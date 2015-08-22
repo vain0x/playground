@@ -15,7 +15,7 @@
         | IdentPtn of string
 
         ///array literal
-        | Array of Expr []
+        | Array of Expr [] * Expr option * Expr []
 
         ///prefix application: f x
         | AppPr of Expr * Expr

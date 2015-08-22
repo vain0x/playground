@@ -87,12 +87,20 @@
 
     ///配列リテラル、またはグループ式
     let internal array_lit =
-        let delimiter = token <| skipChar ','
+        let delimiter      = token <| skipChar ','
+        let last_delimiter = opt delimiter |>> Option.isSome
+        ///splat の左側にある項の列
+        let left  = sepBy1 (token <| expr) delimiter
+        let splat_elem =
+            delimiter
+            >>. opt (token expr .>> (token <| skipString ".."))
+        ///splat の右側にある項の列、および最後のカンマ
+        let right = tuple2 left last_delimiter
         let body =
-            tuple2 (sepBy1 (token <| expr) delimiter) (opt delimiter |>> Option.isSome)
+            tuple3 left splat_elem right
             |>> function
-                | [e], false -> e
-                | es, _      -> es |> Array.ofList |> AST.Array
+                | [e], None, ([], false) -> e
+                | es1, es2,  (es3, _)    -> AST.Array (es1 |> Array.ofList, es2, es3 |> Array.ofList)
 
         between (skipChar '(') (skipChar ')') body
 
