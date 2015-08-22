@@ -12,8 +12,8 @@ open Parser
             | IntLit n -> string n
             | Ident s  -> "``" + s + "``"
             | IdentPtn s -> "\\``" + s + "``"
-            | Tuple es ->
-                "(" + String.Join(",", List.map inspect es) + ")"
+            | Array es ->
+                "(" + String.Join(",", Array.map inspect es) + ",)"
 
             ///中置演算子
             | AppPr (AppPr(Ident op_name, lhs), rhs)

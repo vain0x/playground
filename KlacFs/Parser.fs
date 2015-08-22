@@ -50,7 +50,7 @@
     let inline internal token p =
         klac_spaces >>. p
 
-    let int_literal: Parser<_> =
+    let int_lit: Parser<_> =
         parse {
             let! digits =
                 many1Chars2 digit (digit <|> pchar '_')
@@ -85,24 +85,21 @@
     ///Klacの式
     let internal expr, expr_ref = createParserForwardedToRef ()
 
-    ///カンマ区切りの式
-    let rec internal expr_seq =
-        let comma = token <| skipChar ','
-        sepEndBy (token <| expr) comma
+    ///配列リテラル、またはグループ式
+    let internal array_lit =
+        let delimiter = token <| skipChar ','
+        let body =
+            tuple2 (sepBy1 (token <| expr) delimiter) (opt delimiter |>> Option.isSome)
             |>> function
-                | [] -> AST.Nothing
-                | [e] -> e
-                | es -> AST.Tuple es
+                | [e], false -> e
+                | es, _      -> es |> Array.ofList |> AST.Array
 
-    ///タプル項
-    ///ただし要素が0個なら nothing、1個なら丸括弧で括られた式とみなす。
-    let internal tuple_term =
-        between (skipChar '(') (skipChar ')') expr_seq
+        between (skipChar '(') (skipChar ')') body
 
     let internal atomic_term =
-        int_literal
+        int_lit
         <|> ident
-        <|> tuple_term
+        <|> array_lit
 
     ///関数適用式
     let internal app_pr =
