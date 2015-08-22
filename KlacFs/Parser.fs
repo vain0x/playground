@@ -2,7 +2,7 @@
 
     #nowarn "40"
 
-    open System.IO
+    open System
     open System.Text
     open System.Collections.Generic
     open FParsec
@@ -52,7 +52,9 @@
 
     let int_literal: Parser<_> =
         parse {
-            let! digits = many1Chars digit
+            let! digits =
+                many1Chars2 digit (digit <|> pchar '_')
+                |>> Str.filter Char.IsDigit
             let (succeeds, value) = System.Int32.TryParse digits
             if succeeds then
                 return AST.IntLit value
