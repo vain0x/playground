@@ -59,11 +59,9 @@
             }
 
     let regular_ident: Parser<_> =
-        parse {
-            let! ident_init = letter
-            let! ident_body = manyChars (letter <|> digit)
-            return (string ident_init) + ident_body
-            }
+        let p_let_init = letter <|> pchar '_'
+        let p_let_body = p_let_init <|> digit
+        many1Chars2 p_let_init p_let_body
 
     let generalized_ident: Parser<_> =
         let double_backquotes = skipString "``"
