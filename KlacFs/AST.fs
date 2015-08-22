@@ -14,9 +14,8 @@
         ///identifier pattern: \x
         | IdentPtn of string
 
-        ///tuple literal
-        ///It has 2 or more values.
-        | Tuple of Expr list
+        ///list literal
+        | List of Expr list
 
         ///prefix application: f x
         | AppPr of Expr * Expr
