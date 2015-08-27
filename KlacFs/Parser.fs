@@ -77,7 +77,7 @@
 
     let ident_lit = ident_lit' |>> AST.Ident
 
-    let internal ident_ptn: Parser<_> =
+    let internal ident_ptn_lit: Parser<_> =
         skipChar '\\' >>= konst_unit ident_lit'
         |>> AST.IdentPtn
 
@@ -122,6 +122,7 @@
     let internal atomic_term =
         int_lit
         <|> ident_lit
+        <|> ident_ptn_lit
         <|> list_lit
         <|> dict_lit
 
