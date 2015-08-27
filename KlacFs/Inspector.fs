@@ -3,6 +3,7 @@
 open System
 open AST
 open Parser
+open Basis.Core
 
     type AST.Expr with
         member this.Inspect() =
@@ -12,8 +13,13 @@ open Parser
             | Ident s  -> "``" + s + "``"
             | IdentPtn s -> "\\``" + s + "``"
             | List es ->
-                "(" + String.Join(",", List.map inspect es)
+                "(" + (es |> List.map inspect |> Str.join ", ")
                 + (if es |> List.length = 1 then ",)" else ")")
+            | Dict dt ->
+                let kvs =
+                    dt  |> Map.toList
+                        |> List.map (fun (k, v) -> k + ": " + (inspect v))
+                "{" + (kvs |> Str.join ", ") + "}"
 
             ///中置演算子
             | AppPr (AppPr(Ident op_name, lhs), rhs)

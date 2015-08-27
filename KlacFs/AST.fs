@@ -11,8 +11,11 @@
         ///identifier pattern: \x
         | IdentPtn of string
 
-        ///list literal
+        ///list literal: (x, y, ...)
         | List of Expr list
+
+        ///dictionary literal: {k: v, ...}
+        | Dict of Map<string, Expr>
 
         ///prefix application: f x
         | AppPr of Expr * Expr

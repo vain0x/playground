@@ -72,12 +72,14 @@
         let double_backquotes = skipString "``"
         double_backquotes >>. (many1CharsTill anyChar double_backquotes)
 
-    let ident = 
+    let ident_lit' = 
         (regular_ident <|> generalized_ident)
-        |>> AST.Ident
+
+    let ident_lit = ident_lit' |>> AST.Ident
 
     let internal ident_ptn: Parser<_> =
-        skipChar '\\' >>= konst_unit ident
+        skipChar '\\' >>= konst_unit ident_lit'
+        |>> AST.IdentPtn
 
     let internal op_token: Parser<_> =
         many1Chars <| anyOf "+-*/%&|^~<>=!?:@$"
@@ -106,10 +108,22 @@
 
         between (skipChar '(') (skipChar ')') (token' body)
 
+    ///辞書リテラル
+    let internal dict_lit =
+        let delimiter = token' <| skipChar ','
+        let kv_pair =
+            pipe3 ident_lit' (skipChar ':') (token expr)
+                (fun key _ value -> (key, value))
+        let body =
+            sepEndBy (token kv_pair) delimiter
+            |>> (Map.ofList >> AST.Dict)
+        between (skipChar '{') (skipChar '}') (token' body)
+
     let internal atomic_term =
         int_lit
-        <|> ident
+        <|> ident_lit
         <|> list_lit
+        <|> dict_lit
 
     ///関数適用式
     let internal app_pr =
