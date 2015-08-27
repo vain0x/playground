@@ -11,11 +11,11 @@ open Basis.Core
             match this with
             | IntLit n -> string n
             | Ident s  -> "``" + s + "``"
-            | IdentPtn s -> "\\``" + s + "``"
-            | List es ->
+            | IdentPtnLit s -> "\\``" + s + "``"
+            | ListLit es ->
                 "(" + (es |> List.map inspect |> Str.join ", ")
                 + (if es |> List.length = 1 then ",)" else ")")
-            | Dict dt ->
+            | DictLit dt ->
                 let kvs =
                     dt  |> Map.toList
                         |> List.map (fun (k, v) -> k + ": " + (inspect v))

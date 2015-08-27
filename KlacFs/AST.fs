@@ -9,13 +9,13 @@
         | Ident of string
 
         ///identifier pattern: \x
-        | IdentPtn of string
+        | IdentPtnLit of string
 
         ///list literal: (x, y, ...)
-        | List of Expr list
+        | ListLit of Expr list
 
         ///dictionary literal: {k: v, ...}
-        | Dict of Map<string, Expr>
+        | DictLit of Map<string, Expr>
 
         ///prefix application: f x
         | AppPr of Expr * Expr

@@ -79,13 +79,13 @@
 
     let internal ident_ptn_lit: Parser<_> =
         skipChar '\\' >>= konst_unit ident_lit'
-        |>> AST.IdentPtn
+        |>> AST.IdentPtnLit
 
     let internal op_token: Parser<_> =
         many1Chars <| anyOf "+-*/%&|^~<>=!?:@$"
 
     let internal empty: Parser<_> =
-        preturn <| AST.Expr.List []
+        preturn <| AST.Expr.ListLit []
 
     ///Klacの式
     let internal expr, expr_ref = createParserForwardedToRef ()
@@ -104,7 +104,7 @@
             sepEndBy' (token expr) delimiter
             |>> function
                 | [e], false -> e
-                | es,  _     -> es |> AST.List
+                | es,  _     -> es |> AST.ListLit
 
         between (skipChar '(') (skipChar ')') (token' body)
 
@@ -116,7 +116,7 @@
                 (fun key _ value -> (key, value))
         let body =
             sepEndBy (token kv_pair) delimiter
-            |>> (Map.ofList >> AST.Dict)
+            |>> (Map.ofList >> AST.DictLit)
         between (skipChar '{') (skipChar '}') (token' body)
 
     let internal atomic_term =
