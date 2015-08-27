@@ -1,9 +1,6 @@
 ﻿module AST
 
     type Expr =
-        ///no value
-        | Nothing
-
         ///intger literal
         //TODO: 多倍長整数にする
         | IntLit of int

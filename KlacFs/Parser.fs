@@ -83,7 +83,7 @@
         many1Chars <| anyOf "+-*/%&|^~<>=!?:@$"
 
     let internal empty: Parser<_> =
-        preturn AST.Expr.Nothing
+        preturn <| AST.Expr.List []
 
     ///Klacの式
     let internal expr, expr_ref = createParserForwardedToRef ()
@@ -101,7 +101,6 @@
         let body =
             sepEndBy' (token expr) delimiter
             |>> function
-                | [],  _     -> AST.Nothing
                 | [e], false -> e
                 | es,  _     -> es |> AST.List
 
