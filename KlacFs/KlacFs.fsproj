@@ -64,7 +64,9 @@
     <Compile Include="AST.fs" />
     <Compile Include="Ops.fs" />
     <Compile Include="Parser.fs" />
+    <Compile Include="Value.fs" />
     <Compile Include="Inspector.fs" />
+    <Compile Include="StEval.fs" />
     <Compile Include="KlacFs.fs" />
     <None Include="packages.config" />
     <None Include="app.config" />
