@@ -32,7 +32,9 @@ primitives =
 		("boolean?",   Bool . typeTestBool       . head),
 		("list?",      Bool . typeTestList       . head),
 		("pair?",      Bool . typeTestDottedList . head),
-		("eqv?",       Bool . equals)
+		("eqv?",       Bool . equals),
+		("string->symbol", symbolFromString . head),
+		("symbol->string", stringFromSymbol . head)
 		]
 
 numericBinOp :: (Integer -> Integer -> Integer) -> [LispVal] -> LispVal
@@ -64,3 +66,9 @@ typeTestDottedList _                = False
 equals :: [LispVal] -> Bool
 equals args =
 	and $ zipWith (==) args (tail args)
+
+symbolFromString :: LispVal -> LispVal
+symbolFromString (String s) = Atom s
+
+stringFromSymbol :: LispVal -> LispVal
+stringFromSymbol (Atom s) = String s
