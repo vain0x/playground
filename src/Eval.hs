@@ -17,9 +17,9 @@ eval badForm =
 apply :: String -> [LispVal] -> ThrowsError LispVal
 apply func args =
 	let err = (throwError $ NotFunction "Unrecognized primitive function args" func) in
-	maybe err (return . ($ args)) $ Map.lookup func primitives
+	maybe err ($ args) $ Map.lookup func primitives
 
-primitives :: Map.Map String ([LispVal] -> LispVal)
+primitives :: Map.Map String ([LispVal] -> ThrowsError LispVal)
 primitives =
 	Map.fromList
 		[
@@ -30,24 +30,31 @@ primitives =
 		("mod",       numericBinOp mod),
 		("quotient",  numericBinOp quot),
 		("remainder", numericBinOp rem),
-		("symbol?",    Bool . typeTestAtom       . head),
-		("number?",    Bool . typeTestNumber     . head),
-		("string?",    Bool . typeTestString     . head),
-		("character?", Bool . typeTestChar       . head),
-		("boolean?",   Bool . typeTestBool       . head),
-		("list?",      Bool . typeTestList       . head),
-		("pair?",      Bool . typeTestDottedList . head),
-		("eqv?",       Bool . equals),
-		("string->symbol", symbolFromString . head),
-		("symbol->string", stringFromSymbol . head)
+		("symbol?",    headArg >=> (return . Bool . typeTestAtom      )),
+		("number?",    headArg >=> (return . Bool . typeTestNumber    )),
+		("string?",    headArg >=> (return . Bool . typeTestString    )),
+		("character?", headArg >=> (return . Bool . typeTestChar      )),
+		("boolean?",   headArg >=> (return . Bool . typeTestBool      )),
+		("list?",      headArg >=> (return . Bool . typeTestList      )),
+		("pair?",      headArg >=> (return . Bool . typeTestDottedList)),
+		("eqv?",       return . Bool . equals),
+		("string->symbol", headArg >=> symbolFromString),
+		("symbol->string", headArg >=> stringFromSymbol)
 		]
 
-numericBinOp :: (Integer -> Integer -> Integer) -> [LispVal] -> LispVal
-numericBinOp op args = Number $ foldl1 op $ map unpackNum args
+numericBinOp :: (Integer -> Integer -> Integer) -> [LispVal] -> ThrowsError LispVal
+numericBinOp _  [] =
+	throwError $ NumArgs 2 []
+numericBinOp op args =
+	mapM unpackNum args >>= return . Number . foldl1 op
 
-unpackNum :: LispVal -> Integer
-unpackNum (Number n) = n
-unpackNum _ = 0
+unpackNum :: LispVal -> ThrowsError Integer
+unpackNum (Number n) = return n
+unpackNum val = throwError $ TypeMismatch "number" val
+
+headArg :: [LispVal] -> ThrowsError LispVal
+headArg [val] = return val
+headArg args  = throwError $ NumArgs 1 args
 
 typeTestAtom, typeTestNumber, typeTestString,
 	typeTestChar, typeTestBool, typeTestList, typeTestDottedList
@@ -72,8 +79,10 @@ equals :: [LispVal] -> Bool
 equals args =
 	and $ zipWith (==) args (tail args)
 
-symbolFromString :: LispVal -> LispVal
-symbolFromString (String s) = Atom s
+symbolFromString :: LispVal -> ThrowsError LispVal
+symbolFromString (String s) = return $ Atom s
+symbolFromString val = throwError $ TypeMismatch "string" val
 
-stringFromSymbol :: LispVal -> LispVal
-stringFromSymbol (Atom s) = String s
+stringFromSymbol :: LispVal -> ThrowsError LispVal
+stringFromSymbol (Atom s) = return $ String s
+stringFromSymbol val = throwError $ TypeMismatch "symbol" val
