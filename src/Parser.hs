@@ -3,6 +3,7 @@ module Parser where
 import Numeric
 import qualified Data.Maybe as Maybe
 import Control.Monad
+import Control.Monad.Error
 import Text.ParserCombinators.Parsec hiding (spaces)
 
 import LispVal
@@ -112,9 +113,8 @@ parseExpr =
 	<|> parseString
 	<|> parseAtom
 
-readExpr :: String -> Either String LispVal
+readExpr :: String -> ThrowsError LispVal
 readExpr input =
 	case parse parseExpr "lisp" input of
-		Left err -> Left $ "No match: " ++ show err
-		Right val -> Right val
-
+		Left err -> throwError $ Parser err
+		Right val -> return val

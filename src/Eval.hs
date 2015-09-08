@@ -1,18 +1,23 @@
 module Eval where
 
 import qualified Data.Map as Map
+import Control.Monad.Error
 import LispVal
 
-eval :: LispVal -> LispVal
-eval val@(String _) = val
-eval val@(Number _) = val
-eval val@(Bool _) = val
-eval (List [Atom "quote", val]) = val
-eval (List (Atom func : args)) = apply func $ map eval args
+eval :: LispVal -> ThrowsError LispVal
+eval val@(String _) = return val
+eval val@(Number _) = return val
+eval val@(Bool _)   = return val
+eval (List [Atom "quote", val]) = return val
+eval (List (Atom func : args)) =
+	mapM eval args >>= apply func
+eval badForm =
+	throwError $ BadSpecialForm "Unrecognized special form" badForm
 
-apply :: String -> [LispVal] -> LispVal
+apply :: String -> [LispVal] -> ThrowsError LispVal
 apply func args =
-	maybe (Bool False) ($ args) $ Map.lookup func primitives
+	let err = (throwError $ NotFunction "Unrecognized primitive function args" func) in
+	maybe err (return . ($ args)) $ Map.lookup func primitives
 
 primitives :: Map.Map String ([LispVal] -> LispVal)
 primitives =
