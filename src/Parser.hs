@@ -1,18 +1,11 @@
+module Parser where
+
 import Numeric
 import qualified Data.Maybe as Maybe
 import Control.Monad
-import System.Environment
 import Text.ParserCombinators.Parsec hiding (spaces)
 
-data LispVal
-	= Atom String
-	| List [LispVal]
-	| DottedList [LispVal] LispVal
-	| Number Integer
-	| String String
-	| Char Char
-	| Bool Bool
-	deriving (Show)
+import LispVal
 
 symbol :: Parser Char
 symbol = oneOf "!#$%&|*+-/:<=>?@^_~"
@@ -124,10 +117,4 @@ readExpr input =
 	case parse parseExpr "lisp" input of
 		Left err -> "No match: " ++ show err
 		Right val -> "Found value: " ++ show val
-
-main :: IO ()
-main = do
-	args <- getArgs
-	putStrLn $ readExpr (args !! 0)
-
 

@@ -1,1 +1,1 @@
-ghc -package parsec -o simple_parser src/simple_parser.hs
+ghc -package parsec -o main src/Main.hs src/Parser.hs src/LispVal.hs
