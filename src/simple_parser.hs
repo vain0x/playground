@@ -81,10 +81,14 @@ parseString = do
 	return $ String x
 
 parseChar :: Parser LispVal
-parseChar =
-	liftM Char $ between (char '\'') (char '\'') content
-	where
-		content = (noneOf "\\\'") <|> parseEscapeSequence
+parseChar = do
+	try $ string "#\\"
+	c <-    (try (string "space" >> return ' '))
+		<|> (try (string "newline" >> return '\n'))
+		<|> letter
+		<|> char '('
+		<|> char ' '
+	return $ Char c
 
 parseParenList :: Parser LispVal
 parseParenList = do
