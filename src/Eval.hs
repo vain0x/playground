@@ -32,10 +32,4 @@ numericBinOp op args = Number $ foldl1 op $ map unpackNum args
 
 unpackNum :: LispVal -> Integer
 unpackNum (Number n) = n
-unpackNum (String s) =
-	case reads s of
-		[] -> 0
-		(n, _) : _ -> n
-unpackNum (List [n]) =
-	unpackNum n
 unpackNum _ = 0
