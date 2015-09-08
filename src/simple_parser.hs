@@ -86,9 +86,17 @@ parseChar =
 	where
 		content = (noneOf "\\\'") <|> parseEscapeSequence
 
+parseList :: Parser LispVal
+parseList = liftM List $ sepBy parseExpr spaces
+
+parseParenList :: Parser LispVal
+parseParenList = do
+	between (char '(') (char ')') parseList
+
 parseExpr :: Parser LispVal
 parseExpr =
-	    parseNumber
+	    parseParenList
+	<|> parseNumber
 	<|> parseString
 	<|> parseChar
 	<|> parseAtom
