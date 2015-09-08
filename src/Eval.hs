@@ -31,7 +31,8 @@ primitives =
 		("character?", Bool . typeTestChar       . head),
 		("boolean?",   Bool . typeTestBool       . head),
 		("list?",      Bool . typeTestList       . head),
-		("pair?",      Bool . typeTestDottedList . head)
+		("pair?",      Bool . typeTestDottedList . head),
+		("eqv?",       Bool . equals)
 		]
 
 numericBinOp :: (Integer -> Integer -> Integer) -> [LispVal] -> LispVal
@@ -59,3 +60,7 @@ typeTestList       (List _) = True
 typeTestList       _        = False
 typeTestDottedList (DottedList _ _) = True
 typeTestDottedList _                = False
+
+equals :: [LispVal] -> Bool
+equals args =
+	and $ zipWith (==) args (tail args)

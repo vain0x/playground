@@ -8,6 +8,7 @@ data LispVal
 	| Bool Bool
 	| List [LispVal]
 	| DottedList [LispVal] LispVal
+	deriving (Eq, Ord)
 
 showVal :: LispVal -> String
 showVal (Atom name) = name
