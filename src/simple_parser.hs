@@ -10,6 +10,7 @@ data LispVal
 	| DottedList [LispVal] LispVal
 	| Number Integer
 	| String String
+	| Char Char
 	| Bool Bool
 	deriving (Show)
 
@@ -62,25 +63,34 @@ parseNumber = fmap Number (parseBin <|> parseOct <|> parseHex <|> parseDigit)
 			optional $ string "#d"
 			liftM read $ many1 digit
 
+parseEscapeSequence = do
+	char '\\'
+	(	    (char '\\')
+		<|> (char '\"')
+		<|> (char '\'')
+		<|> (char 't' >> return '\t')
+		<|> (char 'n' >> return '\n')
+		<|> (char 'r' >> return '\r')
+		)
+
 parseString :: Parser LispVal
 parseString = do
 	char '"'
-	x <- many content
+	x <- many ((noneOf "\\\"") <|> parseEscapeSequence)
 	char '"'
 	return $ String x
+
+parseChar :: Parser LispVal
+parseChar =
+	liftM Char $ between (char '\'') (char '\'') content
 	where
-		content = noneOf "\\\"" <|> (char '\\' >> esc_seq)
-		esc_seq = do
-			    (char '\\')
-			<|> (char '\"')
-			<|> (char 't' >> return '\t')
-			<|> (char 'n' >> return '\n')
-			<|> (char 'r' >> return '\r')
+		content = (noneOf "\\\'") <|> parseEscapeSequence
 
 parseExpr :: Parser LispVal
 parseExpr =
 	    parseNumber
 	<|> parseString
+	<|> parseChar
 	<|> parseAtom
 
 readExpr :: String -> String
