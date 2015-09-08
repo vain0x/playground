@@ -48,9 +48,17 @@ numericBinOp _  [] =
 numericBinOp op args =
 	mapM unpackNum args >>= return . Number . foldl1 op
 
+unpackAtom :: LispVal -> ThrowsError String
+unpackAtom (Atom s) = return s
+unpackAtom val = throwError $ TypeMismatch "symbol" val
+
 unpackNum :: LispVal -> ThrowsError Integer
 unpackNum (Number n) = return n
 unpackNum val = throwError $ TypeMismatch "number" val
+
+unpackString :: LispVal -> ThrowsError String
+unpackString (String s) = return s
+unpackString val = throwError $ TypeMismatch "string" val
 
 headArg :: [LispVal] -> ThrowsError LispVal
 headArg [val] = return val
@@ -80,9 +88,7 @@ equals args =
 	and $ zipWith (==) args (tail args)
 
 symbolFromString :: LispVal -> ThrowsError LispVal
-symbolFromString (String s) = return $ Atom s
-symbolFromString val = throwError $ TypeMismatch "string" val
+symbolFromString val = unpackString val >>= return . Atom
 
 stringFromSymbol :: LispVal -> ThrowsError LispVal
-stringFromSymbol (Atom s) = return $ String s
-stringFromSymbol val = throwError $ TypeMismatch "symbol" val
+stringFromSymbol val = unpackAtom val >>= return . String
