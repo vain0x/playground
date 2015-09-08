@@ -86,20 +86,19 @@ parseChar =
 	where
 		content = (noneOf "\\\'") <|> parseEscapeSequence
 
-parseList :: Parser LispVal
-parseList = liftM List $ sepBy parseExpr spaces
-
-parseDottedList :: Parser LispVal
-parseDottedList = do
-	head <- endBy parseExpr spaces
-	tail <- char '.' >> spaces >> parseExpr
-	return $ DottedList head tail
-
 parseParenList :: Parser LispVal
 parseParenList = do
 	between (char '(') (char ')') content
 	where
-		content = try parseList <|> parseDottedList
+		content = do
+			let delim = (try (spaces >> notFollowedBy (char '.')))
+			head <- sepBy parseExpr delim
+			parseDottedListTail head <|> return (List head)
+			
+		parseDottedListTail head = do
+			try (spaces >> char '.' >> spaces)
+			tail <- parseExpr
+			return $ DottedList head tail
 
 parseQuoted :: Parser LispVal
 parseQuoted = do
@@ -111,9 +110,9 @@ parseExpr :: Parser LispVal
 parseExpr =
 	    parseParenList
 	<|> parseQuoted
+	<|> parseChar
 	<|> parseNumber
 	<|> parseString
-	<|> parseChar
 	<|> parseAtom
 
 readExpr :: String -> String
