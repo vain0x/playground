@@ -1,3 +1,4 @@
+import qualified Data.List as L
 import Control.Monad
 import System.Environment
 import Text.ParserCombinators.Parsec hiding (spaces)
@@ -33,9 +34,17 @@ parseNumber = liftM (Number . read) $ many1 digit
 parseString :: Parser LispVal
 parseString = do
 	char '"'
-	x <- many (noneOf "\"")
+	x <- many content
 	char '"'
 	return $ String x
+	where
+		content = noneOf "\\\"" <|> (char '\\' >> esc_seq)
+		esc_seq = do
+			    (char '\\')
+			<|> (char '\"')
+			<|> (char 't' >> return '\t')
+			<|> (char 'n' >> return '\n')
+			<|> (char 'r' >> return '\r')
 
 parseExpr :: Parser LispVal
 parseExpr =
