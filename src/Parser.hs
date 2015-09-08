@@ -112,9 +112,9 @@ parseExpr =
 	<|> parseString
 	<|> parseAtom
 
-readExpr :: String -> String
+readExpr :: String -> Either String LispVal
 readExpr input =
 	case parse parseExpr "lisp" input of
-		Left err -> "No match: " ++ show err
-		Right val -> "Found value: " ++ show val
+		Left err -> Left $ "No match: " ++ show err
+		Right val -> Right val
 
