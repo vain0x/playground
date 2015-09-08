@@ -101,9 +101,16 @@ parseParenList = do
 	where
 		content = try parseList <|> parseDottedList
 
+parseQuoted :: Parser LispVal
+parseQuoted = do
+	char '\''
+	x <- parseExpr
+	return $ List [Atom "quote", x]
+
 parseExpr :: Parser LispVal
 parseExpr =
 	    parseParenList
+	<|> parseQuoted
 	<|> parseNumber
 	<|> parseString
 	<|> parseChar
