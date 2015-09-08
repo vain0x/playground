@@ -89,9 +89,17 @@ parseChar =
 parseList :: Parser LispVal
 parseList = liftM List $ sepBy parseExpr spaces
 
+parseDottedList :: Parser LispVal
+parseDottedList = do
+	head <- endBy parseExpr spaces
+	tail <- char '.' >> spaces >> parseExpr
+	return $ DottedList head tail
+
 parseParenList :: Parser LispVal
 parseParenList = do
-	between (char '(') (char ')') parseList
+	between (char '(') (char ')') content
+	where
+		content = try parseList <|> parseDottedList
 
 parseExpr :: Parser LispVal
 parseExpr =
