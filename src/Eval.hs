@@ -1,5 +1,6 @@
 module Eval where
 
+import qualified Data.Map as Map
 import LispVal
 
 eval :: LispVal -> LispVal
@@ -7,3 +8,34 @@ eval val@(String _) = val
 eval val@(Number _) = val
 eval val@(Bool _) = val
 eval (List [Atom "quote", val]) = val
+eval (List (Atom func : args)) = apply func $ map eval args
+
+apply :: String -> [LispVal] -> LispVal
+apply func args =
+	maybe (Bool False) ($ args) $ Map.lookup func primitives
+
+primitives :: Map.Map String ([LispVal] -> LispVal)
+primitives =
+	Map.fromList
+		[
+		("+",         numericBinOp (+)),
+		("-",         numericBinOp (-)),
+		("*",         numericBinOp (*)),
+		("/",         numericBinOp div),
+		("mod",       numericBinOp mod),
+		("quotient",  numericBinOp quot),
+		("remainder", numericBinOp rem)
+		]
+
+numericBinOp :: (Integer -> Integer -> Integer) -> [LispVal] -> LispVal
+numericBinOp op args = Number $ foldl1 op $ map unpackNum args
+
+unpackNum :: LispVal -> Integer
+unpackNum (Number n) = n
+unpackNum (String s) =
+	case reads s of
+		[] -> 0
+		(n, _) : _ -> n
+unpackNum (List [n]) =
+	unpackNum n
+unpackNum _ = 0
