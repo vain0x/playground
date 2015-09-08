@@ -53,7 +53,7 @@ parseNumber = fmap Number (parseBin <|> parseOct <|> parseHex <|> parseDigit)
 			return num
 			
 		parseDigit = do
-			optional $ string "#d"
+			optional $ try $ string "#d"
 			liftM read $ many1 digit
 
 parseEscapeSequence = do
