@@ -24,7 +24,14 @@ primitives =
 		("/",         numericBinOp div),
 		("mod",       numericBinOp mod),
 		("quotient",  numericBinOp quot),
-		("remainder", numericBinOp rem)
+		("remainder", numericBinOp rem),
+		("symbol?",    Bool . typeTestAtom       . head),
+		("number?",    Bool . typeTestNumber     . head),
+		("string?",    Bool . typeTestString     . head),
+		("character?", Bool . typeTestChar       . head),
+		("boolean?",   Bool . typeTestBool       . head),
+		("list?",      Bool . typeTestList       . head),
+		("pair?",      Bool . typeTestDottedList . head)
 		]
 
 numericBinOp :: (Integer -> Integer -> Integer) -> [LispVal] -> LispVal
@@ -33,3 +40,22 @@ numericBinOp op args = Number $ foldl1 op $ map unpackNum args
 unpackNum :: LispVal -> Integer
 unpackNum (Number n) = n
 unpackNum _ = 0
+
+typeTestAtom, typeTestNumber, typeTestString,
+	typeTestChar, typeTestBool, typeTestList, typeTestDottedList
+	:: LispVal -> Bool
+
+typeTestAtom       (Atom _)   = True
+typeTestAtom       _          = False
+typeTestNumber     (Number _) = True
+typeTestNumber     _          = False
+typeTestString     (String _) = True
+typeTestString     _          = False
+typeTestChar       (Char _) = True
+typeTestChar       _        = False
+typeTestBool       (Bool _) = True
+typeTestBool       _        = False
+typeTestList       (List _) = True
+typeTestList       _        = False
+typeTestDottedList (DottedList _ _) = True
+typeTestDottedList _                = False
