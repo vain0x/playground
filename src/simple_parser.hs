@@ -1,4 +1,5 @@
-import qualified Data.List as L
+import Numeric
+import qualified Data.Maybe as Maybe
 import Control.Monad
 import System.Environment
 import Text.ParserCombinators.Parsec hiding (spaces)
@@ -29,7 +30,37 @@ parseAtom = do
 		_    -> Atom atom
 
 parseNumber :: Parser LispVal
-parseNumber = liftM (Number . read) $ many1 digit
+parseNumber = fmap Number (parseBin <|> parseOct <|> parseHex <|> parseDigit)
+	where
+		parseBin = do
+			try $ string "#b"
+			s <- many1 (oneOf "01")
+			let [(num, rest)] = readBin s
+			setInput rest
+			return num
+			
+		tryBit '0' = Just 0
+		tryBit '1' = Just 1
+		tryBit _ = Nothing
+		readBin = readInt 2 (Maybe.isJust . tryBit) (maybe 0 id . tryBit)
+		
+		parseOct = do
+			try $ string "#o"
+			s <- many1 (oneOf "01234567")
+			let [(num, rest)] = readOct s
+			setInput rest
+			return num
+			
+		parseHex = do
+			try $ string "#x"
+			s <- many1 (digit <|> oneOf "abcdefABCDEF")
+			let [(num, rest)] = readHex s
+			setInput rest
+			return num
+			
+		parseDigit = do
+			optional $ string "#d"
+			liftM read $ many1 digit
 
 parseString :: Parser LispVal
 parseString = do
@@ -48,9 +79,9 @@ parseString = do
 
 parseExpr :: Parser LispVal
 parseExpr =
-	    parseAtom
-	<|> parseNumber
+	    parseNumber
 	<|> parseString
+	<|> parseAtom
 
 readExpr :: String -> String
 readExpr input =
