@@ -23,6 +23,8 @@ primitives :: Map.Map String ([LispVal] -> ThrowsError LispVal)
 primitives =
 	Map.fromList
 		[
+		("&&",        boolBinOp (&&) True),
+		("||",        boolBinOp (||) False),
 		("+",         numericBinOp (+)),
 		("-",         numericBinOp (-)),
 		("*",         numericBinOp (*)),
@@ -54,6 +56,10 @@ primitives =
 		("symbol->string", headArg >=> stringFromSymbol)
 		]
 
+boolBinOp :: (Bool -> Bool -> Bool) -> Bool -> [LispVal] -> ThrowsError LispVal
+boolBinOp op unit args =
+	mapM unpackBool args >>= return . Bool . foldl op unit
+
 numericBinOp :: (Integer -> Integer -> Integer) -> [LispVal] -> ThrowsError LispVal
 numericBinOp _  [] =
 	throwError $ NumArgs 2 []
@@ -77,6 +83,10 @@ strRelOp = relOp unpackString (return . Bool . and)
 unpackAtom :: LispVal -> ThrowsError String
 unpackAtom (Atom s) = return s
 unpackAtom val = throwError $ TypeMismatch "symbol" val
+
+unpackBool :: LispVal -> ThrowsError Bool
+unpackBool (Bool b) = return b
+unpackBool val = throwError $ TypeMismatch "boolean" val
 
 unpackNum :: LispVal -> ThrowsError Integer
 unpackNum (Number n) = return n
