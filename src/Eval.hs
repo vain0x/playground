@@ -62,7 +62,6 @@ primitives =
 		("boolean?",   headArg >=> (return . Bool . typeTestBool      )),
 		("list?",      headArg >=> (return . Bool . typeTestList      )),
 		("pair?",      headArg >=> (return . Bool . typeTestDottedList)),
-		("eqv?",       return . Bool . equals),
 		("string->symbol", headArg >=> symbolFromString),
 		("symbol->string", headArg >=> stringFromSymbol)
 		]
@@ -144,10 +143,6 @@ typeTestList       (List _) = True
 typeTestList       _        = False
 typeTestDottedList (DottedList _ _) = True
 typeTestDottedList _                = False
-
-equals :: [LispVal] -> Bool
-equals args =
-	and $ zipWith (==) args (tail args)
 
 symbolFromString :: LispVal -> ThrowsError LispVal
 symbolFromString val = unpackString val >>= return . Atom
