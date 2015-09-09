@@ -36,6 +36,7 @@ primitives :: Map.Map String ([LispVal] -> ThrowsError LispVal)
 primitives =
 	Map.fromList
 		[
+		("eqv?",      untypedRelOp eqv),
 		("&&",        boolBinOp (&&) True),
 		("||",        boolBinOp (||) False),
 		("+",         numericBinOp (+)),
@@ -93,6 +94,33 @@ numericRelOp = relOp unpackNum (return . Bool . and)
 
 strRelOp :: (String -> String -> Bool) -> [LispVal] -> ThrowsError LispVal
 strRelOp = relOp unpackString (return . Bool . and)
+
+and' :: [ThrowsError Bool] -> ThrowsError Bool
+and' (x : xs) = do
+	x' <- x
+	y' <- and' xs
+	return $ x' && y'
+and' _ = return True
+
+untypedRelOp :: (LispVal -> LispVal -> ThrowsError Bool) -> [LispVal] -> ThrowsError LispVal
+untypedRelOp op args =
+	if length args < 2 then
+		throwError $ NumArgs 2 args
+	else
+		fmap Bool $ and' $ zipWith op args (tail args)
+
+eqv :: LispVal -> LispVal -> ThrowsError Bool
+eqv (Atom lhs)   (Atom rhs)    = return $ lhs == rhs
+eqv (Bool lhs)   (Bool rhs)    = return $ lhs == rhs
+eqv (Number lhs) (Number rhs)  = return $ lhs == rhs
+eqv (String lhs) (String rhs)  = return $ lhs == rhs
+eqv (DottedList xs x) (DottedList ys y) =
+	let lhs = (List $ xs ++ [x]) in
+	let rhs = (List $ ys ++ [y]) in
+	eqv lhs rhs
+eqv (List lhs) (List rhs) =
+	and' $ (return $ length lhs == length rhs) : (zipWith eqv lhs rhs)
+eqv _ _ = return False
 
 unpackEquals :: Unpacker a -> LispVal -> LispVal -> ThrowsError Bool
 unpackEquals (Unpacker unpacker) lhs rhs =
