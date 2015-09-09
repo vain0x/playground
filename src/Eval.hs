@@ -37,6 +37,7 @@ primitives =
 	Map.fromList
 		[
 		("eqv?",      untypedRelOp eqv),
+		("equals?",   untypedRelOp equals),
 		("&&",        boolBinOp (&&) True),
 		("||",        boolBinOp (||) False),
 		("+",         numericBinOp (+)),
@@ -121,6 +122,24 @@ eqv (DottedList xs x) (DottedList ys y) =
 eqv (List lhs) (List rhs) =
 	and' $ (return $ length lhs == length rhs) : (zipWith eqv lhs rhs)
 eqv _ _ = return False
+
+equals :: LispVal -> LispVal -> ThrowsError Bool
+equals lhs rhs
+	|    typeTestDottedList lhs || typeTestList lhs
+	  || typeTestDottedList rhs || typeTestList rhs =
+		do
+			lhs' <- unpackList lhs
+			rhs' <- unpackList rhs
+			and' $ ((return $ length lhs' == length rhs') : zipWith equals lhs' rhs')
+		`catchError` (const $ return False)
+	| otherwise = do
+		let allUnpackers = [Unpacker unpackNum, Unpacker unpackString, Unpacker unpackBool]
+		primitiveEq <-
+			liftM or $ forM allUnpackers $ \unpacker ->
+				unpackEquals unpacker lhs rhs
+		isEqv <-
+			eqv lhs rhs
+		return (primitiveEq || isEqv)
 
 unpackEquals :: Unpacker a -> LispVal -> LispVal -> ThrowsError Bool
 unpackEquals (Unpacker unpacker) lhs rhs =
