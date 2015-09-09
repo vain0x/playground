@@ -107,6 +107,11 @@ unpackString :: LispVal -> ThrowsError String
 unpackString (String s) = return s
 unpackString val = throwError $ TypeMismatch "string" val
 
+unpackList :: LispVal -> ThrowsError [LispVal]
+unpackList (List xs) = return xs
+unpackList (DottedList xs x) = return $ xs ++ [x]
+unpackList val = throwError $ TypeMismatch "pair" val
+
 headArg :: [LispVal] -> ThrowsError LispVal
 headArg [val] = return val
 headArg args  = throwError $ NumArgs 1 args
