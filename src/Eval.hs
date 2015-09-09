@@ -1,8 +1,12 @@
+{-# LANGUAGE ExistentialQuantification #-}
+
 module Eval where
 
 import qualified Data.Map as Map
 import Control.Monad.Error
 import LispVal
+
+data Unpacker a = forall a. Eq a => Unpacker (LispVal -> ThrowsError a)
 
 eval :: LispVal -> ThrowsError LispVal
 eval val@(String _) = return val
@@ -89,6 +93,13 @@ numericRelOp = relOp unpackNum (return . Bool . and)
 
 strRelOp :: (String -> String -> Bool) -> [LispVal] -> ThrowsError LispVal
 strRelOp = relOp unpackString (return . Bool . and)
+
+unpackEquals :: Unpacker a -> LispVal -> LispVal -> ThrowsError Bool
+unpackEquals (Unpacker unpacker) lhs rhs =
+	do	lhs' <- unpacker lhs
+		rhs' <- unpacker rhs
+		return $ lhs' == rhs'
+	`catchError` (const $ return False)
 
 unpackAtom :: LispVal -> ThrowsError String
 unpackAtom (Atom s) = return s
