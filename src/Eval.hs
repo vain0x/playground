@@ -9,10 +9,19 @@ eval val@(String _) = return val
 eval val@(Number _) = return val
 eval val@(Bool _)   = return val
 eval (List [Atom "quote", val]) = return val
+eval (List [Atom "if", pred, thenCl, elseCl]) =
+	applyIf pred thenCl elseCl
 eval (List (Atom func : args)) =
 	mapM eval args >>= apply func
 eval badForm =
 	throwError $ BadSpecialForm "Unrecognized special form" badForm
+
+applyIf :: LispVal -> LispVal -> LispVal -> ThrowsError LispVal
+applyIf pred thenCl elseCl = do
+	cond <- eval pred
+	if cond == Bool False
+	then eval elseCl
+	else eval thenCl
 
 apply :: String -> [LispVal] -> ThrowsError LispVal
 apply func args =
