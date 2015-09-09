@@ -53,6 +53,8 @@ primitives =
 		("string>?",  strRelOp (>)),
 		("string<=?", strRelOp (<=)),
 		("string>=?", strRelOp (>=)),
+		("car",        headArg >=> car),
+		("cdr",        headArg >=> cdr),
 		("symbol?",    headArg >=> (return . Bool . typeTestAtom      )),
 		("number?",    headArg >=> (return . Bool . typeTestNumber    )),
 		("string?",    headArg >=> (return . Bool . typeTestString    )),
@@ -108,6 +110,16 @@ unpackString val = throwError $ TypeMismatch "string" val
 headArg :: [LispVal] -> ThrowsError LispVal
 headArg [val] = return val
 headArg args  = throwError $ NumArgs 1 args
+
+car :: LispVal -> ThrowsError LispVal
+car (List (x : xs)) = return x
+car (DottedList (x : _) _) = return x
+car val = throwError $ TypeMismatch "pair" val
+
+cdr :: LispVal -> ThrowsError LispVal
+cdr (List (_ : xs))            = return $ List xs
+cdr (DottedList (_ : xs) tail) = return $ DottedList xs tail
+cdr val = throwError $ TypeMismatch "pair" val
 
 typeTestAtom, typeTestNumber, typeTestString,
 	typeTestChar, typeTestBool, typeTestList, typeTestDottedList
