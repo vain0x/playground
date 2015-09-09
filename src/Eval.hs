@@ -36,6 +36,12 @@ primitives =
 		(">",         numericRelOp (>)),
 		(">=",        numericRelOp (>=)),
 		("<=",        numericRelOp (<=)),
+		("string=?",  strRelOp (==)),
+		("string/=?", strRelOp (/=)),
+		("string<?",  strRelOp (<)),
+		("string>?",  strRelOp (>)),
+		("string<=?", strRelOp (<=)),
+		("string>=?", strRelOp (>=)),
 		("symbol?",    headArg >=> (return . Bool . typeTestAtom      )),
 		("number?",    headArg >=> (return . Bool . typeTestNumber    )),
 		("string?",    headArg >=> (return . Bool . typeTestString    )),
@@ -64,6 +70,9 @@ opPrimitive unpacker packer op args =
 
 numericRelOp :: (Integer -> Integer -> Bool) -> [LispVal] -> ThrowsError LispVal
 numericRelOp = opPrimitive unpackNum (return . Bool . and)
+
+strRelOp :: (String -> String -> Bool) -> [LispVal] -> ThrowsError LispVal
+strRelOp = opPrimitive unpackString (return . Bool . and)
 
 unpackAtom :: LispVal -> ThrowsError String
 unpackAtom (Atom s) = return s
