@@ -1,5 +1,7 @@
 module LispVal where
 
+import qualified Data.Map as Map
+import Data.IORef
 import Control.Monad.Error
 import Text.Parsec (ParseError)
 
@@ -68,3 +70,56 @@ trapError action = catchError action $ return . show
 extractValue :: ThrowsError a -> a
 extractValue (Right val) = val
 extractValue _ = undefined
+
+type Env = IORef (Map.Map String (IORef LispVal))
+
+nullEnv :: IO Env
+nullEnv = newIORef $ Map.empty
+
+type IOThrowsError = ErrorT LispError IO
+
+liftThrows :: ThrowsError a -> IOThrowsError a
+liftThrows (Left err) = throwError err
+liftThrows (Right val) = return val
+
+runIOThrows :: IOThrowsError String -> IO String
+runIOThrows action = runErrorT (trapError action) >>= return . extractValue
+
+isBound :: Env -> String -> IO Bool
+isBound envRef var =
+    readIORef envRef >>= return . maybe False (const True) . Map.lookup var
+
+getVar :: Env -> String -> IOThrowsError LispVal
+getVar envRef var = do
+    env <- liftIO $ readIORef envRef
+    maybe err
+        (liftIO . readIORef)
+        (Map.lookup var env)
+    where
+        err = (throwError $ UnboundVar "Getting an unbound variable: " var)
+
+setVar :: Env -> String -> LispVal -> IOThrowsError LispVal
+setVar envRef var value = do
+    env <- liftIO $ readIORef envRef
+    maybe err
+        (liftIO . (flip writeIORef value))
+        (Map.lookup var env)
+    return value
+    where
+        err = throwError $ UnboundVar "Setting an unbound variable: " var
+
+defineVar :: Env -> String -> LispVal -> IOThrowsError LispVal
+defineVar envRef var value = do
+    alreadyDefined <- liftIO $ isBound envRef var
+    if alreadyDefined then do
+        setVar envRef var value
+        return value
+    else
+        liftIO $ do
+            valueRef <- newIORef value
+            env <- readIORef envRef
+            writeIORef envRef (Map.insert var valueRef env)
+            return value
+
+
+

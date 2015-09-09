@@ -8,35 +8,42 @@ import LispVal
 
 data Unpacker a = forall a. Eq a => Unpacker (LispVal -> ThrowsError a)
 
-eval :: LispVal -> ThrowsError LispVal
-eval val@(String _) = return val
-eval val@(Number _) = return val
-eval val@(Bool _)   = return val
-eval (List [Atom "quote", val]) = return val
-eval (List [Atom "if", pred, thenCl, elseCl]) =
-    applyIf pred thenCl elseCl
-eval (List (Atom "cond" : cls)) =
-    applyCond cls
-eval (List (Atom func : args)) =
-    mapM eval args >>= apply func
-eval badForm =
+eval :: Env -> LispVal -> IOThrowsError LispVal
+eval env val@(String _) = return val
+eval env val@(Number _) = return val
+eval env val@(Bool _)   = return val
+eval env (Atom name) = getVar env name
+eval env (List [Atom "quote", val]) = return val
+eval env (List [Atom "if", pred, thenCl, elseCl]) =
+    applyIf env pred thenCl elseCl
+eval env (List (Atom "cond" : cls)) =
+    applyCond env cls
+eval env (List [Atom "set!", Atom var, form]) =
+    eval env form >>= setVar env var
+eval env (List [Atom "define", Atom var, form]) =
+    eval env form >>= defineVar env var
+eval env (List (Atom func : args)) =
+    mapM (eval env) args >>= liftThrows . apply func
+eval _ badForm =
     throwError $ BadSpecialForm "Unrecognized special form" badForm
 
-applyIf :: LispVal -> LispVal -> LispVal -> ThrowsError LispVal
-applyIf cond thenCl elseCl =
-    eval cond
-    >>= unpackBool
-    >>= \b -> eval (if b then thenCl else elseCl)
+applyIf :: Env -> LispVal -> LispVal -> LispVal -> IOThrowsError LispVal
+applyIf env cond thenCl elseCl =
+    eval env cond
+    >>= liftThrows . unpackBool
+    >>= \b -> eval env (if b then thenCl else elseCl)
 
-applyCond :: [LispVal] -> ThrowsError LispVal
-applyCond (List [Atom "else", expr] : _) =
-    eval expr
-applyCond (List [cond, expr] : xs) =
-    eval cond >>= unpackBool >>= \b ->
+applyCond :: Env -> [LispVal] -> IOThrowsError LispVal
+applyCond env (List [Atom "else", expr] : _) =
+    eval env expr
+applyCond env (List [cond, expr] : xs) =
+    eval env cond
+    >>= liftThrows . unpackBool
+    >>= \b ->
         if b
-            then eval expr
-            else applyCond xs
-applyCond val =
+            then eval env expr
+            else applyCond env xs
+applyCond _ val =
     throwError $ BadSpecialForm "`cond` should take clauses each of the form (<test> <expr>) and one of <test>s must evaluate to true" (List val)
 
 apply :: String -> [LispVal] -> ThrowsError LispVal
