@@ -30,6 +30,12 @@ primitives =
 		("mod",       numericBinOp mod),
 		("quotient",  numericBinOp quot),
 		("remainder", numericBinOp rem),
+		("=",         numericRelOp (==)),
+		("/=",        numericRelOp (/=)),
+		("<",         numericRelOp (<)),
+		(">",         numericRelOp (>)),
+		(">=",        numericRelOp (>=)),
+		("<=",        numericRelOp (<=)),
 		("symbol?",    headArg >=> (return . Bool . typeTestAtom      )),
 		("number?",    headArg >=> (return . Bool . typeTestNumber    )),
 		("string?",    headArg >=> (return . Bool . typeTestString    )),
@@ -47,6 +53,17 @@ numericBinOp _  [] =
 	throwError $ NumArgs 2 []
 numericBinOp op args =
 	mapM unpackNum args >>= return . Number . foldl1 op
+
+opPrimitive :: (LispVal -> ThrowsError a) -> ([b] -> ThrowsError LispVal) -> (a -> a -> b) -> [LispVal] -> ThrowsError LispVal
+opPrimitive unpacker packer op args =
+	if length args < 2 then
+		throwError $ NumArgs 2 args
+	else do
+		arg_vals <- mapM unpacker args
+		packer $ zipWith op arg_vals (tail arg_vals)
+
+numericRelOp :: (Integer -> Integer -> Bool) -> [LispVal] -> ThrowsError LispVal
+numericRelOp = opPrimitive unpackNum (return . Bool . and)
 
 unpackAtom :: LispVal -> ThrowsError String
 unpackAtom (Atom s) = return s
