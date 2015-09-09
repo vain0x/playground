@@ -21,11 +21,10 @@ eval badForm =
 	throwError $ BadSpecialForm "Unrecognized special form" badForm
 
 applyIf :: LispVal -> LispVal -> LispVal -> ThrowsError LispVal
-applyIf pred thenCl elseCl = do
-	cond <- eval pred
-	if cond == Bool False
-	then eval elseCl
-	else eval thenCl
+applyIf cond thenCl elseCl =
+	eval cond
+	>>= unpackBool
+	>>= \b -> eval (if b then thenCl else elseCl)
 
 apply :: String -> [LispVal] -> ThrowsError LispVal
 apply func args =
