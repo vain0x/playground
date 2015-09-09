@@ -33,26 +33,26 @@ parseNumber = fmap Number (parseBin <|> parseOct <|> parseHex <|> parseDigit)
 			let [(num, rest)] = readBin s
 			setInput rest
 			return num
-			
+
 		tryBit '0' = Just 0
 		tryBit '1' = Just 1
 		tryBit _ = Nothing
 		readBin = readInt 2 (Maybe.isJust . tryBit) (maybe 0 id . tryBit)
-		
+
 		parseOct = do
 			try $ string "#o"
 			s <- many1 (oneOf "01234567")
 			let [(num, rest)] = readOct s
 			setInput rest
 			return num
-			
+
 		parseHex = do
 			try $ string "#x"
 			s <- many1 (digit <|> oneOf "abcdefABCDEF")
 			let [(num, rest)] = readHex s
 			setInput rest
 			return num
-			
+
 		parseDigit = do
 			optional $ try $ string "#d"
 			liftM read $ many1 digit
@@ -92,7 +92,7 @@ parseParenList = do
 			let delim = (try (spaces >> notFollowedBy (char '.')))
 			head <- sepBy parseExpr delim
 			parseDottedListTail head <|> return (List head)
-			
+
 		parseDottedListTail head = do
 			try (spaces >> char '.' >> spaces)
 			tail <- parseExpr

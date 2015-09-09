@@ -23,9 +23,9 @@ evalAndPrint expr =
 	evalString expr >>= putStrLn
 
 until_ :: Monad m => (a -> Bool) -> m a -> (a -> m ()) -> m ()
-until_ pred next action = do 
+until_ pred next action = do
 	result <- next
-	if pred result 
+	if pred result
 		then return ()
 		else action result >> until_ pred next action
 

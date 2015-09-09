@@ -1,5 +1,7 @@
 module LispVal where
 
+import qualified Data.Map as Map
+import Data.IORef
 import Control.Monad.Error
 import Text.Parsec (ParseError)
 
@@ -68,3 +70,15 @@ trapError action = catchError action $ return . show
 extractValue :: ThrowsError a -> a
 extractValue (Right val) = val
 extractValue _ = undefined
+
+type Env = IORef (Map.Map String (IORef LispVal))
+
+type IOThrowsError = ErrorT LispError IO
+
+liftThrows :: ThrowsError a -> IOThrowsError a
+liftThrows (Left err) = throwError err
+liftThrows (Right val) = return val
+
+runIOThrows :: IOThrowsError String -> IO String
+runIOThrows action = runErrorT (trapError action) >>= return . extractValue
+
