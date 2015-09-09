@@ -60,8 +60,8 @@ numericBinOp _  [] =
 numericBinOp op args =
 	mapM unpackNum args >>= return . Number . foldl1 op
 
-opPrimitive :: (LispVal -> ThrowsError a) -> ([b] -> ThrowsError LispVal) -> (a -> a -> b) -> [LispVal] -> ThrowsError LispVal
-opPrimitive unpacker packer op args =
+relOp :: (LispVal -> ThrowsError a) -> ([b] -> ThrowsError LispVal) -> (a -> a -> b) -> [LispVal] -> ThrowsError LispVal
+relOp unpacker packer op args =
 	if length args < 2 then
 		throwError $ NumArgs 2 args
 	else do
@@ -69,10 +69,10 @@ opPrimitive unpacker packer op args =
 		packer $ zipWith op arg_vals (tail arg_vals)
 
 numericRelOp :: (Integer -> Integer -> Bool) -> [LispVal] -> ThrowsError LispVal
-numericRelOp = opPrimitive unpackNum (return . Bool . and)
+numericRelOp = relOp unpackNum (return . Bool . and)
 
 strRelOp :: (String -> String -> Bool) -> [LispVal] -> ThrowsError LispVal
-strRelOp = opPrimitive unpackString (return . Bool . and)
+strRelOp = relOp unpackString (return . Bool . and)
 
 unpackAtom :: LispVal -> ThrowsError String
 unpackAtom (Atom s) = return s
