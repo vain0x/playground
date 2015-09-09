@@ -15,6 +15,8 @@ eval val@(Bool _)   = return val
 eval (List [Atom "quote", val]) = return val
 eval (List [Atom "if", pred, thenCl, elseCl]) =
 	applyIf pred thenCl elseCl
+eval (List (Atom "cond" : cls)) =
+	applyCond cls
 eval (List (Atom func : args)) =
 	mapM eval args >>= apply func
 eval badForm =
@@ -25,6 +27,17 @@ applyIf cond thenCl elseCl =
 	eval cond
 	>>= unpackBool
 	>>= \b -> eval (if b then thenCl else elseCl)
+
+applyCond :: [LispVal] -> ThrowsError LispVal
+applyCond (List [Atom "else", expr] : _) =
+	eval expr
+applyCond (List [cond, expr] : xs) =
+	eval cond >>= unpackBool >>= \b ->
+		if b
+			then eval expr
+			else applyCond xs
+applyCond val =
+	throwError $ BadSpecialForm "`cond` should take clauses each of the form (<test> <expr>) and one of <test>s must evaluate to true" (List val)
 
 apply :: String -> [LispVal] -> ThrowsError LispVal
 apply func args =
