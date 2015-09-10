@@ -16,6 +16,12 @@ data LispVal
     | List [LispVal]
     | DottedList [LispVal] LispVal
     | PrimitiveFunc String PrimitiveFunc
+    | Closure
+        { prms        :: [String]
+        , variadicPrm :: Maybe String
+        , body        :: [LispVal]
+        , closure     :: Env
+        }
 
 showVal :: LispVal -> String
 showVal (Atom name) = name
@@ -32,6 +38,10 @@ showVal (DottedList head tail) =
     "(" ++ unwordsList head ++ " . " ++ showVal tail ++ ")"
 showVal (PrimitiveFunc name _) =
     "<primitive(" ++ name ++ ")>"
+showVal (Closure prms variadicPrm _ _) =
+    "(lambda (" ++ unwords (map show $ prms)
+    ++ maybe "" (\args -> " . " ++ args) variadicPrm
+    ++ ") ...)"
 
 unwordsList :: [LispVal] -> String
 unwordsList = unwords . map showVal

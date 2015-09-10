@@ -22,6 +22,8 @@ eval env (List [Atom "set!", Atom var, form]) =
     eval env form >>= setVar env var
 eval env (List [Atom "define", Atom var, form]) =
     eval env form >>= defineVar env var
+eval env (List (Atom "lambda" : args)) =
+    applyLambda env args
 eval env (List (callable : args)) = do
     func <- eval env callable
     argVals <- mapM (eval env) args
@@ -48,11 +50,44 @@ applyCond env (List [cond, expr] : xs) =
 applyCond _ val =
     throwError $ BadSpecialForm "`cond` should take clauses each of the form (<test> <expr>) and one of <test>s must evaluate to true" (List val)
 
+applyLambda :: Env -> [LispVal] -> IOThrowsError LispVal
+applyLambda env (List prms : body) =
+    makeClosure env (prms, Nothing) body
+applyLambda env (DottedList prms variadicPrm : body) =
+    makeClosure env (prms, Just variadicPrm) body
+applyLambda env (variadicPrm@(Atom _) : body) =
+    makeClosure env ([],   Just variadicPrm) body
+applyLambda _ args =
+    throwError $ BadSpecialForm "`lambda` should take a parameter list and one or more body expressions" (List args)
+
 apply :: LispVal -> [LispVal] -> IOThrowsError LispVal
 apply (PrimitiveFunc _ func) args =
     liftThrows $ func args
+apply (Closure prms variadicPrm body closure) args =
+    if length prms /= length args && variadicPrm == Nothing
+    then throwError $ NumArgs (num prms) args
+    else do
+        boundEnv <-
+            (liftIO $ bindVars closure $ Map.fromList $ zip prms args)
+            >>= bindVarArgs variadicPrm
+        evalBody boundEnv
+    where
+        num = toInteger . length
+        evalBody env = liftM last $ mapM (eval env) body
+        bindVarArgs (Just prm) env =
+            liftIO $ bindVars env $ Map.singleton prm (List remainingArgs)
+        bindVarArgs Nothing env =
+            return env
+        remainingArgs =
+            drop (length prms) args
 apply val _ =
     throwError $ TypeMismatch "function" val
+
+makeClosure :: Env -> ([LispVal], Maybe LispVal) -> [LispVal] -> IOThrowsError LispVal
+makeClosure env (prms, variadicPrm) body = do
+    prms'        <- mapM (liftThrows . unpackAtom) prms
+    variadicPrm' <- mapM (liftThrows . unpackAtom) variadicPrm
+    return $ Closure prms' variadicPrm' body env
 
 primitives :: [(String, PrimitiveFunc)]
 primitives =
