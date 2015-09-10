@@ -16,14 +16,11 @@ eval env (Atom name) = getVar env name
 eval env (List [Atom "quote", val]) = return val
 eval env (List [Atom "if", pred, thenCl, elseCl]) =
     applyIf env pred thenCl elseCl
-eval env (List (Atom "cond" : cls)) =
-    applyCond env cls
+eval env (List (Atom "cond" : cls)) = applyCond env cls
 eval env (List [Atom "set!", Atom var, form]) =
     eval env form >>= setVar env var
-eval env (List [Atom "define", Atom var, form]) =
-    eval env form >>= defineVar env var
-eval env (List (Atom "lambda" : args)) =
-    applyLambda env args
+eval env (List (Atom "define" : args)) = applyDefine env args
+eval env (List (Atom "lambda" : args)) = applyLambda env args
 eval env (List (callable : args)) = do
     func <- eval env callable
     argVals <- mapM (eval env) args
@@ -49,6 +46,18 @@ applyCond env (List [cond, expr] : xs) =
             else applyCond env xs
 applyCond _ val =
     throwError $ BadSpecialForm "`cond` should take clauses each of the form (<test> <expr>) and one of <test>s must evaluate to true" (List val)
+
+applyDefine :: Env -> [LispVal] -> IOThrowsError LispVal
+applyDefine env [Atom var, val] =
+    eval env val >>= defineVar env var
+applyDefine env (List (Atom var : prms) : body) =
+    applyLambda env (List prms : body)
+    >>= defineVar env var
+applyDefine env (DottedList (Atom var : prms) variadicPrm : body) =
+    applyLambda env (DottedList prms variadicPrm : body)
+    >>= defineVar env var
+applyDefine _ args =
+    throwError $ BadSpecialForm "Unrecognized `define` syntax" (List args)
 
 applyLambda :: Env -> [LispVal] -> IOThrowsError LispVal
 applyLambda env (List prms : body) =
