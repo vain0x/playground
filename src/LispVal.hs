@@ -44,14 +44,12 @@ data LispError
     | TypeMismatch String LispVal
     | Parser ParseError
     | BadSpecialForm String LispVal
-    | NotFunction String String
     | UnboundVar String String
     | Default String
 
 showError :: LispError -> String
 showError (UnboundVar msg varname) = msg ++ ": " ++ varname
 showError (BadSpecialForm msg form) = msg ++ ": " ++ show form
-showError (NotFunction msg func) = msg ++ ": " ++ show func
 showError (NumArgs expected found) =
     "Expected " ++ show expected  ++ " args; found values " ++ unwordsList found
 showError (TypeMismatch expected found) =
