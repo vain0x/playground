@@ -3,9 +3,11 @@ module LispVal where
 import qualified Data.Map as Map
 import Data.IORef
 import Control.Monad.Error
+import System.IO
 import Text.Parsec (ParseError)
 
 type PrimitiveFunc = [LispVal] -> ThrowsError LispVal
+type IOFunc = [LispVal] -> IOThrowsError LispVal
 
 data LispVal
     = Atom String
@@ -15,6 +17,8 @@ data LispVal
     | Bool Bool
     | List [LispVal]
     | DottedList [LispVal] LispVal
+    | Port Handle
+    | IOFunc String IOFunc
     | PrimitiveFunc String PrimitiveFunc
     | Closure
         { prms        :: [String]
@@ -36,6 +40,8 @@ showVal (List xs) =
     "(" ++ unwordsList xs ++ ")"
 showVal (DottedList head tail) =
     "(" ++ unwordsList head ++ " . " ++ showVal tail ++ ")"
+showVal (Port handle) = "<IO port(" ++ show handle ++ ">"
+showVal (IOFunc name _) = "<IO func(" ++ name ++ ")>"
 showVal (PrimitiveFunc name _) =
     "<primitive(" ++ name ++ ")>"
 showVal (Closure prms variadicPrm _ _) =

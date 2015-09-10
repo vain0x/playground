@@ -1,4 +1,7 @@
-module Parser where
+module Parser
+    ( readExpr
+    , readExprList
+    ) where
 
 import Numeric
 import qualified Data.Maybe as Maybe
@@ -113,8 +116,15 @@ parseExpr =
     <|> parseString
     <|> parseAtom
 
-readExpr :: String -> ThrowsError LispVal
-readExpr input =
-    case parse parseExpr "lisp" input of
+parseExprList :: Parser [LispVal]
+parseExprList =
+    endBy parseExpr spaces
+
+readOrThrow :: Parser a -> String -> ThrowsError a
+readOrThrow parser input =
+    case parse parser "lisp" input of
         Left err -> throwError $ Parser err
         Right val -> return val
+
+readExpr     = readOrThrow parseExpr
+readExprList = readOrThrow parseExprList

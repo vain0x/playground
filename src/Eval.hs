@@ -4,6 +4,7 @@ module Eval where
 
 import qualified Data.Map as Map
 import Control.Monad.Error
+import System.IO
 import LispVal
 
 data Unpacker a = forall a. Eq a => Unpacker (LispVal -> ThrowsError a)
@@ -72,6 +73,8 @@ applyLambda _ args =
 apply :: LispVal -> [LispVal] -> IOThrowsError LispVal
 apply (PrimitiveFunc _ func) args =
     liftThrows $ func args
+apply (IOFunc _ func) args =
+    func args
 apply (Closure prms variadicPrm body closure) args =
     if length prms /= length args && variadicPrm == Nothing
     then throwError $ NumArgs (num prms) args
@@ -137,13 +140,26 @@ primitives =
         ("symbol->string", headArg >=> stringFromSymbol)
         ]
 
+ioPrimitives :: [(String, IOFunc)]
+ioPrimitives =
+    [ ("apply", applyProc)
+    ]
+
 primitiveBindings :: IO Env
 primitiveBindings = do
     envRef <- nullEnv
-    bindVars envRef $ Map.fromList $ map makePrimitiveFunc primitives
+    bindVars envRef $ foldMap Map.fromList allPrimitives
     where
-        makePrimitiveFunc (name, func) =
-            (name, PrimitiveFunc name func)
+        allPrimitives    = [primitiveFuncs, primitiveIOFuncs]
+        primitiveFuncs   = map (makeFunc PrimitiveFunc) primitives
+        primitiveIOFuncs = map (makeFunc IOFunc       ) ioPrimitives
+        makeFunc ctor (name, func) =
+            (name, ctor name func)
+
+applyProc :: [LispVal] -> IOThrowsError LispVal
+applyProc [func, List args] = apply func args
+applyProc (func : args)     = apply func args
+applyProc args = throwError $ NumArgs 1 args
 
 boolBinOp :: (Bool -> Bool -> Bool) -> Bool -> [LispVal] -> ThrowsError LispVal
 boolBinOp op unit args =
