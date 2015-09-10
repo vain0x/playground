@@ -22,8 +22,10 @@ eval env (List [Atom "set!", Atom var, form]) =
     eval env form >>= setVar env var
 eval env (List [Atom "define", Atom var, form]) =
     eval env form >>= defineVar env var
-eval env (List (Atom func : args)) =
-    mapM (eval env) args >>= liftThrows . apply func
+eval env (List (callable : args)) = do
+    func <- eval env callable
+    argVals <- mapM (eval env) args
+    apply func argVals
 eval _ badForm =
     throwError $ BadSpecialForm "Unrecognized special form" badForm
 
@@ -46,14 +48,14 @@ applyCond env (List [cond, expr] : xs) =
 applyCond _ val =
     throwError $ BadSpecialForm "`cond` should take clauses each of the form (<test> <expr>) and one of <test>s must evaluate to true" (List val)
 
-apply :: String -> [LispVal] -> ThrowsError LispVal
-apply func args =
-    let err = (throwError $ NotFunction "Unrecognized primitive function args" func) in
-    maybe err ($ args) $ Map.lookup func primitives
+apply :: LispVal -> [LispVal] -> IOThrowsError LispVal
+apply (PrimitiveFunc _ func) args =
+    liftThrows $ func args
+apply val _ =
+    throwError $ TypeMismatch "function" val
 
-primitives :: Map.Map String ([LispVal] -> ThrowsError LispVal)
+primitives :: [(String, PrimitiveFunc)]
 primitives =
-    Map.fromList
         [
         ("eqv?",      untypedRelOp eqv),
         ("equals?",   untypedRelOp equals),
@@ -90,6 +92,14 @@ primitives =
         ("string->symbol", headArg >=> symbolFromString),
         ("symbol->string", headArg >=> stringFromSymbol)
         ]
+
+primitiveBindings :: IO Env
+primitiveBindings = do
+    envRef <- nullEnv
+    bindVars envRef $ Map.fromList $ map makePrimitiveFunc primitives
+    where
+        makePrimitiveFunc (name, func) =
+            (name, PrimitiveFunc name func)
 
 boolBinOp :: (Bool -> Bool -> Bool) -> Bool -> [LispVal] -> ThrowsError LispVal
 boolBinOp op unit args =

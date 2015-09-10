@@ -5,6 +5,8 @@ import Data.IORef
 import Control.Monad.Error
 import Text.Parsec (ParseError)
 
+type PrimitiveFunc = [LispVal] -> ThrowsError LispVal
+
 data LispVal
     = Atom String
     | Number Integer
@@ -13,7 +15,7 @@ data LispVal
     | Bool Bool
     | List [LispVal]
     | DottedList [LispVal] LispVal
-    deriving (Eq, Ord)
+    | PrimitiveFunc String PrimitiveFunc
 
 showVal :: LispVal -> String
 showVal (Atom name) = name
@@ -28,6 +30,8 @@ showVal (List xs) =
     "(" ++ unwordsList xs ++ ")"
 showVal (DottedList head tail) =
     "(" ++ unwordsList head ++ " . " ++ showVal tail ++ ")"
+showVal (PrimitiveFunc name _) =
+    "<primitive(" ++ name ++ ")>"
 
 unwordsList :: [LispVal] -> String
 unwordsList = unwords . map showVal
@@ -121,5 +125,10 @@ defineVar envRef var value = do
             writeIORef envRef (Map.insert var valueRef env)
             return value
 
-
-
+bindVars :: Env -> Map.Map String LispVal -> IO Env
+bindVars envRef bindings =
+    readIORef envRef >>= extendEnv bindings >>= newIORef
+    where
+        extendEnv bindings env =
+            -- Prefer vars in bindings with the same name as ones in env.
+            liftM (flip Map.union env) (sequence $ Map.map newIORef bindings)
