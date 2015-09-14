@@ -144,6 +144,10 @@ primitives =
 ioPrimitives :: [(String, IOFunc)]
 ioPrimitives =
     [ ("apply", applyProc)
+    , ("open-input-file",  makePort ReadMode)
+    , ("open-output-file", makePort WriteMode)
+    , ("close-input-file",  closePort)
+    , ("close-output-file", closePort)
     , ("read",  readProc)
     , ("write", writeProc)
     ]
@@ -163,6 +167,19 @@ applyProc :: [LispVal] -> IOThrowsError LispVal
 applyProc [func, List args] = apply func args
 applyProc (func : args)     = apply func args
 applyProc args = throwError $ NumArgs 1 args
+
+makePort :: IOMode -> IOFunc
+makePort ioMode [val] = do
+    fileName <- liftThrows $ unpackString val
+    liftM Port $ liftIO $ openFile fileName ioMode
+makePort _ args = throwError $ NumArgs 1 args
+
+closePort :: IOFunc
+closePort [val] = do
+    port <- liftThrows $ unpackPort val
+    liftIO $ hClose port
+    return $ Bool True
+closePort args = throwError $ NumArgs 1 args
 
 readProc :: [LispVal] -> IOThrowsError LispVal
 readProc [] =
@@ -275,6 +292,10 @@ unpackList :: LispVal -> ThrowsError [LispVal]
 unpackList (List xs) = return xs
 unpackList (DottedList xs x) = return $ xs ++ [x]
 unpackList val = throwError $ TypeMismatch "pair" val
+
+unpackPort :: LispVal -> ThrowsError Handle
+unpackPort (Port port) = return port
+unpackPort val = throwError $ TypeMismatch "port" val
 
 headArg :: [LispVal] -> ThrowsError LispVal
 headArg [val] = return val
