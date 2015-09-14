@@ -23,6 +23,7 @@ eval env (List [Atom "set!", Atom var, form]) =
     eval env form >>= setVar env var
 eval env (List (Atom "define" : args)) = applyDefine env args
 eval env (List (Atom "lambda" : args)) = applyLambda env args
+eval env (List (Atom "load" : args))   = applyLoad env args
 eval env (List (callable : args)) = do
     func <- eval env callable
     argVals <- mapM (eval env) args
@@ -70,6 +71,11 @@ applyLambda env (variadicPrm@(Atom _) : body) =
     makeClosure env ([],   Just variadicPrm) body
 applyLambda _ args =
     throwError $ BadSpecialForm "`lambda` should take a parameter list and one or more body expressions" (List args)
+
+applyLoad env args = do
+    fileName <- liftThrows $ headArg args >>= unpackString
+    exprList <- loadFile fileName
+    liftM last $ mapM (eval env) exprList
 
 apply :: LispVal -> [LispVal] -> IOThrowsError LispVal
 apply (PrimitiveFunc _ func) args =
