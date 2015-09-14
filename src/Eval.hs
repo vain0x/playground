@@ -145,6 +145,7 @@ ioPrimitives :: [(String, IOFunc)]
 ioPrimitives =
     [ ("apply", applyProc)
     , ("read",  readProc)
+    , ("write", writeProc)
     ]
 
 primitiveBindings :: IO Env
@@ -169,6 +170,14 @@ readProc [] =
 readProc [Port port] =
     (liftIO $ hGetLine port) >>= liftThrows . Parser.readExpr
 readProc args = throwError $ NumArgs 1 args
+
+writeProc :: [LispVal] -> IOThrowsError LispVal
+writeProc [val] =
+    writeProc [val, Port stdout]
+writeProc [val, Port port] = do
+    liftIO $ hPrint port val
+    return $ Bool True
+writeProc args = throwError $ NumArgs 2 args
 
 boolBinOp :: (Bool -> Bool -> Bool) -> Bool -> [LispVal] -> ThrowsError LispVal
 boolBinOp op unit args =
