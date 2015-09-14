@@ -196,6 +196,10 @@ readContents [val] = do
     return $ String contents
 readContents args = throwError $ NumArgs 1 args
 
+loadFile :: String -> IOThrowsError [LispVal]
+loadFile fileName =
+    (liftIO $ readFile fileName) >>= liftThrows . Parser.readExprList
+
 writeProc :: [LispVal] -> IOThrowsError LispVal
 writeProc [val] =
     writeProc [val, Port stdout]
