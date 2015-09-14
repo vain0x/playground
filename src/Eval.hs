@@ -150,6 +150,7 @@ ioPrimitives =
     , ("close-output-file", closePort)
     , ("read",  readProc)
     , ("write", writeProc)
+    , ("read-contents", readContents)
     ]
 
 primitiveBindings :: IO Env
@@ -187,6 +188,13 @@ readProc [] =
 readProc [Port port] =
     (liftIO $ hGetLine port) >>= liftThrows . Parser.readExpr
 readProc args = throwError $ NumArgs 1 args
+
+readContents :: IOFunc
+readContents [val] = do
+    fileName <- liftThrows $ unpackString val
+    contents <- liftIO $ readFile fileName
+    return $ String contents
+readContents args = throwError $ NumArgs 1 args
 
 writeProc :: [LispVal] -> IOThrowsError LispVal
 writeProc [val] =
