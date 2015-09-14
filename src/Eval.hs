@@ -5,6 +5,7 @@ module Eval where
 import qualified Data.Map as Map
 import Control.Monad.Error
 import System.IO
+import qualified Parser
 import LispVal
 
 data Unpacker a = forall a. Eq a => Unpacker (LispVal -> ThrowsError a)
@@ -143,6 +144,7 @@ primitives =
 ioPrimitives :: [(String, IOFunc)]
 ioPrimitives =
     [ ("apply", applyProc)
+    , ("read",  readProc)
     ]
 
 primitiveBindings :: IO Env
@@ -160,6 +162,13 @@ applyProc :: [LispVal] -> IOThrowsError LispVal
 applyProc [func, List args] = apply func args
 applyProc (func : args)     = apply func args
 applyProc args = throwError $ NumArgs 1 args
+
+readProc :: [LispVal] -> IOThrowsError LispVal
+readProc [] =
+    readProc [Port stdin]
+readProc [Port port] =
+    (liftIO $ hGetLine port) >>= liftThrows . Parser.readExpr
+readProc args = throwError $ NumArgs 1 args
 
 boolBinOp :: (Bool -> Bool -> Bool) -> Bool -> [LispVal] -> ThrowsError LispVal
 boolBinOp op unit args =
