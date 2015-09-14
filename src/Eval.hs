@@ -151,6 +151,7 @@ ioPrimitives =
     , ("read",  readProc)
     , ("write", writeProc)
     , ("read-contents", readContents)
+    , ("read-all", readAll)
     ]
 
 primitiveBindings :: IO Env
@@ -200,6 +201,11 @@ loadFile :: String -> IOThrowsError [LispVal]
 loadFile fileName =
     (liftIO $ readFile fileName) >>= liftThrows . Parser.readExprList
 
+readAll :: IOFunc
+readAll args = do
+    fileName <- liftThrows $ headArg args >>= unpackString
+    liftM List $ loadFile fileName
+    
 writeProc :: [LispVal] -> IOThrowsError LispVal
 writeProc [val] =
     writeProc [val, Port stdout]
