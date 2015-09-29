@@ -30,7 +30,12 @@ let main argv =
     printtm ctx t
     print_newline ()
     let tyT = t |> typeof ctx
+    pr ":: "
     printty tyT
+    print_newline ()
+    let value = t |> eval ctx
+    pr "→ "
+    printtm ctx value
     print_newline ()
     pr "-----------------------"
     print_newline ()
