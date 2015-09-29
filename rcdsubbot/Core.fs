@@ -5,6 +5,56 @@ open Support.Error
 open Support.Pervasive
 open FSharp.Compatibility.OCaml.Format
 
+(* ------------------------   SUBTYPING  ------------------------ *)
+
+let rec subtype tyS tyT =
+  let walk = function
+    | (_, TyTop) -> true
+    | (TyBot, _) -> true
+    | (TyArr (tyS1, tyS2), TyArr (tyT1, tyT2)) ->
+           subtype tyT1 tyS1
+        && subtype tyS2 tyT2
+    | (TyRecord (fS), TyRecord (fT)) ->
+        let pred (li, tyTi) =
+          List.assoc li fS
+          |> Option.map (fun tySj -> subtype tySj tyTi)
+          |> (=) (Some true)
+        fT |> List.forall pred
+    | _ -> false
+
+  (=) tyS tyT || walk (tyS, tyT)
+
+(* ------------------------   TYPING  ------------------------ *)
+
+let rec typeof (ctx: context) = function
+  | TmUnit _ ->
+      TyUnit
+  | TmRecord (fi, fields) ->
+      let fieldtys = 
+        List.map (fun (li, ti) -> (li, typeof ctx ti)) fields
+      TyRecord (fieldtys)
+  | TmVar (fi, i, _) -> getTypeFromContext fi ctx i
+  | TmAbs (fi, x, tyT1, t2) ->
+      let ctx' = addbinding ctx x (VarBind tyT1) in
+      let tyT2 = typeof ctx' t2 in
+      TyArr(tyT1, tyT2)
+  | TmApp (fi, t1, t2) ->
+      let tyT1 = typeof ctx t1 in
+      let tyT2 = typeof ctx t2 in
+      match tyT1 with
+      | TyArr (tyT11, tyT12) ->
+          if subtype tyT2 tyT11 then tyT12
+          else error fi "parameter type mismatch" 
+      | TyBot -> TyBot
+      | _ -> error fi "arrow type expected"
+  | TmProj (fi, t1, l) ->
+      match (typeof ctx t1) with
+      | TyRecord(fieldtys) ->
+          List.assoc l fieldtys
+          |> Option.getOr' (fun () -> error fi ("label " + l + " not found"))
+      | TyBot -> TyBot
+      | _ -> error fi "Expected record type"
+      
 (* ---------------------------------------------------------------------- *)
 (* Printing *)
 

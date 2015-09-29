@@ -10,7 +10,7 @@ let main argv =
   let exprs =
     [| "unit" 
     ;  "lambda x:Top.x"
-    ;  "(lambda x : Top -> Top. x) unit"
+    ;  "(lambda x : Top -> Top. x) (lambda z: Top. z)"
     ;  "(lambda x: Top. x) (lambda x: Top. x)"
     ;  "{ x = unit }"
     ;  "{x=unit      , y = lambda x: Top. x}"
@@ -22,11 +22,17 @@ let main argv =
     ;  "lambda x: Bot. x.y x.y"
     ;  "(lambda r: { x: Top->Top }. r) {x = lambda z: Top. z}"
     ;  "(lambda r: { x: Top->Top }. r.x r.x) {x = lambda z: Top. z, y = lambda z: Top. z}"
+    ;  "(lambda r: {x: Unit}. r.x) {y = unit, x = unit}"
     |]
   
   exprs |> Array.iter (fun s ->
     let (t, ctx) = parseExpr "rcdsubbot" s
     printtm ctx t
+    print_newline ()
+    let tyT = t |> typeof ctx
+    printty tyT
+    print_newline ()
+    pr "-----------------------"
     print_newline ()
     ()
   )
