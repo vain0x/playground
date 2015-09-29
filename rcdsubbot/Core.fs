@@ -16,7 +16,7 @@ let rec subtype tyS tyT =
         && subtype tyS2 tyT2
     | (TyRecord (fS), TyRecord (fT)) ->
         let pred (li, tyTi) =
-          List.assoc li fS
+          List.tryAssoc li fS
           |> Option.map (fun tySj -> subtype tySj tyTi)
           |> (=) (Some true)
         fT |> List.forall pred
@@ -49,8 +49,8 @@ let rec typeof (ctx: context) = function
       | _ -> error fi "arrow type expected"
   | TmProj (fi, t1, l) ->
       match (typeof ctx t1) with
-      | TyRecord(fieldtys) ->
-          List.assoc l fieldtys
+      | TyRecord (fieldtys) ->
+          List.tryAssoc l fieldtys
           |> Option.getOr' (fun () -> error fi ("label " + l + " not found"))
       | TyBot -> TyBot
       | _ -> error fi "Expected record type"
@@ -85,7 +85,7 @@ let rec eval1 ctx = function
       in let fields' = evalafield fields in
       TmRecord(fi, fields')
   | TmProj(fi, (TmRecord(_, fields) as v1), l) when isval ctx v1 ->
-      List.assoc l fields
+      List.tryAssoc l fields
       |> Option.getOr' (fun () -> raise NoRuleApplies)
   | TmProj(fi, t1, l) ->
       let t1' = eval1 ctx t1 in

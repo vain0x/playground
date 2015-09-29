@@ -14,6 +14,6 @@ module Option =
     | None -> y
 
 module List =
-  let assoc key =
+  let tryAssoc key =
     List.tryFind (fun (k, v) -> k = key)
     >> Option.map snd
