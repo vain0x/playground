@@ -5,8 +5,8 @@ import xml.etree.ElementTree as ET
 
 class popTranslateEnglishIntoJapaneseCommand(sublime_plugin.TextCommand):
     def run(self, edit):
-        search_word = self.view.substr(self.view.sel()[0])
-        if search_word == '':
+        search_word = self.getSearchWord()
+        if search_word is None:
             sublime.status_message("Nothing to search!")
             return
 
@@ -21,6 +21,16 @@ class popTranslateEnglishIntoJapaneseCommand(sublime_plugin.TextCommand):
 
         text_arr = self.splitTranslatedText(text, '\t')
         self.view.show_popup_menu(text_arr, None)
+
+
+    def getSearchWord(self):
+        region = self.view.sel()[0]
+        if region.empty():
+            word = self.view.word(region)
+            if not word.empty():
+                return self.view.substr(word)
+        else:
+            return self.view.substr(region)
 
 
     def getXmlElementText(self, url, tag):
