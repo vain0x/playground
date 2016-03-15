@@ -33,6 +33,9 @@
     <DocumentationFile>bin\Release\Util.XML</DocumentationFile>
   </PropertyGroup>
   <ItemGroup>
+    <Reference Include="Basis.Core">
+      <HintPath>..\packages\Basis.Core\lib\net40\Basis.Core.dll</HintPath>
+    </Reference>
     <Reference Include="mscorlib" />
     <Reference Include="FSharp.Core, Version=$(TargetFSharpCoreVersion), Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a">
       <Private>True</Private>
@@ -41,6 +44,7 @@
     <Reference Include="System.Core" />
     <Reference Include="System.Numerics" />
   </ItemGroup>
+  <ItemGroup />
   <PropertyGroup>
     <MinimumVisualStudioVersion Condition="'$(MinimumVisualStudioVersion)' == ''">11</MinimumVisualStudioVersion>
   </PropertyGroup>
