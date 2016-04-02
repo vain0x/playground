@@ -12,7 +12,7 @@ module UpdateMonad =
   open System.Collections.Generic
   open Operators
 
-  type Update<'s, 'u, 't> =
+  type UpdateMonad<'s, 'u, 't> =
     | Update of ('s -> 'u * 't)
 
   [<RequireQualifiedAccess>]

@@ -45,10 +45,8 @@
     <Reference Include="System.Numerics" />
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="Misc.fs" />
-    <Compile Include="Collections.fs" />
-    <Compile Include="Console.fs" />
     <Compile Include="Control.fs" />
+    <Compile Include="StateMonad.fs" />
   </ItemGroup>
   <PropertyGroup>
     <MinimumVisualStudioVersion Condition="'$(MinimumVisualStudioVersion)' == ''">11</MinimumVisualStudioVersion>
