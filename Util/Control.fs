@@ -1,9 +1,5 @@
 namespace Util.Control
 
-open System
-open System.Collections.Generic
-open Basis.Core
-
 module Operators =
   let inline empty< ^m when ^m: (static member Empty: ^m)> () =
     (^m: (static member Empty: ^m) ())
@@ -11,108 +7,9 @@ module Operators =
   let inline append< ^m when ^m: (static member Append: ^m * ^m -> ^m)> l r =
     (^m: (static member Append: ^m * ^m -> ^m) (l, r))
 
-type FlowControl =
-  | Break
-  | Continue
-
-[<RequireQualifiedAccess>]
-module Builders =
-  open Operators
-  
-  type Base() =
-    member this.Delay(f: unit -> _ * FlowControl) =
-      f
-
-    member this.Run(f: unit -> _ * FlowControl) =
-      f () |> fst
-
-    member this.ReturnFrom(x) =
-      (x, Break)
-
-    member this.Combine((x, flow), kont: unit -> _ * FlowControl) =
-      match flow with
-      | Break -> (x, Break)
-      | Continue -> kont ()
-
-    member this.Using(x: #IDisposable, f: _ -> _ * FlowControl) =
-      try f x
-      finally
-        match box x with
-        | null -> ()
-        | notNull -> x.Dispose()
-
-    member this.TryWith(f, h) =
-      try f ()
-      with e -> h e
-
-    member this.TryFinally(f, g) =
-      try f ()
-      finally g ()
-
-  let while' combine zero (guard, f) =
-    let rec loop () =
-      if guard () then
-        let x = f ()
-        in combine (x, loop)
-      else zero ()
-    in loop ()
-
-  let for' using' while' (xs: #seq<_>, f) =
-    using'
-      ( xs.GetEnumerator()
-      , (fun (iter: IEnumerator<_>) ->
-          while' (iter.MoveNext, (fun () -> f (iter.Current))))
-      )
-
-[<AutoOpen>]
-module IdentityMonad =
-  type Identity<'t> =
-    | Identity of 't
-
-  [<RequireQualifiedAccess>]
-  module Identity =
-    let run (Identity x) = x
-
-  type Identity<'t> with
-    static member Return(x)     = Identity x
-    static member Map(x, f)     = x |> Identity.run |> f |> Identity
-    static member Bind(x, f)    = x |> Identity.run |> f
-
-[<AutoOpen>]
-module ContMonad =
-  open Operators
-
-  type Cont<'r, 't> =
-    | Cont of (('t -> 'r) -> 'r)
-
-  [<RequireQualifiedAccess>]
-  module Cont =
-    let run (Cont x) = x
-
-    let callCC (f: ('t -> Cont<'r, _>) -> Cont<'r, 't>) =
-      Cont (fun k ->
-        k |> run (f (fun x -> Cont (fun _ -> k x)))
-        )
-
-    let result x = Cont (fun k -> k x)
-    let bind f x = Cont (fun k -> run x (fun a -> run (f a) k))
-
-  type ContBuilder internal () =
-    inherit Builders.Base()
-
-    member this.Zero()        = (Cont.result (), Continue)
-    member this.Return(x)     = (Cont.result x, Break)
-    member this.Bind(x, f)    = (Cont.bind (f >> fst) x, Continue)
-
-    member this.While(guard, f) =
-      Builders.while' this.Combine this.Zero (guard, f)
-    member this.For(xs, f) =
-      Builders.for' this.Using this.While (xs, f)
-
-  let cont = ContBuilder()
-
 [<AutoOpen>]
 module UpdateMonad =
+  open System.Collections.Generic
   open Operators
 
   type Update<'s, 'u, 't> =
@@ -181,43 +78,9 @@ module UpdateMonad =
   let update = UpdateBuilder()
 
 [<AutoOpen>]
-module ReaderMonad =
-  type ReaderUpdate<'s> =
-    | NoUpdate
-  with
-    static member Empty = NoUpdate
-    static member Append(NoUpdate, NoUpdate) = NoUpdate
-    static member Update(s, NoUpdate) = s
-
-  [<RequireQualifiedAccess>]
-  module Reader =
-    let read x =
-      Update (fun s -> (NoUpdate, s))
-
-    let readRun s u =
-      Update.run u s |> snd
-
-[<AutoOpen>]
-module WriterMonad =
-  type WriterUpdate<'x> =
-    internal
-    | Log of list<'x>
-  with
-    static member Empty                 = Log []
-    static member Append(Log l, Log r)  = List.append l r |> Log
-    static member Update((), _)         = ()
-
-  [<RequireQualifiedAccess>]
-  module Writer =
-    let write x =
-      Update (fun _ -> (Log [x], ()))
-
-    let writeRun u =
-      let (Log us, v) = Update.run u ()
-      in (v, us)
-
-[<AutoOpen>]
 module StateMonad =
+  open Basis.Core
+
   type StateState<'t> =
     | State of 't
 
