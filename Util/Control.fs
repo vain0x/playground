@@ -102,7 +102,7 @@ module StateMonad =
   module State =
     let run (State s) = s
 
-    let put s  = Update (fun _ -> (StateUpdate (Some s), ()))
+    let put s  = Update (fun _ -> (StateUpdate (Some (State s)), ()))
     let get () = Update (fun s -> (StateUpdate None, run s))
 
     let eval s m =
