@@ -98,7 +98,7 @@ module StateMonad =
   [<RequireQualifiedAccess>]
   module State =
     let put s  = Update (fun _ -> (StateUpdate (Some s), ()))
-    let get () = Update (fun (s: 's) -> (StateUpdate (None: option<'s>), s))
+    let get () = Update (fun s -> (StateUpdate None, s))
 
     let eval s m =
       Update.run m s |> snd
