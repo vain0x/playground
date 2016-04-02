@@ -11,6 +11,20 @@ module Operators =
   let inline append< ^m when ^m: (static member Append: ^m * ^m -> ^m)> l r =
     (^m: (static member Append: ^m * ^m -> ^m) (l, r))
 
+  /// a.k.a ``return``, pure, singlton
+  let inline result< ^m, ^t when ^m: (static member Return: ^t -> ^m)>
+      (x: ^t)
+      : ^m
+    = (^m: (static member Return: ^t -> ^m) (x))
+
+  let inline bind< ^m_t, ^m_u, ^t when ^m_t: (static member Bind: ^m_t * (^t -> ^m_u) -> ^m_u)>
+      (f    : ^t -> ^m_u)
+      (x    : ^m_t)
+      : ^m_u
+    = (^m_t: (static member Bind: ^m_t * (^t -> ^m_u) -> ^m_u) (x, f))
+
+  let inline (>>=) x f = bind f x
+
 type FlowControl =
   | Break
   | Continue
