@@ -11,6 +11,12 @@ let main argv =
       return! State.put (x + 1)
     }
 
+  let logs =
+    update {
+      do! Writer.write 1
+    }
+    |> Writer.writeRun
+
   printfn "%A" 0
 
   // exit code

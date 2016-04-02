@@ -77,11 +77,27 @@ module UpdateMonad =
   let update = UpdateBuilder()
 
 [<AutoOpen>]
+module WriterMonad =
+  type WriterUpdate<'x> =
+    internal
+    | Log of list<'x>
+  with
+    static member Empty()               = Log []
+    static member Append(Log l, Log r)  = List.append l r |> Log
+    static member Update((), _)         = ()
+
+  [<RequireQualifiedAccess>]
+  module Writer =
+    let write x =
+      Update (fun _ -> (Log [x], ()))
+
+    let writeRun u =
+      let (Log us, v) = Update.run u ()
+      in (v, us)
+
+[<AutoOpen>]
 module StateMonad =
   open Basis.Core
-
-  type StateState<'t> =
-    | State of 't
 
   type StateUpdateType<'s> = 
     | StateUpdate of option<'s>
@@ -95,14 +111,12 @@ module StateMonad =
       | Some _, Some s -> Some s |> StateUpdate
 
     static member Update(s, StateUpdate u) = 
-      u |> Option.map State |> Option.getOr s
+      u |> Option.getOr s
 
   [<RequireQualifiedAccess>]
   module State =
-    let run (State s) = s
-
     let put s  = Update (fun _ -> (StateUpdate (Some s), ()))
-    let get () = Update (fun s -> (StateUpdate None, run s))
+    let get () = Update (fun s -> (StateUpdate None, s))
 
     let eval s m =
       Update.run m s |> snd
