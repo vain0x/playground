@@ -4,10 +4,12 @@ open Util.Control
 
 [<EntryPoint>]
 let main argv =
-
+  
   let inc =
-    State.get () |> Update.bind (fun x ->
-      State.put (x + 1))
+    update {
+      let! x = State.get ()
+      return! State.put (x + 1)
+    }
 
   printfn "%A" 0
 

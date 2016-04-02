@@ -76,7 +76,7 @@ module UpdateMonad =
         )
 
   let update = UpdateBuilder()
-
+  
 [<AutoOpen>]
 module StateMonad =
   open Basis.Core
@@ -102,7 +102,3 @@ module StateMonad =
 
     let eval s m =
       Update.run m s |> snd
-
-  let inc =
-    State.get () |> Update.bind (fun x ->
-      State.put (x + 1))
