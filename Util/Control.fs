@@ -1,8 +1,8 @@
 namespace Util.Control
 
 module Operators =
-  let inline empty< ^m when ^m: (static member Empty: ^m)> () =
-    (^m: (static member Empty: ^m) ())
+  let inline empty< ^m when ^m: (static member Empty: unit -> ^m)> () =
+    (^m: (static member Empty: unit -> ^m) ())
   
   let inline append< ^m when ^m: (static member Append: ^m * ^m -> ^m)> l r =
     (^m: (static member Append: ^m * ^m -> ^m) (l, r))
@@ -47,8 +47,7 @@ module UpdateMonad =
 
     member inline this.Run(f) = f ()
 
-    member inline this.Delay(f) =
-      (fun () -> this.Bind(this.Zero(), f))
+    member inline this.Delay(f) = f
 
     member inline this.Combine(c1, c2) =
       this.Bind(c1, c2)
@@ -87,7 +86,7 @@ module StateMonad =
   type StateUpdate<'t> = 
     | StateUpdate of option<'t>
 
-    static member Empty = StateUpdate None
+    static member Empty() = StateUpdate None
 
     static member Append(StateUpdate l, StateUpdate r) = 
       match l, r with 
@@ -96,13 +95,13 @@ module StateMonad =
       | Some _, Some s -> Some s |> StateUpdate
 
     static member Update(s, StateUpdate u) = 
-      u |> Option.getOr s
+      u |> Option.map State |> Option.getOr s
 
   [<RequireQualifiedAccess>]
   module State =
     let run (State s) = s
 
-    let put s  = Update (fun _ -> (StateUpdate (Some (State s)), ()))
+    let put s  = Update (fun _ -> (StateUpdate (Some s), ()))
     let get () = Update (fun s -> (StateUpdate None, run s))
 
     let eval s m =
