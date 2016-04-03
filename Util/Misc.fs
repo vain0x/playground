@@ -28,6 +28,17 @@ module Misc =
   let inline assert' pred =
     tap (fun x -> assert (pred x))
 
+module Ref =
+  /// Eval f () with r assigned to v'.
+  /// After it, restore the value to r.
+  /// Note: Ensure to eval this atomically.
+  let local (r: byref<'v>) (v': 'v) (f: unit -> 't) =
+    let v = r
+    let () = r <- v'
+    let result = f ()
+    let () = r <- v
+    in result
+
 module Math =
   let numDigits n =
     if n = 0
