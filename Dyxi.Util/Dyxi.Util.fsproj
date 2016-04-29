@@ -5,14 +5,14 @@
     <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
     <Platform Condition=" '$(Platform)' == '' ">AnyCPU</Platform>
     <SchemaVersion>2.0</SchemaVersion>
-    <ProjectGuid>9d7c3f45-c34a-4562-bd29-6b54a24c41e0</ProjectGuid>
+    <ProjectGuid>8f8f35fa-a2b8-4a9c-a9e2-3c67d6776f61</ProjectGuid>
     <OutputType>Library</OutputType>
-    <RootNamespace>Dyxi.Muse.ViewModel</RootNamespace>
-    <AssemblyName>Dyxi.Muse.ViewModel</AssemblyName>
+    <RootNamespace>Dyxi.Util</RootNamespace>
+    <AssemblyName>Dyxi.Util</AssemblyName>
     <TargetFrameworkVersion>v4.5.2</TargetFrameworkVersion>
     <TargetFSharpCoreVersion>4.4.0.0</TargetFSharpCoreVersion>
     <AutoGenerateBindingRedirects>true</AutoGenerateBindingRedirects>
-    <Name>Dyxi.Muse.ViewModel</Name>
+    <Name>Dyxi.Util</Name>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
     <DebugSymbols>true</DebugSymbols>
@@ -22,7 +22,7 @@
     <OutputPath>bin\Debug\</OutputPath>
     <DefineConstants>DEBUG;TRACE</DefineConstants>
     <WarningLevel>3</WarningLevel>
-    <DocumentationFile>bin\Debug\Dyxi.Muse.ViewModel.XML</DocumentationFile>
+    <DocumentationFile>bin\Debug\Dyxi.Util.XML</DocumentationFile>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|AnyCPU' ">
     <DebugType>pdbonly</DebugType>
@@ -31,9 +31,13 @@
     <OutputPath>bin\Release\</OutputPath>
     <DefineConstants>TRACE</DefineConstants>
     <WarningLevel>3</WarningLevel>
-    <DocumentationFile>bin\Release\Dyxi.Muse.ViewModel.XML</DocumentationFile>
+    <DocumentationFile>bin\Release\Dyxi.Util.XML</DocumentationFile>
   </PropertyGroup>
   <ItemGroup>
+    <Compile Include="..\paket-files\fsprojects\Chessie\src\Chessie\ErrorHandling.fs">
+      <Paket>True</Paket>
+      <Link>ErrorHandling.fs</Link>
+    </Compile>
     <Reference Include="mscorlib" />
     <Reference Include="FSharp.Core, Version=$(TargetFSharpCoreVersion), Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a">
       <Private>True</Private>
@@ -44,18 +48,6 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="AssemblyInfo.fs" />
-  </ItemGroup>
-  <ItemGroup>
-    <ProjectReference Include="..\Dyxi.Muse.Model\Dyxi.Muse.Model.fsproj">
-      <Name>Dyxi.Muse.Model</Name>
-      <Project>{7a1d370f-9c03-4951-a7bc-247074876631}</Project>
-      <Private>True</Private>
-    </ProjectReference>
-    <ProjectReference Include="..\Dyxi.Util\Dyxi.Util.fsproj">
-      <Name>Dyxi.Util</Name>
-      <Project>{8f8f35fa-a2b8-4a9c-a9e2-3c67d6776f61}</Project>
-      <Private>True</Private>
-    </ProjectReference>
   </ItemGroup>
   <PropertyGroup>
     <MinimumVisualStudioVersion Condition="'$(MinimumVisualStudioVersion)' == ''">11</MinimumVisualStudioVersion>
