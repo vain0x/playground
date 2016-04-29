@@ -1,1 +1,10 @@
-
+NUGET
+  remote: https://www.nuget.org/api/v2
+  specs:
+    Basis.Core (1.1.3)
+    NAudio (1.7.3)
+    SQLProvider (1.0)
+GITHUB
+  remote: fsprojects/Chessie
+  specs:
+    src/Chessie/ErrorHandling.fs (683c29b387a972e26e6e40826f4eb43627e7775b)

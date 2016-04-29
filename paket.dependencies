@@ -1,1 +1,6 @@
 source https://www.nuget.org/api/v2
+
+nuget Basis.Core
+nuget NAudio
+nuget SQLProvider
+github fsprojects/Chessie src/Chessie/ErrorHandling.fs
