@@ -27,7 +27,7 @@ namespace Dyxi.Muse.Model
 
         public IEnumerable<media> Items
         {
-            get { throw new NotImplementedException(); }
+            get { return Entity.Instance.medias; }
         }
     }
 }
