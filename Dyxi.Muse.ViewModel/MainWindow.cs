@@ -14,6 +14,7 @@ namespace Dyxi.Muse.ViewModel
         public MainWindow()
         {
             _settingsWindow = new SettingsWindow();
+            _stack = new List<TrackRow>();
         }
         
         private ICommand _openSettingsCommand;
@@ -52,6 +53,17 @@ namespace Dyxi.Muse.ViewModel
             }
         }
 
+        private List<TrackRow> _stack;
+        public List<TrackRow> Stack
+        {
+            get { return _stack; }
+            set
+            {
+                _stack = value;
+                RaisePropertyChanged();
+            }
+        }
+        
         public SettingsWindow SettingsWindow
         {
             get { return _settingsWindow; }
