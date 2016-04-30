@@ -47,5 +47,19 @@ namespace Dyxi.Muse.Model
             AddComposersToWork(work.id, composerNames);
             return work;
         }
+
+        public static void AddPerformersToMedia(int mediaId, string[] performerNames)
+        {
+            foreach (var name in performerNames)
+            {
+                var people = FindOrAddPeople(name);
+                Instance.media_performers.Add(new media_performers
+                {
+                    media_id = mediaId,
+                    people_id = people.id,
+                    role = null
+                });
+            }
+        }
     }
 }
