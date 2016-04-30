@@ -14,5 +14,18 @@ namespace Dyxi.Muse.Model
         {
             return Instance.peoples.Where(people => people.name == name).FirstOrDefault();
         }
+
+        public static people FindOrAddPeople(string name)
+        {
+            var people = Instance.peoples.Find();
+            if (people == null)
+            {
+                return Instance.peoples.Add(new people() { name = name });
+            }
+            else
+            {
+                return people;
+            }
+        }
     }
 }
