@@ -14,12 +14,12 @@ namespace Dyxi.CSharp.Util
         /// Create a command that's always executable.
         /// </summary>
         /// <param name="execute"></param>
-        LambdaCommand(Action<object> execute)
+        public LambdaCommand(Action<object> execute)
             : this((param) => true, execute)
         {
         }
 
-        LambdaCommand(Predicate<object> canExecute, Action<object> execute)
+        public LambdaCommand(Predicate<object> canExecute, Action<object> execute)
         {
             _canExecute = canExecute;
             _execute = execute;
