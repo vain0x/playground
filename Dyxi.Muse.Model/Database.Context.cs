@@ -25,15 +25,15 @@ namespace Dyxi.Muse.Model
             throw new UnintentionalCodeFirstException();
         }
     
+        public DbSet<media_contents> media_contents { get; set; }
         public DbSet<media_performers> media_performers { get; set; }
         public DbSet<media> medias { get; set; }
-        public DbSet<people> peoples { get; set; }
-        public DbSet<user> users { get; set; }
-        public DbSet<work> works { get; set; }
         public DbSet<people_members> people_members { get; set; }
+        public DbSet<people> peoples { get; set; }
         public DbSet<play_logs> play_logs { get; set; }
+        public DbSet<user> users { get; set; }
         public DbSet<work_composers> work_composers { get; set; }
         public DbSet<work_writers> work_writers { get; set; }
-        public DbSet<media_contents> media_contents { get; set; }
+        public DbSet<work> works { get; set; }
     }
 }
