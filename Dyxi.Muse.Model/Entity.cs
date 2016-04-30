@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using TagLib;
 
 namespace Dyxi.Muse.Model
 {
@@ -60,6 +61,21 @@ namespace Dyxi.Muse.Model
                     role = null
                 });
             }
+        }
+
+        public static media AddAudioMedia
+            (string workName, Tag tag, string ext, long length, byte[] content)
+        {
+            var work = AddAudioWork(workName, tag.Composers);
+            return
+                Instance.medias.Add(new media
+                {
+                    name = tag.Title,
+                    length = length,
+                    extension = ext,
+                    content = content,
+                    work_id = work.id
+                });
         }
     }
 }
