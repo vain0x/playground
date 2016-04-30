@@ -40,5 +40,12 @@ namespace Dyxi.Muse.Model
                 });
             }
         }
+
+        public static work AddAudioWork(string name, string[] composerNames)
+        {
+            var work = Instance.works.Add(new work { name = name });
+            AddComposersToWork(work.id, composerNames);
+            return work;
+        }
     }
 }
