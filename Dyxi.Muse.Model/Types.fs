@@ -2,7 +2,7 @@
 
 [<AutoOpen>]
 module Types =
-  type Id = uint32
+  type Id = int
   type MediaId = Id
 
   type Coll =

@@ -15,8 +15,9 @@ type SettingsDialog() =
     Command.create
       (konst true)
       (fun _ ->
-        Media.uploadAudio path None (DateTime.Now |> Some) |> ignore
-        Database.update ()
+        ()
+        //Media.uploadAudio path None (DateTime.Now |> Some) |> ignore
+        //Database.update ()
         )
 
   member this.Path

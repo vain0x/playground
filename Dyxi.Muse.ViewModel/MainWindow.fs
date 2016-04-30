@@ -22,32 +22,26 @@ type MainWindow() =
   let updateTracks () =
     tracks <-
       [|
-        for mediaId in Coll.fetchMediaList coll do
-          yield!
-            query {
-              for media in db.Medias do
-              where (media.Id = mediaId)
-              select
-                {
-                  Title       = media.Name
-                  Album       = ""
-                  Composer    = ""
-                  Writer      = ""
-                  Added       = ""
-                  LastPlayed  = ""
-                  MediaId     = mediaId
-                }
-            } |> Seq.toArray
+        for media in Coll.fetchMediaList coll do
+          yield
+            {
+              Title       = media.name
+              Album       = ""
+              Composer    = ""
+              Writer      = ""
+              Added       = ""
+              LastPlayed  = ""
+              MediaId     = media.id
+            }
       |]
 
   member this.Coll
     with get () = coll
     and  set v  =
-      if this.Coll <> v then
-        coll <- v
-        updateTracks ()
-        for name in ["Coll"; "Tracks"] do
-          this.RaisePropertyChanged(name)
+      coll <- v
+      updateTracks ()
+      for name in ["Coll"; "Tracks"] do
+        this.RaisePropertyChanged(name)
 
   member this.Tracks
     with get () = tracks

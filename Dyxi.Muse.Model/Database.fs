@@ -1,31 +1,12 @@
 ﻿namespace Dyxi.Muse.Model
 
-open FSharp.Data.Sql
-
-type sql =
-  SqlDataProvider<
-      Common.DatabaseProviderTypes.MYSQL
-    , ConnectionString  = "Data Source=localhost; user=root; password=;"
-    , ResolutionPath    = @"C:\Program Files (x86)\MySQL\MySQL Connector Net 6.9.8\Assemblies\v4.0"
-    , UseOptionTypes    = true
-    , Owner             = "dyxi_muse"
-    >
-
-module Database =
-  let ctx = sql.GetDataContext()
-
-  let internal updatedEvent = Event<unit>()
-
-  let updated = updatedEvent.Publish
-
-  let update () =
-    ctx.SubmitUpdates ()
-    updatedEvent.Trigger()
+open Dyxi.Muse.Database
 
 [<AutoOpen>]
 module DatabaseExtension =
-  let db = Database.ctx.DyxiMuse
+  let dbx = DbAccess()
+  let db = dbx.Entities
 
   // Login
   let loginUser =
-    db.Users.Individuals.``1``
+    db.users.Find(1)

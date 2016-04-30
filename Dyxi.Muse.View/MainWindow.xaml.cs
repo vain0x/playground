@@ -41,8 +41,14 @@ namespace Dyxi.Muse.View
 
         private void _listView_MouseDoubleClick(object sender, MouseButtonEventArgs e)
         {
-            var item = ((FrameworkElement)e.OriginalSource).DataContext as Model.Types.Coll;
+            var item = ((FrameworkElement)e.OriginalSource).DataContext as ViewModel.Types.LvRow;
             if (item == null) return;
+        }
+
+        private void Window_Closed(object sender, EventArgs e)
+        {
+            this._vm.SettingsDialog.Hide();
+            this._settingsDialog.Close();
         }
 
         private ViewModel.MainWindow _vm;

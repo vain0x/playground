@@ -8,6 +8,7 @@
         Title="Dyxi.Muse"
         Width="1024"
         Height="576"
+        Closed="Window_Closed"
         >
     <Grid>
         <Grid.RowDefinitions>

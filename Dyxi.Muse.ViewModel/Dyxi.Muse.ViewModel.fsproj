@@ -54,6 +54,11 @@
     <Compile Include="MainWindow.fs" />
   </ItemGroup>
   <ItemGroup>
+    <ProjectReference Include="..\Dyxi.Muse.Database\Dyxi.Muse.Database.csproj">
+      <Name>Dyxi.Muse.Database</Name>
+      <Project>{9d8bf131-2eca-4ddb-adde-9307928a1553}</Project>
+      <Private>True</Private>
+    </ProjectReference>
     <ProjectReference Include="..\Dyxi.Muse.Model\Dyxi.Muse.Model.fsproj">
       <Name>Dyxi.Muse.Model</Name>
       <Project>{7a1d370f-9c03-4951-a7bc-247074876631}</Project>

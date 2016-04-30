@@ -2,53 +2,16 @@
 
 open System
 open System.IO
-open Microsoft.FSharp.Control
 open Dyxi.Util
+open Dyxi.Muse.Database
 open Basis.Core
 open Chessie.ErrorHandling
 open TagLib
 
-module Extension =
-  // 音楽メディアの拡張子であるか？
-  // TODO: NAudio, TagLib が対応している拡張子を網羅する
-  let isAudio =
-    let exts =
-      set [".flac"; ".m4a"; ".mp3"; ".wav"]
-    in fun ext -> exts |> Set.contains ext
-
 module People =
-
-  let findById peopleId =
-    query {
-      for people in db.Peoples do
-        where (people.Id = peopleId)
-        select people
-    }
-    |> Seq.tryHead
-
-  let findByName name =
-    let q =
-      query {
-        for people in db.Peoples do
-          where (people.Name = name)
-          select people
-      }
-    in q |> Seq.tryHead
-
-  let name peopleId =
-    (peopleId |> findById |> Option.get).Name
-
-  /// 個人のIDを取得する。未登録なら登録する。
-  let findOrAdd name =
-    let people =
-      findByName name |> Option.getOrElse (fun () ->
-          db.Peoples.Create()
-          |> tap (fun people ->
-              people.Name <- name
-              Database.update ()
-              ))
-    in people.Id
-
+  let name (peopleId: Id) =
+    (db.users.Find(peopleId)).name
+(*
 module Work =
   let addAudioWork name createdOpt composerNames =
     let work =
@@ -59,14 +22,13 @@ module Work =
           Database.update ()
           )
     let composers =
-      [](*
+      []
       composerNames |> List.map (fun name ->
         db.WorkComposers.Create()
         |> tap (fun composer ->
             composer.WorkId     <- work.Id
             composer.PeopleId   <- People.findOrAdd name
             ))
-      //*)
     in (work, composers)
 
 module MediaPerformer =
@@ -121,17 +83,12 @@ module Media =
         | e -> return! fail (e.Message)
       return path
     }
+      //*)
 
 module Coll =
-  let fetchMediaList: Coll -> MediaId [] =
+  let fetchMediaList: Coll -> medias [] =
     function
     | MusicColl ->
-        let q =
-          query {
-            for m in db.Medias do
-              where (m.Extension |> Extension.isAudio)
-              select m.Id
-          }
-        in q |> Seq.toArray
+        dbx.AllMedias() |> Seq.toArray
     | CollId collId ->
         failwith "unimplemented"
