@@ -27,5 +27,18 @@ namespace Dyxi.Muse.Model
                 return people;
             }
         }
+
+        public static void AddComposersToWork(int workId, string[] names)
+        {
+            foreach (var name in names)
+            {
+                var people = FindOrAddPeople(name);
+                Instance.work_composers.Add(new work_composers
+                {
+                    work_id = workId,
+                    people_id = people.id
+                });
+            }
+        }
     }
 }
