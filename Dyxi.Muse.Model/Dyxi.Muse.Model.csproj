@@ -79,6 +79,7 @@
       <DependentUpon>Database.tt</DependentUpon>
     </Compile>
     <Compile Include="Properties\AssemblyInfo.cs" />
+    <Compile Include="Types.cs" />
     <Compile Include="user.cs">
       <DependentUpon>Database.tt</DependentUpon>
     </Compile>
