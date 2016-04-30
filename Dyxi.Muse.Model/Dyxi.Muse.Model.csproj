@@ -64,6 +64,7 @@
       <DependentUpon>Database.edmx</DependentUpon>
     </Compile>
     <Compile Include="Entity.cs" />
+    <Compile Include="Auth.cs" />
     <Compile Include="media.cs">
       <DependentUpon>Database.tt</DependentUpon>
     </Compile>
