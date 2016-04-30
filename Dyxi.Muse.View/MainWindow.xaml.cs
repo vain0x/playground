@@ -23,6 +23,29 @@ namespace Dyxi.Muse.View
         public MainWindow()
         {
             InitializeComponent();
+            
+            this.DataContext = this._vm = new ViewModel.MainWindow();
+            
+            this._musicColl.DataContext = Model.Types.Coll.MusicColl;
+
+            this._settingsDialog = new SettingsDialog(this._vm.SettingsDialog);
         }
+
+        private void _collTree_SelectedItemChanged(object sender, RoutedPropertyChangedEventArgs<object> e)
+        {
+            var item = e.NewValue as TreeViewItem;
+            var coll = (item != null ? item.DataContext as Model.Types.Coll : null);
+            if (coll == null) return;
+            this._vm.Coll = coll;
+        }
+
+        private void _listView_MouseDoubleClick(object sender, MouseButtonEventArgs e)
+        {
+            var item = ((FrameworkElement)e.OriginalSource).DataContext as Model.Types.Coll;
+            if (item == null) return;
+        }
+
+        private ViewModel.MainWindow _vm;
+        private SettingsDialog _settingsDialog;
     }
 }

@@ -42,11 +42,16 @@
     <Reference Include="PresentationFramework" />
     <Reference Include="System" />
     <Reference Include="System.Core" />
+    <Reference Include="System.Data" />
+    <Reference Include="System.Data.Linq" />
     <Reference Include="System.Numerics" />
     <Reference Include="WindowsBase" />
   </ItemGroup>
   <ItemGroup>
     <Compile Include="AssemblyInfo.fs" />
+    <Compile Include="Types.fs" />
+    <Compile Include="SettingsDialog.fs" />
+    <Compile Include="MainWindow.fs" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\Dyxi.Muse.Model\Dyxi.Muse.Model.fsproj">
@@ -100,4 +105,11 @@
       </ItemGroup>
     </When>
   </Choose>
+  <ItemGroup>
+    <Reference Include="FSharp.Data.SqlProvider">
+      <HintPath>..\packages\SQLProvider\lib\FSharp.Data.SqlProvider.dll</HintPath>
+      <Private>True</Private>
+      <Paket>True</Paket>
+    </Reference>
+  </ItemGroup>
 </Project>

@@ -6,14 +6,23 @@
         xmlns:local="clr-namespace:Dyxi.Muse.View"
         mc:Ignorable="d"
         Title="Settings | Dyxi.Muse"
-        Width="240"
-        Height="135"
+        Width="320"
+        Height="180"
         WindowStyle="ToolWindow"
         ResizeMode="NoResize"
+        Visibility="{Binding Visibility}"
+        Closing="Window_Closing"
         >
     <Grid>
-        <StackPanel>
-            <Button Content="Upload music file" Command="{Binding UploadMusicFileCommand}" Margin="5" />
-        </StackPanel>
+        <Expander Header="UploadMusicFile" Margin="5">
+            <Grid Height="30">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="1*" />
+                    <ColumnDefinition Width="auto" />
+                </Grid.ColumnDefinitions>
+                <TextBox Text="{Binding Path}" />
+                <Button Grid.Column="1" Content="Upload" Command="{Binding UploadMusicFileCommand}"  Width="80" />
+            </Grid>
+        </Expander>
     </Grid>
 </Window>

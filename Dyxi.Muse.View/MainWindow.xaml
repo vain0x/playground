@@ -24,24 +24,25 @@
                 <ColumnDefinition Width="2*" />
             </Grid.ColumnDefinitions>
 
-            <TreeView Grid.Column="0" x:Name="_collTree">
-                <TreeViewItem Header="Albums" ItemsSource="{Binding Albums}" />
-                <TreeViewItem Header="Playlists" ItemsSource="{Binding Playlists}" />
+            <TreeView Grid.Column="0" x:Name="_collTree" SelectedItemChanged="_collTree_SelectedItemChanged">
+                <TreeViewItem x:Name="_musicColl"       Header="Music" />
+                <TreeViewItem x:Name="_albumsColl"      Header="Albums"         ItemsSource="{Binding Albums}" />
+                <TreeViewItem x:Name="_playListsColl"   Header="Playlists"      ItemsSource="{Binding Playlists}" />
             </TreeView>
 
             <GridSplitter Grid.Column="1" Width="5" HorizontalAlignment="Stretch" />
 
-            <ListView Grid.Column="2" x:Name="_listView" ItemsSource="{Binding Tracks}">
+            <ListView Grid.Column="2" x:Name="_listView" ItemsSource="{Binding Tracks}" MouseDoubleClick="_listView_MouseDoubleClick">
                 <ListView.View>
                     <GridView>
-                        <GridViewColumn Header="#" />
-                        <GridViewColumn Header="Title" />
-                        <GridViewColumn Header="Album" />
-                        <GridViewColumn Header="Composer" />
-                        <GridViewColumn Header="Writer" />
-                        <GridViewColumn Header="Added" />
-                        <GridViewColumn Header="Last Played" />
-                        <GridViewColumn Header="Count" />
+                        <GridViewColumn Header="#"          DisplayMemberBinding="{Binding Ix}"/>
+                        <GridViewColumn Header="Title"      DisplayMemberBinding="{Binding Name}" />
+                        <GridViewColumn Header="Album"      DisplayMemberBinding="{Binding Album}" />
+                        <GridViewColumn Header="Composer"   DisplayMemberBinding="{Binding Composer}"/>
+                        <GridViewColumn Header="Writer"     DisplayMemberBinding="{Binding Writer}"/>
+                        <GridViewColumn Header="Added"      DisplayMemberBinding="{Binding Added}"/>
+                        <GridViewColumn Header="Last Played" DisplayMemberBinding="{Binding LastPlayed}"/>
+                        <GridViewColumn Header="Count"      DisplayMemberBinding="{Binding PlayCount}"/>
                     </GridView>
                 </ListView.View>
             </ListView>

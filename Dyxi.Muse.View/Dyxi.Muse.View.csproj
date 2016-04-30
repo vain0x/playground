@@ -35,6 +35,7 @@
     <WarningLevel>4</WarningLevel>
   </PropertyGroup>
   <ItemGroup>
+    <Reference Include="FSharp.Core, Version=4.4.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a, processorArchitecture=MSIL" />
     <Reference Include="System" />
     <Reference Include="System.Data" />
     <Reference Include="System.Xml" />
@@ -110,6 +111,10 @@
     <ProjectReference Include="..\Dyxi.Muse.ViewModel\Dyxi.Muse.ViewModel.fsproj">
       <Project>{9d7c3f45-c34a-4562-bd29-6b54a24c41e0}</Project>
       <Name>Dyxi.Muse.ViewModel</Name>
+    </ProjectReference>
+    <ProjectReference Include="..\Dyxi.Util\Dyxi.Util.fsproj">
+      <Project>{8f8f35fa-a2b8-4a9c-a9e2-3c67d6776f61}</Project>
+      <Name>Dyxi.Util</Name>
     </ProjectReference>
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />

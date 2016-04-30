@@ -19,9 +19,18 @@ namespace Dyxi.Muse.View
     /// </summary>
     public partial class SettingsDialog : Window
     {
-        public SettingsDialog()
+        public SettingsDialog(ViewModel.SettingsDialog vm)
         {
             InitializeComponent();
+
+            this.DataContext = this._vm = vm;
         }
+
+        private void Window_Closing(object sender, System.ComponentModel.CancelEventArgs e)
+        {
+            e.Cancel = this._vm.Hide();
+        }
+
+        ViewModel.SettingsDialog _vm;
     }
 }

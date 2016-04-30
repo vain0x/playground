@@ -58,7 +58,9 @@
   -->
   <ItemGroup>
     <Compile Include="AssemblyInfo.fs" />
+    <Compile Include="Types.fs" />
     <Compile Include="Database.fs" />
+    <Compile Include="Funcs.fs" />
   </ItemGroup>
   <ItemGroup>
     <Reference Include="mscorlib" />

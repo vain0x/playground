@@ -31,7 +31,7 @@ module ViewModel =
     let (propertyChanged, raisePropertyChanged) =
       NotifyPropertyChanged.create this
 
-    member internal this.RaisePropertyChanged(name) =
+    member this.RaisePropertyChanged(name) =
       raisePropertyChanged name
 
     interface INotifyPropertyChanged with
