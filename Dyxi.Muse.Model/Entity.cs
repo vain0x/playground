@@ -11,6 +11,11 @@ namespace Dyxi.Muse.Model
     {
         public static dyxi_museEntities Instance = new dyxi_museEntities();
 
+        public static void Commit()
+        {
+            Instance.SaveChanges();
+        }
+
         public static people TryFindPeopleByName(string name)
         {
             return Instance.peoples.Where(people => people.name == name).FirstOrDefault();
@@ -21,12 +26,10 @@ namespace Dyxi.Muse.Model
             var people = TryFindPeopleByName(name);
             if (people == null)
             {
-                return Instance.peoples.Add(new people() { name = name });
+                people = Instance.peoples.Add(new people() { name = name });
+                Commit();
             }
-            else
-            {
-                return people;
-            }
+            return people;
         }
 
         public static void AddComposersToWork(int workId, string[] names)
@@ -45,6 +48,7 @@ namespace Dyxi.Muse.Model
         public static work AddAudioWork(string name, string[] composerNames)
         {
             var work = Instance.works.Add(new work { name = name });
+            Commit();
             AddComposersToWork(work.id, composerNames);
             return work;
         }
@@ -75,11 +79,13 @@ namespace Dyxi.Muse.Model
                     extension = ext,
                     work_id = work.id
                 });
+            Commit();
             Instance.media_contents.Add(new media_contents()
             {
                 media_id = media.id,
                 content = content
             });
+            Commit();
             return media;
         }
     }
