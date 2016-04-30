@@ -18,7 +18,7 @@ namespace Dyxi.Muse.Model
 
         public static people FindOrAddPeople(string name)
         {
-            var people = Instance.peoples.Find();
+            var people = TryFindPeopleByName(name);
             if (people == null)
             {
                 return Instance.peoples.Add(new people() { name = name });
