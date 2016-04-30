@@ -14,4 +14,12 @@ namespace Dyxi.CSharp.Util
             get { return (_instance ?? (_instance = new NullableUnit())); }
         }
     }
+
+    public static class IEnumerableExtensions
+    {
+        public static bool IsEmpty<T>(this IEnumerable<T> self)
+        {
+            return self.All(x => false);
+        }
+    }
 }
