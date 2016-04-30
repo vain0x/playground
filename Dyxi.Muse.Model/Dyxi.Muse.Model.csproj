@@ -65,10 +65,14 @@
     </Compile>
     <Compile Include="Entity.cs" />
     <Compile Include="Auth.cs" />
+    <Compile Include="Import.cs" />
     <Compile Include="media.cs">
       <DependentUpon>Database.tt</DependentUpon>
     </Compile>
     <Compile Include="MediaCache.cs" />
+    <Compile Include="media_contents.cs">
+      <DependentUpon>Database.tt</DependentUpon>
+    </Compile>
     <Compile Include="media_performers.cs">
       <DependentUpon>Database.tt</DependentUpon>
     </Compile>
