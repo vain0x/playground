@@ -68,6 +68,7 @@
     <Compile Include="media.cs">
       <DependentUpon>Database.tt</DependentUpon>
     </Compile>
+    <Compile Include="MediaCache.cs" />
     <Compile Include="media_performers.cs">
       <DependentUpon>Database.tt</DependentUpon>
     </Compile>
