@@ -30,12 +30,19 @@ namespace Dyxi.Muse.ViewModel
             {
                 _coll = value;
                 RaisePropertyChanged();
-                Tracks = _coll.Items.ToArray();
+                
+                Tracks = _coll.Items.Select(media =>
+                    new TrackRow()
+                    {
+                        Title = media.name,
+                        MediaId = media.id
+                    }
+                ).ToArray();
             }
         }
         
-        private media[] _tracks;
-        public media[] Tracks
+        private TrackRow[] _tracks;
+        public TrackRow[] Tracks
         {
             get { return _tracks; }
             set
