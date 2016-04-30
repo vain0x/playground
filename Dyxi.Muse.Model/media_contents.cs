@@ -12,13 +12,9 @@ namespace Dyxi.Muse.Model
     using System;
     using System.Collections.Generic;
     
-    public partial class media
+    public partial class media_contents
     {
-        public int id { get; set; }
-        public int work_id { get; set; }
-        public string name { get; set; }
-        public string extension { get; set; }
-        public long length { get; set; }
-        public Nullable<System.DateTime> created { get; set; }
+        public int media_id { get; set; }
+        public byte[] content { get; set; }
     }
 }

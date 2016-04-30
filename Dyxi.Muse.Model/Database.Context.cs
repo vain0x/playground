@@ -34,5 +34,6 @@ namespace Dyxi.Muse.Model
         public DbSet<play_logs> play_logs { get; set; }
         public DbSet<work_composers> work_composers { get; set; }
         public DbSet<work_writers> work_writers { get; set; }
+        public DbSet<media_contents> media_contents { get; set; }
     }
 }
