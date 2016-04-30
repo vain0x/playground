@@ -63,6 +63,12 @@ namespace Dyxi.Muse.ViewModel
                 RaisePropertyChanged();
             }
         }
+
+        public void PushToStack(TrackRow row)
+        {
+            Stack.Insert(0, row);
+            RaisePropertyChanged("Stack");
+        }
         
         public SettingsWindow SettingsWindow
         {

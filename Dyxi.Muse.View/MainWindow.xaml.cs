@@ -42,9 +42,9 @@ namespace Dyxi.Muse.View
 
         private void _listView_MouseDoubleClick(object sender, MouseButtonEventArgs e)
         {
-            var media = ((FrameworkElement)e.OriginalSource).DataContext as Model.media;
-            if (media == null) return;
-            // TODO: スタックに media を積む
+            var row = ((FrameworkElement)e.OriginalSource).DataContext as ViewModel.TrackRow;
+            if (row == null) return;
+            _vm.PushToStack(row);
         }
 
         private void Window_Closed(object sender, EventArgs e)
