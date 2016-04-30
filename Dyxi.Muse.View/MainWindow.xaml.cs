@@ -37,7 +37,7 @@ namespace Dyxi.Muse.View
             var item = e.NewValue as TreeViewItem;
             var coll = (item != null ? item.DataContext as Model.IColl : null);
             if (coll == null) return;
-            // TODO: リストビューの項目源を coll にする
+            _vm.Coll = coll;
         }
 
         private void _listView_MouseDoubleClick(object sender, MouseButtonEventArgs e)
