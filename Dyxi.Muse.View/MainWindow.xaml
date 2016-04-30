@@ -37,10 +37,9 @@
                 <ListView.View>
                     <GridView>
                         <GridViewColumn Header="#"              DisplayMemberBinding="{Binding Ix}"/>
-                        <GridViewColumn Header="Title"          DisplayMemberBinding="{Binding Name}" />
-                        <GridViewColumn Header="Album"          DisplayMemberBinding="{Binding Album}" />
-                        <GridViewColumn Header="Composer"       DisplayMemberBinding="{Binding Composer}"/>
-                        <GridViewColumn Header="Writer"         DisplayMemberBinding="{Binding Writer}"/>
+                        <GridViewColumn Header="Title"          DisplayMemberBinding="{Binding Title}" />
+                        <GridViewColumn Header="Composer"       DisplayMemberBinding="{Binding Composers}"/>
+                        <GridViewColumn Header="Writer"         DisplayMemberBinding="{Binding Writers}"/>
                         <GridViewColumn Header="Added"          DisplayMemberBinding="{Binding Added}"/>
                         <GridViewColumn Header="Last Played"    DisplayMemberBinding="{Binding LastPlayed}"/>
                         <GridViewColumn Header="Count"          DisplayMemberBinding="{Binding PlayCount}"/>
