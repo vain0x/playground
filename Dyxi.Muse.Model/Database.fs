@@ -13,3 +13,7 @@ type sql =
 
 let ctx = sql.GetDataContext()
 let db = ctx.DyxiMuse
+
+// Login
+let loginUser =
+  db.Users.Individuals.``1``
