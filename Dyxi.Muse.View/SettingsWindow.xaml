@@ -14,5 +14,20 @@
         Closing="Window_Closing"
         >
     <Grid>
+        <Grid.RowDefinitions>
+            <RowDefinition Height="auto" />
+            <RowDefinition Height="auto" />
+        </Grid.RowDefinitions>
+        <Expander Header="UploadMusicFile" Margin="5">
+            <Grid Height="30">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="1*" />
+                    <ColumnDefinition Width="auto" />
+                </Grid.ColumnDefinitions>
+                <TextBox Text="{Binding Path}" />
+                <Button Grid.Column="1" Content="Upload" Command="{Binding UploadMusicFileCommand}"  Width="80" />
+            </Grid>
+        </Expander>
+        <TextBlock Grid.Row="1" Text="{Binding Error}" TextWrapping="Wrap" VerticalAlignment="Bottom" />
     </Grid>
 </Window>
