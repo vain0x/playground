@@ -33,6 +33,14 @@ namespace Dyxi.Muse.ViewModel
 
         private void UploadMusicFile()
         {
+            try
+            {
+                Model.Import.ImportMediaFile(Path);
+            }
+            catch (Exception e)
+            {
+                Error = e.Message;
+            }
         }
     }
 }
