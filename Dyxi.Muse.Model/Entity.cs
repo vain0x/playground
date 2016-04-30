@@ -67,15 +67,20 @@ namespace Dyxi.Muse.Model
             (string workName, Tag tag, string ext, long length, byte[] content)
         {
             var work = AddAudioWork(workName, tag.Composers);
-            return
+            var media =
                 Instance.medias.Add(new media
                 {
                     name = tag.Title,
                     length = length,
                     extension = ext,
-                    content = content,
                     work_id = work.id
                 });
+            Instance.media_contents.Add(new media_contents()
+            {
+                media_id = media.id,
+                content = content
+            });
+            return media;
         }
     }
 }
