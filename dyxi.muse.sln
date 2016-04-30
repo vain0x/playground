@@ -11,6 +11,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Dyxi.Muse.View", "Dyxi.Muse
 EndProject
 Project("{F2A71F9B-5D33-465A-A702-920D77279786}") = "Dyxi.Muse.Cui", "Dyxi.Muse.Cui\Dyxi.Muse.Cui.fsproj", "{32290C41-EE04-4097-B1B8-0DC9532B2DE4}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Dyxi.CSharp.Util", "Dyxi.CSharp.Util\Dyxi.CSharp.Util.csproj", "{5FAA6811-4C69-4834-A4E9-C5D14E9C5D61}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -33,6 +35,10 @@ Global
 		{32290C41-EE04-4097-B1B8-0DC9532B2DE4}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{32290C41-EE04-4097-B1B8-0DC9532B2DE4}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{32290C41-EE04-4097-B1B8-0DC9532B2DE4}.Release|Any CPU.Build.0 = Release|Any CPU
+		{5FAA6811-4C69-4834-A4E9-C5D14E9C5D61}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{5FAA6811-4C69-4834-A4E9-C5D14E9C5D61}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{5FAA6811-4C69-4834-A4E9-C5D14E9C5D61}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{5FAA6811-4C69-4834-A4E9-C5D14E9C5D61}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

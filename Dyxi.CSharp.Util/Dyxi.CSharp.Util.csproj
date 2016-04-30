@@ -4,11 +4,11 @@
   <PropertyGroup>
     <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
     <Platform Condition=" '$(Platform)' == '' ">AnyCPU</Platform>
-    <ProjectGuid>{B2D324B4-E333-4421-BC0E-32E0B05D5FB8}</ProjectGuid>
+    <ProjectGuid>{5FAA6811-4C69-4834-A4E9-C5D14E9C5D61}</ProjectGuid>
     <OutputType>Library</OutputType>
     <AppDesignerFolder>Properties</AppDesignerFolder>
-    <RootNamespace>Dyxi.Muse.ViewModel</RootNamespace>
-    <AssemblyName>Dyxi.Muse.ViewModel</AssemblyName>
+    <RootNamespace>Dyxi.CSharp.Util</RootNamespace>
+    <AssemblyName>Dyxi.CSharp.Util</AssemblyName>
     <TargetFrameworkVersion>v4.5.2</TargetFrameworkVersion>
     <FileAlignment>512</FileAlignment>
   </PropertyGroup>
@@ -41,16 +41,6 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="Properties\AssemblyInfo.cs" />
-  </ItemGroup>
-  <ItemGroup>
-    <ProjectReference Include="..\Dyxi.CSharp.Util\Dyxi.CSharp.Util.csproj">
-      <Project>{5faa6811-4c69-4834-a4e9-c5d14e9c5d61}</Project>
-      <Name>Dyxi.CSharp.Util</Name>
-    </ProjectReference>
-    <ProjectReference Include="..\Dyxi.Muse.Model\Dyxi.Muse.Model.csproj">
-      <Project>{c19ae902-8478-4adb-8393-9d9ec5a47f29}</Project>
-      <Name>Dyxi.Muse.Model</Name>
-    </ProjectReference>
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 
