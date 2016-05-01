@@ -31,11 +31,12 @@ namespace Dyxi.Muse.ViewModel
             {
                 _coll = value;
                 RaisePropertyChanged();
-                
+
                 Tracks = _coll.Items.Select(media =>
                     new TrackRow()
                     {
                         Title = media.name,
+                        Extension = media.extension,
                         MediaId = media.id
                     }
                 ).ToArray();
