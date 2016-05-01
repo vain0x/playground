@@ -26,9 +26,9 @@ namespace Dyxi.Muse.Model
             return path;
         }
 
-        public static Task FetchAsync(int mediaId)
+        public static Task<string> FetchAsync(int mediaId)
         {
-            Task task;
+            Task<string> task;
             if (!CacheTask.TryGetValue(mediaId, out task))
             {
                 task = Task.Run(() => Fetch(mediaId));
@@ -37,6 +37,7 @@ namespace Dyxi.Muse.Model
             return task;
         }
 
-        public static Dictionary<int, Task> CacheTask = new Dictionary<int, Task>();
+        public static Dictionary<int, Task<string>> CacheTask =
+            new Dictionary<int, Task<string>>();
     }
 }
