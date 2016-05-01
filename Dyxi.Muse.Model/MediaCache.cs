@@ -14,7 +14,7 @@ namespace Dyxi.Muse.Model
             return Path.Combine(Auth.Instance.cache_dir, mediaId.ToString() + ext);
         }
         
-        public static string Fetch(int mediaId)
+        private static string Fetch(int mediaId)
         {
             var media = Entity.Instance.medias.Find(mediaId);
             var mediaContent = Entity.Instance.media_contents.Find(mediaId);
@@ -25,5 +25,18 @@ namespace Dyxi.Muse.Model
             }
             return path;
         }
+
+        public static Task FetchAsync(int mediaId)
+        {
+            Task task;
+            if (!CacheTask.TryGetValue(mediaId, out task))
+            {
+                task = Task.Run(() => Fetch(mediaId));
+                CacheTask.Add(mediaId, task);
+            }
+            return task;
+        }
+
+        public static Dictionary<int, Task> CacheTask = new Dictionary<int, Task>();
     }
 }

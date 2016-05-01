@@ -67,6 +67,7 @@ namespace Dyxi.Muse.ViewModel
         public void PushToStack(TrackRow row)
         {
             Stack.Insert(0, row);
+            MediaCache.FetchAsync(row.MediaId);
             RaisePropertyChanged("Stack");
         }
         
