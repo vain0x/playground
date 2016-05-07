@@ -1,4 +1,7 @@
-
+NUGET
+  remote: https://www.nuget.org/api/v2
+  specs:
+    Basis.Core (1.1.3)
 GITHUB
   remote: fsprojects/Chessie
   specs:
