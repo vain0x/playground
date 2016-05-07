@@ -82,6 +82,7 @@
     <Compile Include="Misc.fs" />
     <Compile Include="Collections.fs" />
     <Compile Include="Reflection.fs" />
+    <Compile Include="Threading.fs" />
     <Compile Include="IO.fs" />
   </ItemGroup>
   <ItemGroup>
