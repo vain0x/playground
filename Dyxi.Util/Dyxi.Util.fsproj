@@ -33,22 +33,6 @@
     <WarningLevel>3</WarningLevel>
     <DocumentationFile>bin\Release\Dyxi.Util.XML</DocumentationFile>
   </PropertyGroup>
-  <ItemGroup>
-    <Compile Include="..\paket-files\fsprojects\Chessie\src\Chessie\ErrorHandling.fs">
-      <Paket>True</Paket>
-      <Link>ErrorHandling.fs</Link>
-    </Compile>
-    <Reference Include="mscorlib" />
-    <Reference Include="FSharp.Core, Version=$(TargetFSharpCoreVersion), Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a">
-      <Private>True</Private>
-    </Reference>
-    <Reference Include="System" />
-    <Reference Include="System.Core" />
-    <Reference Include="System.Numerics" />
-  </ItemGroup>
-  <ItemGroup>
-    <Compile Include="AssemblyInfo.fs" />
-  </ItemGroup>
   <PropertyGroup>
     <MinimumVisualStudioVersion Condition="'$(MinimumVisualStudioVersion)' == ''">11</MinimumVisualStudioVersion>
   </PropertyGroup>
@@ -89,4 +73,22 @@
       </ItemGroup>
     </When>
   </Choose>
+  <ItemGroup>
+    <Compile Include="..\paket-files\fsprojects\Chessie\src\Chessie\ErrorHandling.fs">
+      <Paket>True</Paket>
+      <Link>ErrorHandling.fs</Link>
+    </Compile>
+    <Compile Include="AssemblyInfo.fs" />
+    <Compile Include="Misc.fs" />
+    <Compile Include="Collections.fs" />
+  </ItemGroup>
+  <ItemGroup>
+    <Reference Include="mscorlib" />
+    <Reference Include="FSharp.Core, Version=$(TargetFSharpCoreVersion), Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a">
+      <Private>True</Private>
+    </Reference>
+    <Reference Include="System" />
+    <Reference Include="System.Core" />
+    <Reference Include="System.Numerics" />
+  </ItemGroup>
 </Project>
