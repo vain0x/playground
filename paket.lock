@@ -10,5 +10,15 @@ GROUP Test
 NUGET
   remote: https://www.nuget.org/api/v2
   specs:
+    FsPickler (2.1)
+    FsRandom (1.3.3)
     Persimmon (1.1)
     Persimmon.Console (1.1)
+    Persimmon.Dried (2.0.1)
+      FsPickler (>= 2.1)
+      FsRandom (>= 1.3.3)
+      Persimmon (>= 1.1)
+      Persimmon.Dried.Gen (>= 2.0.1)
+    Persimmon.Dried.Gen (2.0.1)
+      FsRandom (>= 1.3.3)
+      Persimmon (>= 1.1)

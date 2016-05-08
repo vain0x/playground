@@ -7,4 +7,5 @@ group Test
   source https://nuget.org/api/v2
 
   nuget Persimmon
+  nuget Persimmon.Dried
   nuget Persimmon.Console
