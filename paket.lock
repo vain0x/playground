@@ -1,1 +1,24 @@
-
+NUGET
+  remote: https://www.nuget.org/api/v2
+  specs:
+    Basis.Core (1.1.3)
+GITHUB
+  remote: fsprojects/Chessie
+  specs:
+    src/Chessie/ErrorHandling.fs (683c29b387a972e26e6e40826f4eb43627e7775b)
+GROUP Test
+NUGET
+  remote: https://www.nuget.org/api/v2
+  specs:
+    FsPickler (2.1)
+    FsRandom (1.3.3)
+    Persimmon (1.1)
+    Persimmon.Console (1.1)
+    Persimmon.Dried (2.0.1)
+      FsPickler (>= 2.1)
+      FsRandom (>= 1.3.3)
+      Persimmon (>= 1.1)
+      Persimmon.Dried.Gen (>= 2.0.1)
+    Persimmon.Dried.Gen (2.0.1)
+      FsRandom (>= 1.3.3)
+      Persimmon (>= 1.1)
