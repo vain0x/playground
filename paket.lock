@@ -11,3 +11,4 @@ NUGET
   remote: https://www.nuget.org/api/v2
   specs:
     Persimmon (1.1)
+    Persimmon.Console (1.1)
