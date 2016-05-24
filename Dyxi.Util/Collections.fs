@@ -29,6 +29,13 @@ module Option =
     | (true, value) -> Some value
     | _ -> None
 
+  /// Returns `f x` for Some x; or `g ()` for None.
+  /// This returns a value of type 'y either.
+  let either (f: 'x -> 'y) (g: unit -> 'y): option<'x> -> 'y =
+    function
+    | Some x      -> f x
+    | None        -> g ()
+
 module List =
   let tryMaxBy (proj: 'x -> 'y) (xs: list<'x>): option<'x> =
     let folder ma x =
