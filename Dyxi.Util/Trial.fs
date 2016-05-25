@@ -22,7 +22,7 @@ module Trial =
   let failf fmt =
     kprintf fail fmt
 
-  let inline runConsoleApp (result: Result<unit, 'x>): int =
+  let runConsoleApp (result: Result<unit, string>): int =
     let printMessages msgs =
       for msg in msgs do eprintfn "%s" (string msg)
     match result with
