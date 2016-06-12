@@ -5,7 +5,7 @@ open Persimmon.Syntax.UseTestNameByReflection
 
 module BTreeTest =
   let kvs =
-    [4; 6; 5; 1; 3; 2]
+    [4; 7; 5; 1; 3; 2]
     |> List.mapi (fun i x -> (x, i))
 
   let btree () =
@@ -34,7 +34,7 @@ module BTreeTest =
       }
     parameterize {
       case (4, 0)
-      case (6, 1)
+      case (7, 1)
       case (5, 2)
       case (1, 3)
       case (3, 4)
@@ -51,7 +51,7 @@ module BTreeTest =
     parameterize {
       case 0
       case (-1)
-      case 7
+      case 6
       run f
     }
 
