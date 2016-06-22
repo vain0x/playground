@@ -1,1 +1,5 @@
-
+NUGET
+  remote: https://www.nuget.org/api/v2
+    FParsec (1.0.2)
+    Persimmon (1.1)
+    Persimmon.Console (1.1)
