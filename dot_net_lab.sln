@@ -5,6 +5,8 @@ VisualStudioVersion = 14.0.25123.0
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{F2A71F9B-5D33-465A-A702-920D77279786}") = "DotNetLab.Fs.Lib", "DotNetLab.Fs.Lib\DotNetLab.Fs.Lib.fsproj", "{D700D1DF-58FA-453E-9195-2AF3E0AFDE5A}"
 EndProject
+Project("{F2A71F9B-5D33-465A-A702-920D77279786}") = "DotNetLab.Fs.Lib.Test", "DotNetLab.Fs.Lib.Test\DotNetLab.Fs.Lib.Test.fsproj", "{7EE56824-1124-4ACE-8046-6A52C53E7F7A}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -15,6 +17,10 @@ Global
 		{D700D1DF-58FA-453E-9195-2AF3E0AFDE5A}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{D700D1DF-58FA-453E-9195-2AF3E0AFDE5A}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{D700D1DF-58FA-453E-9195-2AF3E0AFDE5A}.Release|Any CPU.Build.0 = Release|Any CPU
+		{7EE56824-1124-4ACE-8046-6A52C53E7F7A}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{7EE56824-1124-4ACE-8046-6A52C53E7F7A}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{7EE56824-1124-4ACE-8046-6A52C53E7F7A}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{7EE56824-1124-4ACE-8046-6A52C53E7F7A}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
