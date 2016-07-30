@@ -1,13 +1,13 @@
-﻿<?xml version="1.0" encoding="utf-8"?>
+<?xml version="1.0" encoding="utf-8"?>
 <Project ToolsVersion="14.0" DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <Import Project="$(MSBuildExtensionsPath)\$(MSBuildToolsVersion)\Microsoft.Common.props" Condition="Exists('$(MSBuildExtensionsPath)\$(MSBuildToolsVersion)\Microsoft.Common.props')" />
   <PropertyGroup>
     <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
     <Platform Condition=" '$(Platform)' == '' ">AnyCPU</Platform>
-    <ProjectGuid>{5F1923B2-C8BB-4A0E-9F7F-25D9DDBB1A92}</ProjectGuid>
+    <ProjectGuid>{e06f2f05-2355-4570-a797-83cf69f69ae6}</ProjectGuid>
     <OutputType>Library</OutputType>
-    <RootNamespace>DotNetLab.Vb.Lib.Test</RootNamespace>
-    <AssemblyName>DotNetLab.Vb.Lib.Test</AssemblyName>
+    <RootNamespace>QueryBuilder.Test</RootNamespace>
+    <AssemblyName>QueryBuilder.Test</AssemblyName>
     <FileAlignment>512</FileAlignment>
     <MyType>Windows</MyType>
     <TargetFrameworkVersion>v4.5.2</TargetFrameworkVersion>
@@ -20,7 +20,7 @@
     <DefineDebug>true</DefineDebug>
     <DefineTrace>true</DefineTrace>
     <OutputPath>bin\Debug\</OutputPath>
-    <DocumentationFile>DotNetLab.Vb.Lib.Test.xml</DocumentationFile>
+    <DocumentationFile>QueryBuilder.Test.xml</DocumentationFile>
     <NoWarn>
     </NoWarn>
     <WarningsAsErrors>41999,42016,42017,42018,42019,42020,42021,42022,42032,42036</WarningsAsErrors>
@@ -31,7 +31,7 @@
     <DefineTrace>true</DefineTrace>
     <Optimize>true</Optimize>
     <OutputPath>bin\Release\</OutputPath>
-    <DocumentationFile>DotNetLab.Vb.Lib.Test.xml</DocumentationFile>
+    <DocumentationFile>QueryBuilder.Test.xml</DocumentationFile>
     <NoWarn>
     </NoWarn>
     <WarningsAsErrors>41999,42016,42017,42018,42019,42020,42021,42022,42032,42036</WarningsAsErrors>
@@ -148,9 +148,9 @@
     </None>
   </ItemGroup>
   <ItemGroup>
-    <ProjectReference Include="..\DotNetLab.Vb.Lib\DotNetLab.Vb.Lib.vbproj">
+    <ProjectReference Include="..\QueryBuilder\QueryBuilder.vbproj">
       <Project>{36757c03-1694-486d-b93b-e8fe94979dca}</Project>
-      <Name>DotNetLab.Vb.Lib</Name>
+      <Name>QueryBuilder</Name>
     </ProjectReference>
   </ItemGroup>
   <ItemGroup>

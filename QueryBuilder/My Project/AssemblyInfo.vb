@@ -1,4 +1,4 @@
-﻿Imports System
+Imports System
 Imports System.Reflection
 Imports System.Runtime.InteropServices
 
@@ -8,17 +8,17 @@ Imports System.Runtime.InteropServices
 
 ' アセンブリ属性の値を確認します
 
-<Assembly: AssemblyTitle("DotNetLab.Vb.Lib.Test")> 
+<Assembly: AssemblyTitle("QueryBuilder")> 
 <Assembly: AssemblyDescription("")> 
 <Assembly: AssemblyCompany("")> 
-<Assembly: AssemblyProduct("DotNetLab.Vb.Lib.Test")> 
+<Assembly: AssemblyProduct("QueryBuilder")> 
 <Assembly: AssemblyCopyright("Copyright ©  2016")> 
 <Assembly: AssemblyTrademark("")> 
 
 <Assembly: ComVisible(False)>
 
 'このプロジェクトが COM に公開される場合、次の GUID が typelib の ID になります
-<Assembly: Guid("8a823414-0fc0-4d53-a0de-2403f7bc0740")> 
+<Assembly: Guid("04e55af5-3ed9-44ab-bf91-7911b725503e")> 
 
 ' アセンブリのバージョン情報は次の 4 つの値で構成されています:
 '
