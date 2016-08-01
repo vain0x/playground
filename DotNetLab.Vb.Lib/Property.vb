@@ -133,14 +133,22 @@ Namespace SheetObjectModel
         Protected Sub RaiseChanged(sender As Object, e As ChangedEventArgs)
             RaiseEvent Changed(sender, e)
         End Sub
+    End Class
+
+    ''' <summary>
+    ''' 代入操作によってのみ値が変化する観測可能プロパティを表します。
+    ''' </summary>
+    ''' <typeparam name="X"></typeparam>
+    Public Class VariableObservableProperty(Of X)
+        Inherits ObservableProperty(Of X)
 
         Private _latestValueOrNone As [Option](Of X) = [Option].None(Of X)()
 
-        Protected MustOverride Property ValueImpl As X
+        Private _value As X
 
         Public Overrides Property Value As X
             Get
-                Return Me.ValueImpl
+                Return Me._value
             End Get
             Set(value As X)
                 ' 前回と同じ値が設定される場合は、キャンセルします。
@@ -151,22 +159,12 @@ Namespace SheetObjectModel
                 ' 値を設定します。
                 Dim oldValue = Me._latestValueOrNone
                 Me._latestValueOrNone = [Option].Some(value)
-                Me.ValueImpl = value
+                Me._value = value
 
                 ' 値の変更を通知します。
-                RaiseEvent Changed(Me, New ChangedEventArgs(Me, oldValue, value))
+                RaiseChanged(Me, New ChangedEventArgs(Me, oldValue, value))
             End Set
         End Property
-    End Class
-
-    ''' <summary>
-    ''' 代入操作によってのみ値が変化する観測可能プロパティを表します。
-    ''' </summary>
-    ''' <typeparam name="X"></typeparam>
-    Public Class VariableObservableProperty(Of X)
-        Inherits ObservableProperty(Of X)
-
-        Protected Overrides Property ValueImpl As X
     End Class
 
     ''' <summary>
@@ -187,9 +185,9 @@ Namespace SheetObjectModel
             End Get
         End Property
 
-        Protected Overrides Property ValueImpl As Y
+        Public Overrides Property Value As Y
             Get
-                Return Me._f(_source.Value)
+                Return Me._property.Value
             End Get
             Set(value As Y)
                 Throw New NotSupportedException()
