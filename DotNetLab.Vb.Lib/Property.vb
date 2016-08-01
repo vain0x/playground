@@ -63,58 +63,10 @@ Namespace SheetObjectModel
         End Sub
     End Class
 
-    Public Class BoxProperty(Of X)
-        Inherits [Property](Of Object)
-
-        Private ReadOnly _property As [Property](Of X)
-
-        Public Overrides Property Value As Object
-            Get
-                Return DirectCast(Me._property.Value, Object)
-            End Get
-            Set(value As Object)
-                Me._property.Value = DirectCast(value, X)
-            End Set
-        End Property
-
-        Public Sub New([property] As [Property](Of X))
-            Me._property = [property]
-        End Sub
-    End Class
-
-    Public Class UnboxProperty(Of X)
-        Inherits [Property](Of X)
-
-        Private ReadOnly _property As [Property](Of Object)
-
-        Public Overrides Property Value As X
-            Get
-                Return DirectCast(Me._property.Value, X)
-            End Get
-            Set(value As X)
-                Me._property.Value = DirectCast(value, Object)
-            End Set
-        End Property
-
-        Public Sub New([property] As [Property](Of Object))
-            Me._property = [property]
-        End Sub
-    End Class
-
     Public Module PropertyExtensions
         <Extension>
         Public Function ToReadOnly(Of X)(this As [Property](Of X)) As [Property](Of X)
             Return New ReadOnlyProperty(Of X)(this)
-        End Function
-
-        <Extension>
-        Public Function Box(Of X)(this As [Property](Of X)) As [Property](Of Object)
-            Return New BoxProperty(Of X)(this)
-        End Function
-
-        <Extension>
-        Public Function Unbox(Of X)(this As [Property](Of Object)) As [Property](Of X)
-            Return New UnboxProperty(Of X)(this)
         End Function
     End Module
 
