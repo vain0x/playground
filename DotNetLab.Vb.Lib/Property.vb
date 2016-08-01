@@ -231,12 +231,12 @@ Namespace SheetObjectModel
             Return New VariableProperty(Of X)() With {.Value = value}
         End Function
 
-        Public Shared Function MakeObservable(Of X)(value As X) As ObservableProperty(Of X)
-            Return New VariableObservableProperty(Of X)() With {.Value = value}
-        End Function
-
         Public Shared Function MakeReadOnly(Of X)(value As X) As [Property](Of X)
             Return MakeVariable(value).ToReadOnly()
+        End Function
+
+        Public Shared Function MakeObservable(Of X)(value As X) As ObservableProperty(Of X)
+            Return New VariableObservableProperty(Of X)() With {.Value = value}
         End Function
     End Class
 End Namespace
