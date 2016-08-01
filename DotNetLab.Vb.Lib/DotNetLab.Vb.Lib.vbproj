@@ -68,6 +68,8 @@
     <Import Include="System.Threading.Tasks" />
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="CellType.vb" />
+    <Compile Include="ISpreadSheet.vb" />
     <Compile Include="My Project\AssemblyInfo.vb" />
     <Compile Include="My Project\Application.Designer.vb">
       <AutoGen>True</AutoGen>
@@ -83,6 +85,11 @@
       <DependentUpon>Settings.settings</DependentUpon>
       <DesignTimeSharedInput>True</DesignTimeSharedInput>
     </Compile>
+    <Compile Include="Option.vb" />
+    <Compile Include="Property.vb" />
+    <Compile Include="SheetCellViewModel.vb" />
+    <Compile Include="SheetElementViewModel.vb" />
+    <Compile Include="SheetViewModelBase.vb" />
   </ItemGroup>
   <ItemGroup>
     <EmbeddedResource Include="My Project\Resources.resx">
