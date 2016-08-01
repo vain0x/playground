@@ -200,6 +200,14 @@ Namespace SheetObjectModel
                 Me,
                 e.OldValue.Map(Function(x) Me._f(x)),
                 Me._f(e.NewValue))
+
+            ' If oldValue = Some newValue then don't raise 'Changed' event.
+            Dim isNotModified =
+                eventArgs.OldValue _
+                .Map(Function(oldValue) Equals(oldValue, eventArgs.NewValue)) _
+                .SequenceEqual({True})
+            If isNotModified Then Return
+
             RaiseChanged(Me, eventArgs)
         End Sub
 
