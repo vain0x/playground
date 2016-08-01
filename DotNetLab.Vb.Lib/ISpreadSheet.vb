@@ -1,4 +1,6 @@
-﻿Namespace SheetObjectModel
+﻿Imports System.Drawing
+
+Namespace SheetObjectModel
     Public Interface ICell
         ReadOnly Property Location As Point
         Property RowSpan As Integer

@@ -50,6 +50,7 @@
   <ItemGroup>
     <Reference Include="System" />
     <Reference Include="System.Data" />
+    <Reference Include="System.Drawing" />
     <Reference Include="System.Xml" />
     <Reference Include="System.Core" />
     <Reference Include="System.Xml.Linq" />
@@ -90,6 +91,7 @@
     <Compile Include="SheetCellViewModel.vb" />
     <Compile Include="SheetElementViewModel.vb" />
     <Compile Include="SheetViewModelBase.vb" />
+    <Compile Include="ValueConverter.vb" />
   </ItemGroup>
   <ItemGroup>
     <EmbeddedResource Include="My Project\Resources.resx">

@@ -1,4 +1,6 @@
-﻿Namespace SheetObjectModel
+﻿Imports System.Drawing
+
+Namespace SheetObjectModel
     ''' <summary>
     ''' スプレッドシートのビューモデルを表します。
     ''' </summary>
@@ -13,13 +15,13 @@
             End Get
         End Property
 
-        Public Sub New(model As [Property](Of Object), cellTypeFactoryOrNull As CellTypeFactory)
-            MyBase.New(model, parent:=Nothing, location:=New Point(0, 0))
+        Public Sub New(cellTypeFactoryOrNull As CellTypeFactory)
+            MyBase.New(parent:=Nothing, location:=New Point(0, 0))
             Me._cellTypeFactory = If(CellTypeFactory, CellTypeFactory.Default.Instance)
         End Sub
 
-        Public Sub New(model As [Property](Of Object))
-            Me.New(model, Nothing)
+        Public Sub New()
+            Me.New(Nothing)
         End Sub
 
         Public NotOverridable Overrides ReadOnly Property Root As SheetElementViewModel

@@ -1,4 +1,6 @@
-﻿Namespace SheetObjectModel
+﻿Imports System.Drawing
+
+Namespace SheetObjectModel
     ''' <summary>
     ''' スプレッドシートの1つのセルに対応するビューモデルを表します。
     ''' </summary>

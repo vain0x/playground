@@ -1,4 +1,7 @@
-﻿Namespace SheetObjectModel
+﻿Imports System.Drawing
+Imports System.Linq
+
+Namespace SheetObjectModel
     Public MustInherit Class SheetElementViewModel
         Private ReadOnly _parent As SheetElementViewModel
 

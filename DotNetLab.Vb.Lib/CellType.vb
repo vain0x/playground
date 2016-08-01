@@ -36,24 +36,6 @@
             Public Property EditFormat As String = _dateTimeFormat
             Public Property DisplayFormat As String = _dateTimeFormat
         End Class
-
-        Public Class [Date]
-            Inherits DateTime
-
-            Public Sub New()
-                Me.EditFormat = DATE_FORMAT_YYYYMMDD
-                Me.DisplayFormat = DATE_FORMAT_YYYYMMDD
-            End Sub
-        End Class
-
-        Public Class JapaneseMonth
-            Inherits DateTime
-
-            Public Sub New()
-                Me.EditFormat = DATE_FORMAT_YYYYMMDD
-                Me.DisplayFormat = DATE_FORMAT_JAPANESE_MONTH
-            End Sub
-        End Class
     End Class
 
     ''' <summary>
@@ -74,7 +56,7 @@
                     Case GetType(Double)
                         Return New CellType.Double()
                     Case GetType(DateTime)
-                        Return New CellType.Date()
+                        Return New CellType.DateTime()
                     Case Else
                         Throw New NotSupportedException(String.Format("Can't convert '{0}' to 'SpreadObjectModel.Celltype'.", type.ToString()))
                 End Select
