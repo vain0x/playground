@@ -155,9 +155,23 @@ Namespace SheetObjectModel
         End Property
     End Class
 
+    ''' <summary>
+    ''' 代入操作によってのみ値が変化する観測可能プロパティを表します。
+    ''' </summary>
+    ''' <typeparam name="X"></typeparam>
+    Public Class VariableObservableProperty(Of X)
+        Inherits ObservableProperty(Of X)
+
+        Protected Overrides Property ValueImpl As X
+    End Class
+
     Public Class [Property]
         Public Shared Function MakeVariable(Of X)(value As X) As VariableProperty(Of X)
             Return New VariableProperty(Of X)() With {.Value = value}
+        End Function
+
+        Public Shared Function MakeObservable(Of X)(value As X) As ObservableProperty(Of X)
+            Return New VariableObservableProperty(Of X)() With {.Value = value}
         End Function
 
         Public Shared Function MakeReadOnly(Of X)(value As X) As [Property](Of X)
