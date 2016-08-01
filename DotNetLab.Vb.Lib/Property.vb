@@ -130,6 +130,10 @@ Namespace SheetObjectModel
 
         Public Event Changed As EventHandler(Of ChangedEventArgs)
 
+        Protected Sub RaiseChanged(sender As Object, e As ChangedEventArgs)
+            RaiseEvent Changed(sender, e)
+        End Sub
+
         Private _latestValueOrNone As [Option](Of X) = [Option].None(Of X)()
 
         Protected MustOverride Property ValueImpl As X
@@ -164,6 +168,55 @@ Namespace SheetObjectModel
 
         Protected Overrides Property ValueImpl As X
     End Class
+
+    ''' <summary>
+    ''' 値として関数の結果を返す観測可能プロパティを表します。
+    ''' </summary>
+    ''' <typeparam name="X"></typeparam>
+    ''' <typeparam name="Y"></typeparam>
+    Public Class MapObservableProperty(Of X, Y)
+        Inherits ObservableProperty(Of Y)
+
+        Private ReadOnly _source As ObservableProperty(Of X)
+        Private ReadOnly _f As Func(Of X, Y)
+
+        Public Overrides ReadOnly Property CanWrite As Boolean
+            Get
+                Return False
+            End Get
+        End Property
+
+        Protected Overrides Property ValueImpl As Y
+            Get
+                Return Me._f(_source.Value)
+            End Get
+            Set(value As Y)
+                Throw New NotSupportedException()
+            End Set
+        End Property
+
+        Private Sub OnSourceChanged(sender As Object, e As ObservableProperty(Of X).ChangedEventArgs)
+            Dim eventArgs = New ChangedEventArgs(
+                Me,
+                e.OldValue.Map(Function(x) Me._f(x)),
+                Me._f(e.NewValue))
+            RaiseChanged(Me, eventArgs)
+        End Sub
+
+        Public Sub New(source As ObservableProperty(Of X), f As Func(Of X, Y))
+            Me._source = source
+            Me._f = f
+
+            AddHandler source.Changed, AddressOf OnSourceChanged
+        End Sub
+    End Class
+
+    Public Module ObservablePropertyExtensions
+        <Extension>
+        Public Function Map(Of X, Y)(this As ObservableProperty(Of X), f As Func(Of X, Y)) As ObservableProperty(Of Y)
+            Return New MapObservableProperty(Of X, Y)(this, f)
+        End Function
+    End Module
 
     Public Class [Property]
         Public Shared Function MakeVariable(Of X)(value As X) As VariableProperty(Of X)
