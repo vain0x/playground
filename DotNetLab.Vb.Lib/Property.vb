@@ -178,6 +178,7 @@ Namespace SheetObjectModel
         Inherits ObservableProperty(Of Y)
 
         Private ReadOnly _source As ObservableProperty(Of X)
+        Private ReadOnly _property As ObservableProperty(Of Y)
         Private ReadOnly _f As Func(Of X, Y)
 
         Public Overrides ReadOnly Property CanWrite As Boolean
@@ -196,26 +197,20 @@ Namespace SheetObjectModel
         End Property
 
         Private Sub OnSourceChanged(sender As Object, e As ObservableProperty(Of X).ChangedEventArgs)
-            Dim eventArgs = New ChangedEventArgs(
-                Me,
-                e.OldValue.Map(Function(x) Me._f(x)),
-                Me._f(e.NewValue))
+            Me._property.Value = Me._f(e.NewValue)
+        End Sub
 
-            ' 前回と同じ値が設定される場合は、キャンセルします。
-            Dim isNotModified =
-                eventArgs.OldValue _
-                .Map(Function(oldValue) Equals(oldValue, eventArgs.NewValue)) _
-                .SequenceEqual({True})
-            If isNotModified Then Return
-
-            RaiseChanged(Me, eventArgs)
+        Private Sub OnValueChanged(sender As Object, e As ObservableProperty(Of Y).ChangedEventArgs)
+            RaiseChanged(Me, e)
         End Sub
 
         Public Sub New(source As ObservableProperty(Of X), f As Func(Of X, Y))
-            Me._source = source
             Me._f = f
+            Me._source = source
+            Me._property = New VariableObservableProperty(Of Y)() With {.Value = Me._f(Me._source.Value)}
 
-            AddHandler source.Changed, AddressOf OnSourceChanged
+            AddHandler Me._source.Changed, AddressOf OnSourceChanged
+            AddHandler Me._property.Changed, AddressOf OnValueChanged
         End Sub
     End Class
 
