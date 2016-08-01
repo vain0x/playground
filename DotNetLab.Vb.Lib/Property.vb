@@ -201,7 +201,7 @@ Namespace SheetObjectModel
                 e.OldValue.Map(Function(x) Me._f(x)),
                 Me._f(e.NewValue))
 
-            ' If oldValue = Some newValue then don't raise 'Changed' event.
+            ' 前回と同じ値が設定される場合は、キャンセルします。
             Dim isNotModified =
                 eventArgs.OldValue _
                 .Map(Function(oldValue) Equals(oldValue, eventArgs.NewValue)) _
