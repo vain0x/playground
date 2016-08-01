@@ -118,10 +118,10 @@ Namespace SheetObjectModel
 
         Public Class ChangedEventArgs
             Public ReadOnly [Property] As ObservableProperty(Of X)
-            Public ReadOnly OldValue As [Option](Of X)
+            Public ReadOnly OldValue As X
             Public ReadOnly NewValue As X
 
-            Public Sub New([property] As ObservableProperty(Of X), oldValue As [Option](Of X), newValue As X)
+            Public Sub New([property] As ObservableProperty(Of X), oldValue As X, newValue As X)
                 Me.Property = [property]
                 Me.OldValue = oldValue
                 Me.NewValue = newValue
@@ -142,8 +142,6 @@ Namespace SheetObjectModel
     Public Class VariableObservableProperty(Of X)
         Inherits ObservableProperty(Of X)
 
-        Private _latestValueOrNone As [Option](Of X) = [Option].None(Of X)()
-
         Private _value As X
 
         Public Overrides Property Value As X
@@ -151,20 +149,20 @@ Namespace SheetObjectModel
                 Return Me._value
             End Get
             Set(value As X)
-                ' 前回と同じ値が設定される場合は、キャンセルします。
-                If Me._latestValueOrNone.HasValue _
-                    AndAlso Object.Equals(Me._latestValueOrNone.Value, value) _
-                    Then Return
-
-                ' 値を設定します。
-                Dim oldValue = Me._latestValueOrNone
-                Me._latestValueOrNone = [Option].Some(value)
+                Dim oldValue = Me._value
+                If Equals(oldValue, value) Then Return
                 Me._value = value
-
-                ' 値の変更を通知します。
                 RaiseChanged(Me, New ChangedEventArgs(Me, oldValue, value))
             End Set
         End Property
+
+        Public Sub New(value As X)
+            Me._value = value
+        End Sub
+
+        Public Sub New()
+            ' Me._value = default
+        End Sub
     End Class
 
     ''' <summary>
@@ -233,7 +231,7 @@ Namespace SheetObjectModel
         End Function
 
         Public Shared Function MakeObservable(Of X)(value As X) As ObservableProperty(Of X)
-            Return New VariableObservableProperty(Of X)() With {.Value = value}
+            Return New VariableObservableProperty(Of X)(value)
         End Function
     End Class
 End Namespace
