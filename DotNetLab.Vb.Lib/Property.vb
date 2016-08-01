@@ -111,9 +111,10 @@ Namespace SheetObjectModel
 
     ''' <summary>
     ''' 値の再設定をイベントとして通知するプロパティを表します。
+    ''' TODO: IObservable(Of X) を実装する。
     ''' </summary>
-    Public Class ObservableProperty(Of X)
-        Inherits RelayProperty(Of X)
+    Public MustInherit Class ObservableProperty(Of X)
+        Inherits [Property](Of X)
 
         Public Class ChangedEventArgs
             Public ReadOnly [Property] As ObservableProperty(Of X)
@@ -131,9 +132,11 @@ Namespace SheetObjectModel
 
         Private _latestValueOrNone As [Option](Of X) = [Option].None(Of X)()
 
+        Protected MustOverride Property ValueImpl As X
+
         Public Overrides Property Value As X
             Get
-                Return MyBase.Value
+                Return Me.ValueImpl
             End Get
             Set(value As X)
                 ' 前回と同じ値が設定される場合は、キャンセルします。
@@ -144,16 +147,12 @@ Namespace SheetObjectModel
                 ' 値を設定します。
                 Dim oldValue = Me._latestValueOrNone
                 Me._latestValueOrNone = [Option].Some(value)
-                MyBase.Value = value
+                Me.ValueImpl = value
 
                 ' 値の変更を通知します。
                 RaiseEvent Changed(Me, New ChangedEventArgs(Me, oldValue, value))
             End Set
         End Property
-
-        Public Sub New([get] As Func(Of X), [set] As Action(Of X))
-            MyBase.New([get], [set])
-        End Sub
     End Class
 
     Public Class [Property]
