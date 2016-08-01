@@ -164,9 +164,5 @@ Namespace SheetObjectModel
         Public Shared Function MakeReadOnly(Of X)(value As X) As [Property](Of X)
             Return MakeVariable(value).ToReadOnly()
         End Function
-
-        Public Shared Function MakeObservable(Of X)([get] As Func(Of X), [set] As Action(Of X)) As [Property](Of X)
-            Return New ObservableProperty(Of X)([get], [set])
-        End Function
     End Class
 End Namespace
