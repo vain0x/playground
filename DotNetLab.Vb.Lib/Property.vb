@@ -286,6 +286,43 @@ Namespace SheetObjectModel
         End Sub
     End Class
 
+    Public Class BimapObservableProperty(Of X, Y)
+        Inherits ObservableProperty(Of Y)
+
+        Private ReadOnly _source As ObservableProperty(Of X)
+        Private ReadOnly _convert As Func(Of X, Y)
+        Private ReadOnly _invert As Func(Of Y, X)
+
+        Public Overrides ReadOnly Property CanRead As Boolean
+            Get
+                Return Me._source.CanRead
+            End Get
+        End Property
+
+        Public Overrides ReadOnly Property CanWrite As Boolean
+            Get
+                Return Me._source.CanWrite
+            End Get
+        End Property
+
+        Public Overrides Property Value As Y
+            Get
+                Return Me._convert(Me._source.Value)
+            End Get
+            Set(value As Y)
+                Dim oldValue = Me.Value
+                Me._source.Value = Me._invert(value)
+                Me.RaiseChanged(oldValue, value)
+            End Set
+        End Property
+
+        Public Sub New(source As ObservableProperty(Of X), convert As Func(Of X, Y), invert As Func(Of Y, X))
+            Me._source = source
+            Me._convert = convert
+            Me._invert = invert
+        End Sub
+    End Class
+
     Public Class FlattenObservableProperty(Of X)
         Inherits ObservableProperty(Of X)
 
@@ -338,6 +375,11 @@ Namespace SheetObjectModel
         <Extension>
         Public Function Map(Of X, Y)(this As ObservableProperty(Of X), f As Func(Of X, Y)) As ObservableProperty(Of Y)
             Return New MapObservableProperty(Of X, Y)(this, f)
+        End Function
+
+        <Extension>
+        Public Function Bimap(Of X, Y)(this As ObservableProperty(Of X), convert As Func(Of X, Y), invert As Func(Of Y, X)) As ObservableProperty(Of Y)
+            Return New BimapObservableProperty(Of X, Y)(this, convert, invert)
         End Function
 
         <Extension>

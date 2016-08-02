@@ -199,4 +199,19 @@ Public Class PropertyTest
         Dim tester = New ObservablePropertyBindTester()
         tester.SelectAndSelectManyTest()
     End Sub
+
+    <Fact>
+    Public Sub ObservablePropertyBimapTest()
+        Dim source = ObservableProperty.Create(0)
+        Dim dependent = source.Bimap(Function(x) x.ToString(), Function(y) Int32.Parse(y))
+        Assert.Equal("0", dependent.Value)
+        ' dependent が変わるごとに、source も変わります。
+        dependent.Value = "1"
+        Assert.Equal("1", dependent.Value)
+        Assert.Equal(1, source.Value)
+        ' source が変わるごとに、dependent も変わります。
+        source.Value = 2
+        Assert.Equal(2, source.Value)
+        Assert.Equal("2", dependent.Value)
+    End Sub
 End Class
