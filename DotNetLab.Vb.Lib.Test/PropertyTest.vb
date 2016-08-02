@@ -77,4 +77,54 @@ Public Class PropertyTest
         Assert.Equal({"1", "2"}, tester.Values.ToArray())
         Assert.Equal("2", tester.Dependent.Value)
     End Sub
+
+    Public Class ObservablePropertyBindTester
+        Public ReadOnly Prefix As ObservableProperty(Of String)
+        Public ReadOnly Price As ObservableProperty(Of Double)
+        Public ReadOnly Display As ObservableProperty(Of String)
+
+        Public ReadOnly History As New List(Of Tuple(Of String, String))()
+
+        Public Sub OnPrefixChanged(sender As Object, e As ObservableProperty(Of String).ChangedEventArgs)
+            Me.History.Add(Tuple.Create("Prefix", e.NewValue))
+        End Sub
+
+        Public Sub OnPriceChanged(sender As Object, e As ObservableProperty(Of Double).ChangedEventArgs)
+            Me.History.Add(Tuple.Create("Price", e.NewValue.ToString()))
+        End Sub
+
+        Public Sub OnDisplayChanged(sender As Object, e As ObservableProperty(Of String).ChangedEventArgs)
+            Me.History.Add(Tuple.Create("Display", e.NewValue))
+        End Sub
+
+        Public Sub New()
+            Me.Prefix = [Property].MakeObservable("$")
+            Me.Price = [Property].MakeObservable(0.0)
+            Me.Display =
+                Me.Prefix.Bind(Function(prefix) _
+                Me.Price.Map(Function(value) _
+                    String.Format("{0}{1}", prefix, value)))
+
+            AddHandler Me.Prefix.Changed, AddressOf OnPrefixChanged
+            AddHandler Me.Price.Changed, AddressOf OnPriceChanged
+            AddHandler Me.Display.Changed, AddressOf OnDisplayChanged
+        End Sub
+    End Class
+
+    <Fact>
+    Public Sub ObservablePropertyBindTest()
+        Dim tester = New ObservablePropertyBindTester()
+        tester.Price.Value = 1.99
+        tester.Price.Value = 200
+        tester.Prefix.Value = "Y."
+        Assert.Equal(
+            {
+                Tuple.Create("Display", "$1.99"),
+                Tuple.Create("Price", "1.99"),
+                Tuple.Create("Display", "$200"),
+                Tuple.Create("Price", "200"),
+                Tuple.Create("Display", "Y.200"),
+                Tuple.Create("Prefix", "Y.")
+            }, tester.History.ToArray())
+    End Sub
 End Class

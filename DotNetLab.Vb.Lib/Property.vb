@@ -210,10 +210,66 @@ Namespace SheetObjectModel
         End Sub
     End Class
 
+    Public Class FlattenObservableProperty(Of X)
+        Inherits ObservableProperty(Of X)
+
+        Private ReadOnly _property As ObservableProperty(Of ObservableProperty(Of X))
+
+        Public Overrides ReadOnly Property CanRead As Boolean
+            Get
+                Return Me._property.Value.CanRead
+            End Get
+        End Property
+
+        Public Overrides ReadOnly Property CanWrite As Boolean
+            Get
+                Return Me._property.Value.CanWrite
+            End Get
+        End Property
+
+        Public Overrides Property Value As X
+            Get
+                Return Me._property.Value.Value
+            End Get
+            Set(value As X)
+                Me._property.Value.Value = value
+            End Set
+        End Property
+
+        Private Sub OnOuterValueChanged(sender As Object, e As ObservableProperty(Of ObservableProperty(Of X)).ChangedEventArgs)
+            If Not Equals(e.OldValue.Value, e.NewValue.Value) Then
+                RaiseChanged(Me, New ChangedEventArgs(Me, e.OldValue.Value, e.NewValue.Value))
+            End If
+
+            AddHandler Me._property.Value.Changed, AddressOf OnInnerValueChanged
+        End Sub
+
+        Private Sub OnInnerValueChanged(sender As Object, e As ObservableProperty(Of X).ChangedEventArgs)
+            RaiseChanged(Me, New ChangedEventArgs(Me, e.OldValue, e.NewValue))
+        End Sub
+
+        Public Sub New([property] As ObservableProperty(Of ObservableProperty(Of X)))
+            Me._property = [property]
+
+            AddHandler Me._property.Changed, AddressOf OnOuterValueChanged
+            AddHandler Me._property.Value.Changed, AddressOf OnInnerValueChanged
+        End Sub
+    End Class
+
     Public Module ObservablePropertyExtensions
         <Extension>
         Public Function Map(Of X, Y)(this As ObservableProperty(Of X), f As Func(Of X, Y)) As ObservableProperty(Of Y)
             Return New MapObservableProperty(Of X, Y)(this, f)
+        End Function
+
+        <Extension>
+        Public Function Flatten(Of X)(this As ObservableProperty(Of ObservableProperty(Of X))) As ObservableProperty(Of X)
+            Return New FlattenObservableProperty(Of X)(this)
+        End Function
+
+        <Extension>
+        Public Function Bind(Of X, Y)(this As ObservableProperty(Of X), f As Func(Of X, ObservableProperty(Of Y))) As ObservableProperty(Of Y)
+            Return this.Map(f).Flatten()
         End Function
     End Module
 
