@@ -71,7 +71,7 @@ Namespace SheetObjectModel
     End Module
 
     ''' <summary>
-    ''' CLIプロパティと等価なプロパティを表します。
+    ''' CLRプロパティと等価なプロパティを表します。
     ''' すなわち、値の取得と再設定がいずれも関数実行により実装されます。
     ''' </summary>
     ''' <typeparam name="X"></typeparam>
