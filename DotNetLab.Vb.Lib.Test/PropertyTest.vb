@@ -185,15 +185,17 @@ Public Class PropertyTest
     <Fact>
     Public Sub ObservablePropertyBimapTest()
         Dim source = ObservableProperty.Create(0)
+        Dim sourceHistory = source.History()
         Dim dependent = source.Bimap(Function(x) x.ToString(), Function(y) Int32.Parse(y))
+        Dim dependentHistory = dependent.History()
         Assert.Equal("0", dependent.Value)
         ' dependent が変わるごとに、source も変わります。
         dependent.Value = "1"
-        Assert.Equal("1", dependent.Value)
-        Assert.Equal(1, source.Value)
+        Assert.Equal("1", dependentHistory.Value.Last())
+        Assert.Equal(1, sourceHistory.Value.Last())
         ' source が変わるごとに、dependent も変わります。
         source.Value = 2
-        Assert.Equal(2, source.Value)
-        Assert.Equal("2", dependent.Value)
+        Assert.Equal(2, sourceHistory.Value.Last())
+        Assert.Equal("2", dependentHistory.Value.Last())
     End Sub
 End Class
