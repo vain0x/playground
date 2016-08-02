@@ -252,10 +252,16 @@ Public Class BimapObservableProperty(Of X, Y)
         End Set
     End Property
 
+    Private Sub OnSourceChanged(sender As Object, e As ObservableProperty(Of X).ChangedEventArgs)
+        Me.RaiseChanged(Me._convert(e.OldValue), Me._convert(e.NewValue))
+    End Sub
+
     Public Sub New(source As ObservableProperty(Of X), convert As Func(Of X, Y), invert As Func(Of Y, X))
         Me._source = source
         Me._convert = convert
         Me._invert = invert
+
+        AddHandler Me._source.Changed, AddressOf OnSourceChanged
     End Sub
 End Class
 
