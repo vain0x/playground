@@ -36,7 +36,7 @@ Public Class PropertyTest
         End Sub
 
         Public Sub New()
-            Me.Vop = [Property].MakeObservable(Of Integer)()
+            Me.Vop = ObservableProperty.Create(Of Integer)()
             AddHandler Me.Vop.Changed, AddressOf Me.AddOldValue
         End Sub
     End Class
@@ -65,10 +65,10 @@ Public Class PropertyTest
         Private _value As Integer
 
         Public Sub New()
-            Me.ReadWrite = [Property].MakeObservable(Of Integer)(
+            Me.ReadWrite = ObservableProperty.Create(Of Integer)(
                 Function() Me._value,
                 Sub(value) Me._value = value)
-            Me.[ReadOnly] = [Property].MakeObservableReadOnly(Of Integer)(Function() Me._value)
+            Me.[ReadOnly] = ObservableProperty.CreateReadOnly(Of Integer)(Function() Me._value)
 
             AddHandler Me.[ReadOnly].Changed, AddressOf AddOldValue
             AddHandler Me.ReadWrite.Changed, AddressOf AddOldValue
@@ -136,8 +136,8 @@ Public Class PropertyTest
         End Sub
 
         Public Sub New()
-            Me.Prefix = [Property].MakeObservable("$")
-            Me.Price = [Property].MakeObservable(0.0)
+            Me.Prefix = ObservableProperty.Create("$")
+            Me.Price = ObservableProperty.Create(0.0)
         End Sub
     End Class
 

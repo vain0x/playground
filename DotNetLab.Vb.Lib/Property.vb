@@ -324,20 +324,22 @@ Namespace SheetObjectModel
         Public Shared Function MakeConst(Of X)(value As X) As [Property](Of X)
             Return MakeVariable(value).ToReadOnly()
         End Function
+    End Class
 
-        Public Shared Function MakeObservable(Of X)() As ObservableProperty(Of X)
+    Public Class ObservableProperty
+        Public Shared Function Create(Of X)() As ObservableProperty(Of X)
             Return New VariableObservableProperty(Of X)()
         End Function
 
-        Public Shared Function MakeObservable(Of X)(value As X) As ObservableProperty(Of X)
+        Public Shared Function Create(Of X)(value As X) As ObservableProperty(Of X)
             Return New VariableObservableProperty(Of X)(value)
         End Function
 
-        Public Shared Function MakeObservableReadOnly(Of X)([get] As Func(Of X)) As ObservableProperty(Of X)
+        Public Shared Function CreateReadOnly(Of X)([get] As Func(Of X)) As ObservableProperty(Of X)
             Return New RelayObservableProperty(Of X)([get])
         End Function
 
-        Public Shared Function MakeObservable(Of X)([get] As Func(Of X), [set] As Action(Of X)) As ObservableProperty(Of X)
+        Public Shared Function Create(Of X)([get] As Func(Of X), [set] As Action(Of X)) As ObservableProperty(Of X)
             Debug.Assert([set] IsNot Nothing)
             Return New RelayObservableProperty(Of X)([get], [set])
         End Function
