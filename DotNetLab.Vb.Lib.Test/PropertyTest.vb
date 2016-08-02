@@ -2,31 +2,6 @@
 Imports Xunit
 
 Public Class PropertyTest
-    <Fact>
-    Public Sub VariablePropertyTest()
-        Dim var = [Property].MakeVariable(1)
-        Assert.True(var.CanRead)
-        Assert.Equal(1, var.Value)
-        Assert.True(var.CanWrite)
-        var.Value = 2
-        Assert.Equal(2, var.Value)
-    End Sub
-
-    <Fact>
-    Public Sub VariablePropertySyncTest()
-        Dim x = [Property].MakeVariable(1)
-        Dim y = x
-        x.Value = 2
-        Assert.Equal(x.Value, y.Value)
-    End Sub
-
-    <Fact>
-    Public Sub ToReadOnlyTest()
-        Dim x = [Property].MakeVariable(1).ToReadOnly()
-        Assert.False(x.CanWrite)
-        Assert.ThrowsAny(Of Exception)(Sub() x.Value = 2)
-    End Sub
-
     Public Class VariableObservablePropertyTester
         Public ReadOnly Vop As ObservableProperty(Of Integer)
         Public ReadOnly OldValues As New List(Of Integer)()

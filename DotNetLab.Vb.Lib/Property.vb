@@ -2,11 +2,10 @@
 
 Namespace SheetObjectModel
     ''' <summary>
-    ''' プロパティを表します。
+    ''' 値の再設定をイベントとして通知するプロパティを表します。
+    ''' TODO: IObservable(Of X) を実装する。
     ''' </summary>
-    Public MustInherit Class [Property](Of X)
-        Public MustOverride Property Value As X
-
+    Partial Public MustInherit Class ObservableProperty(Of X)
         Public Overridable ReadOnly Property CanRead As Boolean
             Get
                 Return True
@@ -19,100 +18,7 @@ Namespace SheetObjectModel
             End Get
         End Property
 
-        Public Overrides Function ToString() As String
-            Return Me.Value.ToString()
-        End Function
-    End Class
-
-    ''' <summary>
-    ''' 変数と等価なプロパティを表します。
-    ''' すなわち、値の取得と再設定は単に変数の値を取得、再設定するだけです。
-    ''' </summary>
-    Public Class VariableProperty(Of X)
-        Inherits [Property](Of X)
-
-        Public Overrides Property Value As X
-    End Class
-
-    Public Class ReadOnlyProperty(Of X)
-        Inherits [Property](Of X)
-
-        Private _property As [Property](Of X)
-
-        Public Overrides ReadOnly Property CanWrite As Boolean
-            Get
-                Return False
-            End Get
-        End Property
-
-        Public Overrides Property Value As X
-            Get
-                Return Me._property.Value
-            End Get
-            Set(value As X)
-                Throw New NotSupportedException()
-            End Set
-        End Property
-
-        Public Sub New([property] As [Property](Of X))
-            Me._property = [property]
-        End Sub
-
-        Public Sub New(value As X)
-            Me.New(New VariableProperty(Of X)() With {.Value = value})
-        End Sub
-    End Class
-
-    Public Module PropertyExtensions
-        <Extension>
-        Public Function ToReadOnly(Of X)(this As [Property](Of X)) As [Property](Of X)
-            Return New ReadOnlyProperty(Of X)(this)
-        End Function
-    End Module
-
-    ''' <summary>
-    ''' CLRプロパティと等価なプロパティを表します。
-    ''' すなわち、値の取得と再設定がいずれも関数実行により実装されます。
-    ''' </summary>
-    Public Class RelayProperty(Of X)
-        Inherits [Property](Of X)
-
-        Private ReadOnly _get As Func(Of X)
-        Private ReadOnly _set As Action(Of X)
-
-        Public Overrides ReadOnly Property CanRead As Boolean
-            Get
-                Return Me._get IsNot Nothing
-            End Get
-        End Property
-
-        Public Overrides ReadOnly Property CanWrite As Boolean
-            Get
-                Return Me._set IsNot Nothing
-            End Get
-        End Property
-
-        Public Overrides Property Value As X
-            Get
-                Return Me._get()
-            End Get
-            Set(value As X)
-                Me._set(value)
-            End Set
-        End Property
-
-        Public Sub New([get] As Func(Of X), [set] As Action(Of X))
-            Me._get = [get]
-            Me._set = [set]
-        End Sub
-    End Class
-
-    ''' <summary>
-    ''' 値の再設定をイベントとして通知するプロパティを表します。
-    ''' TODO: IObservable(Of X) を実装する。
-    ''' </summary>
-    Partial Public MustInherit Class ObservableProperty(Of X)
-        Inherits [Property](Of X)
+        Public MustOverride Property Value As X
 
         Public Class ChangedEventArgs
             Public ReadOnly [Property] As ObservableProperty(Of X)
@@ -404,16 +310,6 @@ Namespace SheetObjectModel
 
         Public Function SelectMany(Of Y, Z)(f As Func(Of X, ObservableProperty(Of Y)), run As Func(Of X, Y, Z)) As ObservableProperty(Of Z)
             Return Me.Bind(Function(valueX) f(valueX).Map(Function(valueY) run(valueX, valueY)))
-        End Function
-    End Class
-
-    Public Class [Property]
-        Public Shared Function MakeVariable(Of X)(value As X) As VariableProperty(Of X)
-            Return New VariableProperty(Of X)() With {.Value = value}
-        End Function
-
-        Public Shared Function MakeConst(Of X)(value As X) As [Property](Of X)
-            Return MakeVariable(value).ToReadOnly()
         End Function
     End Class
 

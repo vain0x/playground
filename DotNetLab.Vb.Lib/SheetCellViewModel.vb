@@ -7,7 +7,7 @@ Namespace SheetObjectModel
     Public Class SheetCellViewModel(Of TValue)
         Inherits SheetElementViewModel
 
-        Private ReadOnly _property As [Property](Of TValue)
+        Private ReadOnly _property As ObservableProperty(Of TValue)
         Private ReadOnly _cellTypeOrNull As CellType
 
         Public NotOverridable Overrides ReadOnly Iterator Property Children As IEnumerable(Of SheetElementViewModel)
@@ -48,9 +48,9 @@ Namespace SheetObjectModel
             End If
         End Sub
 
-        Public Sub New([property] As [Property](Of TValue), parent As SheetElementViewModel, location As Point, size As Size?, valueConverter As ValueConverter, cellType As CellType)
+        Public Sub New(ObservableProperty As ObservableProperty(Of TValue), parent As SheetElementViewModel, location As Point, size As Size?, valueConverter As ValueConverter, cellType As CellType)
             MyBase.New(parent, location)
-            Me._property = [property]
+            Me._property = ObservableProperty
             Me._size = If(size, New Size(1, 1))
             Me._valueConverter = If(valueConverter, IdentityConverter.Instance)
             Me._cellTypeOrNull = cellType
@@ -76,14 +76,14 @@ Namespace SheetObjectModel
 
     Public Class SheetCellViewModel
         Public Shared Function Create(Of X)(
-            [property] As [Property](Of X),
+            ObservableProperty As ObservableProperty(Of X),
             parent As SheetElementViewModel,
             location As Point,
             Optional size As Size? = Nothing,
             Optional valueConverter As ValueConverter = Nothing,
             Optional cellType As CellType = Nothing
             ) As SheetCellViewModel(Of X)
-            Return New SheetCellViewModel(Of X)([property], parent, location, size, valueConverter, cellType)
+            Return New SheetCellViewModel(Of X)(ObservableProperty, parent, location, size, valueConverter, cellType)
         End Function
     End Class
 End Namespace
