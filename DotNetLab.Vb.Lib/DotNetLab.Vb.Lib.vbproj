@@ -87,7 +87,7 @@
       <DesignTimeSharedInput>True</DesignTimeSharedInput>
     </Compile>
     <Compile Include="Option.vb" />
-    <Compile Include="Property.vb" />
+    <Compile Include="ObservableProperty.vb" />
     <Compile Include="SheetCellViewModel.vb" />
     <Compile Include="SheetElementViewModel.vb" />
     <Compile Include="SheetViewModelBase.vb" />
