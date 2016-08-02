@@ -128,6 +128,11 @@ Namespace SheetObjectModel
 
         Public Event Changed As EventHandler(Of ChangedEventArgs)
 
+        Protected Sub ForceRaiseChanged()
+            Dim value = Me.Value
+            RaiseEvent Changed(Me, New ChangedEventArgs(Me, Value, Value))
+        End Sub
+
         Protected Sub RaiseChanged(oldValue As X, newValue As X)
             If Equals(oldValue, newValue) Then Return
             RaiseEvent Changed(Me, New ChangedEventArgs(Me, oldValue, newValue))
@@ -196,6 +201,45 @@ Namespace SheetObjectModel
 
         Public Sub New([get] As Func(Of X))
             Me.New([get], Nothing)
+        End Sub
+    End Class
+
+    Public Class HistoryObservableProperty(Of X)
+        Inherits ObservableProperty(Of IList(Of X))
+
+        Private ReadOnly _source As ObservableProperty(Of X)
+        Private ReadOnly _hisotry As New List(Of X)()
+
+        Public Overrides ReadOnly Property CanRead As Boolean
+            Get
+                Return Me._source.CanRead
+            End Get
+        End Property
+
+        Public Overrides ReadOnly Property CanWrite As Boolean
+            Get
+                Return Me._source.CanWrite
+            End Get
+        End Property
+
+        Public Overrides Property Value As IList(Of X)
+            Get
+                Return Me._hisotry
+            End Get
+            Set(value As IList(Of X))
+                Throw New NotSupportedException()
+            End Set
+        End Property
+
+        Private Sub OnSourceChanged(sender As Object, e As ObservableProperty(Of X).ChangedEventArgs)
+            Me._hisotry.Add(e.NewValue)
+            ForceRaiseChanged()
+        End Sub
+
+        Public Sub New([property] As ObservableProperty(Of X))
+            Me._source = [property]
+            Me._hisotry.Add(Me._source.Value)
+            AddHandler Me._source.Changed, AddressOf Me.OnSourceChanged
         End Sub
     End Class
 
@@ -286,6 +330,11 @@ Namespace SheetObjectModel
     End Class
 
     Public Module ObservablePropertyExtensions
+        <Extension>
+        Public Function History(Of X)(this As ObservableProperty(Of X)) As ObservableProperty(Of IList(Of X))
+            Return New HistoryObservableProperty(Of X)(this)
+        End Function
+
         <Extension>
         Public Function Map(Of X, Y)(this As ObservableProperty(Of X), f As Func(Of X, Y)) As ObservableProperty(Of Y)
             Return New MapObservableProperty(Of X, Y)(this, f)

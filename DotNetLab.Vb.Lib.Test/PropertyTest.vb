@@ -85,6 +85,15 @@ Public Class PropertyTest
         Assert.Equal({0, 1}, tester.OldValues.ToArray())
     End Sub
 
+    <Fact>
+    Public Sub ObservablePropertyHistoryTest()
+        Dim x = ObservableProperty.Create(0)
+        Dim history = x.History()
+        x.Value = 1
+        x.Value = 2
+        Assert.Equal({0, 1, 2}, history.Value.ToArray())
+    End Sub
+
     Public Class ObservablePropertyMapTester
         Public ReadOnly Source As New VariableObservableProperty(Of Integer)(0)
         Public ReadOnly Dependent As ObservableProperty(Of String)
