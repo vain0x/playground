@@ -48,6 +48,8 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="AssemblyInfo.fs" />
+    <Compile Include="Util.fs" />
+    <Compile Include="Types.fs" />
     <Compile Include="Program.fs" />
   </ItemGroup>
   <PropertyGroup>
