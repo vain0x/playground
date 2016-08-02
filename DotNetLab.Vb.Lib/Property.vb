@@ -113,7 +113,7 @@ Namespace SheetObjectModel
     ''' 値の再設定をイベントとして通知するプロパティを表します。
     ''' TODO: IObservable(Of X) を実装する。
     ''' </summary>
-    Public MustInherit Class ObservableProperty(Of X)
+    Partial Public MustInherit Class ObservableProperty(Of X)
         Inherits [Property](Of X)
 
         Public Class ChangedEventArgs
@@ -272,6 +272,20 @@ Namespace SheetObjectModel
             Return this.Map(f).Flatten()
         End Function
     End Module
+
+    Partial Class ObservableProperty(Of X)
+        Public Function [Select](Of Y)(f As Func(Of X, Y)) As ObservableProperty(Of Y)
+            Return Me.Map(f)
+        End Function
+
+        Public Function SelectMany(Of Y)(f As Func(Of X, ObservableProperty(Of Y))) As ObservableProperty(Of Y)
+            Return Me.Bind(f)
+        End Function
+
+        Public Function SelectMany(Of Y, Z)(f As Func(Of X, ObservableProperty(Of Y)), run As Func(Of X, Y, Z)) As ObservableProperty(Of Z)
+            Return Me.Bind(Function(valueX) f(valueX).Map(Function(valueY) run(valueX, valueY)))
+        End Function
+    End Class
 
     Public Class [Property]
         Public Shared Function MakeVariable(Of X)(value As X) As VariableProperty(Of X)
