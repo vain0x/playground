@@ -101,6 +101,23 @@ Public Class PropertyTest
         Assert.Equal("2", tester.Dependent.Value)
     End Sub
 
+    <Fact>
+    Public Sub ObservablePropertyBimapTest()
+        Dim source = ObservableProperty.Create(0)
+        Dim sourceHistory = source.History()
+        Dim dependent = source.Bimap(Function(x) x.ToString(), Function(y) Int32.Parse(y))
+        Dim dependentHistory = dependent.History()
+        Assert.Equal("0", dependent.Value)
+        ' dependent が変わるごとに、source も変わります。
+        dependent.Value = "1"
+        Assert.Equal("1", dependentHistory.Value.Last())
+        Assert.Equal(1, sourceHistory.Value.Last())
+        ' source が変わるごとに、dependent も変わります。
+        source.Value = 2
+        Assert.Equal(2, sourceHistory.Value.Last())
+        Assert.Equal("2", dependentHistory.Value.Last())
+    End Sub
+
     Public Class PriceDisplay
         Public Prefix As ObservableProperty(Of String)
         Public Price As ObservableProperty(Of Double)
@@ -180,22 +197,5 @@ Public Class PropertyTest
     Public Sub ObservablePropertyLinqTest()
         Dim tester = New ObservablePropertyBindTester()
         tester.SelectAndSelectManyTest()
-    End Sub
-
-    <Fact>
-    Public Sub ObservablePropertyBimapTest()
-        Dim source = ObservableProperty.Create(0)
-        Dim sourceHistory = source.History()
-        Dim dependent = source.Bimap(Function(x) x.ToString(), Function(y) Int32.Parse(y))
-        Dim dependentHistory = dependent.History()
-        Assert.Equal("0", dependent.Value)
-        ' dependent が変わるごとに、source も変わります。
-        dependent.Value = "1"
-        Assert.Equal("1", dependentHistory.Value.Last())
-        Assert.Equal(1, sourceHistory.Value.Last())
-        ' source が変わるごとに、dependent も変わります。
-        source.Value = 2
-        Assert.Equal(2, sourceHistory.Value.Last())
-        Assert.Equal("2", dependentHistory.Value.Last())
     End Sub
 End Class
