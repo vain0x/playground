@@ -110,6 +110,37 @@ Namespace SheetObjectModel
         End Sub
     End Class
 
+    Public Class ReadOnlyObservableProperty(Of X)
+        Inherits ObservableProperty(Of X)
+
+        Private ReadOnly _property As ObservableProperty(Of X)
+
+        Public Overrides ReadOnly Property CanRead As Boolean
+            Get
+                Return Me._property.CanRead
+            End Get
+        End Property
+
+        Public Overrides ReadOnly Property CanWrite As Boolean
+            Get
+                Return False
+            End Get
+        End Property
+
+        Public Overrides Property Value As X
+            Get
+                Return Me._property.Value
+            End Get
+            Set(value As X)
+                Throw New NotSupportedException()
+            End Set
+        End Property
+
+        Public Sub New([property] As ObservableProperty(Of X))
+            Me._property = [property]
+        End Sub
+    End Class
+
     Public Class HistoryObservableProperty(Of X)
         Inherits ObservableProperty(Of IList(Of X))
 
@@ -274,6 +305,11 @@ Namespace SheetObjectModel
 
     Public Module ObservablePropertyExtensions
         <Extension>
+        Public Function MakeReadOnly(Of X)(this As ObservableProperty(Of X)) As ObservableProperty(Of X)
+            Return New ReadOnlyObservableProperty(Of X)(this)
+        End Function
+
+        <Extension>
         Public Function History(Of X)(this As ObservableProperty(Of X)) As ObservableProperty(Of IList(Of X))
             Return New HistoryObservableProperty(Of X)(this)
         End Function
@@ -320,6 +356,10 @@ Namespace SheetObjectModel
 
         Public Shared Function Create(Of X)(value As X) As ObservableProperty(Of X)
             Return New VariableObservableProperty(Of X)(value)
+        End Function
+
+        Public Shared Function CreateConst(Of X)(value As X) As ObservableProperty(Of X)
+            Return Create(value).MakeReadOnly()
         End Function
 
         Public Shared Function CreateReadOnly(Of X)([get] As Func(Of X)) As ObservableProperty(Of X)

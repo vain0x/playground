@@ -61,6 +61,13 @@ Public Class PropertyTest
     End Sub
 
     <Fact>
+    Public Sub ObservablePropertyMakeReadOnlyTest()
+        Dim x = ObservableProperty.Create(Of Integer)(0).MakeReadOnly()
+        Assert.Equal(0, x.Value)
+        Assert.ThrowsAny(Of Exception)(Sub() x.Value = 0)
+    End Sub
+
+    <Fact>
     Public Sub ObservablePropertyHistoryTest()
         Dim x = ObservableProperty.Create(0)
         Dim history = x.History()
