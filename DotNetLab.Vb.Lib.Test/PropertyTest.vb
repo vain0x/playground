@@ -76,29 +76,17 @@ Public Class PropertyTest
         Assert.Equal({0, 1, 2}, history.Value.ToArray())
     End Sub
 
-    Public Class ObservablePropertyMapTester
-        Public ReadOnly Source As New VariableObservableProperty(Of Integer)(0)
-        Public ReadOnly Dependent As ObservableProperty(Of String)
-        Public ReadOnly Values As New List(Of String)()
-
-        Private Sub OnValueChanged(sender As Object, e As ObservableProperty(Of String).ChangedEventArgs)
-            Me.Values.Add(e.NewValue)
-        End Sub
-
-        Public Sub New()
-            Me.Dependent = Me.Source.Map(Function(x) (x \ 2).ToString())
-            AddHandler Me.Dependent.Changed, AddressOf OnValueChanged
-        End Sub
-    End Class
-
     <Fact>
     Public Sub ObservablePropertyMapTest()
-        Dim tester = New ObservablePropertyMapTester()
+        Dim source = ObservableProperty.Create(0)
+        Dim dependent = source.Map(Function(valueX) (valueX \ 2).ToString())
+        Dim dependentHistory = dependent.History()
         For i = 0 To 4
-            tester.Source.Value = i
+            source.Value = i
         Next
-        Assert.Equal({"1", "2"}, tester.Values.ToArray())
-        Assert.Equal("2", tester.Dependent.Value)
+        Assert.Equal({"0", "1", "2"}, dependentHistory.Value.ToArray())
+        Assert.Equal("2", dependent.Value)
+        Assert.ThrowsAny(Of Exception)(Sub() dependent.Value = "1")
     End Sub
 
     <Fact>
