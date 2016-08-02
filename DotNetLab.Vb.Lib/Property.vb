@@ -131,6 +131,7 @@ Namespace SheetObjectModel
         Public Event Changed As EventHandler(Of ChangedEventArgs)
 
         Protected Sub RaiseChanged(sender As Object, e As ChangedEventArgs)
+            If Equals(e.OldValue, e.NewValue) Then Return
             RaiseEvent Changed(sender, e)
         End Sub
     End Class
@@ -150,7 +151,6 @@ Namespace SheetObjectModel
             End Get
             Set(value As X)
                 Dim oldValue = Me._value
-                If Equals(oldValue, value) Then Return
                 Me._value = value
                 RaiseChanged(Me, New ChangedEventArgs(Me, oldValue, value))
             End Set
@@ -237,10 +237,7 @@ Namespace SheetObjectModel
         End Property
 
         Private Sub OnOuterValueChanged(sender As Object, e As ObservableProperty(Of ObservableProperty(Of X)).ChangedEventArgs)
-            If Not Equals(e.OldValue.Value, e.NewValue.Value) Then
-                RaiseChanged(Me, New ChangedEventArgs(Me, e.OldValue.Value, e.NewValue.Value))
-            End If
-
+            RaiseChanged(Me, New ChangedEventArgs(Me, e.OldValue.Value, e.NewValue.Value))
             AddHandler Me._property.Value.Changed, AddressOf OnInnerValueChanged
         End Sub
 
