@@ -292,7 +292,7 @@ Namespace SheetObjectModel
             Return New VariableProperty(Of X)() With {.Value = value}
         End Function
 
-        Public Shared Function MakeReadOnly(Of X)(value As X) As [Property](Of X)
+        Public Shared Function MakeConst(Of X)(value As X) As [Property](Of X)
             Return MakeVariable(value).ToReadOnly()
         End Function
 
