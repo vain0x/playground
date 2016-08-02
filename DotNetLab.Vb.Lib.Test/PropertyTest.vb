@@ -53,6 +53,38 @@ Public Class PropertyTest
         Assert.Equal(3, tester.Vop.Value)
     End Sub
 
+    Public Class RelayObservablePropertyTester
+        Public ReadOnly ReadWrite As ObservableProperty(Of Integer)
+        Public ReadOnly [ReadOnly] As ObservableProperty(Of Integer)
+        Public ReadOnly OldValues As New List(Of Integer)()
+
+        Private Sub AddOldValue(sender As Object, e As ObservableProperty(Of Integer).ChangedEventArgs)
+            Me.OldValues.Add(e.OldValue)
+        End Sub
+
+        Private _value As Integer
+
+        Public Sub New()
+            Me.ReadWrite = [Property].MakeObservable(Of Integer)(
+                Function() Me._value,
+                Sub(value) Me._value = value)
+            Me.[ReadOnly] = [Property].MakeObservableReadOnly(Of Integer)(Function() Me._value)
+
+            AddHandler Me.[ReadOnly].Changed, AddressOf AddOldValue
+            AddHandler Me.ReadWrite.Changed, AddressOf AddOldValue
+        End Sub
+    End Class
+
+    <Fact>
+    Public Sub RelayObservablePropertyTest()
+        Dim tester = New RelayObservablePropertyTester()
+        For i = 1 To 2
+            Assert.Equal(tester.ReadOnly.Value, tester.ReadWrite.Value)
+            tester.ReadWrite.Value = i
+        Next
+        Assert.Equal({0, 1}, tester.OldValues.ToArray())
+    End Sub
+
     Public Class ObservablePropertyMapTester
         Public ReadOnly Source As New VariableObservableProperty(Of Integer)(0)
         Public ReadOnly Dependent As ObservableProperty(Of String)

@@ -74,8 +74,6 @@ Namespace SheetObjectModel
     ''' CLRプロパティと等価なプロパティを表します。
     ''' すなわち、値の取得と再設定がいずれも関数実行により実装されます。
     ''' </summary>
-    ''' <typeparam name="X"></typeparam>
-    ''' <remarks></remarks>
     Public Class RelayProperty(Of X)
         Inherits [Property](Of X)
 
@@ -139,7 +137,6 @@ Namespace SheetObjectModel
     ''' <summary>
     ''' 代入操作によってのみ値が変化する観測可能プロパティを表します。
     ''' </summary>
-    ''' <typeparam name="X"></typeparam>
     Public Class VariableObservableProperty(Of X)
         Inherits ObservableProperty(Of X)
 
@@ -166,10 +163,45 @@ Namespace SheetObjectModel
     End Class
 
     ''' <summary>
+    ''' CLRプロパティと等価な観測可能プロパティを表します。
+    ''' </summary>
+    Public Class RelayObservableProperty(Of X)
+        Inherits ObservableProperty(Of X)
+
+        Private ReadOnly _get As Func(Of X)
+        Private ReadOnly _setOrNull As Action(Of X)
+
+        Public Overrides ReadOnly Property CanWrite As Boolean
+            Get
+                Return _setOrNull IsNot Nothing
+            End Get
+        End Property
+
+        Public Overrides Property Value As X
+            Get
+                Return Me._get()
+            End Get
+            Set(value As X)
+                Dim oldValue = Me.Value
+                Me._setOrNull(value)
+                Me.RaiseChanged(oldValue, Me.Value)
+            End Set
+        End Property
+
+        Public Sub New([get] As Func(Of X), setOrNull As Action(Of X))
+            Debug.Assert([get] IsNot Nothing)
+            Me._get = [get]
+            Me._setOrNull = setOrNull
+        End Sub
+
+        Public Sub New([get] As Func(Of X))
+            Me.New([get], Nothing)
+        End Sub
+    End Class
+
+    ''' <summary>
     ''' 値として関数の結果を返す観測可能プロパティを表します。
     ''' </summary>
-    ''' <typeparam name="X"></typeparam>
-    ''' <typeparam name="Y"></typeparam>
     Public Class MapObservableProperty(Of X, Y)
         Inherits ObservableProperty(Of Y)
 
@@ -299,6 +331,15 @@ Namespace SheetObjectModel
 
         Public Shared Function MakeObservable(Of X)(value As X) As ObservableProperty(Of X)
             Return New VariableObservableProperty(Of X)(value)
+        End Function
+
+        Public Shared Function MakeObservableReadOnly(Of X)([get] As Func(Of X)) As ObservableProperty(Of X)
+            Return New RelayObservableProperty(Of X)([get])
+        End Function
+
+        Public Shared Function MakeObservable(Of X)([get] As Func(Of X), [set] As Action(Of X)) As ObservableProperty(Of X)
+            Debug.Assert([set] IsNot Nothing)
+            Return New RelayObservableProperty(Of X)([get], [set])
         End Function
     End Class
 End Namespace
