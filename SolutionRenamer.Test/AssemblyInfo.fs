@@ -1,4 +1,4 @@
-﻿namespace DotNetLab.Fs.Console.Test.AssemblyInfo
+﻿namespace SolutionRenamer.Test.AssemblyInfo
 
 open System.Reflection
 open System.Runtime.CompilerServices
@@ -7,11 +7,11 @@ open System.Runtime.InteropServices
 // アセンブリに関する一般情報は、以下の属性セットによって
 // 制御されます。アセンブリに関連付けられている情報を変更するには、
 // これらの属性値を変更します。
-[<assembly: AssemblyTitle("DotNetLab.Fs.Console.Test")>]
+[<assembly: AssemblyTitle("SolutionRenamer.Test")>]
 [<assembly: AssemblyDescription("")>]
 [<assembly: AssemblyConfiguration("")>]
 [<assembly: AssemblyCompany("")>]
-[<assembly: AssemblyProduct("DotNetLab.Fs.Console.Test")>]
+[<assembly: AssemblyProduct("SolutionRenamer.Test")>]
 [<assembly: AssemblyCopyright("Copyright ©  2016")>]
 [<assembly: AssemblyTrademark("")>]
 [<assembly: AssemblyCulture("")>]
@@ -22,7 +22,7 @@ open System.Runtime.InteropServices
 [<assembly: ComVisible(false)>]
 
 // このプロジェクトが COM に公開される場合、次の GUID がタイプ ライブラリの ID になります
-[<assembly: Guid("e98a8375-0444-4893-beeb-26257ff9a661")>]
+[<assembly: Guid("48B33772-17BB-41F1-85D2-92567B7980BB")>]
 
 // アセンブリのバージョン情報は、以下の 4 つの値で構成されます。:
 // 
