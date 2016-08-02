@@ -25,34 +25,30 @@ module Model =
   let replace (state: RenamerState) text =
     text |> String.replaceBy state.Map
 
-  let rec copyTo state (destination: DirectoryInfo) (source: DirectoryInfo) =
+  let rec walk state (source: DirectoryInfo) =
     // Copy subfiles, replacing their name and content.
     for subfile in source.GetFiles() do
       if state.IgnoreList |> Set.contains subfile.Name |> not then
         let newFileName = subfile.Name |> replace state
-        let newFilePath =  Path.Combine(destination.FullName, newFileName)
-        let newFile = subfile.CopyTo(newFilePath)
         // Replace content.
-        if extensions |> Set.contains newFile.Extension then
-          newFile.FullName |> File.mapAsString (replace state)
+        if extensions |> Set.contains subfile.Extension then
+          subfile.FullName |> File.mapAsString (replace state)
+        // Replace name.
+        if subfile.Name <> newFileName then
+          subfile.MoveTo(Path.Combine(source.FullName, newFileName))
 
     // Copy subdirectories, replacing their name.
     for subdir in source.GetDirectories() do
       if state.IgnoreList |> Set.contains subdir.Name |> not then
         let newDirectoryName = subdir.Name |> replace state
-        let newDirectoryPath = Path.Combine(destination.FullName, newDirectoryName)
-        let newDirectory = Directory.CreateDirectory(newDirectoryPath)
-        subdir |> copyTo state newDirectory
+        // Do recursively.
+        subdir |> walk state
+        // Replace name.
+        if subdir.Name <> newDirectoryName then
+          subdir.MoveTo(Path.Combine(source.FullName, newDirectoryName))
 
   let rename state (directory: DirectoryInfo) =
-    let temporaryDirectory =
-      DirectoryInfo(Path.Combine(directory.Root.FullName, directory.Name |> replace state))
-    try
-      temporaryDirectory.Create()
-      directory |> copyTo state temporaryDirectory
-      temporaryDirectory.FullName |> Directory.swap directory.FullName
-    finally
-      temporaryDirectory |> DirectoryInfo.deleteIfExists
+    directory |> walk state
 
 module Program =
   open System
@@ -91,6 +87,15 @@ module Program =
           SourceProjectName             = sourceProjectName
           SolutionDirectory             = DirectoryInfo(path)
         }
+#if DEBUG
+    | [] ->
+      run
+        {
+          SourceSolutionName            = "dot_net_lab"
+          SourceProjectName             = "DotNetLab.Cs.Lib"
+          SolutionDirectory             = DirectoryInfo(".")
+        }
+#endif
     | _ ->
       printfn "SolutionRenamer.exe solution_directory"
 
