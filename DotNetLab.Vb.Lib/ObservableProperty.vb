@@ -19,6 +19,11 @@ Partial Public MustInherit Class ObservableProperty(Of X)
 
     Public MustOverride Property Value As X
 
+    Public Overrides Function ToString() As String
+        Dim value = Me.Value
+        Return If(value Is Nothing, String.Empty, value.ToString())
+    End Function
+
     Public Class ChangedEventArgs
         Public ReadOnly [Property] As ObservableProperty(Of X)
         Public ReadOnly OldValue As X
