@@ -1,7 +1,7 @@
 ﻿Imports DotNetLab.Vb.Lib.SheetObjectModel
 Imports Xunit
 
-Public Class PropertyTest
+Public Class ObservablePropertyTest
     <Fact>
     Public Sub VariableObservablePropertyTest()
         Dim vop = ObservableProperty.Create(Of Integer)()
