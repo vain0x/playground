@@ -41,6 +41,7 @@ Partial Public MustInherit Class ObservableProperty(Of X)
     End Sub
 
     Public Sub Subscribe(f As Action(Of ObservableProperty(Of X), X))
+        f(Me, Me.Value)
         AddHandler Me.Changed, Sub(sender, e) f(e.Property, e.NewValue)
     End Sub
 End Class

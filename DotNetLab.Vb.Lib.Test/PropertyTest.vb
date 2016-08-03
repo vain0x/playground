@@ -20,7 +20,7 @@ Public Class PropertyTest
         For i = 1 To 3
             tester.Vop.Value = i
         Next
-        Assert.Equal({1, 2, 3}, tester.OldValues.ToArray())
+        Assert.Equal({0, 1, 2, 3}, tester.OldValues.ToArray())
         Assert.Equal(3, tester.Vop.Value)
     End Sub
 
@@ -53,7 +53,7 @@ Public Class PropertyTest
             Assert.Equal(tester.ReadOnly.Value, tester.ReadWrite.Value)
             tester.ReadWrite.Value = i
         Next
-        Assert.Equal({1, 2}, tester.OldValues.ToArray())
+        Assert.Equal({0, 0, 1, 2}, tester.OldValues.ToArray())
     End Sub
 
     <Fact>
@@ -69,7 +69,7 @@ Public Class PropertyTest
         Dim history = x.History()
         x.Value = 1
         x.Value = 2
-        Assert.Equal({0, 1, 2}, history.Value.ToArray())
+        Assert.Equal({0, 0, 1, 2}, history.Value.ToArray())
     End Sub
 
     <Fact>
@@ -80,7 +80,7 @@ Public Class PropertyTest
         For i = 0 To 4
             source.Value = i
         Next
-        Assert.Equal({"0", "0", "0", "1", "1", "2"}, dependentHistory.Value.ToArray())
+        Assert.Equal({"0", "0", "0", "0", "1", "1", "2"}, dependentHistory.Value.ToArray())
         Assert.Equal("2", dependent.Value)
         Assert.ThrowsAny(Of Exception)(Sub() dependent.Value = "1")
     End Sub
@@ -130,13 +130,18 @@ Public Class PropertyTest
             Me.Price.Value = 1.99
             Me.Price.Value = 200
             Me.Prefix.Value = "Y."
-
             Assert.Equal(
                 {
+                    Tuple.Create("Prefix", "$"),
+                    Tuple.Create("Price", "0"),
+                    Tuple.Create("Display", "$0"),
+                    Tuple.Create("Display", "$1.99"),
                     Tuple.Create("Display", "$1.99"),
                     Tuple.Create("Price", "1.99"),
                     Tuple.Create("Display", "$200"),
+                    Tuple.Create("Display", "$200"),
                     Tuple.Create("Price", "200"),
+                    Tuple.Create("Display", "Y.200"),
                     Tuple.Create("Display", "Y.200"),
                     Tuple.Create("Prefix", "Y.")
                 }, Me.History.ToArray())
