@@ -36,11 +36,6 @@ Partial Public MustInherit Class ObservableProperty(Of X)
 
     Public Event Changed As EventHandler(Of ChangedEventArgs)
 
-    Protected Sub ForceRaiseChanged()
-        Dim value = Me.Value
-        RaiseEvent Changed(Me, New ChangedEventArgs(Me, value))
-    End Sub
-
     Protected Sub RaiseChanged(newValue As X)
         RaiseEvent Changed(Me, New ChangedEventArgs(Me, newValue))
     End Sub
@@ -173,7 +168,7 @@ Public Class HistoryObservableProperty(Of X)
 
     Private Sub OnSourceChanged(sender As Object, e As ObservableProperty(Of X).ChangedEventArgs)
         Me._hisotry.Add(e.NewValue)
-        ForceRaiseChanged()
+        RaiseChanged(Me.Value)
     End Sub
 
     Public Sub New([property] As ObservableProperty(Of X))
