@@ -154,7 +154,7 @@ Public Class HistoryObservableProperty(Of X)
 
     Public Overrides ReadOnly Property CanWrite As Boolean
         Get
-            Return Me._source.CanWrite
+            Return False
         End Get
     End Property
 
@@ -169,7 +169,6 @@ Public Class HistoryObservableProperty(Of X)
 
     Public Sub New([property] As ObservableProperty(Of X))
         Me._source = [property]
-        Me._hisotry.Add(Me._source.Value)
         Me._source.Subscribe(
             Sub(sender, value)
                 Me._hisotry.Add(value)
