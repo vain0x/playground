@@ -26,12 +26,10 @@ Partial Public MustInherit Class ObservableProperty(Of X)
 
     Public Class ChangedEventArgs
         Public ReadOnly [Property] As ObservableProperty(Of X)
-        Public ReadOnly OldValue As X
         Public ReadOnly NewValue As X
 
-        Public Sub New([property] As ObservableProperty(Of X), oldValue As X, newValue As X)
+        Public Sub New([property] As ObservableProperty(Of X), newValue As X)
             Me.Property = [property]
-            Me.OldValue = oldValue
             Me.NewValue = newValue
         End Sub
     End Class
@@ -40,11 +38,11 @@ Partial Public MustInherit Class ObservableProperty(Of X)
 
     Protected Sub ForceRaiseChanged()
         Dim value = Me.Value
-        RaiseEvent Changed(Me, New ChangedEventArgs(Me, value, value))
+        RaiseEvent Changed(Me, New ChangedEventArgs(Me, value))
     End Sub
 
-    Protected Sub RaiseChanged(oldValue As X, newValue As X)
-        RaiseEvent Changed(Me, New ChangedEventArgs(Me, oldValue, newValue))
+    Protected Sub RaiseChanged(newValue As X)
+        RaiseEvent Changed(Me, New ChangedEventArgs(Me, newValue))
     End Sub
 End Class
 
@@ -61,9 +59,8 @@ Public Class VariableObservableProperty(Of X)
             Return Me._value
         End Get
         Set(value As X)
-            Dim oldValue = Me._value
             Me._value = value
-            RaiseChanged(oldValue, value)
+            RaiseChanged(value)
         End Set
     End Property
 
@@ -96,9 +93,8 @@ Public Class RelayObservableProperty(Of X)
             Return Me._get()
         End Get
         Set(value As X)
-            Dim oldValue = Me.Value
             Me._setOrNull(value)
-            Me.RaiseChanged(oldValue, Me.Value)
+            Me.RaiseChanged(value)
         End Set
     End Property
 
@@ -213,7 +209,7 @@ Public Class MapObservableProperty(Of X, Y)
     End Sub
 
     Private Sub OnValueChanged(sender As Object, e As ObservableProperty(Of Y).ChangedEventArgs)
-        RaiseChanged(e.OldValue, e.NewValue)
+        RaiseChanged(e.NewValue)
     End Sub
 
     Public Sub New(source As ObservableProperty(Of X), f As Func(Of X, Y))
@@ -250,14 +246,13 @@ Public Class BimapObservableProperty(Of X, Y)
             Return Me._convert(Me._source.Value)
         End Get
         Set(value As Y)
-            Dim oldValue = Me.Value
             Me._source.Value = Me._invert(value)
-            Me.RaiseChanged(oldValue, value)
+            Me.RaiseChanged(value)
         End Set
     End Property
 
     Private Sub OnSourceChanged(sender As Object, e As ObservableProperty(Of X).ChangedEventArgs)
-        Me.RaiseChanged(Me._convert(e.OldValue), Me._convert(e.NewValue))
+        Me.RaiseChanged(Me._convert(e.NewValue))
     End Sub
 
     Public Sub New(source As ObservableProperty(Of X), convert As Func(Of X, Y), invert As Func(Of Y, X))
@@ -296,12 +291,12 @@ Public Class FlattenObservableProperty(Of X)
     End Property
 
     Private Sub OnOuterValueChanged(sender As Object, e As ObservableProperty(Of ObservableProperty(Of X)).ChangedEventArgs)
-        RaiseChanged(e.OldValue.Value, e.NewValue.Value)
+        RaiseChanged(e.NewValue.Value)
         AddHandler Me._property.Value.Changed, AddressOf OnInnerValueChanged
     End Sub
 
     Private Sub OnInnerValueChanged(sender As Object, e As ObservableProperty(Of X).ChangedEventArgs)
-        RaiseChanged(e.OldValue, e.NewValue)
+        RaiseChanged(e.NewValue)
     End Sub
 
     Public Sub New([property] As ObservableProperty(Of ObservableProperty(Of X)))

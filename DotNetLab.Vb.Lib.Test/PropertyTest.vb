@@ -7,7 +7,7 @@ Public Class PropertyTest
         Public ReadOnly OldValues As New List(Of Integer)()
 
         Private Sub AddOldValue(sender As Object, e As ObservableProperty(Of Integer).ChangedEventArgs)
-            Me.OldValues.Add(e.OldValue)
+            Me.OldValues.Add(e.NewValue)
         End Sub
 
         Public Sub New()
@@ -24,7 +24,7 @@ Public Class PropertyTest
         For i = 1 To 3
             tester.Vop.Value = i
         Next
-        Assert.Equal({0, 1, 2}, tester.OldValues.ToArray())
+        Assert.Equal({1, 2, 3}, tester.OldValues.ToArray())
         Assert.Equal(3, tester.Vop.Value)
     End Sub
 
@@ -34,7 +34,7 @@ Public Class PropertyTest
         Public ReadOnly OldValues As New List(Of Integer)()
 
         Private Sub AddOldValue(sender As Object, e As ObservableProperty(Of Integer).ChangedEventArgs)
-            Me.OldValues.Add(e.OldValue)
+            Me.OldValues.Add(e.NewValue)
         End Sub
 
         Private _value As Integer
@@ -57,7 +57,7 @@ Public Class PropertyTest
             Assert.Equal(tester.ReadOnly.Value, tester.ReadWrite.Value)
             tester.ReadWrite.Value = i
         Next
-        Assert.Equal({0, 1}, tester.OldValues.ToArray())
+        Assert.Equal({1, 2}, tester.OldValues.ToArray())
     End Sub
 
     <Fact>
