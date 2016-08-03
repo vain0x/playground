@@ -84,7 +84,7 @@ Public Class PropertyTest
         For i = 0 To 4
             source.Value = i
         Next
-        Assert.Equal({"0", "1", "2"}, dependentHistory.Value.ToArray())
+        Assert.Equal({"0", "0", "0", "1", "1", "2"}, dependentHistory.Value.ToArray())
         Assert.Equal("2", dependent.Value)
         Assert.ThrowsAny(Of Exception)(Sub() dependent.Value = "1")
     End Sub

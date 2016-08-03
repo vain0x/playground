@@ -44,7 +44,6 @@ Partial Public MustInherit Class ObservableProperty(Of X)
     End Sub
 
     Protected Sub RaiseChanged(oldValue As X, newValue As X)
-        If Equals(oldValue, newValue) Then Return
         RaiseEvent Changed(Me, New ChangedEventArgs(Me, oldValue, newValue))
     End Sub
 End Class
