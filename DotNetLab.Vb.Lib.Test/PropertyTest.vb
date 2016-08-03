@@ -175,4 +175,21 @@ Public Class PropertyTest
         Dim tester = New ObservablePropertyBindTester()
         tester.SelectAndSelectManyTest()
     End Sub
+
+    <Fact>
+    Public Sub ObservableAggregateTest()
+        Dim sources = Enumerable.Range(0, 3).Select(Function(i) ObservableProperty.Create(i)).ToArray()
+        Dim dependent = sources.Aggregate(Function() String.Empty, Function(y, x) y + "," + x.ToString())
+        Dim dependentHistory = dependent.History()
+
+        sources(0).Value = 5
+        sources(1).Value = 6
+        Assert.Equal(
+            {
+                ",0,1,2",
+                ",0,1,2",
+                ",5,1,2",
+                ",5,6,2"
+            }, dependentHistory.Value.ToArray())
+    End Sub
 End Class

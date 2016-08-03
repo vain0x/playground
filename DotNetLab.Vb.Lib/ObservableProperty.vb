@@ -293,6 +293,41 @@ Public Class FlattenObservableProperty(Of X)
     End Sub
 End Class
 
+Public Class AggregateObservableProperty(Of X, Y)
+    Inherits ObservableProperty(Of Y)
+
+    Private ReadOnly _properties As IEnumerable(Of ObservableProperty(Of X))
+    Private ReadOnly _seed As Func(Of Y)
+    Private ReadOnly _aggregate As Func(Of Y, X, Y)
+
+    Public Overrides ReadOnly Property CanWrite As Boolean
+        Get
+            Return False
+        End Get
+    End Property
+
+    Public Overrides Property Value As Y
+        Get
+            Return Me._properties _
+                .Select(Function([property]) [property].Value) _
+                .Aggregate(Me._seed(), Me._aggregate)
+        End Get
+        Set(value As Y)
+            Throw New NotSupportedException()
+        End Set
+    End Property
+
+    Public Sub New(properties As IEnumerable(Of ObservableProperty(Of X)), seed As Func(Of Y), aggregate As Func(Of Y, X, Y))
+        Me._properties = properties
+        Me._seed = seed
+        Me._aggregate = aggregate
+
+        For Each [property] In Me._properties
+            [property].Subscribe(Sub(sender, value) Me.RaiseChanged(Me.Value))
+        Next
+    End Sub
+End Class
+
 Public Module ObservablePropertyExtensions
     <Extension>
     Public Function MakeReadOnly(Of X)(this As ObservableProperty(Of X)) As ObservableProperty(Of X)
@@ -312,6 +347,11 @@ Public Module ObservablePropertyExtensions
     <Extension>
     Public Function Bimap(Of X, Y)(this As ObservableProperty(Of X), convert As Func(Of X, Y), invert As Func(Of Y, X)) As ObservableProperty(Of Y)
         Return New BimapObservableProperty(Of X, Y)(this, convert, invert)
+    End Function
+
+    <Extension>
+    Public Function Aggregate(Of X, Y)(this As IEnumerable(Of ObservableProperty(Of X)), seed As Func(Of Y), f As Func(Of Y, X, Y)) As ObservableProperty(Of Y)
+        Return New AggregateObservableProperty(Of X, Y)(this, seed, f)
     End Function
 
     <Extension>
