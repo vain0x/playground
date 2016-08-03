@@ -6,13 +6,9 @@ Public Class PropertyTest
         Public ReadOnly Vop As ObservableProperty(Of Integer)
         Public ReadOnly OldValues As New List(Of Integer)()
 
-        Private Sub AddOldValue(sender As Object, e As ObservableProperty(Of Integer).ChangedEventArgs)
-            Me.OldValues.Add(e.NewValue)
-        End Sub
-
         Public Sub New()
             Me.Vop = ObservableProperty.Create(Of Integer)()
-            AddHandler Me.Vop.Changed, AddressOf Me.AddOldValue
+            Me.Vop.Subscribe(Sub(sender, value) Me.OldValues.Add(value))
         End Sub
     End Class
 
@@ -33,8 +29,8 @@ Public Class PropertyTest
         Public ReadOnly [ReadOnly] As ObservableProperty(Of Integer)
         Public ReadOnly OldValues As New List(Of Integer)()
 
-        Private Sub AddOldValue(sender As Object, e As ObservableProperty(Of Integer).ChangedEventArgs)
-            Me.OldValues.Add(e.NewValue)
+        Private Sub AddOldValue(sender As ObservableProperty(Of Integer), value As Integer)
+            Me.OldValues.Add(value)
         End Sub
 
         Private _value As Integer
@@ -45,8 +41,8 @@ Public Class PropertyTest
                 Sub(value) Me._value = value)
             Me.[ReadOnly] = ObservableProperty.CreateReadOnly(Of Integer)(Function() Me._value)
 
-            AddHandler Me.[ReadOnly].Changed, AddressOf AddOldValue
-            AddHandler Me.ReadWrite.Changed, AddressOf AddOldValue
+            Me.ReadOnly.Subscribe(AddressOf AddOldValue)
+            Me.ReadWrite.Subscribe(AddressOf AddOldValue)
         End Sub
     End Class
 
@@ -113,22 +109,10 @@ Public Class PropertyTest
 
         Public ReadOnly History As New List(Of Tuple(Of String, String))()
 
-        Public Sub OnPrefixChanged(sender As Object, e As ObservableProperty(Of String).ChangedEventArgs)
-            Me.History.Add(Tuple.Create("Prefix", e.NewValue))
-        End Sub
-
-        Public Sub OnPriceChanged(sender As Object, e As ObservableProperty(Of Double).ChangedEventArgs)
-            Me.History.Add(Tuple.Create("Price", e.NewValue.ToString()))
-        End Sub
-
-        Public Sub OnDisplayChanged(sender As Object, e As ObservableProperty(Of String).ChangedEventArgs)
-            Me.History.Add(Tuple.Create("Display", e.NewValue))
-        End Sub
-
         Protected Sub AddHandlers()
-            AddHandler Me.Prefix.Changed, AddressOf OnPrefixChanged
-            AddHandler Me.Price.Changed, AddressOf OnPriceChanged
-            AddHandler Me.Display.Changed, AddressOf OnDisplayChanged
+            Me.Prefix.Subscribe(Sub(sender, value) Me.History.Add(Tuple.Create("Prefix", value)))
+            Me.Price.Subscribe(Sub(sender, value) Me.History.Add(Tuple.Create("Price", value.ToString())))
+            Me.Display.Subscribe(Sub(sender, value) Me.History.Add(Tuple.Create("Display", value)))
         End Sub
 
         Public Sub New()

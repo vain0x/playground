@@ -24,7 +24,7 @@ Partial Public MustInherit Class ObservableProperty(Of X)
         Return If(value Is Nothing, String.Empty, value.ToString())
     End Function
 
-    Public Class ChangedEventArgs
+    Private Class ChangedEventArgs
         Public ReadOnly [Property] As ObservableProperty(Of X)
         Public ReadOnly NewValue As X
 
@@ -34,7 +34,7 @@ Partial Public MustInherit Class ObservableProperty(Of X)
         End Sub
     End Class
 
-    Public Event Changed As EventHandler(Of ChangedEventArgs)
+    Private Event Changed As EventHandler(Of ChangedEventArgs)
 
     Protected Sub RaiseChanged(newValue As X)
         RaiseEvent Changed(Me, New ChangedEventArgs(Me, newValue))
@@ -166,15 +166,14 @@ Public Class HistoryObservableProperty(Of X)
         End Set
     End Property
 
-    Private Sub OnSourceChanged(sender As Object, e As ObservableProperty(Of X).ChangedEventArgs)
-        Me._hisotry.Add(e.NewValue)
-        RaiseChanged(Me.Value)
-    End Sub
-
     Public Sub New([property] As ObservableProperty(Of X))
         Me._source = [property]
         Me._hisotry.Add(Me._source.Value)
-        AddHandler Me._source.Changed, AddressOf Me.OnSourceChanged
+        Me._source.Subscribe(
+            Sub(sender, value)
+                Me._hisotry.Add(value)
+                RaiseChanged(Me.Value)
+            End Sub)
     End Sub
 End Class
 
@@ -203,21 +202,13 @@ Public Class MapObservableProperty(Of X, Y)
         End Set
     End Property
 
-    Private Sub OnSourceChanged(sender As Object, e As ObservableProperty(Of X).ChangedEventArgs)
-        Me._property.Value = Me._f(e.NewValue)
-    End Sub
-
-    Private Sub OnValueChanged(sender As Object, e As ObservableProperty(Of Y).ChangedEventArgs)
-        RaiseChanged(e.NewValue)
-    End Sub
-
     Public Sub New(source As ObservableProperty(Of X), f As Func(Of X, Y))
         Me._f = f
         Me._source = source
         Me._property = New VariableObservableProperty(Of Y)() With {.Value = Me._f(Me._source.Value)}
 
-        AddHandler Me._source.Changed, AddressOf OnSourceChanged
-        AddHandler Me._property.Changed, AddressOf OnValueChanged
+        Me._source.Subscribe(Sub(sender, value) Me._property.Value = Me._f(value))
+        Me._property.Subscribe(Sub(sender, value) Me.RaiseChanged(value))
     End Sub
 End Class
 
@@ -250,16 +241,12 @@ Public Class BimapObservableProperty(Of X, Y)
         End Set
     End Property
 
-    Private Sub OnSourceChanged(sender As Object, e As ObservableProperty(Of X).ChangedEventArgs)
-        Me.RaiseChanged(Me._convert(e.NewValue))
-    End Sub
-
     Public Sub New(source As ObservableProperty(Of X), convert As Func(Of X, Y), invert As Func(Of Y, X))
         Me._source = source
         Me._convert = convert
         Me._invert = invert
 
-        AddHandler Me._source.Changed, AddressOf OnSourceChanged
+        Me._source.Subscribe(Sub(sender, value) Me.RaiseChanged(Me._convert(value)))
     End Sub
 End Class
 
@@ -289,20 +276,19 @@ Public Class FlattenObservableProperty(Of X)
         End Set
     End Property
 
-    Private Sub OnOuterValueChanged(sender As Object, e As ObservableProperty(Of ObservableProperty(Of X)).ChangedEventArgs)
-        RaiseChanged(e.NewValue.Value)
-        AddHandler Me._property.Value.Changed, AddressOf OnInnerValueChanged
-    End Sub
-
-    Private Sub OnInnerValueChanged(sender As Object, e As ObservableProperty(Of X).ChangedEventArgs)
-        RaiseChanged(e.NewValue)
+    Private Sub OnInnerValueChanged(sender As ObservableProperty(Of X), value As X)
+        Me.RaiseChanged(value)
     End Sub
 
     Public Sub New([property] As ObservableProperty(Of ObservableProperty(Of X)))
         Me._property = [property]
 
-        AddHandler Me._property.Changed, AddressOf OnOuterValueChanged
-        AddHandler Me._property.Value.Changed, AddressOf OnInnerValueChanged
+        Me._property.Value.Subscribe(AddressOf Me.OnInnerValueChanged)
+        Me._property.Subscribe(
+            Sub(sender, newInnerProperty)
+                Me.RaiseChanged(newInnerProperty.Value)
+                newInnerProperty.Subscribe(AddressOf Me.OnInnerValueChanged)
+            End Sub)
     End Sub
 End Class
 
