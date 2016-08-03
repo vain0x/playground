@@ -44,6 +44,10 @@ Partial Public MustInherit Class ObservableProperty(Of X)
     Protected Sub RaiseChanged(newValue As X)
         RaiseEvent Changed(Me, New ChangedEventArgs(Me, newValue))
     End Sub
+
+    Public Sub Subscribe(f As Action(Of ObservableProperty(Of X), X))
+        AddHandler Me.Changed, Sub(sender, e) f(e.Property, e.NewValue)
+    End Sub
 End Class
 
 ''' <summary>
