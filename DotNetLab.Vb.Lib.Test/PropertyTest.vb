@@ -29,10 +29,6 @@ Public Class PropertyTest
         Public ReadOnly [ReadOnly] As ObservableProperty(Of Integer)
         Public ReadOnly OldValues As New List(Of Integer)()
 
-        Private Sub AddOldValue(sender As ObservableProperty(Of Integer), value As Integer)
-            Me.OldValues.Add(value)
-        End Sub
-
         Private _value As Integer
 
         Public Sub New()
@@ -41,8 +37,7 @@ Public Class PropertyTest
                 Sub(value) Me._value = value)
             Me.[ReadOnly] = ObservableProperty.CreateReadOnly(Of Integer)(Function() Me._value)
 
-            Me.ReadOnly.Subscribe(AddressOf AddOldValue)
-            Me.ReadWrite.Subscribe(AddressOf AddOldValue)
+            Me.ReadWrite.Subscribe(Sub(sender, value) Me.OldValues.Add(value))
         End Sub
     End Class
 
@@ -53,7 +48,7 @@ Public Class PropertyTest
             Assert.Equal(tester.ReadOnly.Value, tester.ReadWrite.Value)
             tester.ReadWrite.Value = i
         Next
-        Assert.Equal({0, 0, 1, 2}, tester.OldValues.ToArray())
+        Assert.Equal({0, 1, 2}, tester.OldValues.ToArray())
     End Sub
 
     <Fact>
@@ -77,10 +72,10 @@ Public Class PropertyTest
         Dim source = ObservableProperty.Create(0)
         Dim dependent = source.Map(Function(valueX) (valueX \ 2).ToString())
         Dim dependentHistory = dependent.History()
-        For i = 0 To 4
+        For i = 2 To 4
             source.Value = i
         Next
-        Assert.Equal({"0", "0", "0", "1", "1", "2"}, dependentHistory.Value.ToArray())
+        Assert.Equal({"0", "1", "1", "2"}, dependentHistory.Value.ToArray())
         Assert.Equal("2", dependent.Value)
         Assert.ThrowsAny(Of Exception)(Sub() dependent.Value = "1")
     End Sub
