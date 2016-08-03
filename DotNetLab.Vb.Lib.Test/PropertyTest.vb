@@ -2,53 +2,35 @@
 Imports Xunit
 
 Public Class PropertyTest
-    Public Class VariableObservablePropertyTester
-        Public ReadOnly Vop As ObservableProperty(Of Integer)
-        Public ReadOnly OldValues As New List(Of Integer)()
-
-        Public Sub New()
-            Me.Vop = ObservableProperty.Create(Of Integer)()
-            Me.Vop.Subscribe(Sub(sender, value) Me.OldValues.Add(value))
-        End Sub
-    End Class
-
     <Fact>
     Public Sub VariableObservablePropertyTest()
-        Dim tester = New VariableObservablePropertyTester()
-        Assert.Equal(GetType(VariableObservableProperty(Of Integer)), tester.Vop.GetType())
-        Assert.Equal(0, tester.Vop.Value)
+        Dim vop = ObservableProperty.Create(Of Integer)()
+        Dim history = vop.History()
+
+        Assert.Equal(0, vop.Value)
         For i = 1 To 3
-            tester.Vop.Value = i
+            vop.Value = i
         Next
-        Assert.Equal({0, 1, 2, 3}, tester.OldValues.ToArray())
-        Assert.Equal(3, tester.Vop.Value)
+        Assert.Equal({0, 1, 2, 3}, history.Value.ToArray())
+        Assert.Equal(3, vop.Value)
     End Sub
-
-    Public Class RelayObservablePropertyTester
-        Public ReadOnly ReadWrite As ObservableProperty(Of Integer)
-        Public ReadOnly [ReadOnly] As ObservableProperty(Of Integer)
-        Public ReadOnly OldValues As New List(Of Integer)()
-
-        Private _value As Integer
-
-        Public Sub New()
-            Me.ReadWrite = ObservableProperty.Create(Of Integer)(
-                Function() Me._value,
-                Sub(value) Me._value = value)
-            Me.[ReadOnly] = ObservableProperty.CreateReadOnly(Of Integer)(Function() Me._value)
-
-            Me.ReadWrite.Subscribe(Sub(sender, value) Me.OldValues.Add(value))
-        End Sub
-    End Class
 
     <Fact>
     Public Sub RelayObservablePropertyTest()
-        Dim tester = New RelayObservablePropertyTester()
+        Dim theValue = 0
+
+        Dim readWrite = ObservableProperty.Create(Of Integer)(
+            Function() theValue,
+            Sub(value) theValue = value)
+        Dim history = readWrite.History()
+
+        Dim [readOnly] = ObservableProperty.CreateReadOnly(Function() theValue)
+
         For i = 1 To 2
-            Assert.Equal(tester.ReadOnly.Value, tester.ReadWrite.Value)
-            tester.ReadWrite.Value = i
+            Assert.Equal([readOnly].Value, [readWrite].Value)
+            readWrite.Value = i
         Next
-        Assert.Equal({0, 1, 2}, tester.OldValues.ToArray())
+        Assert.Equal({0, 1, 2}, history.Value.ToArray())
     End Sub
 
     <Fact>
@@ -56,15 +38,6 @@ Public Class PropertyTest
         Dim x = ObservableProperty.Create(Of Integer)(0).MakeReadOnly()
         Assert.Equal(0, x.Value)
         Assert.ThrowsAny(Of Exception)(Sub() x.Value = 0)
-    End Sub
-
-    <Fact>
-    Public Sub ObservablePropertyHistoryTest()
-        Dim x = ObservableProperty.Create(0)
-        Dim history = x.History()
-        x.Value = 1
-        x.Value = 2
-        Assert.Equal({0, 1, 2}, history.Value.ToArray())
     End Sub
 
     <Fact>
