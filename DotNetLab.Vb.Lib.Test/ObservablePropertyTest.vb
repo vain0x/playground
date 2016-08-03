@@ -110,7 +110,6 @@ Public Class ObservablePropertyTest
                     Tuple.Create("Display", "$200"),
                     Tuple.Create("Price", "200"),
                     Tuple.Create("Display", "Y.200"),
-                    Tuple.Create("Display", "Y.200"),
                     Tuple.Create("Prefix", "Y.")
                 }, Me.History.ToArray())
         End Sub

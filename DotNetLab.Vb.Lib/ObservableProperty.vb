@@ -205,7 +205,7 @@ Public Class MapObservableProperty(Of X, Y)
     Public Sub New(source As ObservableProperty(Of X), f As Func(Of X, Y))
         Me._f = f
         Me._source = source
-        Me._property = New VariableObservableProperty(Of Y)() With {.Value = Me._f(Me._source.Value)}
+        Me._property = New VariableObservableProperty(Of Y)()
 
         Me._source.Subscribe(Sub(sender, value) Me._property.Value = Me._f(value))
         Me._property.Subscribe(Sub(sender, value) Me.RaiseChanged(value))
@@ -285,10 +285,7 @@ Public Class FlattenObservableProperty(Of X)
 
         Me._property.Value.Subscribe(AddressOf Me.OnInnerValueChanged)
         Me._property.Subscribe(
-            Sub(sender, newInnerProperty)
-                Me.RaiseChanged(newInnerProperty.Value)
-                newInnerProperty.Subscribe(AddressOf Me.OnInnerValueChanged)
-            End Sub)
+            Sub(sender, innerProperty) innerProperty.Subscribe(AddressOf Me.OnInnerValueChanged))
     End Sub
 End Class
 
