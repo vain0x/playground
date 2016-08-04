@@ -82,12 +82,53 @@ Namespace Detail
         End Sub
 #End Region
     End Class
+
+    Public Class MergeObservable(Of TValue)
+        Inherits Observable(Of TValue)
+        Implements IObserver(Of TValue)
+        Implements IDisposable
+
+        Private ReadOnly _sources As IObservable(Of TValue)()
+        Private ReadOnly _subscribeTokens As IDisposable()
+
+#Region "IObserver"
+        Public Sub OnNext(value As TValue) Implements IObserver(Of TValue).OnNext
+            NotifyNext(value)
+        End Sub
+
+        Public Sub OnError([error] As Exception) Implements IObserver(Of TValue).OnError
+            ' TODO: Support.
+        End Sub
+
+        Public Sub OnCompleted() Implements IObserver(Of TValue).OnCompleted
+            ' TODO: Support.
+        End Sub
+#End Region
+
+#Region "IDisposable"
+        Public Sub Dispose() Implements IDisposable.Dispose
+            For Each subscribeToken In Me._subscribeTokens
+                Disposable.Dispose(subscribeToken)
+            Next
+        End Sub
+#End Region
+
+        Public Sub New(sources As IObservable(Of TValue)())
+            Me._sources = sources
+            Me._subscribeTokens = Me._sources.Select(Function(source) source.Subscribe(Me)).ToArray()
+        End Sub
+    End Class
 End Namespace
 
 Public Module ObservableExtensions
     <Extension>
     Public Function Subscribe(Of X)(observable As IObservable(Of X), onNext As Action(Of X)) As IDisposable
         Return observable.Subscribe(New Detail.AnonymousObserver(Of X)(onNext))
+    End Function
+
+    <Extension>
+    Public Function Merge(Of X)(observables As IObservable(Of X)()) As IObservable(Of X)
+        Return New Detail.MergeObservable(Of X)(observables)
     End Function
 End Module
 
