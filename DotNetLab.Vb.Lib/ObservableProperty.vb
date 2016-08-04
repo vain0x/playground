@@ -56,16 +56,7 @@ Namespace Detail
             Me._onNext = onNext
         End Sub
     End Class
-End Namespace
 
-Public Module ObservableExtensions
-    <Extension>
-    Public Function Subscribe(Of X)(observable As IObservable(Of X), onNext As Action(Of X)) As IDisposable
-        Return observable.Subscribe(New Detail.AnonymousObserver(Of X)(onNext))
-    End Function
-End Module
-
-Namespace Detail
     Public Class Observable(Of TValue)
         Implements IObservable(Of TValue)
 
@@ -91,7 +82,16 @@ Namespace Detail
         End Sub
 #End Region
     End Class
+End Namespace
 
+Public Module ObservableExtensions
+    <Extension>
+    Public Function Subscribe(Of X)(observable As IObservable(Of X), onNext As Action(Of X)) As IDisposable
+        Return observable.Subscribe(New Detail.AnonymousObserver(Of X)(onNext))
+    End Function
+End Module
+
+Namespace Detail
     Public MustInherit Class ObservableProperty(Of TValue)
         Inherits Observable(Of TValue)
         Implements IObservableProperty(Of TValue)
@@ -329,7 +329,7 @@ Namespace Detail
         End Property
 #End Region
 
-#Region "IDisposable"
+#Region "IObserver"
         Public Sub OnNext(value As TValue) Implements IObserver(Of TValue).OnNext
             Me.NotifyNext(Me.Value)
         End Sub
