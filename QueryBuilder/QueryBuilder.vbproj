@@ -69,10 +69,11 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="ConditionBuilder.vb" />
-    <Compile Include="Detail\Aliased.vb" />
+    <Compile Include="Detail\OptionallyAliased.vb" />
     <Compile Include="Detail\BuilderBase.vb" />
     <Compile Include="Detail\ExpressionCombinator.vb" />
-    <Compile Include="OrderDirection.vb" />
+    <Compile Include="SelectBuilder\Detail\Join.vb" />
+    <Compile Include="SelectBuilder\OrderDirection.vb" />
     <Compile Include="Detail\SqlEmitter.vb" />
     <Compile Include="IDbParameterFactory.vb" />
     <Compile Include="My Project\AssemblyInfo.vb" />
@@ -91,7 +92,7 @@
       <DesignTimeSharedInput>True</DesignTimeSharedInput>
     </Compile>
     <Compile Include="QueryBuilder.vb" />
-    <Compile Include="SelectBuilder.vb" />
+    <Compile Include="SelectBuilder\SelectBuilder.vb" />
     <Compile Include="SyntaxException.vb" />
   </ItemGroup>
   <ItemGroup>
