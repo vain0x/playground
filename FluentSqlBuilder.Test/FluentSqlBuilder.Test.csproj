@@ -1,14 +1,14 @@
-﻿<?xml version="1.0" encoding="utf-8"?>
+<?xml version="1.0" encoding="utf-8"?>
 <Project ToolsVersion="14.0" DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <Import Project="$(MSBuildExtensionsPath)\$(MSBuildToolsVersion)\Microsoft.Common.props" Condition="Exists('$(MSBuildExtensionsPath)\$(MSBuildToolsVersion)\Microsoft.Common.props')" />
   <PropertyGroup>
     <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
     <Platform Condition=" '$(Platform)' == '' ">AnyCPU</Platform>
-    <ProjectGuid>{C2FB86B2-62B1-469C-9B53-4A9563597BCE}</ProjectGuid>
+    <ProjectGuid>{85a19276-c15b-4160-b58a-63c0491c9042}</ProjectGuid>
     <OutputType>Library</OutputType>
     <AppDesignerFolder>Properties</AppDesignerFolder>
-    <RootNamespace>DotNetLab.Cs.Lib.Test</RootNamespace>
-    <AssemblyName>DotNetLab.Cs.Lib.Test</AssemblyName>
+    <RootNamespace>FluentSqlBuilder.Test</RootNamespace>
+    <AssemblyName>FluentSqlBuilder.Test</AssemblyName>
     <TargetFrameworkVersion>v4.5.2</TargetFrameworkVersion>
     <FileAlignment>512</FileAlignment>
   </PropertyGroup>
@@ -43,9 +43,9 @@
     <Compile Include="Properties\AssemblyInfo.cs" />
   </ItemGroup>
   <ItemGroup>
-    <ProjectReference Include="..\DotNetLab.Cs.Lib\DotNetLab.Cs.Lib.csproj">
-      <Project>{f2cd3249-5799-4b50-ab79-c957c36930be}</Project>
-      <Name>DotNetLab.Cs.Lib</Name>
+    <ProjectReference Include="..\FluentSqlBuilder\FluentSqlBuilder.csproj">
+      <Project>{95d23570-6075-40ee-ae3d-1ece869263c1}</Project>
+      <Name>FluentSqlBuilder</Name>
     </ProjectReference>
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
