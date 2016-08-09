@@ -41,11 +41,11 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="Properties\AssemblyInfo.cs" />
-    <Compile Include="SelectBuilderTest\SelectBuilderTest.cs" />
+    <Compile Include="SqlBuilderTest.cs" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\FluentSqlBuilder\FluentSqlBuilder.csproj">
-      <Project>{95d23570-6075-40ee-ae3d-1ece869263c1}</Project>
+      <Project>{C500A67F-E8BF-4F9D-A87D-CA20FA56E1C2}</Project>
       <Name>FluentSqlBuilder</Name>
     </ProjectReference>
   </ItemGroup>

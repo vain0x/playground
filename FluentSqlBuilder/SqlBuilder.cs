@@ -1,22 +1,21 @@
 ﻿using System;
 using System.Data;
 using FluentSqlBuilder.Detail;
-using FluentSqlBuilder.Interface;
 
 namespace FluentSqlBuilder
 {
     public class SqlBuilder
     {
-        private readonly DbProvider _provider;
+        readonly DbmsDialect _dialect;
 
-        internal DbProvider Provider
+        internal DbmsDialect Dialect
         {
-            get { return _provider; }
+            get { return _dialect; }
         }
 
-        public SqlBuilder(DbProvider provider)
+        public SqlBuilder(DbmsDialect dialect)
         {
-            _provider = provider;
+            _dialect = dialect;
         }
 
         #region Expression
@@ -27,8 +26,8 @@ namespace FluentSqlBuilder
 
         public Expression Table(string tableName)
         {
-            if (!_provider.Language.IsTableName(tableName)) throw new ArgumentException("tableName");
-            return new Expression(_provider.Language.EscapeTableName(tableName));
+            if (!_dialect.Language.IsTableName(tableName)) throw new ArgumentException("tableName");
+            return new Expression(_dialect.Language.EscapeTableName(tableName));
         }
 
         public Expression Column(string qualifier, string tableName)
@@ -38,14 +37,14 @@ namespace FluentSqlBuilder
 
         public Expression Column(string columnName)
         {
-            if (!_provider.Language.IsColumnName(columnName)) throw new ArgumentException("columnName");
-            return new Expression(_provider.Language.EscaleColumnName(columnName));
+            if (!_dialect.Language.IsColumnName(columnName)) throw new ArgumentException("columnName");
+            return new Expression(_dialect.Language.EscaleColumnName(columnName));
         }
 
         public Expression Value(DbType type, object value)
         {
             var name = "p" + Guid.NewGuid().ToString().Replace("-", "");
-            var parameter = _provider.ParameterFactory.Create(name, type, value);
+            var parameter = _dialect.ParameterFactory.Create(name, type, value);
             return new ParameterExpression(name, parameter);
         }
 
@@ -75,7 +74,7 @@ namespace FluentSqlBuilder
             return Value(DbType.DateTime, value);
         }
 
-        private static readonly Expression _nullExpression =
+        static readonly Expression _nullExpression =
             new Expression("null");
 
         public Expression Null
@@ -100,8 +99,7 @@ namespace FluentSqlBuilder
         #region Mainpulation
         public FromlessSelectBuilder Select()
         {
-            var statement = new SelectStatement(_provider);
-            return new FromlessSelectBuilder(statement);
+            return new FromlessSelectBuilder(this, new SelectStatement());
         }
         #endregion
     }

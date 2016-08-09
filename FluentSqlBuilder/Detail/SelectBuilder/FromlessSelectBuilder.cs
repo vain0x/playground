@@ -5,7 +5,7 @@ namespace FluentSqlBuilder.Detail
     public class FromlessSelectBuilder
         : InternalBuilder
     {
-        private readonly SelectStatement _statement;
+        readonly SelectStatement _statement;
 
         public FromlessSelectBuilder(SqlBuilder sqlBuilder, SelectStatement statement)
             : base(sqlBuilder)

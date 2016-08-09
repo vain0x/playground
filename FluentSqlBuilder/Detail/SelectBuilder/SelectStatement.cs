@@ -1,25 +1,23 @@
-﻿using System;
-using System.Collections.Generic;
-using FluentSqlBuilder.Interface;
+﻿using System.Collections.Generic;
 
 namespace FluentSqlBuilder.Detail
 {
     public class SelectStatement
         : ManipulationStatement
     {
-        public ConditionBuilder WhereCondition { get; private set; } =
+        public ConditionBuilder WhereCondition { get; } =
             new ConditionBuilder();
 
-        public ConditionBuilder HavingCondition { get; private set; } =
+        public ConditionBuilder HavingCondition { get; } =
             new ConditionBuilder();
 
-        public List<Expression> GroupKeys { get; private set; } =
+        public List<Expression> GroupKeys { get; } =
             new List<Expression>();
 
-        public List<OrderKey> OrderKeys { get; private set; } =
+        public List<OrderKey> OrderKeys { get; } =
             new List<OrderKey>();
 
-        public List<OptionallyAliased<Expression>> Fields { get; private set; } =
+        public List<OptionallyAliased<Expression>> Fields { get; } =
             new List<OptionallyAliased<Expression>>();
     }
 }

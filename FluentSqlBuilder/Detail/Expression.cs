@@ -5,14 +5,14 @@ namespace FluentSqlBuilder.Detail
 {
     public class Expression
     {
-        private readonly string _string;
+        readonly string _string;
         
         public override string ToString()
         {
             return _string;
         }
 
-        private readonly IEnumerable<DbParameter> _parametersOrNull = null;
+        readonly IEnumerable<DbParameter> _parametersOrNull;
 
         public virtual IEnumerable<DbParameter> Parameters
         {

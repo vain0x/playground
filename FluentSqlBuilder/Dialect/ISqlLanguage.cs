@@ -1,6 +1,6 @@
-﻿namespace FluentSqlBuilder.Interface
+﻿namespace FluentSqlBuilder
 {
-    public interface IDbLanguage
+    public interface ISqlLanguage
     {
         /// <summary>
         /// 文字列がテーブル名として有効な識別子であることを検査します。
@@ -11,11 +11,6 @@
         /// 文字列がカラム名として有効な識別子であることを検査します。
         /// </summary>
         bool IsColumnName(string word);
-
-        /// <summary>
-        /// 文字列が1つのリテラルを表すSQL式であることを検査します。
-        /// </summary>
-        bool IsLiteral(string expression);
 
         /// <summary>
         /// テーブル名を修飾した文字列を取得します。

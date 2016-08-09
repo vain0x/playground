@@ -1,11 +1,9 @@
-﻿using System;
-
-namespace FluentSqlBuilder.Detail
+﻿namespace FluentSqlBuilder.Detail
 {
     public class FieldlessSelectBuilder
         : InternalBuilder
     {
-        private readonly SelectStatement _statement;
+        readonly SelectStatement _statement;
         
         public FieldlessSelectBuilder(SqlBuilder sqlBuilder, SelectStatement statement)
             : base(sqlBuilder)

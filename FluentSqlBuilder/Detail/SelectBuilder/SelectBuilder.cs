@@ -4,7 +4,7 @@ namespace FluentSqlBuilder.Detail
 {
     public class SelectBuilder
     {
-        private readonly SelectStatement _statement;
+        readonly SelectStatement _statement;
 
         public SelectBuilder(SelectStatement statement)
         {

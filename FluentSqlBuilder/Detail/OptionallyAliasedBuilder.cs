@@ -10,12 +10,12 @@ namespace FluentSqlBuilder.Detail
     public class OptionallyAliasedBuilder<TBase, TValue>
         : OptionallyAliasedBuilder<TBase>
     {
-        private TBase _base;
-        private OptionallyAliased<TValue> _aliased;
+        TBase _base;
+        OptionallyAliased<TValue> _aliased;
 
         public override TBase As(string alias)
         {
-            if (alias == null) throw new ArgumentNullException("alias");
+            if (alias == null) throw new ArgumentNullException(nameof(alias));
             _aliased.AliasOrNull = alias;
             return _base;
         }

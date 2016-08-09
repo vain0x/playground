@@ -1,14 +1,12 @@
-﻿using FluentSqlBuilder.Interface;
-
-namespace FluentSqlBuilder.Detail
+﻿namespace FluentSqlBuilder.Detail
 {
     public abstract class InternalBuilder
     {
-        protected SqlBuilder SqlBuilder { get; private set; }
+        protected SqlBuilder SqlBuilder { get; }
 
-        protected DbProvider DbProvider
+        protected DbmsDialect DbmsDialect
         {
-            get { return SqlBuilder.Provider; }
+            get { return SqlBuilder.Dialect; }
         }
         
         public InternalBuilder(SqlBuilder sqlBuilder)

@@ -1,6 +1,4 @@
-﻿using FluentSqlBuilder.Interface;
-
-namespace FluentSqlBuilder.Detail
+﻿namespace FluentSqlBuilder.Detail
 {
     /// <summary>
     /// データベース操作コマンドを表します。
@@ -8,7 +6,7 @@ namespace FluentSqlBuilder.Detail
     /// </summary>
     public abstract class ManipulationStatement
     {
-        public JoinedRelation Source { get; private set; } =
+        public JoinedRelation Source { get; } =
             new JoinedRelation();
     }
 }
