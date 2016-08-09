@@ -27,7 +27,7 @@ Public Class SqlEmitter
         Next
     End Sub
 
-    Protected Sub AppendAlias(name As Name)
+    Protected Sub AppendAlias(name As OptionallyAliased)
         Me.AppendLine(name.Name)
         If name.AliasOrNull IsNot Nothing Then
             Me.AppendLine("as")

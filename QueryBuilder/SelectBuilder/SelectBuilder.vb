@@ -5,8 +5,8 @@ Public Class SelectBuilder
     Inherits BuilderBase(Of SelectBuilder)
 
     Private ReadOnly _parameterFactory As IDbParameterFactory
-    Private ReadOnly _tables As New List(Of Name)()
-    Private ReadOnly _fields As New List(Of Name)()
+    Private ReadOnly _tables As New List(Of OptionallyAliased)()
+    Private ReadOnly _fields As New List(Of OptionallyAliased)()
     Private _joins As List(Of [Join]) = Nothing
     Private _orderKeys As List(Of Tuple(Of String, OrderDirection)) = Nothing
     Private _groupKeys As List(Of String) = Nothing
@@ -19,7 +19,7 @@ Public Class SelectBuilder
     End Sub
 
     Public Function From(tableName As String, Optional aliasOrNull As String = Nothing) As SelectBuilder
-        Me._tables.Add(New Name(tableName, aliasOrNull))
+        Me._tables.Add(New OptionallyAliased(tableName, aliasOrNull))
         Return Me
     End Function
 
@@ -31,7 +31,7 @@ Public Class SelectBuilder
         ) As SelectBuilder
         Debug.Assert(condition IsNot Nothing)
         If Me._joins Is Nothing Then Me._joins = New List(Of [Join])()
-        Me._joins.Add(New [Join](joinType, New Name(tableName, tableNameAliasOrNull), condition.ToString()))
+        Me._joins.Add(New [Join](joinType, New OptionallyAliased(tableName, tableNameAliasOrNull), condition.ToString()))
         Me._parameters.AddRange(condition.Parameters)
         Return Me
     End Function
@@ -45,7 +45,7 @@ Public Class SelectBuilder
     End Function
 
     Public Function Field(expression As String, aliasOrNull As String) As SelectBuilder
-        Me._fields.Add(New Name(expression, aliasOrNull))
+        Me._fields.Add(New OptionallyAliased(expression, aliasOrNull))
         Return Me
     End Function
 
@@ -55,7 +55,7 @@ Public Class SelectBuilder
 
     Public Function FieldMany(expressions As IEnumerable(Of String)) As SelectBuilder
         Debug.Assert(expressions IsNot Nothing)
-        Me._fields.AddRange(expressions.Select(Function(e) New Name(e)))
+        Me._fields.AddRange(expressions.Select(Function(e) New OptionallyAliased(e)))
         Return Me
     End Function
 
@@ -106,9 +106,9 @@ Public Class SelectBuilder
     Private Class SelectQueryEmitter
         Inherits SqlEmitter
 
-        Public Sub AppendFieldList(fields As IEnumerable(Of Name))
+        Public Sub AppendFieldList(fields As IEnumerable(Of OptionallyAliased))
             Debug.Assert(fields IsNot Nothing)
-            Dim fieldList = If(fields.Any(), fields, {New Name("*")})
+            Dim fieldList = If(fields.Any(), fields, {New OptionallyAliased("*")})
             Me.AppendConcat("select", ",", fieldList, Sub(f) Me.AppendAlias(f))
         End Sub
 
@@ -119,7 +119,7 @@ Public Class SelectBuilder
             Me.AppendLine([join].OnExpression)
         End Sub
 
-        Public Sub AppendFrom(tables As IEnumerable(Of Name), joins As IEnumerable(Of [Join]))
+        Public Sub AppendFrom(tables As IEnumerable(Of OptionallyAliased), joins As IEnumerable(Of [Join]))
             If Not tables.Any() Then
                 Throw New SyntaxException("SelectBulider.From must be invoked once at least.")
             End If

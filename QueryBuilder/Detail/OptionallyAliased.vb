@@ -1,7 +1,7 @@
 ﻿''' <summary>
-''' Represents a name with or without an alias.
+''' Represents a thing with or without an alias.
 ''' </summary>
-Public Class Name
+Public Class OptionallyAliased
     Public ReadOnly Name As String
     Public ReadOnly AliasOrNull As String
 
