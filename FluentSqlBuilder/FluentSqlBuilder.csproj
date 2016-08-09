@@ -40,14 +40,27 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="Implementation\Detail\OptionallyAliased.cs" />
-    <Compile Include="Implementation\Detail\OptionallyAliasedBuilder.cs" />
-    <Compile Include="Implementation\Detail\SelectBuilder\FromlessSelectBuilder.cs" />
-    <Compile Include="Implementation\Detail\SelectBuilder\SelectStatement.cs" />
-    <Compile Include="Implementation\SqlBuilder.cs" />
+    <Compile Include="Detail\ConditionBuilder\ConditionBuilder.cs" />
+    <Compile Include="Detail\ConditionBuilder\ConditionCombinator.cs" />
+    <Compile Include="Detail\Expression.cs" />
+    <Compile Include="Detail\InternalBuilder.cs" />
+    <Compile Include="Detail\JoinBuilders\Join.cs" />
+    <Compile Include="Detail\JoinBuilders\JoinBuilder.cs" />
+    <Compile Include="Detail\JoinBuilders\JoinedRelation.cs" />
+    <Compile Include="Detail\ManipulationStatement.cs" />
+    <Compile Include="Detail\OrderDirection.cs" />
+    <Compile Include="Detail\SelectBuilder\FieldlessSelectBuilder.cs" />
+    <Compile Include="Detail\SelectBuilder\OrderKey.cs" />
+    <Compile Include="Detail\SelectBuilder\SelectBuilder.cs" />
+    <Compile Include="Interface\DbProvder.cs" />
+    <Compile Include="Interface\IDbLanguage.cs" />
+    <Compile Include="Detail\OptionallyAliased.cs" />
+    <Compile Include="Detail\OptionallyAliasedBuilder.cs" />
+    <Compile Include="Detail\SelectBuilder\FromlessSelectBuilder.cs" />
+    <Compile Include="Detail\SelectBuilder\SelectStatement.cs" />
+    <Compile Include="Interface\IDbParameterFactory.cs" />
+    <Compile Include="SqlBuilder.cs" />
     <Compile Include="Interface\IConditionBuilder.cs" />
-    <Compile Include="Interface\Detail\IJoinClauseBuilder.cs" />
-    <Compile Include="Interface\Detail\IOptionallyAliasedBuilder.cs" />
     <Compile Include="Interface\ISqlBuilder.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="Interface\ISelectBuilder.cs" />
