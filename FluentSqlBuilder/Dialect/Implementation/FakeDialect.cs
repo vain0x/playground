@@ -1,9 +1,11 @@
 ﻿using System.Data;
 using System.Data.Common;
+using System.Diagnostics;
 using System.Text.RegularExpressions;
 
 namespace FluentSqlBuilder
 {
+    [DebuggerDisplay("{\"{ParameterName}\" = {Value}: {DbType}")]
 	public class FakeDbParameter
 		: DbParameter
 	{
@@ -18,7 +20,7 @@ namespace FluentSqlBuilder
 
         public override void ResetDbType()
         {
-            DbType = DbType.Int32;
+            DbType = DbType.String;
         }
 	}
 

@@ -26,7 +26,11 @@ namespace FluentSqlBuilder
 
         public Expression Table(string tableName)
         {
-            if (!_dialect.Language.IsTableName(tableName)) throw new ArgumentException("tableName");
+            if (!_dialect.Language.IsTableName(tableName))
+            {
+                throw new ArgumentException(nameof(tableName));
+            }    
+
             return new Expression(_dialect.Language.EscapeTableName(tableName));
         }
 
@@ -37,7 +41,11 @@ namespace FluentSqlBuilder
 
         public Expression Column(string columnName)
         {
-            if (!_dialect.Language.IsColumnName(columnName)) throw new ArgumentException("columnName");
+            if (!_dialect.Language.IsColumnName(columnName))
+            {
+                throw new ArgumentException(nameof(columnName));
+            }
+
             return new Expression(_dialect.Language.EscaleColumnName(columnName));
         }
 

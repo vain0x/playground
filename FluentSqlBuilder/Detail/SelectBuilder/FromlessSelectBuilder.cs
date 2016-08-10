@@ -13,17 +13,18 @@ namespace FluentSqlBuilder.Detail
             _statement = statement;
         }
 
-        public OptionallyAliasedBuilder<FieldlessSelectBuilder> From(string tableName)
+        #region From
+        public OptionallyAliasedBuilder<FieldlessSelectBuilder> From(Expression relation)
         {
-            var aliased = new OptionallyAliased<Expression>(SqlBuilder.Table(tableName));
-            _statement.Source.Relations.Add(aliased);
+            var aliased = _statement.Source.Add(relation);
             var builder = new FieldlessSelectBuilder(SqlBuilder, _statement);
             return OptionallyAliasedBuilder.Create(builder, aliased);
         }
 
-        public OptionallyAliasedBuilder<FieldlessSelectBuilder> From(string qualifier, string tableName)
+        public OptionallyAliasedBuilder<FieldlessSelectBuilder> From(string tableName)
         {
-            throw new NotImplementedException();
+            return From(SqlBuilder.Table(tableName));
         }
+        #endregion
     }
 }

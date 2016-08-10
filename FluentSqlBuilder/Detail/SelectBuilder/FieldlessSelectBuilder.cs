@@ -12,20 +12,24 @@
         }
 
         #region From
-        public OptionallyAliasedBuilder<FieldlessSelectBuilder> From(string tableName)
+        public OptionallyAliasedBuilder<FieldlessSelectBuilder> From(Expression relation)
         {
-            var aliased = new OptionallyAliased<Expression>(SqlBuilder.Table(tableName));
-            _statement.Source.Relations.Add(aliased);
+            var aliased = _statement.Source.Add(relation);
             return OptionallyAliasedBuilder.Create(this, aliased);
         }
         #endregion
 
         #region Join
-        public OptionallyAliasedBuilder<JoinBuilder<FieldlessSelectBuilder>> Join(string tableName)
+        OptionallyAliasedBuilder<JoinBuilder<FieldlessSelectBuilder>> Join(Expression relation, JoinType joinType)
         {
-            var relation = new OptionallyAliased<Expression>(SqlBuilder.Table(tableName));
-            var builder = new JoinBuilder<FieldlessSelectBuilder>(SqlBuilder, _statement, JoinType.Inner, relation, this);
-            return OptionallyAliasedBuilder.Create(builder, relation);
+            var aliased = new OptionallyAliased<Expression>(relation);
+            var builder = new JoinBuilder<FieldlessSelectBuilder>(SqlBuilder, _statement, joinType, aliased, this);
+            return OptionallyAliasedBuilder.Create(builder, aliased);
+        }
+
+        public OptionallyAliasedBuilder<JoinBuilder<FieldlessSelectBuilder>> Join(Expression relation)
+        {
+            return Join(relation, JoinType.Inner);
         }
         #endregion
 
@@ -51,7 +55,7 @@
         #endregion
 
         #region OrderBy
-        private FieldlessSelectBuilder OrderByImpl(Expression expression, OrderDirection direction)
+        FieldlessSelectBuilder OrderByImpl(Expression expression, OrderDirection direction)
         {
             _statement.OrderKeys.Add(new OrderKey(expression, direction));
             return this;
