@@ -4,7 +4,7 @@
     {
         protected SqlBuilder SqlBuilder { get; }
 
-        protected DbmsDialect DbmsDialect
+        protected DbmsDialect Dialect
         {
             get { return SqlBuilder.Dialect; }
         }

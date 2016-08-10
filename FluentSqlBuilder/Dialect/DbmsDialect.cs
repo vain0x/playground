@@ -2,8 +2,8 @@
 {
     public class DbmsDialect
     {
-        public ISqlLanguage Language { get; private set; }
-        public IDbParameterFactory ParameterFactory { get; private set; }
+        public ISqlLanguage Language { get; }
+        public IDbParameterFactory ParameterFactory { get; }
 
         public DbmsDialect(ISqlLanguage language, IDbParameterFactory parameterFactory)
         {

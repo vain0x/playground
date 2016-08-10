@@ -3,10 +3,10 @@
     public class JoinBuilder<TResult>
         : InternalBuilder
     {
-        private readonly ManipulationStatement _statement;
-        private readonly JoinType _joinType;
-        private readonly OptionallyAliased<Expression> _relation;
-        private readonly TResult _result;
+        ManipulationStatement Statement { get; }
+        JoinType JoinType { get; }
+        OptionallyAliased<Expression> Relation { get; }
+        TResult Result { get; }
 
         public JoinBuilder(
             SqlBuilder sqlBuilder,
@@ -14,26 +14,26 @@
             JoinType joinType,
             OptionallyAliased<Expression> relation,
             TResult result
-            )
+        )
             : base(sqlBuilder)
         {
-            _statement = statement;
-            _joinType = joinType;
-            _relation = relation;
-            _result = result;
+            Statement = statement;
+            JoinType = joinType;
+            Relation = relation;
+            Result = result;
         }
 
         public TResult On(ConditionBuilder condition)
         {
-            _statement.Source.Joins.Add(new JoinOn(_joinType, _relation, condition));
-            return _result;
+            Statement.Source.Add(new JoinOn(JoinType, Relation, condition));
+            return Result;
         }
 
         #region Using
         public TResult Using(Expression column)
         {
-            _statement.Source.Joins.Add(new JoinUsing(_joinType, _relation, column));
-            return _result;
+            Statement.Source.Add(new JoinUsing(JoinType, Relation, column));
+            return Result;
         }
         
         public TResult Using(string columnName)

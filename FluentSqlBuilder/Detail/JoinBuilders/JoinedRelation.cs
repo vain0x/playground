@@ -18,28 +18,9 @@ namespace FluentSqlBuilder.Detail
             return aliased;
         }
 
-        public OptionallyAliased<Expression> Add(
-            Expression relation,
-            JoinType joinType,
-            ConditionBuilder condition
-        )
+        public void Add(Join join)
         {
-            var aliased = new OptionallyAliased<Expression>(relation);
-            var joinOn = new JoinOn(joinType, aliased, condition);
-            Joins.Add(joinOn);
-            return aliased;
-        }
-
-        public OptionallyAliased<Expression> Add(
-            Expression relation,
-            JoinType joinType,
-            Expression column
-        )
-        {
-            var aliased = new OptionallyAliased<Expression>(relation);
-            var joinUsing = new JoinUsing(joinType, aliased, column);
-            Joins.Add(joinUsing);
-            return aliased;
+            Joins.Add(join);
         }
         #endregion
     }

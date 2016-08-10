@@ -11,12 +11,13 @@
 
     public abstract class Join
     {
-        public JoinType JoinType { get; private set; }
-        public OptionallyAliased<Expression> Relation { get; private set; }
+        public JoinType JoinType { get; }
+        public OptionallyAliased<Expression> Relation { get; }
 
         public Join(
             JoinType joinType,
-            OptionallyAliased<Expression> relation)
+            OptionallyAliased<Expression> relation
+        )
         {
             JoinType = joinType;
             Relation = relation;
@@ -26,13 +27,13 @@
     public class JoinOn
         : Join
     {
-        public ConditionBuilder Condition { get; private set; }
+        public ConditionBuilder Condition { get; }
 
         public JoinOn(
             JoinType joinType,
             OptionallyAliased<Expression> relation,
             ConditionBuilder condition
-            )
+        )
             : base(joinType, relation)
         {
             Condition = condition;
@@ -42,13 +43,13 @@
     public class JoinUsing
         : Join
     {
-        public Expression Column { get; private set; }
+        public Expression Column { get; }
 
         public JoinUsing(
             JoinType joinType,
             OptionallyAliased<Expression> relation,
             Expression column
-            )
+        )
             : base(joinType, relation)
         {
             Column = column;

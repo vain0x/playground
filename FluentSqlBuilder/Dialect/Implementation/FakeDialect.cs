@@ -6,9 +6,9 @@ using System.Text.RegularExpressions;
 namespace FluentSqlBuilder
 {
     [DebuggerDisplay("{\"{ParameterName}\" = {Value}: {DbType}")]
-	public class FakeDbParameter
-		: DbParameter
-	{
+    public class FakeDbParameter
+        : DbParameter
+    {
         public override DbType DbType { get; set; }
         public override ParameterDirection Direction { get; set; }
         public override bool IsNullable { get; set; }
@@ -22,9 +22,9 @@ namespace FluentSqlBuilder
         {
             DbType = DbType.String;
         }
-	}
+    }
 
-	public class FakeDbParameterFactory
+    public class FakeDbParameterFactory
         : IDbParameterFactory
     {
         public DbParameter Create(string name, DbType type, object value)
@@ -37,7 +37,7 @@ namespace FluentSqlBuilder
                     Value = value
                 };
         }
-	}
+    }
 
     public class FakeSqlLanguage
         : ISqlLanguage
@@ -85,9 +85,9 @@ namespace FluentSqlBuilder
     public class FakeDialect
         : DbmsDialect
     {
-		public FakeDialect()
-            : base(new FakeSqlLanguage(), new FakeDbParameterFactory())
-		{
-		}
+        public FakeDialect()
+        : base(new FakeSqlLanguage(), new FakeDbParameterFactory())
+        {
+        }
     }
 }

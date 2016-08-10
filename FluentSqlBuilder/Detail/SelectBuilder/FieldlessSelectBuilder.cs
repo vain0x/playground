@@ -3,18 +3,18 @@
     public class FieldlessSelectBuilder
         : InternalBuilder
     {
-        readonly SelectStatement _statement;
+        SelectStatement Statement { get; }
         
         public FieldlessSelectBuilder(SqlBuilder sqlBuilder, SelectStatement statement)
             : base(sqlBuilder)
         {
-            _statement = statement;
+            Statement = statement;
         }
 
         #region From
         public OptionallyAliasedBuilder<FieldlessSelectBuilder> From(Expression relation)
         {
-            var aliased = _statement.Source.Add(relation);
+            var aliased = Statement.Source.Add(relation);
             return OptionallyAliasedBuilder.Create(this, aliased);
         }
         #endregion
@@ -23,7 +23,7 @@
         OptionallyAliasedBuilder<JoinBuilder<FieldlessSelectBuilder>> Join(Expression relation, JoinType joinType)
         {
             var aliased = new OptionallyAliased<Expression>(relation);
-            var builder = new JoinBuilder<FieldlessSelectBuilder>(SqlBuilder, _statement, joinType, aliased, this);
+            var builder = new JoinBuilder<FieldlessSelectBuilder>(SqlBuilder, Statement, joinType, aliased, this);
             return OptionallyAliasedBuilder.Create(builder, aliased);
         }
 
@@ -36,12 +36,12 @@
         #region Where
         public ConditionBuilder<FieldlessSelectBuilder> Where()
         {
-            return new ConditionBuilder<FieldlessSelectBuilder>(_statement.WhereCondition, this);
+            return new ConditionBuilder<FieldlessSelectBuilder>(Statement.WhereCondition, this);
         }
 
         public FieldlessSelectBuilder Where(ConditionBuilder condition)
         {
-            _statement.WhereCondition.Add(condition);
+            Statement.WhereCondition.Add(condition);
             return this;
         }
         #endregion
@@ -49,7 +49,7 @@
         #region GroupBy
         public FieldlessSelectBuilder GroupBy(Expression expression)
         {
-            _statement.GroupKeys.Add(expression);
+            Statement.GroupKeys.Add(expression);
             return this;
         }
         #endregion
@@ -57,7 +57,7 @@
         #region OrderBy
         FieldlessSelectBuilder OrderByImpl(Expression expression, OrderDirection direction)
         {
-            _statement.OrderKeys.Add(new OrderKey(expression, direction));
+            Statement.OrderKeys.Add(new OrderKey(expression, direction));
             return this;
         }
 
@@ -71,8 +71,8 @@
         public OptionallyAliasedBuilder<SelectBuilder> Field(Expression expression)
         {
             var field = new OptionallyAliased<Expression>(expression);
-            _statement.Fields.Add(field);
-            var builder = new SelectBuilder(_statement);
+            Statement.Fields.Add(field);
+            var builder = new SelectBuilder(Statement);
             return OptionallyAliasedBuilder.Create(builder, field);
         }
         #endregion

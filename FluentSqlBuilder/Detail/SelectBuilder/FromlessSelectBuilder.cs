@@ -5,19 +5,19 @@ namespace FluentSqlBuilder.Detail
     public class FromlessSelectBuilder
         : InternalBuilder
     {
-        readonly SelectStatement _statement;
+        SelectStatement Statement { get; }
 
         public FromlessSelectBuilder(SqlBuilder sqlBuilder, SelectStatement statement)
             : base(sqlBuilder)
         {
-            _statement = statement;
+            Statement = statement;
         }
 
         #region From
         public OptionallyAliasedBuilder<FieldlessSelectBuilder> From(Expression relation)
         {
-            var aliased = _statement.Source.Add(relation);
-            var builder = new FieldlessSelectBuilder(SqlBuilder, _statement);
+            var aliased = Statement.Source.Add(relation);
+            var builder = new FieldlessSelectBuilder(SqlBuilder, Statement);
             return OptionallyAliasedBuilder.Create(builder, aliased);
         }
 

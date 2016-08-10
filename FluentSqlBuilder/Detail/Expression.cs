@@ -5,21 +5,21 @@ namespace FluentSqlBuilder.Detail
 {
     public class Expression
     {
-        readonly string _string;
+        string String { get; }
         
         public override string ToString()
         {
-            return _string;
+            return String;
         }
 
-        readonly IEnumerable<DbParameter> _parametersOrNull;
+        IEnumerable<DbParameter> ParametersOrNull { get; }
 
         public virtual IEnumerable<DbParameter> Parameters
         {
             get
             {
-                if (_parametersOrNull == null) yield break;
-                foreach (var parameter in _parametersOrNull)
+                if (ParametersOrNull == null) yield break;
+                foreach (var parameter in ParametersOrNull)
                 {
                     yield return parameter;
                 }
@@ -28,8 +28,8 @@ namespace FluentSqlBuilder.Detail
 
         internal Expression(string @string, IEnumerable<DbParameter> parametersOrNull)
         {
-            _string = @string;
-            _parametersOrNull = parametersOrNull;
+            String = @string;
+            ParametersOrNull = parametersOrNull;
         }
 
         internal Expression(string @string)

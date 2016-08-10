@@ -6,16 +6,11 @@ namespace FluentSqlBuilder
 {
     public class SqlBuilder
     {
-        readonly DbmsDialect _dialect;
-
-        internal DbmsDialect Dialect
-        {
-            get { return _dialect; }
-        }
+        internal DbmsDialect Dialect { get; }
 
         public SqlBuilder(DbmsDialect dialect)
         {
-            _dialect = dialect;
+            Dialect = dialect;
         }
 
         #region Expression
@@ -26,12 +21,12 @@ namespace FluentSqlBuilder
 
         public Expression Table(string tableName)
         {
-            if (!_dialect.Language.IsTableName(tableName))
+            if (!Dialect.Language.IsTableName(tableName))
             {
                 throw new ArgumentException(nameof(tableName));
             }    
 
-            return new Expression(_dialect.Language.EscapeTableName(tableName));
+            return new Expression(Dialect.Language.EscapeTableName(tableName));
         }
 
         public Expression Column(string qualifier, string tableName)
@@ -41,18 +36,18 @@ namespace FluentSqlBuilder
 
         public Expression Column(string columnName)
         {
-            if (!_dialect.Language.IsColumnName(columnName))
+            if (!Dialect.Language.IsColumnName(columnName))
             {
                 throw new ArgumentException(nameof(columnName));
             }
 
-            return new Expression(_dialect.Language.EscaleColumnName(columnName));
+            return new Expression(Dialect.Language.EscaleColumnName(columnName));
         }
 
         public Expression Value(DbType type, object value)
         {
             var name = "p" + Guid.NewGuid().ToString().Replace("-", "");
-            var parameter = _dialect.ParameterFactory.Create(name, type, value);
+            var parameter = Dialect.ParameterFactory.Create(name, type, value);
             return new ParameterExpression(name, parameter);
         }
 

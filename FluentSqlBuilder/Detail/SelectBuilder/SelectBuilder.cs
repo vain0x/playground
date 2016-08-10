@@ -4,18 +4,18 @@ namespace FluentSqlBuilder.Detail
 {
     public class SelectBuilder
     {
-        readonly SelectStatement _statement;
+        SelectStatement Statement { get; }
 
         public SelectBuilder(SelectStatement statement)
         {
-            _statement = statement;
+            Statement = statement;
         }
 
         #region Field
         public OptionallyAliasedBuilder<SelectBuilder> Field(Expression expression)
         {
             var field = new OptionallyAliased<Expression>(expression);
-            _statement.Fields.Add(field);
+            Statement.Fields.Add(field);
             return OptionallyAliasedBuilder.Create(this, field);
         }
         #endregion

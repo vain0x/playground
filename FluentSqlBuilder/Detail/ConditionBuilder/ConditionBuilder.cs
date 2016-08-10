@@ -4,14 +4,14 @@ namespace FluentSqlBuilder.Detail
 {
     public class ConditionBuilder
     {
-        private readonly ConditionCombinator _combinator;
+        ConditionCombinator Combinator { get; }
 
-        public List<string> Expressions { get; private set; } =
+        public List<string> Expressions { get; } =
             new List<string>();
 
         public ConditionBuilder(ConditionCombinator combinator)
         {
-            _combinator = combinator;
+            Combinator = combinator;
         }
 
         public ConditionBuilder()
@@ -21,12 +21,12 @@ namespace FluentSqlBuilder.Detail
 
         public override string ToString()
         {
-            return _combinator.Concat(Expressions);
+            return Combinator.Concat(Expressions);
         }
 
         public ConditionBuilder Add(ConditionBuilder condition)
         {
-            if (ReferenceEquals(_combinator, condition._combinator))
+            if (ReferenceEquals(Combinator, condition.Combinator))
             {
                 Expressions.AddRange(condition.Expressions);
             }
@@ -46,19 +46,19 @@ namespace FluentSqlBuilder.Detail
 
     public class ConditionBuilder<TResult>
     {
-        private readonly ConditionBuilder _builder;
-        private readonly TResult _result;
+        ConditionBuilder Condition { get; }
+        TResult Result { get; }
 
         public ConditionBuilder(ConditionBuilder builder, TResult result)
         {
-            _builder = builder;
-            _result = result;
+            Condition = builder;
+            Result = result;
         }
 
         public TResult Equal(string lhs, string rhs)
         {
-            _builder.Equal(lhs, rhs);
-            return _result;
+            Condition.Equal(lhs, rhs);
+            return Result;
         }
     }
 }
