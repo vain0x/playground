@@ -1,4 +1,4 @@
-﻿namespace FluentSqlBuilder
+﻿namespace FluentSqlBuilder.Provider
 {
     public interface ISqlLanguage
     {

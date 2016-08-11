@@ -1,4 +1,9 @@
-﻿namespace FluentSqlBuilder.Detail
+﻿using System;
+using System.Collections.Generic;
+using System.Data.Common;
+using System.Linq;
+
+namespace FluentSqlBuilder.Detail
 {
     public enum JoinType
     {
@@ -10,18 +15,40 @@
     }
 
     public abstract class Join
+        : ISqlPart
     {
         public JoinType JoinType { get; }
-        public OptionallyAliased<Expression> Relation { get; }
+        public OptionallyAliasedExpression Relation { get; }
 
         public Join(
             JoinType joinType,
-            OptionallyAliased<Expression> relation
+            OptionallyAliasedExpression relation
         )
         {
             JoinType = joinType;
             Relation = relation;
         }
+
+        public string JoinWord
+        {
+            get
+            {
+                switch (JoinType)
+                {
+                    case JoinType.Inner: return "join";
+                    case JoinType.Cross: return "cross join";
+                    case JoinType.LeftOuter: return "left outer join";
+                    case JoinType.RightOuter: return "right outer join";
+                    case JoinType.FullOuter: return "full outer join";
+                    default: throw new Exception();
+                }
+            }
+        }
+
+        #region ISqlPart
+        public abstract IEnumerable<string> Tokens { get; }
+        public abstract IEnumerable<DbParameter> Parameters { get; }
+        #endregion
     }
 
     public class JoinOn
@@ -31,28 +58,57 @@
 
         public JoinOn(
             JoinType joinType,
-            OptionallyAliased<Expression> relation,
+            OptionallyAliasedExpression relation,
             ConditionBuilder condition
         )
             : base(joinType, relation)
         {
             Condition = condition;
         }
+
+        public override IEnumerable<string> Tokens
+        {
+            get
+            {
+                yield return JoinWord;
+                foreach (var token in Relation.Tokens) yield return token;
+                yield return "on";
+                foreach (var token in Condition.Tokens) yield return token;
+            }
+        }
+
+        public override IEnumerable<DbParameter> Parameters =>
+            Enumerable.Concat(Relation.Parameters, Condition.Parameters);
     }
 
     public class JoinUsing
         : Join
     {
-        public Expression Column { get; }
+        public SqlExpression Column { get; }
 
         public JoinUsing(
             JoinType joinType,
-            OptionallyAliased<Expression> relation,
-            Expression column
+            OptionallyAliasedExpression relation,
+            SqlExpression column
         )
             : base(joinType, relation)
         {
             Column = column;
         }
+
+        public override IEnumerable<string> Tokens
+        {
+            get
+            {
+                yield return JoinWord;
+                foreach (var token in Relation.Tokens) yield return token;
+                yield return "(";
+                foreach (var token in Column.Tokens) yield return token;
+                yield return ")";
+            }
+        }
+
+        public override IEnumerable<DbParameter> Parameters =>
+            Enumerable.Concat(Relation.Parameters, Column.Parameters);
     }
 }

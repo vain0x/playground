@@ -14,7 +14,7 @@ namespace FluentSqlBuilder.Detail
         }
 
         #region From
-        public OptionallyAliasedBuilder<FieldlessSelectBuilder> From(Expression relation)
+        public OptionallyAliasedBuilder<FieldlessSelectBuilder> From(SqlExpression relation)
         {
             var aliased = Statement.Source.Add(relation);
             var builder = new FieldlessSelectBuilder(SqlBuilder, Statement);

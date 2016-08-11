@@ -40,29 +40,33 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="Detail\ConditionBuilder\ConditionBuilder.cs" />
-    <Compile Include="Detail\ConditionBuilder\ConditionCombinator.cs" />
-    <Compile Include="Detail\Expression.cs" />
+    <Compile Include="Detail\SqlExpression\ConditionBuilder\ConditionBuilder.cs" />
+    <Compile Include="Detail\SqlExpression\ConditionBuilder\ConditionCombinator.cs" />
+    <Compile Include="Detail\SqlExpression\SqlExpression.cs" />
     <Compile Include="Detail\InternalBuilder.cs" />
     <Compile Include="Detail\JoinBuilders\Join.cs" />
     <Compile Include="Detail\JoinBuilders\JoinBuilder.cs" />
     <Compile Include="Detail\JoinBuilders\JoinedRelation.cs" />
-    <Compile Include="Detail\ManipulationStatement.cs" />
-    <Compile Include="Detail\OrderDirection.cs" />
-    <Compile Include="Detail\SelectBuilder\FieldlessSelectBuilder.cs" />
-    <Compile Include="Detail\SelectBuilder\OrderKey.cs" />
-    <Compile Include="Detail\SelectBuilder\SelectBuilder.cs" />
-    <Compile Include="Dialect\DbmsDialect.cs" />
-    <Compile Include="Dialect\Implementation\FakeDialect.cs" />
-    <Compile Include="Dialect\ISqlLanguage.cs" />
-    <Compile Include="Detail\OptionallyAliased.cs" />
+    <Compile Include="Detail\Interfaces.cs" />
+    <Compile Include="Detail\SqlExpression\SelectBuilder\OrderDirection.cs" />
+    <Compile Include="Detail\SqlExpression\SelectBuilder\FieldlessSelectBuilder.cs" />
+    <Compile Include="Detail\SqlExpression\SelectBuilder\OrderKey.cs" />
+    <Compile Include="Detail\SqlExpression\SelectBuilder\SelectBuilder.cs" />
+    <Compile Include="Detail\Utility\LinqExtensions.cs" />
+    <Compile Include="Detail\Utility\Unit.cs" />
+    <Compile Include="Provider\DbProvider.cs" />
+    <Compile Include="Provider\Fake\FakeDbProvider.cs" />
+    <Compile Include="Provider\Fake\FakeDbProviderFactory.cs" />
+    <Compile Include="Provider\Fake\FakeSqlLanguage.cs" />
+    <Compile Include="Provider\ISqlLanguage.cs" />
+    <Compile Include="Detail\SqlExpression\OptionallyAliasedExpression.cs" />
     <Compile Include="Detail\OptionallyAliasedBuilder.cs" />
-    <Compile Include="Detail\SelectBuilder\FromlessSelectBuilder.cs" />
-    <Compile Include="Detail\SelectBuilder\SelectStatement.cs" />
-    <Compile Include="Dialect\IDbParameterFactory.cs" />
+    <Compile Include="Detail\SqlExpression\SelectBuilder\FromlessSelectBuilder.cs" />
+    <Compile Include="Detail\SqlExpression\SelectBuilder\SelectStatement.cs" />
     <Compile Include="SqlBuilder.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
   </ItemGroup>
+  <ItemGroup />
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 
        Other similar extension points exist, see Microsoft.Common.targets.

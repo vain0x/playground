@@ -12,7 +12,7 @@
         }
 
         #region From
-        public OptionallyAliasedBuilder<FieldlessSelectBuilder> From(Expression relation)
+        public OptionallyAliasedBuilder<FieldlessSelectBuilder> From(SqlExpression relation)
         {
             var aliased = Statement.Source.Add(relation);
             return OptionallyAliasedBuilder.Create(this, aliased);
@@ -20,14 +20,14 @@
         #endregion
 
         #region Join
-        OptionallyAliasedBuilder<JoinBuilder<FieldlessSelectBuilder>> Join(Expression relation, JoinType joinType)
+        OptionallyAliasedBuilder<JoinBuilder<FieldlessSelectBuilder>> Join(SqlExpression relation, JoinType joinType)
         {
-            var aliased = new OptionallyAliased<Expression>(relation);
+            var aliased = new OptionallyAliasedExpression(relation);
             var builder = new JoinBuilder<FieldlessSelectBuilder>(SqlBuilder, Statement, joinType, aliased, this);
             return OptionallyAliasedBuilder.Create(builder, aliased);
         }
 
-        public OptionallyAliasedBuilder<JoinBuilder<FieldlessSelectBuilder>> Join(Expression relation)
+        public OptionallyAliasedBuilder<JoinBuilder<FieldlessSelectBuilder>> Join(SqlExpression relation)
         {
             return Join(relation, JoinType.Inner);
         }
@@ -47,7 +47,7 @@
         #endregion
 
         #region GroupBy
-        public FieldlessSelectBuilder GroupBy(Expression expression)
+        public FieldlessSelectBuilder GroupBy(SqlExpression expression)
         {
             Statement.GroupKeys.Add(expression);
             return this;
@@ -55,7 +55,7 @@
         #endregion
 
         #region OrderBy
-        FieldlessSelectBuilder OrderByImpl(Expression expression, OrderDirection direction)
+        FieldlessSelectBuilder OrderByImpl(SqlExpression expression, OrderDirection direction)
         {
             Statement.OrderKeys.Add(new OrderKey(expression, direction));
             return this;
@@ -68,9 +68,9 @@
         #endregion
 
         #region Field
-        public OptionallyAliasedBuilder<SelectBuilder> Field(Expression expression)
+        public OptionallyAliasedBuilder<SelectBuilder> Field(SqlExpression expression)
         {
-            var field = new OptionallyAliased<Expression>(expression);
+            var field = new OptionallyAliasedExpression(expression);
             Statement.Fields.Add(field);
             var builder = new SelectBuilder(Statement);
             return OptionallyAliasedBuilder.Create(builder, field);

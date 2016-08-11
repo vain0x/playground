@@ -3,16 +3,16 @@
     public class JoinBuilder<TResult>
         : InternalBuilder
     {
-        ManipulationStatement Statement { get; }
+        IRelationalQueryOrCommand Statement { get; }
         JoinType JoinType { get; }
-        OptionallyAliased<Expression> Relation { get; }
+        OptionallyAliasedExpression Relation { get; }
         TResult Result { get; }
 
         public JoinBuilder(
             SqlBuilder sqlBuilder,
-            ManipulationStatement statement,
+            IRelationalQueryOrCommand statement,
             JoinType joinType,
-            OptionallyAliased<Expression> relation,
+            OptionallyAliasedExpression relation,
             TResult result
         )
             : base(sqlBuilder)
@@ -30,7 +30,7 @@
         }
 
         #region Using
-        public TResult Using(Expression column)
+        public TResult Using(SqlExpression column)
         {
             Statement.Source.Add(new JoinUsing(JoinType, Relation, column));
             return Result;

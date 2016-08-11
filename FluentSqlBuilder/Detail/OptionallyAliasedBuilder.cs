@@ -1,26 +1,22 @@
-﻿using System;
-
-namespace FluentSqlBuilder.Detail
+﻿namespace FluentSqlBuilder.Detail
 {
-    public abstract class OptionallyAliasedBuilder<TBase>
-    {
-        public abstract TBase As(string alias);
-    }
-
-    public class OptionallyAliasedBuilder<TBase, TValue>
-        : OptionallyAliasedBuilder<TBase>
+    public class OptionallyAliasedBuilder<TBase>
     {
         TBase _base;
-        OptionallyAliased<TValue> _aliased;
+        OptionallyAliasedExpression _aliased;
 
-        public override TBase As(string alias)
+        public TBase As()
         {
-            if (alias == null) throw new ArgumentNullException(nameof(alias));
+            return _base;
+        }
+
+        public TBase As(string alias)
+        {
             _aliased.AliasOrNull = alias;
             return _base;
         }
 
-        public OptionallyAliasedBuilder(TBase @base, OptionallyAliased<TValue> aliased)
+        public OptionallyAliasedBuilder(TBase @base, OptionallyAliasedExpression aliased)
         {
             _base = @base;
             _aliased = aliased;
@@ -29,9 +25,9 @@ namespace FluentSqlBuilder.Detail
 
     public static class OptionallyAliasedBuilder
     {
-        public static OptionallyAliasedBuilder<B> Create<B, X>(B @base, OptionallyAliased<X> aliased)
+        public static OptionallyAliasedBuilder<B> Create<B>(B @base, OptionallyAliasedExpression aliased)
         {
-            return new OptionallyAliasedBuilder<B, X>(@base, aliased);
+            return new OptionallyAliasedBuilder<B>(@base, aliased);
         }
     }
 }

@@ -1,8 +1,11 @@
 ﻿using System;
+using System.Collections.Generic;
+using System.Data.Common;
 
 namespace FluentSqlBuilder.Detail
 {
     public class SelectBuilder
+        : ISqlPart
     {
         SelectStatement Statement { get; }
 
@@ -11,10 +14,18 @@ namespace FluentSqlBuilder.Detail
             Statement = statement;
         }
 
-        #region Field
-        public OptionallyAliasedBuilder<SelectBuilder> Field(Expression expression)
+        public IEnumerable<string> Tokens
         {
-            var field = new OptionallyAliased<Expression>(expression);
+            get
+            {
+
+            }
+        }
+
+        #region Field
+        public OptionallyAliasedBuilder<SelectBuilder> Field(SqlExpression expression)
+        {
+            var field = new OptionallyAliasedExpression(expression);
             Statement.Fields.Add(field);
             return OptionallyAliasedBuilder.Create(this, field);
         }

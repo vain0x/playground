@@ -1,86 +1,90 @@
 ﻿using System;
 using System.Data;
 using FluentSqlBuilder.Detail;
+using FluentSqlBuilder.Provider;
 
 namespace FluentSqlBuilder
 {
     public class SqlBuilder
     {
-        internal DbmsDialect Dialect { get; }
+        internal DbProvider Provider { get; }
 
-        public SqlBuilder(DbmsDialect dialect)
+        public SqlBuilder(DbProvider provider)
         {
-            Dialect = dialect;
+            Provider = provider;
         }
 
         #region Expression
-        public Expression Table(string qualifier, string tableName)
+        public SqlExpression Table(string qualifier, string tableName)
         {
             throw new NotImplementedException();
         }
 
-        public Expression Table(string tableName)
+        public SqlExpression Table(string tableName)
         {
-            if (!Dialect.Language.IsTableName(tableName))
+            if (!Provider.Language.IsTableName(tableName))
             {
                 throw new ArgumentException(nameof(tableName));
             }    
 
-            return new Expression(Dialect.Language.EscapeTableName(tableName));
+            return new AtomicExpression(Provider.Language.EscapeTableName(tableName));
         }
 
-        public Expression Column(string qualifier, string tableName)
+        public SqlExpression Column(string qualifier, string tableName)
         {
             throw new NotImplementedException();
         }
 
-        public Expression Column(string columnName)
+        public SqlExpression Column(string columnName)
         {
-            if (!Dialect.Language.IsColumnName(columnName))
+            if (!Provider.Language.IsColumnName(columnName))
             {
                 throw new ArgumentException(nameof(columnName));
             }
 
-            return new Expression(Dialect.Language.EscaleColumnName(columnName));
+            return new AtomicExpression(Provider.Language.EscaleColumnName(columnName));
         }
 
-        public Expression Value(DbType type, object value)
+        public SqlExpression Value(DbType type, object value)
         {
             var name = "p" + Guid.NewGuid().ToString().Replace("-", "");
-            var parameter = Dialect.ParameterFactory.Create(name, type, value);
+            var parameter = Provider.Factory.CreateParameter();
+            parameter.ParameterName = name;
+            parameter.DbType = type;
+            parameter.Value = value;
             return new ParameterExpression(name, parameter);
         }
 
         #region Typed value expressions
-        public Expression Bool(bool value)
+        public SqlExpression Bool(bool value)
         {
             return Value(DbType.Boolean, value);
         }
 
-        public Expression Int(long value)
+        public SqlExpression Int(long value)
         {
             return Value(DbType.Int64, value);
         }
 
-        public Expression String(string value)
+        public SqlExpression String(string value)
         {
             return Value(DbType.String, value);
         }
 
-        public Expression Date(DateTime value)
+        public SqlExpression Date(DateTime value)
         {
             return Value(DbType.Date, value);
         }
 
-        public Expression DateTime(DateTime value)
+        public SqlExpression DateTime(DateTime value)
         {
             return Value(DbType.DateTime, value);
         }
 
-        static readonly Expression _nullExpression =
-            new Expression("null");
+        static readonly SqlExpression _nullExpression =
+            new AtomicExpression("null");
 
-        public Expression Null
+        public SqlExpression Null
         {
             get { return _nullExpression; }
         }
