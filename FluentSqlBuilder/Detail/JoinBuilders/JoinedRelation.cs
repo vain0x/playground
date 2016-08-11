@@ -7,18 +7,16 @@ namespace FluentSqlBuilder.Detail
     public class JoinedRelation
         : ISqlPart
     {
-        public List<OptionallyAliasedExpression> Relations { get; } =
-            new List<OptionallyAliasedExpression>();
+        public List<SqlExpression> Relations { get; } =
+            new List<SqlExpression>();
 
         public List<Join> Joins { get; } =
             new List<Join>();
 
         #region Add
-        public OptionallyAliasedExpression Add(SqlExpression relation)
+        public void Add(SqlExpression relation)
         {
-            var aliased = new OptionallyAliasedExpression(relation);
-            Relations.Add(aliased);
-            return aliased;
+            Relations.Add(relation);
         }
 
         public void Add(Join join)

@@ -58,9 +58,7 @@
     <Compile Include="Provider\Fake\FakeDbProvider.cs" />
     <Compile Include="Provider\Fake\FakeDbProviderFactory.cs" />
     <Compile Include="Provider\Fake\FakeSqlLanguage.cs" />
-    <Compile Include="Provider\ISqlLanguage.cs" />
-    <Compile Include="Detail\SqlExpression\OptionallyAliasedExpression.cs" />
-    <Compile Include="Detail\OptionallyAliasedBuilder.cs" />
+    <Compile Include="Provider\SqlLanguage.cs" />
     <Compile Include="Detail\SqlExpression\SelectBuilder\FromlessSelectBuilder.cs" />
     <Compile Include="Detail\SqlExpression\SelectBuilder\SelectStatement.cs" />
     <Compile Include="SqlBuilder.cs" />

@@ -12,22 +12,20 @@
         }
 
         #region From
-        public OptionallyAliasedBuilder<FieldlessSelectBuilder> From(SqlExpression relation)
+        public FieldlessSelectBuilder From(SqlExpression relation)
         {
-            var aliased = Statement.Source.Add(relation);
-            return OptionallyAliasedBuilder.Create(this, aliased);
+            Statement.Source.Add(relation);
+            return this;
         }
         #endregion
 
         #region Join
-        OptionallyAliasedBuilder<JoinBuilder<FieldlessSelectBuilder>> Join(SqlExpression relation, JoinType joinType)
+        JoinBuilder<FieldlessSelectBuilder> Join(SqlExpression relation, JoinType joinType)
         {
-            var aliased = new OptionallyAliasedExpression(relation);
-            var builder = new JoinBuilder<FieldlessSelectBuilder>(SqlBuilder, Statement, joinType, aliased, this);
-            return OptionallyAliasedBuilder.Create(builder, aliased);
+            return new JoinBuilder<FieldlessSelectBuilder>(SqlBuilder, Statement, joinType, relation, this);
         }
 
-        public OptionallyAliasedBuilder<JoinBuilder<FieldlessSelectBuilder>> Join(SqlExpression relation)
+        public JoinBuilder<FieldlessSelectBuilder> Join(SqlExpression relation)
         {
             return Join(relation, JoinType.Inner);
         }
@@ -61,19 +59,22 @@
             return this;
         }
 
-        public FieldlessSelectBuilder OrderBy(string columnName)
+        public FieldlessSelectBuilder OrderBy(SqlExpression column)
         {
-            return OrderByImpl(SqlBuilder.Column(columnName), OrderDirection.Ascending);
+            return OrderByImpl(column, OrderDirection.Ascending);
+        }
+
+        public FieldlessSelectBuilder OrderByDescending(SqlExpression column)
+        {
+            return OrderByImpl(column, OrderDirection.Descending);
         }
         #endregion
 
         #region Field
-        public OptionallyAliasedBuilder<SelectBuilder> Field(SqlExpression expression)
+        public SelectBuilder Field(SqlExpression expression)
         {
-            var field = new OptionallyAliasedExpression(expression);
-            Statement.Fields.Add(field);
-            var builder = new SelectBuilder(Statement);
-            return OptionallyAliasedBuilder.Create(builder, field);
+            Statement.Fields.Add(expression);
+            return new SelectBuilder(SqlBuilder, Statement);
         }
         #endregion
     }

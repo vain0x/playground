@@ -46,7 +46,10 @@ namespace FluentSqlBuilder.Provider.Fake
 
         public override void AddRange(Array values)
         {
-            throw new NotImplementedException();
+            for (var i = 0; i < values.Length; i ++)
+            {
+                Add(values.GetValue(i));
+            }
         }
 
         public override void Clear()
@@ -146,7 +149,8 @@ namespace FluentSqlBuilder.Provider.Fake
 
         protected override DbConnection DbConnection { get; set; }
 
-        protected override DbParameterCollection DbParameterCollection { get; }
+        protected override DbParameterCollection DbParameterCollection { get; } =
+            new FakeDbParameterCollection();
 
         protected override DbTransaction DbTransaction { get; set; }
 

@@ -5,14 +5,14 @@
     {
         IRelationalQueryOrCommand Statement { get; }
         JoinType JoinType { get; }
-        OptionallyAliasedExpression Relation { get; }
+        SqlExpression Relation { get; }
         TResult Result { get; }
 
         public JoinBuilder(
             SqlBuilder sqlBuilder,
             IRelationalQueryOrCommand statement,
             JoinType joinType,
-            OptionallyAliasedExpression relation,
+            SqlExpression relation,
             TResult result
         )
             : base(sqlBuilder)
@@ -29,7 +29,6 @@
             return Result;
         }
 
-        #region Using
         public TResult Using(SqlExpression column)
         {
             Statement.Source.Add(new JoinUsing(JoinType, Relation, column));
@@ -40,6 +39,5 @@
         {
             return Using(SqlBuilder.Column(columnName));
         }
-        #endregion
     }
 }

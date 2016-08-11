@@ -3,45 +3,24 @@
 namespace FluentSqlBuilder.Provider.Fake
 {
     public class FakeSqlLanguage
-        : ISqlLanguage
+        : SqlLanguage
     {
-        static readonly string _identifierPattern =
-            @"[a-zA-Z_]\w*";
+        static readonly Regex _identifier =
+            new Regex(@"^[a-zA-Z_]\w*$");
 
-        static readonly string _escapedIdentifierPattern =
-            $@"{_identifierPattern}|`{_identifierPattern}`";
-
-        static readonly Regex _qualifiedIdentifier =
-            new Regex($@"^({_escapedIdentifierPattern}\.)?{_escapedIdentifierPattern}$");
-
-        public bool IsTableName(string word)
+        public override bool IsIdentifier(string identifier)
         {
-            return _qualifiedIdentifier.IsMatch(word);
+            return _identifier.IsMatch(identifier);
         }
 
-        public bool IsColumnName(string word)
+        public override string QuoteIdentifier(string identifier)
         {
-            return IsTableName(word);
+            return $"`{identifier}`";
         }
 
-        public string QualifyTableName(string qualifier, string tableName)
+        public override string QualifyIdentifier(string qualifier, string identifier)
         {
-            return $"{qualifier}.{tableName}";
-        }
-
-        public string EscapeTableName(string tableName)
-        {
-            return $"`{tableName}`";
-        }
-
-        public string QualifyColumnName(string qualifier, string columnName)
-        {
-            return QualifyTableName(qualifier, columnName);
-        }
-
-        public string EscaleColumnName(string columnName)
-        {
-            return EscapeTableName(columnName);
+            return $"{qualifier}.{identifier}";
         }
     }
 }

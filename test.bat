@@ -1,1 +1,1 @@
-packages\xunit.runner.console\tools\xunit.console.exe DotNetLab.Cs.Lib.Test\bin\Debug\DotNetLab.Cs.Lib.Test.dll
+packages\xunit.runner.console\tools\xunit.console.exe FluentSqlBuilder.Test\bin\Debug\FluentSqlBuilder.Test.dll

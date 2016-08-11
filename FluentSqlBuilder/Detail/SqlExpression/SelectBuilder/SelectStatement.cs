@@ -23,8 +23,8 @@ namespace FluentSqlBuilder.Detail
         public List<OrderKey> OrderKeys { get; } =
             new List<OrderKey>();
 
-        public List<OptionallyAliasedExpression> Fields { get; } =
-            new List<OptionallyAliasedExpression>();
+        public List<SqlExpression> Fields { get; } =
+            new List<SqlExpression>();
 
         #region SqlExpression
         public override IEnumerable<string> Tokens

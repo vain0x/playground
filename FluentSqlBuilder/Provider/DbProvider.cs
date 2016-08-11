@@ -4,10 +4,10 @@ namespace FluentSqlBuilder.Provider
 {
     public class DbProvider
     {
-        public ISqlLanguage Language { get; }
+        public SqlLanguage Language { get; }
         public DbProviderFactory Factory { get; }
 
-        public DbProvider(ISqlLanguage language, DbProviderFactory factory)
+        public DbProvider(SqlLanguage language, DbProviderFactory factory)
         {
             Language = language;
             Factory = factory;

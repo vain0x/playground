@@ -6,28 +6,34 @@ namespace FluentSqlBuilder.Detail
 {
     public class SelectBuilder
         : ISqlPart
+        , ISqlExecutable
     {
+        SqlBuilder SqlBuilder { get; }
         SelectStatement Statement { get; }
 
-        public SelectBuilder(SelectStatement statement)
+        public SelectBuilder(SqlBuilder sqlBuilder, SelectStatement statement)
         {
+            SqlBuilder = sqlBuilder;
             Statement = statement;
         }
 
-        public IEnumerable<string> Tokens
-        {
-            get
-            {
+        #region ISqlPart
+        public IEnumerable<string> Tokens => Statement.Tokens.Enclose("(", ")");
+        public IEnumerable<DbParameter> Parameters => Statement.Parameters;
+        #endregion
 
-            }
+        #region ISqlExecutable
+        public DbCommand ToCommand()
+        {
+            return SqlBuilder.CreateCommand(Statement);
         }
+        #endregion
 
         #region Field
-        public OptionallyAliasedBuilder<SelectBuilder> Field(SqlExpression expression)
+        public SelectBuilder Field(SqlExpression expression)
         {
-            var field = new OptionallyAliasedExpression(expression);
-            Statement.Fields.Add(field);
-            return OptionallyAliasedBuilder.Create(this, field);
+            Statement.Fields.Add(expression);
+            return this;
         }
         #endregion
 

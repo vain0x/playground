@@ -1,5 +1,7 @@
 ﻿using System;
 using System.Data;
+using System.Data.Common;
+using System.Linq;
 using FluentSqlBuilder.Detail;
 using FluentSqlBuilder.Provider;
 
@@ -7,7 +9,20 @@ namespace FluentSqlBuilder
 {
     public class SqlBuilder
     {
+        #region Provider
         internal DbProvider Provider { get; }
+
+        internal SqlLanguage Language => Provider.Language;
+        internal DbProviderFactory Factory => Provider.Factory;
+
+        internal DbCommand CreateCommand(SqlExpression expression)
+        {
+            var command = Factory.CreateCommand();
+            command.CommandText = expression.ToString();
+            command.Parameters.AddRange(expression.Parameters.ToArray());
+            return command;
+        }
+        #endregion
 
         public SqlBuilder(DbProvider provider)
         {
@@ -17,38 +32,28 @@ namespace FluentSqlBuilder
         #region Expression
         public SqlExpression Table(string qualifier, string tableName)
         {
-            throw new NotImplementedException();
+            return new AtomicExpression(Language.BuildIdentifier(qualifier, tableName));
         }
 
         public SqlExpression Table(string tableName)
         {
-            if (!Provider.Language.IsTableName(tableName))
-            {
-                throw new ArgumentException(nameof(tableName));
-            }    
-
-            return new AtomicExpression(Provider.Language.EscapeTableName(tableName));
+            return Table(null, tableName);
         }
 
-        public SqlExpression Column(string qualifier, string tableName)
+        public SqlExpression Column(string qualifier, string columnName)
         {
-            throw new NotImplementedException();
+            return new AtomicExpression(Language.BuildIdentifier(qualifier, columnName));
         }
 
         public SqlExpression Column(string columnName)
         {
-            if (!Provider.Language.IsColumnName(columnName))
-            {
-                throw new ArgumentException(nameof(columnName));
-            }
-
-            return new AtomicExpression(Provider.Language.EscaleColumnName(columnName));
+            return Column(null, columnName);
         }
 
-        public SqlExpression Value(DbType type, object value)
+        public ParameterExpression Value(DbType type, object value)
         {
             var name = "p" + Guid.NewGuid().ToString().Replace("-", "");
-            var parameter = Provider.Factory.CreateParameter();
+            var parameter = Factory.CreateParameter();
             parameter.ParameterName = name;
             parameter.DbType = type;
             parameter.Value = value;
@@ -56,32 +61,32 @@ namespace FluentSqlBuilder
         }
 
         #region Typed value expressions
-        public SqlExpression Bool(bool value)
+        public ParameterExpression Bool(bool value)
         {
             return Value(DbType.Boolean, value);
         }
 
-        public SqlExpression Int(long value)
+        public ParameterExpression Int(long value)
         {
             return Value(DbType.Int64, value);
         }
 
-        public SqlExpression String(string value)
+        public ParameterExpression String(string value)
         {
             return Value(DbType.String, value);
         }
 
-        public SqlExpression Date(DateTime value)
+        public ParameterExpression Date(DateTime value)
         {
             return Value(DbType.Date, value);
         }
 
-        public SqlExpression DateTime(DateTime value)
+        public ParameterExpression DateTime(DateTime value)
         {
             return Value(DbType.DateTime, value);
         }
 
-        static readonly SqlExpression _nullExpression =
+        static readonly AtomicExpression _nullExpression =
             new AtomicExpression("null");
 
         public SqlExpression Null

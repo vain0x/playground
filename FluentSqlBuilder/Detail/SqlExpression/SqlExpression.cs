@@ -14,6 +14,11 @@ namespace FluentSqlBuilder.Detail
         {
             return string.Join(" ", Tokens);
         }
+
+        public AliasedExpression As(string alias)
+        {
+            return new AliasedExpression(this, alias);
+        }
     }
 
     public class ConcreteSqlExpression
@@ -67,5 +72,33 @@ namespace FluentSqlBuilder.Detail
             : base(new[] { "@" + name }, new[] { parameter })
         {
         }
+    }
+
+    public class AliasedExpression
+        : SqlExpression
+    {
+        public SqlExpression Expression { get; }
+        public string Alias { get; }
+
+        public AliasedExpression(SqlExpression expression, string alias)
+        {
+            Expression = expression;
+            Alias = alias;
+        }
+
+        #region ISqlPart
+        public override IEnumerable<string> Tokens
+        {
+            get
+            {
+                foreach (var token in Expression.Tokens) yield return token;
+                yield return "as";
+                yield return Alias;
+            }
+        }
+
+        public override IEnumerable<DbParameter> Parameters =>
+            Expression.Parameters;
+        #endregion
     }
 }

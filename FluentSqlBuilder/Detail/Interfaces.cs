@@ -13,6 +13,14 @@ namespace FluentSqlBuilder.Detail
     }
 
     /// <summary>
+    /// コマンドとして実行可能なSQL文であることを表します。
+    /// </summary>
+    public interface ISqlExecutable
+    {
+        DbCommand ToCommand();
+    }
+
+    /// <summary>
     /// リレーションを操作するコマンドを表します。
     /// 具体的には select クエリーか insert, update, delete コマンドです。
     /// </summary>

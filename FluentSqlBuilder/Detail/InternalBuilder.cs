@@ -13,7 +13,7 @@ namespace FluentSqlBuilder.Detail
         
         public InternalBuilder(SqlBuilder sqlBuilder)
         {
-            SqlBuilder = SqlBuilder;
+            SqlBuilder = sqlBuilder;
         }
     }
 }
