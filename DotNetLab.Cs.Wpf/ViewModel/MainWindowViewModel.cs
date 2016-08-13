@@ -19,6 +19,11 @@ namespace DotNetLab.Cs.Wpf.ViewModel
         public ReactiveProperty<Brush> Foreground { get; } =
             new ReactiveProperty<Brush>(Brushes.Black);
 
+        public ReactiveCollection<string> Items { get; } =
+            new ReactiveCollection<string>();
+
+        public ReactiveCommand SaveCommand { get; }
+
         public MainWindowViewModel()
         {
             Text =
@@ -36,6 +41,18 @@ namespace DotNetLab.Cs.Wpf.ViewModel
                     .Select(s => Brushes.Black)
                     )
                 .ToReactiveProperty();
+
+            SaveCommand =
+                InputText
+                .Select(s => !string.IsNullOrEmpty(s))
+                .ToReactiveCommand();
+            SaveCommand
+                .Subscribe(
+                    parameter =>
+                    {
+                        Items.Insert(0, InputText.Value);
+                        InputText.Value = string.Empty;
+                    });
         }
     }
 }
