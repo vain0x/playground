@@ -12,6 +12,8 @@ using System.Windows.Media;
 using System.Windows.Media.Imaging;
 using System.Windows.Navigation;
 using System.Windows.Shapes;
+using System.Reactive.Linq;
+using DotNetLab.Cs.Wpf.ViewModel;
 
 namespace DotNetLab.Cs.Wpf
 {
@@ -23,6 +25,8 @@ namespace DotNetLab.Cs.Wpf
         public MainWindow()
         {
             InitializeComponent();
+
+            DataContext = new MainWindowViewModel();
         }
     }
 }
