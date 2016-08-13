@@ -1,0 +1,8 @@
+﻿<Application
+    x:Class="DotNetLab.Cs.Wpf.App"
+    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:local="clr-namespace:DotNetLab.Cs.Wpf"
+    StartupUri="MainWindow.xaml"
+    >
+</Application>
