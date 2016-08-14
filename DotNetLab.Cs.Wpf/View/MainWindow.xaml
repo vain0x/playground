@@ -10,4 +10,20 @@
     Width="525"
     Height="350"
     >
+    <Grid
+        DataContext="{Binding UserRecommendationViewModel}"
+        >
+        <ListBox
+            ItemsSource="{Binding Users}"
+            >
+            <ListBox.ItemTemplate>
+                <DataTemplate>
+                    <TextBlock>
+                        <Run Text="@" />
+                        <Run Text="{Binding Login, Mode=OneWay}" />
+                    </TextBlock>
+                </DataTemplate>
+            </ListBox.ItemTemplate>
+        </ListBox>
+    </Grid>
 </Window>
