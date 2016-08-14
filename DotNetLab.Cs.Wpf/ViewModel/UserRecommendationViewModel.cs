@@ -10,19 +10,32 @@ using Reactive.Bindings;
 
 namespace DotNetLab.Cs.Wpf.ViewModel
 {
+    public class UserViewModel
+    {
+        public User User { get; }
+        public string FullName => string.Format("{0} @{1}", User.Name, User.Login);
+        public string Bio => User.Bio;
+
+        public UserViewModel(User user)
+        {
+            User = user;
+        }
+    }
+
     public class UserRecommendationViewModel
     {
         UserRecommendation Model { get; } =
             new UserRecommendation();
 
-        public ReactiveCollection<User> Users { get; } =
-            new ReactiveCollection<User>();
+        public ReactiveCollection<UserViewModel> Users { get; } =
+            new ReactiveCollection<UserViewModel>();
 
         public UserRecommendationViewModel()
         {
             Model.FetchUser()
                 .Take(3)
-                .Subscribe(user => Users.AddOnScheduler(user));
+                .Subscribe(user =>
+                    Users.AddOnScheduler(new UserViewModel(user)));
         }
     }
 }

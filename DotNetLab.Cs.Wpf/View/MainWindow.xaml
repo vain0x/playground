@@ -19,8 +19,9 @@
             <ListBox.ItemTemplate>
                 <DataTemplate>
                     <TextBlock>
-                        <Run Text="@" />
-                        <Run Text="{Binding Login, Mode=OneWay}" />
+                        <Run Text="{Binding FullName, Mode=OneWay}" />
+                        <LineBreak />
+                        <Run Text="{Binding ShortBio, Mode=OneWay}" />
                     </TextBlock>
                 </DataTemplate>
             </ListBox.ItemTemplate>
