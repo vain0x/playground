@@ -31,16 +31,5 @@ namespace DotNetLab.Cs.Wpf
 
         public new MainWindowViewModel DataContext =>
             (MainWindowViewModel)base.DataContext;
-
-        private void _inputBox_KeyDown(object sender, KeyEventArgs e)
-        {
-            if (e.Key == Key.Return)
-            {
-                if (DataContext.SaveCommand.CanExecute())
-                {
-                    DataContext.SaveCommand.Execute();
-                }
-            }
-        }
     }
 }

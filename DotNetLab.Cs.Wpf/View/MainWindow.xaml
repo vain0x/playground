@@ -10,32 +10,4 @@
     Width="525"
     Height="350"
     >
-    <Grid>
-        <Grid.RowDefinitions>
-            <RowDefinition Height="*" />
-            <RowDefinition Height="*" />
-            <RowDefinition Height="*" />
-        </Grid.RowDefinitions>
-        <TextBox
-            Name="_inputBox"
-            Text="{Binding InputText.Value, UpdateSourceTrigger=PropertyChanged}"
-            AcceptsReturn="false"
-            Height="25"
-            KeyDown="_inputBox_KeyDown"
-            Grid.Row="0"
-            />
-
-        <TextBlock
-            Name="_text"
-            Text="{Binding Text.Value}"
-            Foreground="{Binding Foreground.Value}"
-            Grid.Row="1"
-            />
-
-        <ListBox
-            Name="_list"
-            ItemsSource="{Binding Items}"
-            Grid.Row="2"
-            />
-    </Grid>
 </Window>
