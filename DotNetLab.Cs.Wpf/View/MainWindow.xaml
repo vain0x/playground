@@ -10,8 +10,9 @@
     Width="525"
     Height="350"
     >
-    <Grid
+    <StackPanel
         DataContext="{Binding UserRecommendationViewModel}"
+        Orientation="Vertical"
         >
         <ListBox
             ItemsSource="{Binding Users}"
@@ -26,5 +27,5 @@
                 </DataTemplate>
             </ListBox.ItemTemplate>
         </ListBox>
-    </Grid>
+    </StackPanel>
 </Window>

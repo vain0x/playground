@@ -11,14 +11,25 @@ namespace DotNetLab.Cs.Wpf.Model
 {
     public class UserRecommendation
     {
-        public ReactiveProperty<string> RequestStream { get; } =
+        GitHubClient GitHubClient { get; } =
+            new GitHubClient(new ProductHeaderValue("rx-learning"));
+
+        ReactiveProperty<string> Requests { get; } =
             new ReactiveProperty<string>("https://api.github.com/users");
 
-        public IObservable<User> FetchUser()
+        public IObservable<User> Users { get; }
+
+        Task<SearchUsersResult> RequestNext()
         {
-            var github = new GitHubClient(new ProductHeaderValue("rx-learning"));
-            return
-                Observable.FromAsync(() => github.Search.SearchUsers(new SearchUsersRequest("w")))
+            var request = new SearchUsersRequest("w");
+            return GitHubClient.Search.SearchUsers(request);
+        }
+
+        public UserRecommendation()
+        {
+            Users =
+                Requests
+                .SelectMany(url => Observable.FromAsync(() => RequestNext()))
                 .SelectMany(result => result.Items);
         }
     }

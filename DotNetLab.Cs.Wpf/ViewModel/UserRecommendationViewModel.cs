@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Linq;
 using System.Reactive.Linq;
 using System.Text;
@@ -27,15 +28,15 @@ namespace DotNetLab.Cs.Wpf.ViewModel
         UserRecommendation Model { get; } =
             new UserRecommendation();
 
-        public ReactiveCollection<UserViewModel> Users { get; } =
-            new ReactiveCollection<UserViewModel>();
+        public ReactiveCollection<UserViewModel> Users { get; }
 
         public UserRecommendationViewModel()
         {
-            Model.FetchUser()
+            Users =
+                Model.Users
                 .Take(3)
-                .Subscribe(user =>
-                    Users.AddOnScheduler(new UserViewModel(user)));
+                .Select(user => new UserViewModel(user))
+                .ToReactiveCollection();
         }
     }
 }
