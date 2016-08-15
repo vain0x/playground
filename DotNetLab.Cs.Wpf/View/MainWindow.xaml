@@ -27,5 +27,9 @@
                 </DataTemplate>
             </ListBox.ItemTemplate>
         </ListBox>
+        <Button
+            Content="Refresh"
+            Command="{Binding RefreshCommand}"
+            />
     </StackPanel>
 </Window>

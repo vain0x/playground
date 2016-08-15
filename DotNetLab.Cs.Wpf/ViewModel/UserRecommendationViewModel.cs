@@ -28,15 +28,26 @@ namespace DotNetLab.Cs.Wpf.ViewModel
         UserRecommendation Model { get; } =
             new UserRecommendation();
 
-        public ReactiveCollection<UserViewModel> Users { get; }
+        public ReactiveCollection<UserViewModel> Users { get; } =
+            new ReactiveCollection<UserViewModel>();
+
+        public ReactiveCommand RefreshCommand { get; } =
+            new ReactiveCommand();
 
         public UserRecommendationViewModel()
         {
-            Users =
-                Model.Users
-                .Take(3)
-                .Select(user => new UserViewModel(user))
-                .ToReactiveCollection();
+            Model.Users.Subscribe(users =>
+            {
+                var newUsers =
+                    users
+                    .Take(3)
+                    .Select(user => new UserViewModel(user))
+                    .ToEnumerable();
+                Users.Clear();
+                Users.AddRangeOnScheduler(newUsers);
+            });
+
+            RefreshCommand.Subscribe(_ => Model.Refresh());
         }
     }
 }

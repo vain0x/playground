@@ -19,7 +19,7 @@ namespace DotNetLab.Cs.Wpf.Model
         ReactiveProperty<string> Requests { get; } =
             new ReactiveProperty<string>("https://api.github.com/users");
 
-        public IObservable<User> Users { get; }
+        public IObservable<IObservable<User>> Users { get; }
 
         Task<SearchUsersResult> RequestNext()
         {
@@ -27,12 +27,19 @@ namespace DotNetLab.Cs.Wpf.Model
             return GitHubClient.Search.SearchUsers(request);
         }
 
+        public void Refresh()
+        {
+            Requests.ForceNotify();
+        }
+
         public UserRecommendation()
         {
             Users =
                 Requests
-                .SelectMany(url => Observable.FromAsync(() => RequestNext()))
-                .SelectMany(result => result.Items);
+                .Select(url =>
+                    Observable.FromAsync(() => RequestNext())
+                    .SelectMany(result => result.Items)
+                );
         }
     }
 }
