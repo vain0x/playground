@@ -18,8 +18,16 @@ namespace DotNetLab.Cs.Wpf.ViewModel
     {
         public User User { get; }
         public ReactiveCommand ShowAnotherCommand { get; }
-        public string FullName => string.Format("{0} @{1}", User.Name, User.Login);
-        public string Bio => User.Bio;
+
+        public string FullName =>
+            User.Name == null || User.Login == null
+                ? string.Empty
+                : string.Format("{0} @{1}", User.Name, User.Login);
+
+        public string Bio =>
+            User.Bio == null
+                ? string.Empty
+                : User.Bio;
 
         public UserViewModel(User user, ReactiveCommand<UserViewModel> showAnotherCommand)
         {
