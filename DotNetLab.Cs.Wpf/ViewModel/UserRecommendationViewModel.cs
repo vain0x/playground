@@ -1,10 +1,13 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Collections.ObjectModel;
+using System.Collections.Specialized;
 using System.Diagnostics;
 using System.Linq;
 using System.Reactive.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using DotNetLab.Cs.Wpf.Utility.Detail;
 using DotNetLab.Cs.Wpf.Model;
 using Octokit;
 using Reactive.Bindings;
@@ -28,24 +31,18 @@ namespace DotNetLab.Cs.Wpf.ViewModel
         UserRecommendation Model { get; } =
             new UserRecommendation();
 
-        public ReactiveCollection<UserViewModel> Users { get; } =
-            new ReactiveCollection<UserViewModel>();
+        public ObservableCollection<UserViewModel> Users { get; }
 
         public ReactiveCommand RefreshCommand { get; } =
             new ReactiveCommand();
 
         public UserRecommendationViewModel()
         {
-            Model.Users.Subscribe(users =>
-            {
-                var newUsers =
-                    users
-                    .Take(3)
-                    .Select(user => new UserViewModel(user))
-                    .ToEnumerable();
-                Users.Clear();
-                Users.AddRangeOnScheduler(newUsers);
-            });
+            Users =
+                new SelectObservableCollection<User, UserViewModel>(
+                    Model.RecommendedUsers,
+                    user => new UserViewModel(user)
+                );
 
             RefreshCommand.Subscribe(_ => Model.Refresh());
         }
