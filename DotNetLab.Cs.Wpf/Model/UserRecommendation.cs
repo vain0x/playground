@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Collections.ObjectModel;
 using System.Linq;
 using System.Reactive.Linq;
 using System.Reactive.Threading.Tasks;
@@ -17,50 +18,63 @@ namespace DotNetLab.Cs.Wpf.Model
         GitHubClient GitHubClient { get; } =
             new GitHubClient(new ProductHeaderValue("rx-learning"));
 
-        ReactiveProperty<string> Requests { get; } =
-            new ReactiveProperty<string>("https://api.github.com/users");
-
-        IObservable<User> Users { get; set; }
-        
         Task<SearchUsersResult> RequestNext()
         {
             var request = new SearchUsersRequest("w") { Page = Random.Next(0, 10) };
             return GitHubClient.Search.SearchUsers(request);
         }
 
-        IObservable<User> PopUsers(int n)
-        {
-            var users = Users.Take(n);
-            Users = Users.Skip(n);
-            return users;
-        }
+        public ObservableCollection<User> RecommendedUsers { get; }
 
-        public ReactiveCollection<User> RecommendedUsers { get; } =
-            new ReactiveCollection<User>();
+        public ReactiveCommand<int> ShowAnotherCommand { get; } =
+            new ReactiveCommand<int>();
 
-        public void Refresh()
-        {
-            var users = PopUsers(3).ToEnumerable();
-            RecommendedUsers.Clear();
-            RecommendedUsers.AddRangeOnScheduler(users);
-        }
-
-        public void ShowAnother(int i)
-        {
-            var user = PopUsers(1).Wait();
-            RecommendedUsers[i] = user;
-        }
+        public ReactiveCommand RefreshCommand { get; } =
+            new ReactiveCommand();
 
         public UserRecommendation()
         {
-            Users =
-                Requests
+            var users =
+                Observable.Return("https://api.github.com/users")
                 .SelectMany(url =>
                     Observable.FromAsync(() => RequestNext())
                     .Repeat())
                 .SelectMany(result => result.Items);
 
-            Refresh();
+            var userIndexes =
+                Enumerable.Range(0, 3)
+                .Select(i => new ReactiveProperty<int>(i))
+                .ToArray();
+
+            RecommendedUsers =
+                new ObservableCollection<User>(userIndexes.Select(i => (User)null));
+
+            var userRecommendations =
+                users
+                .Zip(userIndexes.Merge(), Tuple.Create);
+
+            userRecommendations
+                .ObserveOn(UIDispatcherScheduler.Default)
+                .Subscribe(t =>
+                {
+                    var user = t.Item1;
+                    var i = t.Item2;
+                    RecommendedUsers[i] = user;
+                });
+
+            ShowAnotherCommand.Subscribe(
+                i => userIndexes[i].ForceNotify()
+            );
+
+            RefreshCommand.Subscribe(_ =>
+            {
+                foreach (var refreshCommand in userIndexes)
+                {
+                    refreshCommand.ForceNotify();
+                }
+            });
+
+            RefreshCommand.Execute();
         }
     }
 }

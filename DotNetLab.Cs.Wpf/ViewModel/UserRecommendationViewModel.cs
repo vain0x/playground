@@ -37,8 +37,8 @@ namespace DotNetLab.Cs.Wpf.ViewModel
 
         public ObservableCollection<UserViewModel> Users { get; }
 
-        public ReactiveCommand RefreshCommand { get; } =
-            new ReactiveCommand();
+        public ReactiveCommand RefreshCommand =>
+            Model.RefreshCommand;
 
         public ReactiveCommand<UserViewModel> ShowAnotherCommand { get; } =
             new ReactiveCommand<UserViewModel>();
@@ -51,13 +51,11 @@ namespace DotNetLab.Cs.Wpf.ViewModel
                     user => new UserViewModel(user, ShowAnotherCommand)
                 );
 
-            RefreshCommand.Subscribe(_ => Model.Refresh());
-
             ShowAnotherCommand.Subscribe(userVm =>
             {
                 var i = Users.IndexOf(userVm);
                 if (i < 0) return;
-                Model.ShowAnother(i);
+                Model.ShowAnotherCommand.Execute(i);
             });
         }
     }
