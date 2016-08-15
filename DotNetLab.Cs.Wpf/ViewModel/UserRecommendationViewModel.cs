@@ -56,8 +56,7 @@ namespace DotNetLab.Cs.Wpf.ViewModel
             Users =
                 new SelectObservableCollection<User, UserViewModel>(
                     Model.RecommendedUsers,
-                    user => new UserViewModel(user, ShowAnotherCommand)
-                );
+                    user => new UserViewModel(user, ShowAnotherCommand));
 
             ShowAnotherCommand.Subscribe(userVm =>
             {

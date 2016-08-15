@@ -20,7 +20,11 @@ namespace DotNetLab.Cs.Wpf.Model
 
         Task<SearchUsersResult> RequestNext()
         {
-            var request = new SearchUsersRequest("w") { Page = Random.Next(0, 10) };
+            var request =
+                new SearchUsersRequest("w")
+                {
+                    Page = Random.Next(0, 10)
+                };
             return GitHubClient.Search.SearchUsers(request);
         }
 
@@ -62,9 +66,7 @@ namespace DotNetLab.Cs.Wpf.Model
                     RecommendedUsers[i] = user;
                 });
 
-            ShowAnotherCommand.Subscribe(
-                i => userIndexes[i].ForceNotify()
-            );
+            ShowAnotherCommand.Subscribe(i => userIndexes[i].ForceNotify());
 
             RefreshCommand.Subscribe(_ =>
             {
