@@ -55,7 +55,9 @@ namespace DotNetLab.Cs.Wpf.Model
         {
             Users =
                 Requests
-                .SelectMany(url => Observable.FromAsync(() => RequestNext()))
+                .SelectMany(url =>
+                    Observable.FromAsync(() => RequestNext())
+                    .Repeat())
                 .SelectMany(result => result.Items);
 
             Refresh();
