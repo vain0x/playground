@@ -11,6 +11,8 @@ namespace DotNetLab.Cs.Wpf.Model
 {
     public class UserRecommendation
     {
+        Random Random { get; } = new Random();
+
         GitHubClient GitHubClient { get; } =
             new GitHubClient(new ProductHeaderValue("rx-learning"));
 
@@ -21,7 +23,7 @@ namespace DotNetLab.Cs.Wpf.Model
 
         Task<SearchUsersResult> RequestNext()
         {
-            var request = new SearchUsersRequest("w");
+            var request = new SearchUsersRequest("w") { Page = Random.Next(0, 10) };
             return GitHubClient.Search.SearchUsers(request);
         }
 
