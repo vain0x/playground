@@ -45,6 +45,12 @@ namespace DotNetLab.Cs.Wpf.Model
             RecommendedUsers.AddRangeOnScheduler(users);
         }
 
+        public void ShowAnother(int i)
+        {
+            var user = PopUsers(1).Wait();
+            RecommendedUsers[i] = user;
+        }
+
         public UserRecommendation()
         {
             Users =

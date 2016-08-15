@@ -19,11 +19,23 @@
             >
             <ListBox.ItemTemplate>
                 <DataTemplate>
-                    <TextBlock>
-                        <Run Text="{Binding FullName, Mode=OneWay}" />
-                        <LineBreak />
-                        <Run Text="{Binding ShortBio, Mode=OneWay}" />
-                    </TextBlock>
+                    <Grid>
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition />
+                            <ColumnDefinition Width="auto" />
+                        </Grid.ColumnDefinitions>
+                        <TextBlock>
+                            <Run Text="{Binding FullName, Mode=OneWay}" />
+                            <LineBreak />
+                            <Run Text="{Binding Bio, Mode=OneWay}" />
+                        </TextBlock>
+                        <Button
+                            Content="Show another"
+                            Command="{Binding ShowAnotherCommand}"
+                            HorizontalAlignment="Right"
+                            Grid.Column="1"
+                            />
+                    </Grid>
                 </DataTemplate>
             </ListBox.ItemTemplate>
         </ListBox>

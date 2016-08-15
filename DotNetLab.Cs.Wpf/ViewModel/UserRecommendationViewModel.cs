@@ -17,12 +17,16 @@ namespace DotNetLab.Cs.Wpf.ViewModel
     public class UserViewModel
     {
         public User User { get; }
+        public ReactiveCommand ShowAnotherCommand { get; }
         public string FullName => string.Format("{0} @{1}", User.Name, User.Login);
         public string Bio => User.Bio;
 
-        public UserViewModel(User user)
+        public UserViewModel(User user, ReactiveCommand<UserViewModel> showAnotherCommand)
         {
             User = user;
+
+            ShowAnotherCommand = new ReactiveCommand();
+            ShowAnotherCommand.Subscribe(_ => showAnotherCommand.Execute(this));
         }
     }
 
@@ -36,15 +40,25 @@ namespace DotNetLab.Cs.Wpf.ViewModel
         public ReactiveCommand RefreshCommand { get; } =
             new ReactiveCommand();
 
+        public ReactiveCommand<UserViewModel> ShowAnotherCommand { get; } =
+            new ReactiveCommand<UserViewModel>();
+
         public UserRecommendationViewModel()
         {
             Users =
                 new SelectObservableCollection<User, UserViewModel>(
                     Model.RecommendedUsers,
-                    user => new UserViewModel(user)
+                    user => new UserViewModel(user, ShowAnotherCommand)
                 );
 
             RefreshCommand.Subscribe(_ => Model.Refresh());
+
+            ShowAnotherCommand.Subscribe(userVm =>
+            {
+                var i = Users.IndexOf(userVm);
+                if (i < 0) return;
+                Model.ShowAnother(i);
+            });
         }
     }
 }
