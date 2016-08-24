@@ -25,28 +25,40 @@ module Model =
   let replace (state: RenamerState) text =
     text |> String.replaceBy state.Map
 
+  let subfiles state (directory: DirectoryInfo) =
+    seq {
+      for subfile in directory.GetFiles() do
+        if state.IgnoreList |> Set.contains subfile.Name |> not then
+          yield subfile
+    }
+
+  let subdirectories state (directory: DirectoryInfo) =
+    seq {
+      for subdir in directory.GetDirectories() do
+        if state.IgnoreList |> Set.contains subdir.Name |> not then
+          yield subdir
+    }
+
   let rename state (directory: DirectoryInfo) =
     let rec walk state (source: DirectoryInfo) =
       // Replace name and content of subfiles.
-      for subfile in source.GetFiles() do
-        if state.IgnoreList |> Set.contains subfile.Name |> not then
-          let newFileName = subfile.Name |> replace state
-          // Replace content.
-          if extensions |> Set.contains subfile.Extension then
-            subfile.FullName |> File.mapAsString (replace state)
-          // Replace name.
-          if subfile.Name <> newFileName then
-            subfile.MoveTo(Path.Combine(source.FullName, newFileName))
+      for subfile in source |> subfiles state do
+        let newFileName = subfile.Name |> replace state
+        // Replace content.
+        if extensions |> Set.contains subfile.Extension then
+          subfile.FullName |> File.mapAsString (replace state)
+        // Replace name.
+        if subfile.Name <> newFileName then
+          subfile.MoveTo(Path.Combine(source.FullName, newFileName))
 
       // Replace name of subdirectories.
-      for subdir in source.GetDirectories() do
-        if state.IgnoreList |> Set.contains subdir.Name |> not then
-          let newDirectoryName = subdir.Name |> replace state
-          // Do recursively.
-          subdir |> walk state
-          // Replace name.
-          if subdir.Name <> newDirectoryName then
-            subdir.MoveTo(Path.Combine(source.FullName, newDirectoryName))
+      for subdir in source |> subdirectories state do
+        let newDirectoryName = subdir.Name |> replace state
+        // Do recursively.
+        subdir |> walk state
+        // Replace name.
+        if subdir.Name <> newDirectoryName then
+          subdir.MoveTo(Path.Combine(source.FullName, newDirectoryName))
     in
       directory |> walk state
 
