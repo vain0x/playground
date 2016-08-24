@@ -28,7 +28,9 @@ module Model =
   let subfiles state (directory: DirectoryInfo) =
     seq {
       for subfile in directory.GetFiles() do
-        if state.IgnoreList |> Set.contains subfile.Name |> not then
+        if state.IgnoreList |> Set.contains subfile.Name |> not
+          && state.Extensions |> Set.contains subfile.Extension
+        then
           yield subfile
     }
 
@@ -45,8 +47,7 @@ module Model =
       for subfile in source |> subfiles state do
         let newFileName = subfile.Name |> replace state
         // Replace content.
-        if extensions |> Set.contains subfile.Extension then
-          subfile.FullName |> File.mapAsString (replace state)
+        subfile.FullName |> File.mapAsString (replace state)
         // Replace name.
         if subfile.Name <> newFileName then
           subfile.MoveTo(Path.Combine(source.FullName, newFileName))
