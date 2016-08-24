@@ -25,30 +25,30 @@ module Model =
   let replace (state: RenamerState) text =
     text |> String.replaceBy state.Map
 
-  let rec walk state (source: DirectoryInfo) =
-    // Copy subfiles, replacing their name and content.
-    for subfile in source.GetFiles() do
-      if state.IgnoreList |> Set.contains subfile.Name |> not then
-        let newFileName = subfile.Name |> replace state
-        // Replace content.
-        if extensions |> Set.contains subfile.Extension then
-          subfile.FullName |> File.mapAsString (replace state)
-        // Replace name.
-        if subfile.Name <> newFileName then
-          subfile.MoveTo(Path.Combine(source.FullName, newFileName))
-
-    // Copy subdirectories, replacing their name.
-    for subdir in source.GetDirectories() do
-      if state.IgnoreList |> Set.contains subdir.Name |> not then
-        let newDirectoryName = subdir.Name |> replace state
-        // Do recursively.
-        subdir |> walk state
-        // Replace name.
-        if subdir.Name <> newDirectoryName then
-          subdir.MoveTo(Path.Combine(source.FullName, newDirectoryName))
-
   let rename state (directory: DirectoryInfo) =
-    directory |> walk state
+    let rec walk state (source: DirectoryInfo) =
+      // Copy subfiles, replacing their name and content.
+      for subfile in source.GetFiles() do
+        if state.IgnoreList |> Set.contains subfile.Name |> not then
+          let newFileName = subfile.Name |> replace state
+          // Replace content.
+          if extensions |> Set.contains subfile.Extension then
+            subfile.FullName |> File.mapAsString (replace state)
+          // Replace name.
+          if subfile.Name <> newFileName then
+            subfile.MoveTo(Path.Combine(source.FullName, newFileName))
+
+      // Copy subdirectories, replacing their name.
+      for subdir in source.GetDirectories() do
+        if state.IgnoreList |> Set.contains subdir.Name |> not then
+          let newDirectoryName = subdir.Name |> replace state
+          // Do recursively.
+          subdir |> walk state
+          // Replace name.
+          if subdir.Name <> newDirectoryName then
+            subdir.MoveTo(Path.Combine(source.FullName, newDirectoryName))
+    in
+      directory |> walk state
 
 module Program =
   open System
