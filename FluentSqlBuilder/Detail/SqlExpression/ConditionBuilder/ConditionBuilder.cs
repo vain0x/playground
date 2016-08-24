@@ -12,13 +12,14 @@ namespace FluentSqlBuilder.Detail
         List<SqlExpression> Expressions { get; } =
             new List<SqlExpression>();
 
-        public ConditionBuilder(ConditionCombinator combinator)
+        public ConditionBuilder(SqlBuilder sqlBuilder, ConditionCombinator combinator)
+            : base(sqlBuilder)
         {
             Combinator = combinator;
         }
 
-        public ConditionBuilder()
-            : this(ConditionCombinator.And)
+        public ConditionBuilder(SqlBuilder sqlBuilder)
+            : this(sqlBuilder, ConditionCombinator.And)
         {
         }
 
@@ -47,21 +48,14 @@ namespace FluentSqlBuilder.Detail
 
         ConditionBuilder AddSequence(params SqlExpression[] expressions)
         {
-            Expressions.Add(new CompoundExpression(expressions));
+            Expressions.Add(new CompoundExpression(SqlBuilder, expressions));
             return this;
         }
 
-        #region Tokens
-        static readonly SqlExpression _leftParen = new AtomicExpression("(");
-        static readonly SqlExpression _rightParen = new AtomicExpression(")");
-        static readonly SqlExpression _equal = new AtomicExpression("=");
-        static readonly SqlExpression _is = new AtomicExpression("is");
-        static readonly SqlExpression _not = new AtomicExpression("not");
-        #endregion
-
         public ConditionBuilder Equal(SqlExpression lhs, SqlExpression rhs)
         {
-            return AddSequence(lhs, _equal, rhs);
+            var equal = new AtomicExpression(SqlBuilder, "=");
+            return AddSequence(lhs, equal, rhs);
         }
     }
 

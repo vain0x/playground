@@ -8,12 +8,10 @@ namespace FluentSqlBuilder.Detail
         : ISqlPart
         , ISqlExecutable
     {
-        SqlBuilder SqlBuilder { get; }
         SelectStatement Statement { get; }
 
-        public SelectBuilder(SqlBuilder sqlBuilder, SelectStatement statement)
+        public SelectBuilder(SelectStatement statement)
         {
-            SqlBuilder = sqlBuilder;
             Statement = statement;
         }
 
@@ -23,10 +21,7 @@ namespace FluentSqlBuilder.Detail
         #endregion
 
         #region ISqlExecutable
-        public DbCommand ToCommand()
-        {
-            return SqlBuilder.CreateCommand(Statement);
-        }
+        public DbCommand ToCommand() => Statement.ToCommand();
         #endregion
 
         #region Field

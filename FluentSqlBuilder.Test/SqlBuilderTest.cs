@@ -19,21 +19,24 @@ namespace FluentSqlBuilder.Test
         [Fact]
         public void TableTest()
         {
+            var injectionalName = "'; delete from users 0 = 0 or '' = '";
+
             // Unqualified one.
             Assert.Equal("`person`", Sql.Table("person").ToString());
-            Assert.ThrowsAny<Exception>(
-                () => Sql.Table("person '; DELETE FROM users")
-            );
+            Assert.ThrowsAny<Exception>(() => Sql.Table(injectionalName));
 
             // Qualified one.
             Assert.Equal("`db`.`person`", Sql.Table("db", "person").ToString());
+
+            Assert.ThrowsAny<Exception>(() => Sql.Table(injectionalName, "person"));
         }
 
         [Fact]
         public void TableAsTest()
         {
-            // TODO: Should validate and quote aliases.
-            Assert.Equal("`person` as p", Sql.Table("person").As("p").ToString());
+            Assert.Equal("`person` as `p`", Sql.Table("person").As("p").ToString());
+
+            Assert.ThrowsAny<Exception>(() => Sql.Table("person").As("p; delete from users"));
         }
 
         [Fact]
@@ -41,6 +44,7 @@ namespace FluentSqlBuilder.Test
         {
             Assert.Equal("`name`", Sql.Column("name").ToString());
             Assert.Equal("`p`.`name`", Sql.Column("p", "name").ToString());
+            Assert.Equal("`name` as `n`", Sql.Column("name").As("n").ToString());
         }
         #endregion
     }

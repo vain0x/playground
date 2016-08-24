@@ -1,8 +1,8 @@
 ﻿namespace FluentSqlBuilder.Detail
 {
     public class JoinBuilder<TResult>
-        : InternalBuilder
     {
+        SqlBuilder SqlBuilder { get; }
         IRelationalQueryOrCommand Statement { get; }
         JoinType JoinType { get; }
         SqlExpression Relation { get; }
@@ -15,8 +15,8 @@
             SqlExpression relation,
             TResult result
         )
-            : base(sqlBuilder)
         {
+            SqlBuilder = sqlBuilder;
             Statement = statement;
             JoinType = joinType;
             Relation = relation;

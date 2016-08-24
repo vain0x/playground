@@ -1,12 +1,10 @@
 ﻿namespace FluentSqlBuilder.Detail
 {
     public class FieldlessSelectBuilder
-        : InternalBuilder
     {
         SelectStatement Statement { get; }
         
-        public FieldlessSelectBuilder(SqlBuilder sqlBuilder, SelectStatement statement)
-            : base(sqlBuilder)
+        public FieldlessSelectBuilder(SelectStatement statement)
         {
             Statement = statement;
         }
@@ -22,7 +20,7 @@
         #region Join
         JoinBuilder<FieldlessSelectBuilder> Join(SqlExpression relation, JoinType joinType)
         {
-            return new JoinBuilder<FieldlessSelectBuilder>(SqlBuilder, Statement, joinType, relation, this);
+            return new JoinBuilder<FieldlessSelectBuilder>(Statement.SqlBuilder, Statement, joinType, relation, this);
         }
 
         public JoinBuilder<FieldlessSelectBuilder> Join(SqlExpression relation)
@@ -74,7 +72,7 @@
         public SelectBuilder Field(SqlExpression expression)
         {
             Statement.Fields.Add(expression);
-            return new SelectBuilder(SqlBuilder, Statement);
+            return new SelectBuilder(Statement);
         }
         #endregion
     }

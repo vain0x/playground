@@ -43,7 +43,6 @@
     <Compile Include="Detail\SqlExpression\ConditionBuilder\ConditionBuilder.cs" />
     <Compile Include="Detail\SqlExpression\ConditionBuilder\ConditionCombinator.cs" />
     <Compile Include="Detail\SqlExpression\SqlExpression.cs" />
-    <Compile Include="Detail\InternalBuilder.cs" />
     <Compile Include="Detail\JoinBuilders\Join.cs" />
     <Compile Include="Detail\JoinBuilders\JoinBuilder.cs" />
     <Compile Include="Detail\JoinBuilders\JoinedRelation.cs" />

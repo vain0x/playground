@@ -11,11 +11,9 @@ namespace FluentSqlBuilder.Detail
         public JoinedRelation Source { get; } =
             new JoinedRelation();
 
-        public ConditionBuilder WhereCondition { get; } =
-            new ConditionBuilder();
+        public ConditionBuilder WhereCondition { get; }
 
-        public ConditionBuilder HavingCondition { get; } =
-            new ConditionBuilder();
+        public ConditionBuilder HavingCondition { get; }
 
         public List<SqlExpression> GroupKeys { get; } =
             new List<SqlExpression>();
@@ -25,6 +23,13 @@ namespace FluentSqlBuilder.Detail
 
         public List<SqlExpression> Fields { get; } =
             new List<SqlExpression>();
+
+        public SelectStatement(SqlBuilder sqlBuilder)
+            : base(sqlBuilder)
+        {
+            WhereCondition = new ConditionBuilder(SqlBuilder);
+            HavingCondition = new ConditionBuilder(SqlBuilder);
+        }
 
         #region SqlExpression
         public override IEnumerable<string> Tokens
@@ -75,5 +80,8 @@ namespace FluentSqlBuilder.Detail
             .Concat(OrderKeys.SelectMany(o => o.Parameters))
             .Concat(Fields.SelectMany(f => f.Parameters));
         #endregion
+
+        public DbCommand ToCommand() =>
+            SqlBuilder.CreateCommand(this);
     }
 }

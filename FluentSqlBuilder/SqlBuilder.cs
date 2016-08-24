@@ -32,7 +32,7 @@ namespace FluentSqlBuilder
         #region Expression
         public SqlExpression Table(string qualifier, string tableName)
         {
-            return new AtomicExpression(Language.BuildIdentifier(qualifier, tableName));
+            return new AtomicExpression(this, Language.BuildIdentifier(qualifier, tableName));
         }
 
         public SqlExpression Table(string tableName)
@@ -42,7 +42,7 @@ namespace FluentSqlBuilder
 
         public SqlExpression Column(string qualifier, string columnName)
         {
-            return new AtomicExpression(Language.BuildIdentifier(qualifier, columnName));
+            return new AtomicExpression(this, Language.BuildIdentifier(qualifier, columnName));
         }
 
         public SqlExpression Column(string columnName)
@@ -57,7 +57,7 @@ namespace FluentSqlBuilder
             parameter.ParameterName = name;
             parameter.DbType = type;
             parameter.Value = value;
-            return new ParameterExpression(name, parameter);
+            return new ParameterExpression(this, name, parameter);
         }
 
         #region Typed value expressions
@@ -86,12 +86,9 @@ namespace FluentSqlBuilder
             return Value(DbType.DateTime, value);
         }
 
-        static readonly AtomicExpression _nullExpression =
-            new AtomicExpression("null");
-
         public SqlExpression Null
         {
-            get { return _nullExpression; }
+            get { return new AtomicExpression(this, "null"); }
         }
         #endregion
         #endregion
@@ -99,19 +96,19 @@ namespace FluentSqlBuilder
         #region Condition
         public ConditionBuilder And()
         {
-            return new ConditionBuilder(ConditionCombinator.And);
+            return new ConditionBuilder(this, ConditionCombinator.And);
         }
 
         public ConditionBuilder Or()
         {
-            return new ConditionBuilder(ConditionCombinator.Or);
+            return new ConditionBuilder(this, ConditionCombinator.Or);
         }
         #endregion
 
         #region Mainpulation
         public FromlessSelectBuilder Select()
         {
-            return new FromlessSelectBuilder(this, new SelectStatement());
+            return new FromlessSelectBuilder(new SelectStatement(this));
         }
         #endregion
     }

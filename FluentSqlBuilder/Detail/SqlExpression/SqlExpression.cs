@@ -1,4 +1,5 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 using System.Data.Common;
 using System.Linq;
 
@@ -10,6 +11,13 @@ namespace FluentSqlBuilder.Detail
         public abstract IEnumerable<string> Tokens { get; }
         public abstract IEnumerable<DbParameter> Parameters { get; }
 
+        internal SqlBuilder SqlBuilder { get; }
+
+        protected SqlExpression(SqlBuilder sqlBuilder)
+        {
+            SqlBuilder = sqlBuilder;
+        }
+
         public override string ToString()
         {
             return string.Join(" ", Tokens);
@@ -17,29 +25,36 @@ namespace FluentSqlBuilder.Detail
 
         public AliasedExpression As(string alias)
         {
-            return new AliasedExpression(this, alias);
+            if (!SqlBuilder.Language.IsIdentifier(alias))
+            {
+                throw new ArgumentException(nameof(alias));
+            }
+
+            var quotedAlias = SqlBuilder.Language.BuildIdentifier(null, alias);
+            return new AliasedExpression(SqlBuilder, this, quotedAlias);
         }
     }
 
     public class ConcreteSqlExpression
         : SqlExpression
     {
-        public override IEnumerable<string> Tokens { get; }
-        public override IEnumerable<DbParameter> Parameters { get; }
+        public sealed override IEnumerable<string> Tokens { get; }
+        public sealed override IEnumerable<DbParameter> Parameters { get; }
 
-        internal ConcreteSqlExpression(IEnumerable<string> strings, IEnumerable<DbParameter> parameters)
+        internal ConcreteSqlExpression(SqlBuilder sqlBuilder, IEnumerable<string> strings, IEnumerable<DbParameter> parameters)
+            : base(sqlBuilder)
         {
             Tokens = strings;
             Parameters = parameters;
         }
 
-        internal ConcreteSqlExpression(IEnumerable<string> strings)
-            : this(strings, Enumerable.Empty<DbParameter>())
+        internal ConcreteSqlExpression(SqlBuilder sqlBuilder, IEnumerable<string> strings)
+            : this(sqlBuilder, strings, Enumerable.Empty<DbParameter>())
         {
         }
 
-        internal ConcreteSqlExpression(ISqlPart sqlPart)
-            : this(sqlPart.Tokens, sqlPart.Parameters)
+        internal ConcreteSqlExpression(SqlBuilder sqlBuilder, ISqlPart sqlPart)
+            : this(sqlBuilder, sqlPart.Tokens, sqlPart.Parameters)
         {
         }
     }
@@ -47,11 +62,12 @@ namespace FluentSqlBuilder.Detail
     public class CompoundExpression
         : ConcreteSqlExpression
     {
-        internal CompoundExpression(IEnumerable<SqlExpression> innerExpressions)
+        internal CompoundExpression(SqlBuilder sqlBuilder, IEnumerable<SqlExpression> innerExpressions)
             : base(
-                  innerExpressions.SelectMany(x => x.Tokens),
-                  innerExpressions.SelectMany(x => x.Parameters)
-                  )
+                sqlBuilder,
+                innerExpressions.SelectMany(x => x.Tokens),
+                innerExpressions.SelectMany(x => x.Parameters)
+            )
         {
         }
     }
@@ -59,8 +75,8 @@ namespace FluentSqlBuilder.Detail
     public class AtomicExpression
         : ConcreteSqlExpression
     {
-        internal AtomicExpression(string @string)
-            : base(new[] { @string })
+        internal AtomicExpression(SqlBuilder sqlBuilder, string @string)
+            : base(sqlBuilder, new[] { @string })
         {
         }
     }
@@ -68,8 +84,8 @@ namespace FluentSqlBuilder.Detail
     public class ParameterExpression
         : ConcreteSqlExpression
     {
-        internal ParameterExpression(string name, DbParameter parameter)
-            : base(new[] { "@" + name }, new[] { parameter })
+        internal ParameterExpression(SqlBuilder sqlBuilder, string name, DbParameter parameter)
+            : base(sqlBuilder, new[] { "@" + name }, new[] { parameter })
         {
         }
     }
@@ -80,7 +96,8 @@ namespace FluentSqlBuilder.Detail
         public SqlExpression Expression { get; }
         public string Alias { get; }
 
-        public AliasedExpression(SqlExpression expression, string alias)
+        public AliasedExpression(SqlBuilder sqlBuilder, SqlExpression expression, string alias)
+            : base(sqlBuilder)
         {
             Expression = expression;
             Alias = alias;

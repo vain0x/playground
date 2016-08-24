@@ -3,12 +3,10 @@
 namespace FluentSqlBuilder.Detail
 {
     public class FromlessSelectBuilder
-        : InternalBuilder
     {
         SelectStatement Statement { get; }
 
-        public FromlessSelectBuilder(SqlBuilder sqlBuilder, SelectStatement statement)
-            : base(sqlBuilder)
+        public FromlessSelectBuilder(SelectStatement statement)
         {
             Statement = statement;
         }
@@ -17,7 +15,7 @@ namespace FluentSqlBuilder.Detail
         public FieldlessSelectBuilder From(SqlExpression relation)
         {
             Statement.Source.Add(relation);
-            return new FieldlessSelectBuilder(SqlBuilder, Statement);
+            return new FieldlessSelectBuilder(Statement);
         }
         #endregion
     }
