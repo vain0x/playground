@@ -27,7 +27,7 @@ module Model =
 
   let rename state (directory: DirectoryInfo) =
     let rec walk state (source: DirectoryInfo) =
-      // Copy subfiles, replacing their name and content.
+      // Replace name and content of subfiles.
       for subfile in source.GetFiles() do
         if state.IgnoreList |> Set.contains subfile.Name |> not then
           let newFileName = subfile.Name |> replace state
@@ -38,7 +38,7 @@ module Model =
           if subfile.Name <> newFileName then
             subfile.MoveTo(Path.Combine(source.FullName, newFileName))
 
-      // Copy subdirectories, replacing their name.
+      // Replace name of subdirectories.
       for subdir in source.GetDirectories() do
         if state.IgnoreList |> Set.contains subdir.Name |> not then
           let newDirectoryName = subdir.Name |> replace state
