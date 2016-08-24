@@ -5,8 +5,9 @@ using System.Linq;
 namespace FluentSqlBuilder.Detail
 {
     public class SelectStatement
-        : SqlExpression
+        : SqlExpression<IRelation>
         , IRelationalQueryOrCommand
+        , ISqlExecutable
     {
         public JoinedRelation Source { get; } =
             new JoinedRelation();
@@ -15,14 +16,14 @@ namespace FluentSqlBuilder.Detail
 
         public ConditionBuilder HavingCondition { get; }
 
-        public List<SqlExpression> GroupKeys { get; } =
-            new List<SqlExpression>();
+        public List<ISqlPart> GroupKeys { get; } =
+            new List<ISqlPart>();
 
         public List<OrderKey> OrderKeys { get; } =
             new List<OrderKey>();
 
-        public List<SqlExpression> Fields { get; } =
-            new List<SqlExpression>();
+        public List<ISqlPart> Fields { get; } =
+            new List<ISqlPart>();
 
         public SelectStatement(SqlBuilder sqlBuilder)
             : base(sqlBuilder)

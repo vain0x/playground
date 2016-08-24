@@ -10,7 +10,7 @@
         }
 
         #region From
-        public FieldlessSelectBuilder From(SqlExpression relation)
+        public FieldlessSelectBuilder From(ISqlExpression<IRelation> relation)
         {
             Statement.Source.Add(relation);
             return this;
@@ -18,12 +18,12 @@
         #endregion
 
         #region Join
-        JoinBuilder<FieldlessSelectBuilder> Join(SqlExpression relation, JoinType joinType)
+        JoinBuilder<FieldlessSelectBuilder> Join(ISqlExpression<IRelation> relation, JoinType joinType)
         {
             return new JoinBuilder<FieldlessSelectBuilder>(Statement.SqlBuilder, Statement, joinType, relation, this);
         }
 
-        public JoinBuilder<FieldlessSelectBuilder> Join(SqlExpression relation)
+        public JoinBuilder<FieldlessSelectBuilder> Join(ISqlExpression<IRelation> relation)
         {
             return Join(relation, JoinType.Inner);
         }
@@ -43,7 +43,7 @@
         #endregion
 
         #region GroupBy
-        public FieldlessSelectBuilder GroupBy(SqlExpression expression)
+        public FieldlessSelectBuilder GroupBy<X>(ISqlExpression<IScalar<X>> expression)
         {
             Statement.GroupKeys.Add(expression);
             return this;
@@ -51,25 +51,25 @@
         #endregion
 
         #region OrderBy
-        FieldlessSelectBuilder OrderByImpl(SqlExpression expression, OrderDirection direction)
+        FieldlessSelectBuilder OrderByImpl<X>(ISqlExpression<IScalar<X>> expression, OrderDirection direction)
         {
             Statement.OrderKeys.Add(new OrderKey(expression, direction));
             return this;
         }
 
-        public FieldlessSelectBuilder OrderBy(SqlExpression column)
+        public FieldlessSelectBuilder OrderBy<X>(ISqlExpression<IScalar<X>> column)
         {
             return OrderByImpl(column, OrderDirection.Ascending);
         }
 
-        public FieldlessSelectBuilder OrderByDescending(SqlExpression column)
+        public FieldlessSelectBuilder OrderByDescending<X>(ISqlExpression<IScalar<X>> column)
         {
             return OrderByImpl(column, OrderDirection.Descending);
         }
         #endregion
 
         #region Field
-        public SelectBuilder Field(SqlExpression expression)
+        public SelectBuilder Field<X>(ISqlExpression<IScalar<X>> expression)
         {
             Statement.Fields.Add(expression);
             return new SelectBuilder(Statement);

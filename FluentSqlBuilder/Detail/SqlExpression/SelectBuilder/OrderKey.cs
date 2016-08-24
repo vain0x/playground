@@ -6,10 +6,10 @@ namespace FluentSqlBuilder.Detail
     public class OrderKey
         : ISqlPart
     {
-        public SqlExpression Expression { get; }
+        public ISqlPart Expression { get; }
         public OrderDirection Direction { get; }
 
-        public OrderKey(SqlExpression expression, OrderDirection direction)
+        public OrderKey(ISqlPart expression, OrderDirection direction)
         {
             Expression = expression;
             Direction = direction;

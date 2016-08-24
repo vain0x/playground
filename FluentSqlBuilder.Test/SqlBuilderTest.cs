@@ -42,9 +42,9 @@ namespace FluentSqlBuilder.Test
         [Fact]
         public void ColumnTest()
         {
-            Assert.Equal("`name`", Sql.Column("name").ToString());
-            Assert.Equal("`p`.`name`", Sql.Column("p", "name").ToString());
-            Assert.Equal("`name` as `n`", Sql.Column("name").As("n").ToString());
+            Assert.Equal("`name`", Sql.Column<string>("name").ToString());
+            Assert.Equal("`p`.`name`", Sql.Column<string>("p", "name").ToString());
+            Assert.Equal("`name` as `n`", Sql.Column<string>("name").As("n").ToString());
         }
         #endregion
     }

@@ -13,7 +13,7 @@ namespace FluentSqlBuilder.Test
         {
             var c = Sql.Select()
                 .From(Sql.Table("persons"))
-                .Field(Sql.Column("name"))
+                .Field(Sql.Column<string>("name"))
                 .ToCommand();
             Assert.Equal("select `name` from `persons`", c.CommandText);
             Assert.True(c.Parameters.Count == 0);
@@ -24,8 +24,8 @@ namespace FluentSqlBuilder.Test
         {
             var c = Sql.Select()
                 .From(Sql.Table("persons"))
-                .Where().Equal(Sql.Column("name"), Sql.String("Miku"))
-                .Field(Sql.Column("age"))
+                .Where().Equal(Sql.Column<string>("name"), Sql.String("Miku"))
+                .Field(Sql.Column<long>("age"))
                 .ToCommand();
             Assert.Equal(
                 "select `age` from `persons` where ( `name` = @p0 )",

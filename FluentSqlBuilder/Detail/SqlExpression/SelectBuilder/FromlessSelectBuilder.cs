@@ -12,7 +12,7 @@ namespace FluentSqlBuilder.Detail
         }
 
         #region From
-        public FieldlessSelectBuilder From(SqlExpression relation)
+        public FieldlessSelectBuilder From(ISqlExpression<IRelation> relation)
         {
             Statement.Source.Add(relation);
             return new FieldlessSelectBuilder(Statement);

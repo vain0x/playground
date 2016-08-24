@@ -7,14 +7,14 @@ namespace FluentSqlBuilder.Detail
     public class JoinedRelation
         : ISqlPart
     {
-        public List<SqlExpression> Relations { get; } =
-            new List<SqlExpression>();
+        public List<ISqlExpression<IRelation>> Relations { get; } =
+            new List<ISqlExpression<IRelation>>();
 
         public List<Join> Joins { get; } =
             new List<Join>();
 
         #region Add
-        public void Add(SqlExpression relation)
+        public void Add(ISqlExpression<IRelation> relation)
         {
             Relations.Add(relation);
         }

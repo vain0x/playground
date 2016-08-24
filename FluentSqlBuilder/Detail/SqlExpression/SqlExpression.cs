@@ -5,8 +5,14 @@ using System.Linq;
 
 namespace FluentSqlBuilder.Detail
 {
-    public abstract class SqlExpression
+    public interface ISqlExpression<out TType>
         : ISqlPart
+    {
+        IAliasedSqlExpression<TType> As(string alias);
+    }
+
+    public abstract class SqlExpression<TType>
+        : ISqlExpression<TType>
     {
         #region ISqlPart
         public abstract IEnumerable<string> Tokens { get; }
@@ -25,7 +31,8 @@ namespace FluentSqlBuilder.Detail
             return string.Join(" ", Tokens);
         }
 
-        public AliasedExpression As(string alias)
+        #region ISqlExpression
+        public IAliasedSqlExpression<TType> As(string alias)
         {
             if (!SqlBuilder.Language.IsIdentifier(alias))
             {
@@ -33,12 +40,13 @@ namespace FluentSqlBuilder.Detail
             }
 
             var quotedAlias = SqlBuilder.Language.BuildIdentifier(null, alias);
-            return new AliasedExpression(SqlBuilder, this, quotedAlias);
+            return new AliasedExpression<TType>(SqlBuilder, this, quotedAlias);
         }
+        #endregion
     }
 
-    public class ConcreteSqlExpression
-        : SqlExpression
+    public class ConcreteSqlExpression<TType>
+        : SqlExpression<TType>
     {
         public sealed override IEnumerable<string> Tokens { get; }
         public sealed override IEnumerable<DbParameter> Parameters { get; }
@@ -61,8 +69,8 @@ namespace FluentSqlBuilder.Detail
         }
     }
 
-    public class AtomicExpression
-        : ConcreteSqlExpression
+    public class AtomicExpression<TType>
+        : ConcreteSqlExpression<TType>
     {
         internal AtomicExpression(SqlBuilder sqlBuilder, string @string)
             : base(sqlBuilder, new[] { @string })
@@ -70,8 +78,8 @@ namespace FluentSqlBuilder.Detail
         }
     }
 
-    public class ParameterExpression
-        : ConcreteSqlExpression
+    public class ParameterExpression<TType>
+        : ConcreteSqlExpression<TType>
     {
         internal ParameterExpression(SqlBuilder sqlBuilder, string name, DbParameter parameter)
             : base(sqlBuilder, new[] { "@" + name }, new[] { parameter })
@@ -79,13 +87,19 @@ namespace FluentSqlBuilder.Detail
         }
     }
 
-    public class AliasedExpression
-        : SqlExpression
+    public interface IAliasedSqlExpression<out TType>
+        : ISqlPart
     {
-        public SqlExpression Expression { get; }
+    }
+
+    public class AliasedExpression<TType>
+        : SqlExpression<IScalar<object>>
+        , IAliasedSqlExpression<TType>
+    {
+        public ISqlExpression<TType> Expression { get; }
         public string Alias { get; }
 
-        public AliasedExpression(SqlBuilder sqlBuilder, SqlExpression expression, string alias)
+        public AliasedExpression(SqlBuilder sqlBuilder, ISqlExpression<TType> expression, string alias)
             : base(sqlBuilder)
         {
             Expression = expression;

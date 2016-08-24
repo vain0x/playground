@@ -5,7 +5,7 @@ using System.Linq;
 namespace FluentSqlBuilder.Detail
 {
     public class ConditionBuilder
-        : SqlExpression
+        : SqlExpression<bool>
     {
         ConditionCombinator Combinator { get; }
 
@@ -54,7 +54,7 @@ namespace FluentSqlBuilder.Detail
             return this;
         }
 
-        public ConditionBuilder Equal(SqlExpression lhs, SqlExpression rhs)
+        public ConditionBuilder Equal<X>(ISqlExpression<X> lhs, ISqlExpression<X> rhs)
         {
             var equal = SqlPart.FromToken("=");
             return AddExpression(lhs, equal, rhs);
@@ -72,7 +72,7 @@ namespace FluentSqlBuilder.Detail
             Result = result;
         }
 
-        public TResult Equal(SqlExpression lhs, SqlExpression rhs)
+        public TResult Equal<X>(ISqlExpression<X> lhs, ISqlExpression<X> rhs)
         {
             Condition.Equal(lhs, rhs);
             return Result;

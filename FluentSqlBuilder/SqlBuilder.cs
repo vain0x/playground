@@ -15,7 +15,7 @@ namespace FluentSqlBuilder
         internal SqlLanguage Language => Provider.Language;
         internal DbProviderFactory Factory => Provider.Factory;
 
-        internal DbCommand CreateCommand(SqlExpression expression)
+        internal DbCommand CreateCommand(ISqlExecutable expression)
         {
             var command = Factory.CreateCommand();
             command.CommandText = expression.ToString();
@@ -30,65 +30,68 @@ namespace FluentSqlBuilder
         }
 
         #region Expression
-        public SqlExpression Table(string qualifier, string tableName)
+        public ISqlExpression<IRelation> Table(string qualifier, string tableName)
         {
-            return new AtomicExpression(this, Language.BuildIdentifier(qualifier, tableName));
+            return new AtomicExpression<IRelation>(this, Language.BuildIdentifier(qualifier, tableName));
         }
 
-        public SqlExpression Table(string tableName)
+        public ISqlExpression<IRelation> Table(string tableName)
         {
             return Table(null, tableName);
         }
 
-        public SqlExpression Column(string qualifier, string columnName)
+        public ISqlExpression<IScalar<X>> Column<X>(string qualifier, string columnName)
         {
-            return new AtomicExpression(this, Language.BuildIdentifier(qualifier, columnName));
+            return new AtomicExpression<IScalar<X>>(this, Language.BuildIdentifier(qualifier, columnName));
         }
 
-        public SqlExpression Column(string columnName)
+        public ISqlExpression<IScalar<X>> Column<X>(string columnName)
         {
-            return Column(null, columnName);
+            return Column<X>(null, columnName);
         }
 
-        public ParameterExpression Value(DbType type, object value)
+        ParameterExpression<IScalar<X>> ValueImpl<X>(DbType type, object value)
         {
             var name = "p" + Guid.NewGuid().ToString().Replace("-", "");
             var parameter = Factory.CreateParameter();
             parameter.ParameterName = name;
             parameter.DbType = type;
             parameter.Value = value;
-            return new ParameterExpression(this, name, parameter);
+            return new ParameterExpression<IScalar<X>>(this, name, parameter);
         }
+
+        ParameterExpression<IScalar<object>> Value(DbType type, object value) =>
+            ValueImpl<object>(type, value);
 
         #region Typed value expressions
-        public ParameterExpression Bool(bool value)
+        public ParameterExpression<IScalar<bool>> Bool(bool value)
         {
-            return Value(DbType.Boolean, value);
+            return ValueImpl<bool>(DbType.Boolean, value);
         }
 
-        public ParameterExpression Int(long value)
+        public ParameterExpression<IScalar<long>> Int(long value)
         {
-            return Value(DbType.Int64, value);
+            return ValueImpl<long>(DbType.Int64, value);
         }
 
-        public ParameterExpression String(string value)
+        public ParameterExpression<IScalar<string>> String(string value)
         {
-            return Value(DbType.String, value);
+            return ValueImpl<string>(DbType.String, value);
         }
 
-        public ParameterExpression Date(DateTime value)
+        public ParameterExpression<IScalar<DateTime>> Date(DateTime value)
         {
-            return Value(DbType.Date, value);
+            return ValueImpl<DateTime>(DbType.Date, value);
         }
 
-        public ParameterExpression DateTime(DateTime value)
+        public ParameterExpression<IScalar<DateTime>> DateTime(DateTime value)
         {
-            return Value(DbType.DateTime, value);
+            return ValueImpl<DateTime>(DbType.DateTime, value);
         }
 
-        public SqlExpression Null
+        public SqlExpression<IScalar<object>> Null
         {
-            get { return new AtomicExpression(this, "null"); }
+            get { return new AtomicExpression<IScalar<object>>(this, "null"); }
         }
         #endregion
         #endregion

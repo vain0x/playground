@@ -5,14 +5,14 @@
         SqlBuilder SqlBuilder { get; }
         IRelationalQueryOrCommand Statement { get; }
         JoinType JoinType { get; }
-        SqlExpression Relation { get; }
+        ISqlExpression<IRelation> Relation { get; }
         TResult Result { get; }
 
         public JoinBuilder(
             SqlBuilder sqlBuilder,
             IRelationalQueryOrCommand statement,
             JoinType joinType,
-            SqlExpression relation,
+            ISqlExpression<IRelation> relation,
             TResult result
         )
         {
@@ -29,7 +29,7 @@
             return Result;
         }
 
-        public TResult Using(SqlExpression column)
+        public TResult Using(ISqlExpression<IScalar<object>> column)
         {
             Statement.Source.Add(new JoinUsing(JoinType, Relation, column));
             return Result;
@@ -37,7 +37,7 @@
         
         public TResult Using(string columnName)
         {
-            return Using(SqlBuilder.Column(columnName));
+            return Using(SqlBuilder.Column<object>(columnName));
         }
     }
 }
