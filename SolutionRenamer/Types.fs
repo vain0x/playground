@@ -18,7 +18,6 @@ module Types =
       Guids               : Set<string>
     }
 
-[<AutoOpen>]
 module Constants =
   open System.Text.RegularExpressions
 
