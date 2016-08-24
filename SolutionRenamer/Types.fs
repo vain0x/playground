@@ -26,8 +26,10 @@ module Constants =
     [
       ".sln"
       // F#
+      ".fs"
       ".fsproj"
       // C#
+      ".cs"
       ".csproj"
       // Visual Basic
       ".vb"
