@@ -43,12 +43,16 @@
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="SelectBuilderTest.cs" />
     <Compile Include="SqlBuilderTest.cs" />
+    <Compile Include="Utility\DbCommandExtensions.cs" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\FluentSqlBuilder\FluentSqlBuilder.csproj">
       <Project>{C500A67F-E8BF-4F9D-A87D-CA20FA56E1C2}</Project>
       <Name>FluentSqlBuilder</Name>
     </ProjectReference>
+  </ItemGroup>
+  <ItemGroup>
+    <Folder Include="Utility\" />
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <Choose>

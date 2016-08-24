@@ -27,7 +27,10 @@ namespace FluentSqlBuilder.Test
                 .Where().Equal(Sql.Column("name"), Sql.String("Miku"))
                 .Field(Sql.Column("age"))
                 .ToCommand();
-            Assert.Equal("select `age` from `persons` where `name` = @_parameter", c.CommandText);
+            Assert.Equal(
+                "select `age` from `persons` where ( `name` = @p0 )",
+                c.ToParameterizedString()
+            );
         }
     }
 }
