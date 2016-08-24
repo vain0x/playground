@@ -8,8 +8,10 @@ namespace FluentSqlBuilder.Detail
     public abstract class SqlExpression
         : ISqlPart
     {
+        #region ISqlPart
         public abstract IEnumerable<string> Tokens { get; }
         public abstract IEnumerable<DbParameter> Parameters { get; }
+        #endregion
 
         internal SqlBuilder SqlBuilder { get; }
 
@@ -55,19 +57,6 @@ namespace FluentSqlBuilder.Detail
 
         internal ConcreteSqlExpression(SqlBuilder sqlBuilder, ISqlPart sqlPart)
             : this(sqlBuilder, sqlPart.Tokens, sqlPart.Parameters)
-        {
-        }
-    }
-
-    public class CompoundExpression
-        : ConcreteSqlExpression
-    {
-        internal CompoundExpression(SqlBuilder sqlBuilder, IEnumerable<SqlExpression> innerExpressions)
-            : base(
-                sqlBuilder,
-                innerExpressions.SelectMany(x => x.Tokens),
-                innerExpressions.SelectMany(x => x.Parameters)
-            )
         {
         }
     }

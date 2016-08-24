@@ -9,8 +9,8 @@ namespace FluentSqlBuilder.Detail
     {
         ConditionCombinator Combinator { get; }
 
-        List<SqlExpression> Expressions { get; } =
-            new List<SqlExpression>();
+        List<ISqlPart> Expressions { get; } =
+            new List<ISqlPart>();
 
         public ConditionBuilder(SqlBuilder sqlBuilder, ConditionCombinator combinator)
             : base(sqlBuilder)
@@ -23,12 +23,14 @@ namespace FluentSqlBuilder.Detail
         {
         }
 
+        #region SqlExpression
         public override IEnumerable<string> Tokens =>
             Combinator.Combine(Expressions.Select(x => x.Tokens))
             .Enclose("(", ")");
 
         public override IEnumerable<DbParameter> Parameters =>
             Expressions.SelectMany(x => x.Parameters);
+        #endregion
 
         public bool IsTrivial =>
             Expressions.IsEmpty();
@@ -46,16 +48,16 @@ namespace FluentSqlBuilder.Detail
             return this;
         }
 
-        ConditionBuilder AddSequence(params SqlExpression[] expressions)
+        ConditionBuilder AddExpression(params ISqlPart[] parts)
         {
-            Expressions.Add(new CompoundExpression(SqlBuilder, expressions));
+            Expressions.Add(SqlPart.Concat(parts));
             return this;
         }
 
         public ConditionBuilder Equal(SqlExpression lhs, SqlExpression rhs)
         {
-            var equal = new AtomicExpression(SqlBuilder, "=");
-            return AddSequence(lhs, equal, rhs);
+            var equal = SqlPart.FromToken("=");
+            return AddExpression(lhs, equal, rhs);
         }
     }
 
