@@ -5,17 +5,11 @@ module Model =
   open System.IO
 
   let initialState =
-    // Replace GUIDs to new GUIDs.
-    let guidMap =
-      Constants.guids
-      |> List.map (fun guid -> (guid, Guid.NewGuid().ToString()))
-      |> Map.ofList
-    in
-      {
-        Map             = guidMap
-        Extensions      = Constants.extensions
-        IgnoreList      = Constants.ignoreList
-      }
+    {
+      Map             = Map.empty
+      Extensions      = Constants.extensions
+      IgnoreList      = Constants.ignoreList
+    }
 
   let addReplace source destination (state: RenamerState) =
     { state with
@@ -41,7 +35,30 @@ module Model =
           yield subdir
     }
 
-  let rename state (directory: DirectoryInfo) =
+  let collectGuids (directory: DirectoryInfo) state =
+    let findGuids file =
+      Constants.guidRegex
+      |> Regex.matchAll (file |> FileInfo.readAllText)
+      |> Seq.map (fun m -> m.Value)
+    let rec walk state (source: DirectoryInfo) =
+      seq {
+        for subfile in source |> subfiles state do
+          yield findGuids subfile |> Set.ofSeq
+        for subdir in source |> subdirectories state do
+          yield! subdir |> walk state
+      }
+    let guids =
+      directory
+      |> walk state
+      |> Set.unionMany
+    let map =
+      guids
+      |> Seq.map (fun guid -> (guid, Guid.NewGuid().ToString()))
+      |> Map.ofSeq
+    in
+      { state with Map = Map.merge state.Map map }
+
+  let renameImpl (directory: DirectoryInfo) state =
     let rec walk state (source: DirectoryInfo) =
       // Replace name and content of subfiles.
       for subfile in source |> subfiles state do
@@ -62,6 +79,11 @@ module Model =
           subdir.MoveTo(Path.Combine(source.FullName, newDirectoryName))
     in
       directory |> walk state
+
+  let rename state directory =
+    state
+    |> collectGuids directory
+    |> renameImpl directory
 
 module Program =
   open System
