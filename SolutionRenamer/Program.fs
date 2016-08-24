@@ -80,7 +80,7 @@ module Model =
     in
       directory |> walk state
 
-  let rename state directory =
+  let rename directory state =
     state
     |> collectGuids directory
     |> renameImpl directory
@@ -106,11 +106,10 @@ module Program =
       match Console.ReadLine() with
       | null -> ()
       | projectName ->
-        let state =
-          initialState
-          |> addReplace settings.SourceSolutionName solutionName 
-          |> addReplace settings.SourceProjectName projectName
-        settings.SolutionDirectory |> Model.rename state
+        initialState
+        |> addReplace settings.SourceSolutionName solutionName 
+        |> addReplace settings.SourceProjectName projectName
+        |> Model.rename settings.SolutionDirectory
 
   [<EntryPoint>]
   let main args =
