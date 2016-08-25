@@ -4,6 +4,7 @@ using System.Data.Common;
 using System.Linq;
 using FluentSqlBuilder.Detail;
 using FluentSqlBuilder.Provider;
+using FluentSqlBuilder.Public;
 
 namespace FluentSqlBuilder
 {
@@ -30,14 +31,14 @@ namespace FluentSqlBuilder
         }
 
         #region Expression
-        public ISqlExpression<IRelation> Table(string qualifier, string tableName)
+        public ITable Table(string qualifier, string tableName)
         {
-            return new AtomicExpression<IRelation>(this, Language.BuildIdentifier(qualifier, tableName));
+            throw new NotImplementedException();
         }
 
-        public ISqlExpression<IRelation> Table(string tableName)
+        public ITable Table(string tableName)
         {
-            return Table(null, tableName);
+            return new Table(this, tableName);
         }
 
         public ISqlExpression<IScalar<X>> Column<X>(string qualifier, string columnName)
