@@ -5,7 +5,7 @@ using System.Linq;
 namespace FluentSqlBuilder.Detail
 {
     public class ConditionBuilder
-        : SqlExpression<bool>
+        : SqlExpression<IScalar<bool>>
     {
         ConditionCombinator Combinator { get; }
 
