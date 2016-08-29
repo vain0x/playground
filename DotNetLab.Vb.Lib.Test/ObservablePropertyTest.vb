@@ -85,4 +85,54 @@ Public Class ObservablePropertyTest
                 ",5,6,2"
             }, dependentHistory)
     End Sub
+
+    <Fact>
+    Public Sub MakeUndoableUndoTest()
+        Dim undoable = ObservableProperty.Create(0).MakeUndoable()
+        Assert.True(Not undoable.CanUndo)
+        Assert.ThrowsAny(Of Exception)(Sub() undoable.Undo())
+        undoable.Value = 1
+        Assert.True(undoable.CanUndo)
+        undoable.Undo() ' To 0.
+        Assert.Equal(0, undoable.Value)
+        Assert.True(Not undoable.CanUndo)
+        undoable.Value = 2
+        undoable.Value = 3
+        undoable.Undo() ' To 2.
+        undoable.Value = 4
+        undoable.Undo() ' To 2 again.
+        Assert.Equal(2, undoable.Value)
+    End Sub
+
+    <Fact>
+    Public Sub MakeUndoableRedoTest()
+        Dim undoable = ObservableProperty.Create(0).MakeUndoable()
+        Assert.True(Not undoable.CanRedo)
+        Assert.ThrowsAny(Of Exception)(Sub() undoable.Redo())
+        undoable.Value = 1
+        undoable.Value = 2
+        Assert.True(Not undoable.CanRedo)
+        undoable.Undo() ' To 1.
+        Assert.True(undoable.CanRedo)
+        undoable.Redo() ' To 2.
+        Assert.Equal(2, undoable.Value)
+        undoable.Undo() ' To 1.
+        undoable.Value = 3
+        Assert.True(Not undoable.CanRedo)
+    End Sub
+
+    <Fact>
+    Public Sub MakeUndoableIsOriginalTest()
+        Dim undoable = ObservableProperty.Create(0).MakeUndoable()
+        Assert.True(undoable.IsOriginal)
+        undoable.Value = 1
+        Assert.True(Not undoable.IsOriginal)
+        undoable.Value = 0
+        Assert.True(undoable.IsOriginal)
+        undoable.Undo()  ' To 1.
+        undoable.MarkAsOriginal()
+        Assert.True(undoable.IsOriginal)
+        undoable.Undo()
+        Assert.True(Not undoable.IsOriginal)
+    End Sub
 End Class

@@ -411,6 +411,68 @@ Namespace Detail
     End Class
 End Namespace
 
+''' <summary>
+''' 「元の値」を記憶する観測可能プロパティを表します。
+''' </summary>
+Public Class OriginalawareObservableProperty(Of TValue)
+    Implements IObservableProperty(Of TValue)
+
+    Private ReadOnly _property As IObservableProperty(Of TValue)
+
+#Region "IObservableProperty"
+    Public ReadOnly Property CanRead As Boolean Implements IObservableProperty(Of TValue).CanRead
+        Get
+            Return Me._property.CanRead
+        End Get
+    End Property
+
+    Public ReadOnly Property CanWrite As Boolean Implements IObservableProperty(Of TValue).CanWrite
+        Get
+            Return Me._property.CanWrite
+        End Get
+    End Property
+
+    Public Property Value As TValue Implements IObservableProperty(Of TValue).Value
+        Get
+            Return Me._property.Value
+        End Get
+        Set(value As TValue)
+            Me._property.Value = value
+        End Set
+    End Property
+
+    Public Function Subscribe(observer As IObserver(Of TValue)) As IDisposable Implements IObservable(Of TValue).Subscribe
+        Return Me._property.Subscribe(observer)
+    End Function
+#End Region
+
+#Region "IDisposable"
+    Private Sub Dispose() Implements IDisposable.Dispose
+        Me._property.Dispose()
+    End Sub
+#End Region
+
+#Region "IsOriginal"
+    Private _hasOriginal As Boolean = False
+    Private _originalOrNull As TValue = Nothing
+
+    Public Sub SetOriginal(value As TValue)
+        Me._hasOriginal = True
+        Me._originalOrNull = value
+    End Sub
+
+    Public ReadOnly Property IsOriginal As Boolean
+        Get
+            Return Me._hasOriginal AndAlso Object.Equals(Me._originalOrNull, Me.Value)
+        End Get
+    End Property
+#End Region
+
+    Public Sub New([property] As IObservableProperty(Of TValue))
+        Me._property = [property]
+    End Sub
+End Class
+
 Public Module ObservablePropertyExtensions
     <Extension>
     Public Function MakeReadOnly(Of X)(this As IObservableProperty(Of X)) As IObservableProperty(Of X)
