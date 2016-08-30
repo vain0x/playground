@@ -12,6 +12,6 @@ namespace FluentSqlBuilder.Public
                 this ISqlExpression<IScalar<X>> lhs,
                 ISqlExpression<IScalar<X>> rhs
             ) =>
-            new SqlCondition(lhs, SqlPart.FromToken("="), rhs);
+            new SqlCondition(lhs.SqlBuilder, lhs, SqlPart.FromToken("="), rhs);
     }
 }
