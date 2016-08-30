@@ -64,15 +64,13 @@
     <Compile Include="Detail\SqlExpression\SqlPart.cs" />
     <Compile Include="Detail\SqlExpression\SqlTypeTags.cs" />
     <Compile Include="SqlBuilder.cs" />
-    <Compile Include="Public\ITable.cs" />
-    <Compile Include="Public\IColumn.cs" />
-    <Compile Include="Detail\SqlExpression\Table.cs" />
-    <Compile Include="Detail\SqlExpression\Column.cs" />
+    <Compile Include="Detail\SqlExpression\Table\ITable.cs" />
+    <Compile Include="Detail\SqlExpression\Table\IColumn.cs" />
+    <Compile Include="Detail\SqlExpression\Table\Table.cs" />
+    <Compile Include="Detail\SqlExpression\Table\Column.cs" />
   </ItemGroup>
   <ItemGroup />
-  <ItemGroup>
-    <Folder Include="Public\" />
-  </ItemGroup>
+  <ItemGroup />
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <!-- To modify your build process, add your task inside one of the targets below and uncomment it.
        Other similar extension points exist, see Microsoft.Common.targets.
