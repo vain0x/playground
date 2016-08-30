@@ -40,18 +40,18 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="SqlSyntax\SqlExpression\ConditionBuilder\ConditionBuilder.cs" />
-    <Compile Include="SqlSyntax\SqlExpression\ConditionBuilder\ConditionCombinator.cs" />
-    <Compile Include="SqlSyntax\SqlExpression\ConditionBuilder\SqlCondition.cs" />
+    <Compile Include="SqlSyntax\ConditionBuilder\ConditionBuilder.cs" />
+    <Compile Include="SqlSyntax\ConditionBuilder\ConditionCombinator.cs" />
+    <Compile Include="SqlSyntax\ConditionBuilder\SqlCondition.cs" />
     <Compile Include="SqlSyntax\SqlExpression\SqlExpression.cs" />
-    <Compile Include="SqlSyntax\JoinBuilders\Join.cs" />
-    <Compile Include="SqlSyntax\JoinBuilders\JoinBuilder.cs" />
-    <Compile Include="SqlSyntax\JoinBuilders\JoinedRelation.cs" />
-    <Compile Include="SqlSyntax\SqlExecutable.cs" />
-    <Compile Include="SqlSyntax\SqlExpression\SelectBuilder\OrderDirection.cs" />
-    <Compile Include="SqlSyntax\SqlExpression\SelectBuilder\FieldlessSelectBuilder.cs" />
-    <Compile Include="SqlSyntax\SqlExpression\SelectBuilder\OrderKey.cs" />
-    <Compile Include="SqlSyntax\SqlExpression\SelectBuilder\SelectBuilder.cs" />
+    <Compile Include="SqlSyntax\SqlExpression\JoinBuilder\Join.cs" />
+    <Compile Include="SqlSyntax\SqlExpression\JoinBuilder\JoinBuilder.cs" />
+    <Compile Include="SqlSyntax\SqlExpression\JoinBuilder\JoinedRelation.cs" />
+    <Compile Include="SqlSyntax\SqlExecutable\SqlExecutable.cs" />
+    <Compile Include="SqlSyntax\SqlExecutable\SelectBuilder\OrderDirection.cs" />
+    <Compile Include="SqlSyntax\SqlExecutable\SelectBuilder\FieldlessSelectBuilder.cs" />
+    <Compile Include="SqlSyntax\SqlExecutable\SelectBuilder\OrderKey.cs" />
+    <Compile Include="SqlSyntax\SqlExecutable\SelectBuilder\SelectBuilder.cs" />
     <Compile Include="SqlSyntax\SqlExpression\SqlExpressionExtensions.cs" />
     <Compile Include="Utility\LinqExtensions.cs" />
     <Compile Include="Utility\Unit.cs" />
@@ -60,11 +60,11 @@
     <Compile Include="Provider\Fake\FakeDbProviderFactory.cs" />
     <Compile Include="Provider\Fake\FakeSqlLanguage.cs" />
     <Compile Include="Provider\SqlLanguage.cs" />
-    <Compile Include="SqlSyntax\SqlExpression\SelectBuilder\FromlessSelectBuilder.cs" />
-    <Compile Include="SqlSyntax\SqlExpression\SelectBuilder\SelectStatement.cs" />
+    <Compile Include="SqlSyntax\SqlExecutable\SelectBuilder\FromlessSelectBuilder.cs" />
+    <Compile Include="SqlSyntax\SqlExecutable\SelectBuilder\SelectStatement.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="SqlSyntax\SqlPart.cs" />
-    <Compile Include="SqlSyntax\SqlTypeTags.cs" />
+    <Compile Include="SqlSyntax\SqlExpression\SqlTypeTags.cs" />
     <Compile Include="SqlBuilder.cs" />
     <Compile Include="SqlSyntax\SqlExpression\Table\ITable.cs" />
     <Compile Include="SqlSyntax\SqlExpression\Table\IColumn.cs" />
