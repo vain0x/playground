@@ -54,24 +54,17 @@ namespace FluentSqlBuilder.Detail
     public class CompoundExpression<TType>
         : SqlExpression<TType>
     {
-        public sealed override IEnumerable<string> Tokens { get; }
-        public sealed override IEnumerable<DbParameter> Parameters { get; }
+        ISqlPart Part { get; }
 
-        internal CompoundExpression(SqlBuilder sqlBuilder, IEnumerable<string> strings, IEnumerable<DbParameter> parameters)
+        #region SqlExpression
+        public sealed override IEnumerable<string> Tokens => Part.Tokens;
+        public sealed override IEnumerable<DbParameter> Parameters => Part.Parameters;
+        #endregion
+
+        internal CompoundExpression(SqlBuilder sqlBuilder, ISqlPart part)
             : base(sqlBuilder)
         {
-            Tokens = strings;
-            Parameters = parameters;
-        }
-
-        internal CompoundExpression(SqlBuilder sqlBuilder, IEnumerable<string> strings)
-            : this(sqlBuilder, strings, Enumerable.Empty<DbParameter>())
-        {
-        }
-
-        internal CompoundExpression(SqlBuilder sqlBuilder, ISqlPart sqlPart)
-            : this(sqlBuilder, sqlPart.Tokens, sqlPart.Parameters)
-        {
+            Part = part;
         }
     }
 
@@ -79,18 +72,31 @@ namespace FluentSqlBuilder.Detail
         : CompoundExpression<TType>
     {
         internal AtomicExpression(SqlBuilder sqlBuilder, string @string)
-            : base(sqlBuilder, new[] { @string })
+            : base(sqlBuilder, SqlPart.FromToken(@string))
         {
         }
     }
 
     public class ParameterExpression<TType>
-        : CompoundExpression<TType>
+        : SqlExpression<TType>
     {
+        string Name { get; }
+        DbParameter Parameter { get; }
+
         internal ParameterExpression(SqlBuilder sqlBuilder, string name, DbParameter parameter)
-            : base(sqlBuilder, new[] { "@" + name }, new[] { parameter })
+            : base(sqlBuilder)
         {
+            Name = "@" + name;
+            Parameter = parameter;
         }
+
+        #region SqlExpression
+        public sealed override IEnumerable<string> Tokens =>
+            new[] { Name };
+
+        public sealed override IEnumerable<DbParameter> Parameters =>
+            new[] { Parameter };
+        #endregion
     }
 
     public interface IAliasedSqlExpression<out TType>
