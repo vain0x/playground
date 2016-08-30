@@ -6,17 +6,18 @@ using FluentSqlBuilder.Public;
 namespace FluentSqlBuilder.Detail
 {
     public class ConditionBuilder
-        : SqlExpression<IScalar<bool>>
-        , ISqlCondition
+        : ISqlCondition
     {
+        public SqlBuilder SqlBuilder { get; }
+
         ConditionCombinator Combinator { get; }
 
         List<ISqlCondition> Expressions { get; } =
             new List<ISqlCondition>();
 
         public ConditionBuilder(SqlBuilder sqlBuilder, ConditionCombinator combinator)
-            : base(sqlBuilder)
         {
+            SqlBuilder = sqlBuilder;
             Combinator = combinator;
         }
 
@@ -25,12 +26,12 @@ namespace FluentSqlBuilder.Detail
         {
         }
 
-        #region SqlExpression
-        public override IEnumerable<string> Tokens =>
+        #region ISqlPart
+        public IEnumerable<string> Tokens =>
             Combinator.Combine(Expressions.Select(x => x.Tokens))
             .Enclose("(", ")");
 
-        public override IEnumerable<DbParameter> Parameters =>
+        public IEnumerable<DbParameter> Parameters =>
             Expressions.SelectMany(x => x.Parameters);
         #endregion
 
