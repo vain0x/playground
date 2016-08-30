@@ -17,14 +17,14 @@ namespace FluentSqlBuilder.Detail
 
         public ConditionBuilder HavingCondition { get; }
 
-        public List<ISqlPart> GroupKeys { get; } =
-            new List<ISqlPart>();
+        public List<ISqlExpression<IScalar<object>>> GroupKeys { get; } =
+            new List<ISqlExpression<IScalar<object>>>();
 
         public List<OrderKey> OrderKeys { get; } =
             new List<OrderKey>();
 
-        public List<ISqlPart> Fields { get; } =
-            new List<ISqlPart>();
+        public List<ISqlExpression<IScalar<object>>> Fields { get; } =
+            new List<ISqlExpression<IScalar<object>>>();
 
         public SelectStatement(SqlBuilder sqlBuilder)
             : base(sqlBuilder)

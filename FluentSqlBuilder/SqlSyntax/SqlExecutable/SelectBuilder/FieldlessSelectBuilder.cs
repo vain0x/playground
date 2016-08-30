@@ -40,7 +40,7 @@ namespace FluentSqlBuilder.Detail
         #region GroupBy
         public FieldlessSelectBuilder GroupBy<X>(ISqlExpression<IScalar<X>> expression)
         {
-            Statement.GroupKeys.Add(expression);
+            Statement.GroupKeys.Add(expression.Box());
             return this;
         }
         #endregion
@@ -48,7 +48,7 @@ namespace FluentSqlBuilder.Detail
         #region OrderBy
         FieldlessSelectBuilder OrderByImpl<X>(ISqlExpression<IScalar<X>> expression, OrderDirection direction)
         {
-            Statement.OrderKeys.Add(new OrderKey(expression, direction));
+            Statement.OrderKeys.Add(new OrderKey(expression.Box(), direction));
             return this;
         }
 
@@ -62,7 +62,7 @@ namespace FluentSqlBuilder.Detail
         #region Field
         public SelectBuilder Field<X>(ISqlExpression<IScalar<X>> expression)
         {
-            Statement.Fields.Add(expression);
+            Statement.Fields.Add(expression.Box());
             return new SelectBuilder(Statement);
         }
         #endregion

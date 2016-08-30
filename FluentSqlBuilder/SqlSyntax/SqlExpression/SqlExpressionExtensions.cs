@@ -8,6 +8,15 @@ namespace FluentSqlBuilder.Public
     public static class SqlExpressionExtensions
     {
         #region Internal
+        public static ISqlExpression<IScalar<object>>
+            Box<X>(this ISqlExpression<IScalar<X>> expression)
+        {
+            return new CompoundExpression<IScalar<object>>(
+                expression.SqlBuilder,
+                new SqlPart(expression.Tokens, expression.Parameters)
+            );
+        }
+
         static ISqlExpression<T>
             Invoke<T>(
                 SqlBuilder sqlBuilder,

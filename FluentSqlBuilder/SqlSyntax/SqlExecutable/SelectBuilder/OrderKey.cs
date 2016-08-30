@@ -1,15 +1,16 @@
 ﻿using System.Collections.Generic;
 using System.Data.Common;
+using FluentSqlBuilder.Public;
 
 namespace FluentSqlBuilder.Detail
 {
     public class OrderKey
         : ISqlPart
     {
-        public ISqlPart Expression { get; }
+        public ISqlExpression<IScalar<object>> Expression { get; }
         public OrderDirection Direction { get; }
 
-        public OrderKey(ISqlPart expression, OrderDirection direction)
+        public OrderKey(ISqlExpression<IScalar<object>> expression, OrderDirection direction)
         {
             Expression = expression;
             Direction = direction;
