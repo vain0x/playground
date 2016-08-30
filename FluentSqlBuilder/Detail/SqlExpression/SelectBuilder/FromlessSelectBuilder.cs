@@ -1,4 +1,5 @@
 ﻿using System;
+using FluentSqlBuilder.Public;
 
 namespace FluentSqlBuilder.Detail
 {

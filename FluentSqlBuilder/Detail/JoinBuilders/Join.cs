@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Data.Common;
 using System.Linq;
+using FluentSqlBuilder.Public;
 
 namespace FluentSqlBuilder.Detail
 {

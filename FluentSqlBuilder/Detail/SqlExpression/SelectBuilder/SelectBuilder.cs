@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Data.Common;
+using FluentSqlBuilder.Public;
 
 namespace FluentSqlBuilder.Detail
 {
