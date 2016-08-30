@@ -23,18 +23,13 @@ namespace FluentSqlBuilder.Detail
         {
         }
 
-        public static ISqlPart FromToken(string token)
-        {
-            return new SqlPart(new string[] { token });
-        }
+        public static ISqlPart FromToken(string token) =>
+            new SqlPart(new[] { token });
 
-        public static ISqlPart Concat(IEnumerable<ISqlPart> parts)
-        {
-            return
-                new SqlPart(
-                    parts.SelectMany(p => p.Tokens),
-                    parts.SelectMany(p => p.Parameters)
-                );
-        }
+        public static ISqlPart Concat(IEnumerable<ISqlPart> parts) =>
+            new SqlPart(
+                parts.SelectMany(p => p.Tokens),
+                parts.SelectMany(p => p.Parameters)
+            );
     }
 }

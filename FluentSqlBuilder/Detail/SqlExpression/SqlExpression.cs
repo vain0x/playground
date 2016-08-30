@@ -32,10 +32,8 @@ namespace FluentSqlBuilder.Detail
             SqlBuilder = sqlBuilder;
         }
 
-        public override string ToString()
-        {
-            return string.Join(" ", Tokens);
-        }
+        public override string ToString() =>
+            string.Join(" ", Tokens);
 
         #region ISqlExpression
         public SqlBuilder SqlBuilder { get; }

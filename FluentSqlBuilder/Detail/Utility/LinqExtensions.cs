@@ -5,15 +5,11 @@ namespace FluentSqlBuilder.Detail
 {
     public static class LinqExtensions
     {
-        public static bool IsEmpty<X>(this IEnumerable<X> xs)
-        {
-            return !xs.Any();
-        }
+        public static bool IsEmpty<X>(this IEnumerable<X> xs) =>
+            !xs.Any();
 
-        public static IEnumerable<X> Concat<X>(this IEnumerable<IEnumerable<X>> xxs)
-        {
-            return xxs.SelectMany(xs => xs);
-        }
+        public static IEnumerable<X> Concat<X>(this IEnumerable<IEnumerable<X>> xxs) =>
+            xxs.SelectMany(xs => xs);
 
         /// <summary>
         /// シーケンスの各要素の間に separator を挟んだシーケンスを取得します。
@@ -39,10 +35,8 @@ namespace FluentSqlBuilder.Detail
         public static IEnumerable<X> Intercalate<X>(
             this IEnumerable<IEnumerable<X>> xxs,
             IEnumerable<X> separator
-        )
-        {
-            return xxs.Intersperse(separator).Concat();
-        }
+        ) =>
+            xxs.Intersperse(separator).Concat();
 
         public static IEnumerable<X> Enclose<X>(this IEnumerable<X> xs, X left, X right)
         {
@@ -54,12 +48,9 @@ namespace FluentSqlBuilder.Detail
             yield return right;
         }
 
-        public static bool IsSingle<X>(this IEnumerable<X> xs, X x)
-        {
-            return
-                xs.Any() && !xs.Skip(1).Any()
-                    ? xs.First().Equals(x)
-                    : false;
-        }
+        public static bool IsSingle<X>(this IEnumerable<X> xs, X x) =>
+            xs.Any() && !xs.Skip(1).Any()
+                ? xs.First().Equals(x)
+                : false;
     }
 }

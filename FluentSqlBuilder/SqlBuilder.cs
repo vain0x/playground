@@ -35,20 +35,17 @@ namespace FluentSqlBuilder.Public
             throw new NotImplementedException();
         }
 
-        public ITable Table(string tableName)
-        {
-            return new Table(this, tableName);
-        }
+        public ITable Table(string tableName) =>
+            new Table(this, tableName);
 
-        public ISqlExpression<IScalar<X>> Column<X>(string qualifier, string columnName)
-        {
-            return new AtomicExpression<IScalar<X>>(this, Language.BuildIdentifier(qualifier, columnName));
-        }
+        public ISqlExpression<IScalar<X>> Column<X>(string qualifier, string columnName) =>
+            new AtomicExpression<IScalar<X>>(
+                this,
+                Language.BuildIdentifier(qualifier, columnName)
+            );
 
-        public ISqlExpression<IScalar<X>> Column<X>(string columnName)
-        {
-            return Column<X>(null, columnName);
-        }
+        public ISqlExpression<IScalar<X>> Column<X>(string columnName) =>
+            Column<X>(null, columnName);
 
         ParameterExpression<IScalar<X>> ValueImpl<X>(DbType type, object value)
         {
@@ -64,35 +61,23 @@ namespace FluentSqlBuilder.Public
             ValueImpl<object>(type, value);
 
         #region Typed value expressions
-        public ParameterExpression<IScalar<bool>> Bool(bool value)
-        {
-            return ValueImpl<bool>(DbType.Boolean, value);
-        }
+        public ParameterExpression<IScalar<bool>> Bool(bool value) =>
+            ValueImpl<bool>(DbType.Boolean, value);
 
-        public ParameterExpression<IScalar<long>> Int(long value)
-        {
-            return ValueImpl<long>(DbType.Int64, value);
-        }
+        public ParameterExpression<IScalar<long>> Int(long value) =>
+            ValueImpl<long>(DbType.Int64, value);
 
-        public ParameterExpression<IScalar<string>> String(string value)
-        {
-            return ValueImpl<string>(DbType.String, value);
-        }
+        public ParameterExpression<IScalar<string>> String(string value) =>
+            ValueImpl<string>(DbType.String, value);
 
-        public ParameterExpression<IScalar<DateTime>> Date(DateTime value)
-        {
-            return ValueImpl<DateTime>(DbType.Date, value);
-        }
+        public ParameterExpression<IScalar<DateTime>> Date(DateTime value) =>
+            ValueImpl<DateTime>(DbType.Date, value);
 
-        public ParameterExpression<IScalar<DateTime>> DateTime(DateTime value)
-        {
-            return ValueImpl<DateTime>(DbType.DateTime, value);
-        }
+        public ParameterExpression<IScalar<DateTime>> DateTime(DateTime value) =>
+            ValueImpl<DateTime>(DbType.DateTime, value);
 
-        public SqlExpression<IScalar<object>> Null
-        {
-            get { return new AtomicExpression<IScalar<object>>(this, "null"); }
-        }
+        public SqlExpression<IScalar<object>> Null =>
+            new AtomicExpression<IScalar<object>>(this, "null");
 
         public ConditionBuilder True =>
             new ConditionBuilder(this, ConditionCombinator.And);

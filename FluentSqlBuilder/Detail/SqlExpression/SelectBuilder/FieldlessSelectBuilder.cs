@@ -25,10 +25,8 @@ namespace FluentSqlBuilder.Detail
             return new JoinBuilder<FieldlessSelectBuilder>(Statement.SqlBuilder, Statement, joinType, relation, this);
         }
 
-        public JoinBuilder<FieldlessSelectBuilder> Join(ISqlExpression<IRelation> relation)
-        {
-            return Join(relation, JoinType.Inner);
-        }
+        public JoinBuilder<FieldlessSelectBuilder> Join(ISqlExpression<IRelation> relation) =>
+            Join(relation, JoinType.Inner);
         #endregion
 
         #region Where
@@ -54,15 +52,11 @@ namespace FluentSqlBuilder.Detail
             return this;
         }
 
-        public FieldlessSelectBuilder OrderBy<X>(ISqlExpression<IScalar<X>> column)
-        {
-            return OrderByImpl(column, OrderDirection.Ascending);
-        }
+        public FieldlessSelectBuilder OrderBy<X>(ISqlExpression<IScalar<X>> column) =>
+            OrderByImpl(column, OrderDirection.Ascending);
 
-        public FieldlessSelectBuilder OrderByDescending<X>(ISqlExpression<IScalar<X>> column)
-        {
-            return OrderByImpl(column, OrderDirection.Descending);
-        }
+        public FieldlessSelectBuilder OrderByDescending<X>(ISqlExpression<IScalar<X>> column) =>
+            OrderByImpl(column, OrderDirection.Descending);
         #endregion
 
         #region Field
