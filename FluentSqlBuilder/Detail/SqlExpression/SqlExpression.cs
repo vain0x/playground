@@ -6,9 +6,16 @@ using FluentSqlBuilder.Public;
 
 namespace FluentSqlBuilder.Detail
 {
+    /// <summary>
+    /// Represents a SQL expression.
+    /// TODO: Add "where TType: ISqlTypeTag".
+    /// </summary>
+    /// <typeparam name="TType"></typeparam>
     public interface ISqlExpression<out TType>
         : ISqlPart
     {
+        SqlBuilder SqlBuilder { get; }
+
         IAliasedSqlExpression<TType> As(string alias);
     }
 
@@ -19,8 +26,6 @@ namespace FluentSqlBuilder.Detail
         public abstract IEnumerable<string> Tokens { get; }
         public abstract IEnumerable<DbParameter> Parameters { get; }
         #endregion
-
-        internal SqlBuilder SqlBuilder { get; }
 
         protected SqlExpression(SqlBuilder sqlBuilder)
         {
@@ -33,6 +38,8 @@ namespace FluentSqlBuilder.Detail
         }
 
         #region ISqlExpression
+        public SqlBuilder SqlBuilder { get; }
+
         public IAliasedSqlExpression<TType> As(string alias)
         {
             if (!SqlBuilder.Language.IsIdentifier(alias))
