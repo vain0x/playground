@@ -8,7 +8,7 @@ namespace FluentSqlBuilder.Public
 {
     public interface IRecord
     {
-        object GetValueOrDefault(string columnName, object alternative);
+        object GetValueOrAlternative(string columnName, object alternative);
         void SetValue(string columnName, object value);
     }
 
@@ -17,7 +17,7 @@ namespace FluentSqlBuilder.Public
         , IRecord
     {
         #region IRecord
-        public object GetValueOrDefault(string columnName, object alternative)
+        public object GetValueOrAlternative(string columnName, object alternative)
         {
             object value;
             return TryGetValue(columnName, out value) ? value : alternative;

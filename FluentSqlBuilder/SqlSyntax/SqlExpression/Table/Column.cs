@@ -19,12 +19,12 @@ namespace FluentSqlBuilder.Detail
         {
             get
             {
-                throw new NotImplementedException();
+                return row.Field<TValue>(RawName);
             }
 
             set
             {
-                throw new NotImplementedException();
+                row.SetField(RawName, value);
             }
         }
 
@@ -32,7 +32,7 @@ namespace FluentSqlBuilder.Detail
         {
             get
             {
-                return (TValue)record.GetValueOrDefault(RawName, default(TValue));
+                return (TValue)record.GetValueOrAlternative(RawName, default(TValue));
             }
             set
             {
