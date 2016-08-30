@@ -93,19 +93,18 @@ namespace FluentSqlBuilder.Public
         {
             get { return new AtomicExpression<IScalar<object>>(this, "null"); }
         }
+
+        public ConditionBuilder True =>
+            new ConditionBuilder(this, ConditionCombinator.And);
+
+        public ConditionBuilder False =>
+            new ConditionBuilder(this, ConditionCombinator.Or);
         #endregion
         #endregion
 
         #region Condition
-        public ConditionBuilder And()
-        {
-            return new ConditionBuilder(this, ConditionCombinator.And);
-        }
-
-        public ConditionBuilder Or()
-        {
-            return new ConditionBuilder(this, ConditionCombinator.Or);
-        }
+        public ConditionBuilder And() => True;
+        public ConditionBuilder Or() => False;
         #endregion
 
         #region Mainpulation
