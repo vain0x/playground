@@ -7,12 +7,12 @@ using FluentSqlBuilder.Public;
 namespace FluentSqlBuilder.Detail
 {
     /// <summary>
-    /// Represents a SQL expression.
-    /// TODO: Add "where TType: ISqlTypeTag".
+    /// SQLの式を表します。
     /// </summary>
     /// <typeparam name="TType"></typeparam>
     public interface ISqlExpression<out TType>
         : ISqlPart
+        where TType: ISqlTypeTag
     {
         SqlBuilder SqlBuilder { get; }
 
@@ -21,6 +21,7 @@ namespace FluentSqlBuilder.Detail
 
     public abstract class SqlExpression<TType>
         : ISqlExpression<TType>
+        where TType: ISqlTypeTag
     {
         #region ISqlPart
         public abstract IEnumerable<string> Tokens { get; }
@@ -53,6 +54,7 @@ namespace FluentSqlBuilder.Detail
 
     public class CompoundExpression<TType>
         : SqlExpression<TType>
+        where TType: ISqlTypeTag
     {
         ISqlPart Part { get; }
 
@@ -70,6 +72,7 @@ namespace FluentSqlBuilder.Detail
 
     public class AtomicExpression<TType>
         : CompoundExpression<TType>
+        where TType: ISqlTypeTag
     {
         internal AtomicExpression(SqlBuilder sqlBuilder, string @string)
             : base(sqlBuilder, SqlPart.FromToken(@string))
@@ -79,6 +82,7 @@ namespace FluentSqlBuilder.Detail
 
     public class ParameterExpression<TType>
         : SqlExpression<TType>
+        where TType: ISqlTypeTag
     {
         string Name { get; }
         DbParameter Parameter { get; }
@@ -107,6 +111,7 @@ namespace FluentSqlBuilder.Detail
     public class AliasedExpression<TType>
         : SqlExpression<IScalar<object>>
         , IAliasedSqlExpression<TType>
+        where TType: ISqlTypeTag
     {
         public ISqlExpression<TType> Expression { get; }
         public string Alias { get; }

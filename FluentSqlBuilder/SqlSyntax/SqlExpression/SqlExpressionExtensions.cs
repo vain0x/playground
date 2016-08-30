@@ -13,7 +13,9 @@ namespace FluentSqlBuilder.Public
                 SqlBuilder sqlBuilder,
                 string functionName,
                 IEnumerable<ISqlExpression<IScalar<object>>> arguments
-            ) =>
+            ) 
+            where T: ISqlTypeTag
+            =>
             new CompoundExpression<T>(
                 sqlBuilder,
                 SqlPart.Concat(
