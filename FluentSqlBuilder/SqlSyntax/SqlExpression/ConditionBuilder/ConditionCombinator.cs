@@ -28,47 +28,40 @@ namespace FluentSqlBuilder.Detail
                     : new[] { Neutral };
         }
 
-        static readonly string _trueExpression = "0 = 0";
-        static readonly string _falseExpression = "0 = 1";
+        static string TrueExpression => "0 = 0";
+        static string FalseExpression => "0 = 1";
 
         public sealed class AndConditionCombinator
             : ConditionCombinator
         {
-            public override string Neutral => _trueExpression;
-            public override string Absorbing => _falseExpression;
+            public override string Neutral => TrueExpression;
+            public override string Absorbing => FalseExpression;
             public override string Combinator => "and";
             
-            private AndConditionCombinator()
+            AndConditionCombinator()
             {
             }
 
-            public static readonly AndConditionCombinator Instance =
+            public static AndConditionCombinator Instance { get; } =
                 new AndConditionCombinator();
         }
 
         public sealed class OrConditionCombinator
             : ConditionCombinator
         {
-            public override string Neutral => _falseExpression;
-            public override string Absorbing => _trueExpression;
+            public override string Neutral => FalseExpression;
+            public override string Absorbing => TrueExpression;
             public override string Combinator => "or";
 
-            private OrConditionCombinator()
+            OrConditionCombinator()
             {
             }
 
-            public static readonly OrConditionCombinator Instance =
+            public static OrConditionCombinator Instance { get; } =
                 new OrConditionCombinator();
         }
 
-        public static ConditionCombinator And
-        {
-            get { return AndConditionCombinator.Instance; }
-        }
-
-        public static ConditionCombinator Or
-        {
-            get { return OrConditionCombinator.Instance; }
-        }
+        public static ConditionCombinator And => AndConditionCombinator.Instance;
+        public static ConditionCombinator Or => OrConditionCombinator.Instance;
     }
 }
