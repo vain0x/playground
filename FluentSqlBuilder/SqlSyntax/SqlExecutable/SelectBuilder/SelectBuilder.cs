@@ -26,7 +26,7 @@ namespace FluentSqlBuilder.Detail
         #endregion
 
         #region Field
-        public SelectBuilder Field<X>(SqlExpression<IScalar<X>> expression)
+        public SelectBuilder Field<X>(ISqlExpression<IScalar<X>> expression)
         {
             Statement.Fields.Add(expression);
             return this;
