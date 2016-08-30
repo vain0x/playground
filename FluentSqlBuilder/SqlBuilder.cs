@@ -33,7 +33,7 @@ namespace FluentSqlBuilder.Public
         public ITable Table(string tableName) =>
             new Table(this, tableName);
 
-        ParameterExpression<IScalar<X>> ValueImpl<X>(DbType type, object value)
+        ParameterExpression<IScalar<X>> ValueImpl<X>(DbType type, X value)
         {
             var name = "p" + Guid.NewGuid().ToString().Replace("-", "");
             var parameter = Factory.CreateParameter();
@@ -44,23 +44,23 @@ namespace FluentSqlBuilder.Public
         }
 
         ParameterExpression<IScalar<object>> Value(DbType type, object value) =>
-            ValueImpl<object>(type, value);
+            ValueImpl(type, value);
 
         #region Typed value expressions
         public ParameterExpression<IScalar<bool>> Bool(bool value) =>
-            ValueImpl<bool>(DbType.Boolean, value);
+            ValueImpl(DbType.Boolean, value);
 
         public ParameterExpression<IScalar<long>> Int(long value) =>
-            ValueImpl<long>(DbType.Int64, value);
+            ValueImpl(DbType.Int64, value);
 
         public ParameterExpression<IScalar<string>> String(string value) =>
-            ValueImpl<string>(DbType.String, value);
+            ValueImpl(DbType.String, value);
 
         public ParameterExpression<IScalar<DateTime>> Date(DateTime value) =>
-            ValueImpl<DateTime>(DbType.Date, value);
+            ValueImpl(DbType.Date, value);
 
         public ParameterExpression<IScalar<DateTime>> DateTime(DateTime value) =>
-            ValueImpl<DateTime>(DbType.DateTime, value);
+            ValueImpl(DbType.DateTime, value);
 
         public SqlExpression<IScalar<object>> Null =>
             new AtomicExpression<IScalar<object>>(this, "null");
