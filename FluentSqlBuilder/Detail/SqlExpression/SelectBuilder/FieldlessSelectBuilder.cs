@@ -32,7 +32,7 @@ namespace FluentSqlBuilder.Detail
         #endregion
 
         #region Where
-        public FieldlessSelectBuilder Where(SqlCondition condition)
+        public FieldlessSelectBuilder Where(ISqlCondition condition)
         {
             Statement.WhereCondition.Add(condition);
             return this;

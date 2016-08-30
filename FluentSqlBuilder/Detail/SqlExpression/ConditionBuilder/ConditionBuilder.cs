@@ -7,11 +7,12 @@ namespace FluentSqlBuilder.Detail
 {
     public class ConditionBuilder
         : SqlExpression<IScalar<bool>>
+        , ISqlCondition
     {
         ConditionCombinator Combinator { get; }
 
-        List<ISqlPart> Expressions { get; } =
-            new List<ISqlPart>();
+        List<ISqlCondition> Expressions { get; } =
+            new List<ISqlCondition>();
 
         public ConditionBuilder(SqlBuilder sqlBuilder, ConditionCombinator combinator)
             : base(sqlBuilder)
@@ -36,7 +37,7 @@ namespace FluentSqlBuilder.Detail
         public bool IsTrivial =>
             Expressions.IsEmpty();
 
-        public ConditionBuilder Add(SqlCondition condition)
+        public ConditionBuilder Add(ISqlCondition condition)
         {
             Expressions.Add(condition);
             return this;
@@ -52,12 +53,6 @@ namespace FluentSqlBuilder.Detail
             {
                 Expressions.Add(condition);
             }
-            return this;
-        }
-
-        ConditionBuilder AddExpression(params ISqlPart[] parts)
-        {
-            Expressions.Add(SqlPart.Concat(parts));
             return this;
         }
     }

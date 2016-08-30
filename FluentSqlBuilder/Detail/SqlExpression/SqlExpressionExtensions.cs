@@ -7,7 +7,7 @@ namespace FluentSqlBuilder.Public
 {
     public static class SqlExpressionExtensions
     {
-        public static SqlCondition
+        public static ISqlCondition
             Equal<X>(
                 this ISqlExpression<IScalar<X>> lhs,
                 ISqlExpression<IScalar<X>> rhs

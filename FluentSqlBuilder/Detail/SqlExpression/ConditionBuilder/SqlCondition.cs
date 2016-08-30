@@ -7,8 +7,13 @@ using System.Threading.Tasks;
 
 namespace FluentSqlBuilder.Detail
 {
-    public class SqlCondition
+    public interface ISqlCondition
         : ISqlPart
+    {
+    }
+
+    public class SqlCondition
+        : ISqlCondition
     {
         IEnumerable<ISqlPart> Parts { get; }
 
