@@ -36,10 +36,5 @@ namespace FluentSqlBuilder.Detail
             Statement.Source.Add(new JoinUsing(JoinType, Relation, column));
             return Result;
         }
-        
-        public TResult Using(string columnName)
-        {
-            return Using(SqlBuilder.Column<object>(columnName));
-        }
     }
 }

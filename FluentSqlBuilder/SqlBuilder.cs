@@ -30,22 +30,8 @@ namespace FluentSqlBuilder.Public
         }
 
         #region Expression
-        public ITable Table(string qualifier, string tableName)
-        {
-            throw new NotImplementedException();
-        }
-
         public ITable Table(string tableName) =>
             new Table(this, tableName);
-
-        public ISqlExpression<IScalar<X>> Column<X>(string qualifier, string columnName) =>
-            new AtomicExpression<IScalar<X>>(
-                this,
-                Language.BuildIdentifier(qualifier, columnName)
-            );
-
-        public ISqlExpression<IScalar<X>> Column<X>(string columnName) =>
-            Column<X>(null, columnName);
 
         ParameterExpression<IScalar<X>> ValueImpl<X>(DbType type, object value)
         {
