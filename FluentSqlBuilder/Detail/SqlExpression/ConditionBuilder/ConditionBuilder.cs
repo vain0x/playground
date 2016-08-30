@@ -38,13 +38,13 @@ namespace FluentSqlBuilder.Detail
         public bool IsTrivial =>
             Conditions.IsEmpty();
 
-        public ConditionBuilder Add(ISqlCondition condition)
+        internal ConditionBuilder Add(ISqlCondition condition)
         {
             Conditions.Add(condition);
             return this;
         }
 
-        public ConditionBuilder Add(ConditionBuilder condition)
+        internal ConditionBuilder Add(ConditionBuilder condition)
         {
             if (ReferenceEquals(Combinator, condition.Combinator))
             {
@@ -56,5 +56,21 @@ namespace FluentSqlBuilder.Detail
             }
             return this;
         }
+
+        #region ISqlCondition
+        public ConditionBuilder And(ISqlCondition rhs) =>
+            ReferenceEquals(Combinator, ConditionCombinator.And)
+                ? Add(rhs)
+                : new ConditionBuilder(SqlBuilder, ConditionCombinator.And)
+                    .Add(this)
+                    .Add(rhs);
+
+        public ConditionBuilder Or(ISqlCondition rhs) =>
+            ReferenceEquals(Combinator, ConditionCombinator.Or)
+                ? Add(rhs)
+                : new ConditionBuilder(SqlBuilder, ConditionCombinator.Or)
+                    .Add(this)
+                    .Add(rhs);
+        #endregion
     }
 }

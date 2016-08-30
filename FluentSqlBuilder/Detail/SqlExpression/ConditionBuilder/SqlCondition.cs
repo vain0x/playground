@@ -12,6 +12,9 @@ namespace FluentSqlBuilder.Detail
         : ISqlPart
     {
         SqlBuilder SqlBuilder { get; }
+
+        ConditionBuilder And(ISqlCondition rhs);
+        ConditionBuilder Or(ISqlCondition rhs);
     }
 
     public class SqlCondition
@@ -38,6 +41,18 @@ namespace FluentSqlBuilder.Detail
 
         public IEnumerable<DbParameter> Parameters =>
             Parts.SelectMany(part => part.Parameters);
+        #endregion
+
+        #region ISqlCondition
+        public ConditionBuilder And(ISqlCondition rhs) =>
+            new ConditionBuilder(SqlBuilder, ConditionCombinator.And)
+            .Add(this)
+            .Add(rhs);
+
+        public ConditionBuilder Or(ISqlCondition rhs) =>
+            new ConditionBuilder(SqlBuilder, ConditionCombinator.Or)
+            .Add(this)
+            .Add(rhs);
         #endregion
     }
 }
