@@ -53,6 +53,7 @@
     <Compile Include="SqlSyntax\SqlExecutable\SelectBuilder\OrderKey.cs" />
     <Compile Include="SqlSyntax\SqlExecutable\SelectBuilder\SelectBuilder.cs" />
     <Compile Include="SqlSyntax\SqlExpression\SqlExpressionExtensions.cs" />
+    <Compile Include="SqlSyntax\SqlExpression\Table\Record.cs" />
     <Compile Include="Utility\LinqExtensions.cs" />
     <Compile Include="Utility\Unit.cs" />
     <Compile Include="Provider\DbProvider.cs" />

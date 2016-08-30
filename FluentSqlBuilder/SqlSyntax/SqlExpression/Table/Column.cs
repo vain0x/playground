@@ -28,6 +28,18 @@ namespace FluentSqlBuilder.Detail
             }
         }
 
+        public TValue this[IRecord record]
+        {
+            get
+            {
+                return (TValue)record.GetValueOrDefault(RawName, default(TValue));
+            }
+            set
+            {
+                record.SetValue(RawName, value);
+            }
+        }
+
         #region SqlExpression
         public override IEnumerable<string> Tokens
         {

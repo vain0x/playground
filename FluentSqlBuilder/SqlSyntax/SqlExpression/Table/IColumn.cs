@@ -10,5 +10,6 @@ namespace FluentSqlBuilder.Public
         string RawName { get; }
 
         TValue this[DataRow row] { get; set; }
+        TValue this[IRecord record] { get; set; }
     }
 }
