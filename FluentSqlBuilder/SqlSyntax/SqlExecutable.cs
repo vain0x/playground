@@ -4,15 +4,6 @@ using System.Data.Common;
 namespace FluentSqlBuilder.Detail
 {
     /// <summary>
-    /// SQL文の断片を表します。
-    /// </summary>
-    public interface ISqlPart
-    {
-        IEnumerable<string> Tokens { get; }
-        IEnumerable<DbParameter> Parameters { get; }
-    }
-
-    /// <summary>
     /// コマンドとして実行可能なSQL文であることを表します。
     /// </summary>
     public interface ISqlExecutable

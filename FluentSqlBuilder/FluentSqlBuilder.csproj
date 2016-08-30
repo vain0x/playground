@@ -47,7 +47,7 @@
     <Compile Include="SqlSyntax\JoinBuilders\Join.cs" />
     <Compile Include="SqlSyntax\JoinBuilders\JoinBuilder.cs" />
     <Compile Include="SqlSyntax\JoinBuilders\JoinedRelation.cs" />
-    <Compile Include="SqlSyntax\Interfaces.cs" />
+    <Compile Include="SqlSyntax\SqlExecutable.cs" />
     <Compile Include="SqlSyntax\SqlExpression\SelectBuilder\OrderDirection.cs" />
     <Compile Include="SqlSyntax\SqlExpression\SelectBuilder\FieldlessSelectBuilder.cs" />
     <Compile Include="SqlSyntax\SqlExpression\SelectBuilder\OrderKey.cs" />

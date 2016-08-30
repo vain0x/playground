@@ -4,6 +4,15 @@ using System.Linq;
 
 namespace FluentSqlBuilder.Detail
 {
+    /// <summary>
+    /// SQL文の断片を表します。
+    /// </summary>
+    public interface ISqlPart
+    {
+        IEnumerable<string> Tokens { get; }
+        IEnumerable<DbParameter> Parameters { get; }
+    }
+
     public class SqlPart
         : ISqlPart
     {
