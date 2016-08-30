@@ -8,6 +8,10 @@ namespace FluentSqlBuilder.Public
     public static class SqlExpressionExtensions
     {
         public static ISqlCondition
+            IsNull<X>(this ISqlExpression<IScalar<X>> lhs) =>
+            new SqlCondition(lhs.SqlBuilder, SqlPart.FromToken("is null"));
+
+        public static ISqlCondition
             Equal<X>(
                 this ISqlExpression<IScalar<X>> lhs,
                 ISqlExpression<IScalar<X>> rhs
