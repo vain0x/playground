@@ -51,6 +51,7 @@
     <Compile Include="Detail\SqlExpression\SelectBuilder\FieldlessSelectBuilder.cs" />
     <Compile Include="Detail\SqlExpression\SelectBuilder\OrderKey.cs" />
     <Compile Include="Detail\SqlExpression\SelectBuilder\SelectBuilder.cs" />
+    <Compile Include="Detail\SqlExpression\SqlExpressionExtensions.cs" />
     <Compile Include="Detail\Utility\LinqExtensions.cs" />
     <Compile Include="Detail\Utility\Unit.cs" />
     <Compile Include="Provider\DbProvider.cs" />

@@ -27,7 +27,7 @@ namespace FluentSqlBuilder.Test
             var person = new Person(Sql);
             var c = Sql.Select()
                 .From(person.Table)
-                .Where().Equal(person.Name, Sql.String("Miku"))
+                .Where(person.Name.Equal(Sql.String("Miku")))
                 .Field(person.Age)
                 .ToCommand();
             Assert.Equal(

@@ -61,22 +61,4 @@ namespace FluentSqlBuilder.Detail
             return AddExpression(lhs, equal, rhs);
         }
     }
-
-    public class ConditionBuilder<TResult>
-    {
-        ConditionBuilder Condition { get; }
-        TResult Result { get; }
-
-        public ConditionBuilder(ConditionBuilder builder, TResult result)
-        {
-            Condition = builder;
-            Result = result;
-        }
-
-        public TResult Equal<X>(ISqlExpression<X> lhs, ISqlExpression<X> rhs)
-        {
-            Condition.Equal(lhs, rhs);
-            return Result;
-        }
-    }
 }
