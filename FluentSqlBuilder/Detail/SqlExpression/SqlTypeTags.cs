@@ -1,4 +1,4 @@
-﻿namespace FluentSqlBuilder
+﻿namespace FluentSqlBuilder.Public
 {
     public interface ISqlTypeTag
     {

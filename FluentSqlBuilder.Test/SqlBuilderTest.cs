@@ -4,6 +4,7 @@ using System.Linq;
 using Xunit;
 using FluentSqlBuilder.Detail;
 using FluentSqlBuilder.Provider.Fake;
+using FluentSqlBuilder.Public;
 
 namespace FluentSqlBuilder.Test
 {

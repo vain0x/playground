@@ -1,5 +1,6 @@
 ﻿using Xunit;
 using FluentSqlBuilder.Provider.Fake;
+using FluentSqlBuilder.Public;
 
 namespace FluentSqlBuilder.Test
 {

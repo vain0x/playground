@@ -4,9 +4,8 @@ using System.Data.Common;
 using System.Linq;
 using FluentSqlBuilder.Detail;
 using FluentSqlBuilder.Provider;
-using FluentSqlBuilder.Public;
 
-namespace FluentSqlBuilder
+namespace FluentSqlBuilder.Public
 {
     public class SqlBuilder
     {

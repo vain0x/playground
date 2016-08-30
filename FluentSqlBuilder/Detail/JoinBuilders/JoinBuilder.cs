@@ -1,4 +1,6 @@
-﻿namespace FluentSqlBuilder.Detail
+﻿using FluentSqlBuilder.Public;
+
+namespace FluentSqlBuilder.Detail
 {
     public class JoinBuilder<TResult>
     {
