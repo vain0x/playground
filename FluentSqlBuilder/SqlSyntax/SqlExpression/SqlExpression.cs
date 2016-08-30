@@ -51,32 +51,32 @@ namespace FluentSqlBuilder.Detail
         #endregion
     }
 
-    public class ConcreteSqlExpression<TType>
+    public class CompoundExpression<TType>
         : SqlExpression<TType>
     {
         public sealed override IEnumerable<string> Tokens { get; }
         public sealed override IEnumerable<DbParameter> Parameters { get; }
 
-        internal ConcreteSqlExpression(SqlBuilder sqlBuilder, IEnumerable<string> strings, IEnumerable<DbParameter> parameters)
+        internal CompoundExpression(SqlBuilder sqlBuilder, IEnumerable<string> strings, IEnumerable<DbParameter> parameters)
             : base(sqlBuilder)
         {
             Tokens = strings;
             Parameters = parameters;
         }
 
-        internal ConcreteSqlExpression(SqlBuilder sqlBuilder, IEnumerable<string> strings)
+        internal CompoundExpression(SqlBuilder sqlBuilder, IEnumerable<string> strings)
             : this(sqlBuilder, strings, Enumerable.Empty<DbParameter>())
         {
         }
 
-        internal ConcreteSqlExpression(SqlBuilder sqlBuilder, ISqlPart sqlPart)
+        internal CompoundExpression(SqlBuilder sqlBuilder, ISqlPart sqlPart)
             : this(sqlBuilder, sqlPart.Tokens, sqlPart.Parameters)
         {
         }
     }
 
     public class AtomicExpression<TType>
-        : ConcreteSqlExpression<TType>
+        : CompoundExpression<TType>
     {
         internal AtomicExpression(SqlBuilder sqlBuilder, string @string)
             : base(sqlBuilder, new[] { @string })
@@ -85,7 +85,7 @@ namespace FluentSqlBuilder.Detail
     }
 
     public class ParameterExpression<TType>
-        : ConcreteSqlExpression<TType>
+        : CompoundExpression<TType>
     {
         internal ParameterExpression(SqlBuilder sqlBuilder, string name, DbParameter parameter)
             : base(sqlBuilder, new[] { "@" + name }, new[] { parameter })
