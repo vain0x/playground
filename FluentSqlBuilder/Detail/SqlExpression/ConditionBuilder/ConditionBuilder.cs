@@ -12,7 +12,7 @@ namespace FluentSqlBuilder.Detail
 
         ConditionCombinator Combinator { get; }
 
-        List<ISqlCondition> Expressions { get; } =
+        List<ISqlCondition> Conditions { get; } =
             new List<ISqlCondition>();
 
         public ConditionBuilder(SqlBuilder sqlBuilder, ConditionCombinator combinator)
@@ -28,19 +28,19 @@ namespace FluentSqlBuilder.Detail
 
         #region ISqlPart
         public IEnumerable<string> Tokens =>
-            Combinator.Combine(Expressions.Select(x => x.Tokens))
+            Combinator.Combine(Conditions.Select(x => x.Tokens))
             .Enclose("(", ")");
 
         public IEnumerable<DbParameter> Parameters =>
-            Expressions.SelectMany(x => x.Parameters);
+            Conditions.SelectMany(x => x.Parameters);
         #endregion
 
         public bool IsTrivial =>
-            Expressions.IsEmpty();
+            Conditions.IsEmpty();
 
         public ConditionBuilder Add(ISqlCondition condition)
         {
-            Expressions.Add(condition);
+            Conditions.Add(condition);
             return this;
         }
 
@@ -48,11 +48,11 @@ namespace FluentSqlBuilder.Detail
         {
             if (ReferenceEquals(Combinator, condition.Combinator))
             {
-                Expressions.AddRange(condition.Expressions);
+                Conditions.AddRange(condition.Conditions);
             }
             else
             {
-                Expressions.Add(condition);
+                Conditions.Add(condition);
             }
             return this;
         }
