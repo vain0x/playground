@@ -49,8 +49,6 @@ namespace FluentSqlBuilder.Detail
         }
 
         public static bool IsSingle<X>(this IEnumerable<X> xs, X x) =>
-            xs.Any() && !xs.Skip(1).Any()
-                ? xs.First().Equals(x)
-                : false;
+            xs.Any() && !xs.Skip(1).Any() && Equals(xs.First(), x);
     }
 }
