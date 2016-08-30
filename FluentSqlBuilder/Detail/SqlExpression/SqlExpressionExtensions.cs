@@ -7,11 +7,11 @@ namespace FluentSqlBuilder.Public
 {
     public static class SqlExpressionExtensions
     {
-        public static ConditionBuilder
+        public static SqlCondition
             Equal<X>(
                 this ISqlExpression<IScalar<X>> lhs,
                 ISqlExpression<IScalar<X>> rhs
             ) =>
-            new ConditionBuilder(lhs.SqlBuilder).Equal(lhs, rhs);
+            new SqlCondition(lhs, SqlPart.FromToken("="), rhs);
     }
 }

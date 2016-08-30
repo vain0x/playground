@@ -36,6 +36,12 @@ namespace FluentSqlBuilder.Detail
         public bool IsTrivial =>
             Expressions.IsEmpty();
 
+        public ConditionBuilder Add(SqlCondition condition)
+        {
+            Expressions.Add(condition);
+            return this;
+        }
+
         public ConditionBuilder Add(ConditionBuilder condition)
         {
             if (ReferenceEquals(Combinator, condition.Combinator))
@@ -53,12 +59,6 @@ namespace FluentSqlBuilder.Detail
         {
             Expressions.Add(SqlPart.Concat(parts));
             return this;
-        }
-
-        public ConditionBuilder Equal<X>(ISqlExpression<X> lhs, ISqlExpression<X> rhs)
-        {
-            var equal = SqlPart.FromToken("=");
-            return AddExpression(lhs, equal, rhs);
         }
     }
 }
