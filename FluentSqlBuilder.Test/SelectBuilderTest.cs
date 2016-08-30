@@ -1,14 +1,12 @@
 ﻿using Xunit;
-using FluentSqlBuilder.Provider.Fake;
 using FluentSqlBuilder.Public;
 
 namespace FluentSqlBuilder.Test
 {
     public class SelectBuilderTest
     {
-        SqlBuilder Sql { get; } =
-            new SqlBuilder(new FakeDbProvider());
-        
+        static SqlBuilder Sql => DummySqlBuilder.Sql;
+
         [Fact]
         public void MinimumTest()
         {

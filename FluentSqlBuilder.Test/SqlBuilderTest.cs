@@ -2,19 +2,13 @@
 using System.Data;
 using System.Linq;
 using Xunit;
-using FluentSqlBuilder.Detail;
-using FluentSqlBuilder.Provider.Fake;
 using FluentSqlBuilder.Public;
 
 namespace FluentSqlBuilder.Test
 {
     public class SqlBuilderTest
     {
-        static FakeDbProvider Provider { get; } =
-            new FakeDbProvider();
-
-        static SqlBuilder Sql { get; } =
-            new SqlBuilder(Provider);
+        static SqlBuilder Sql => DummySqlBuilder.Sql;
 
         #region Expression
         [Fact]
