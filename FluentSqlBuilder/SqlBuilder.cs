@@ -47,6 +47,9 @@ namespace FluentSqlBuilder.Public
         public ParameterExpression<bool> Bool(bool value) =>
             Value(DbType.Boolean, value);
 
+        public ParameterExpression<int> Int32(int value) =>
+            Value(DbType.Int32, value);
+
         public ParameterExpression<long> Int(long value) =>
             Value(DbType.Int64, value);
 
