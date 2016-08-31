@@ -8,7 +8,7 @@ namespace FluentSqlBuilder.Test
 {
     public class SqlExpressionExtensionsTest
     {
-        static SqlBuilder Sql => DummySqlBuilder.Sql;
+        static SqlBuilder Sql => FakeDb.Sql;
 
         #region Test: Invoke
         [Fact]

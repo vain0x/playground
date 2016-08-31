@@ -5,7 +5,7 @@ namespace FluentSqlBuilder.Test
 {
     public class SelectBuilderTest
     {
-        static SqlBuilder Sql => DummySqlBuilder.Sql;
+        static SqlBuilder Sql => FakeDb.Sql;
 
         [Fact]
         public void MinimumTest()

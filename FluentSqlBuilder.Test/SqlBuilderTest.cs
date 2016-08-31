@@ -8,7 +8,7 @@ namespace FluentSqlBuilder.Test
 {
     public class SqlBuilderTest
     {
-        static SqlBuilder Sql => DummySqlBuilder.Sql;
+        static SqlBuilder Sql => FakeDb.Sql;
 
         #region Expression
         [Fact]

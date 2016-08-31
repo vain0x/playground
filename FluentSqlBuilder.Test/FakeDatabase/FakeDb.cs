@@ -3,7 +3,7 @@ using FluentSqlBuilder.Public;
 
 namespace FluentSqlBuilder.Test
 {
-    public static class DummySqlBuilder
+    public static class FakeDb
     {
         public static FakeDbProvider Provider { get; } =
             new FakeDbProvider();
