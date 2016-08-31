@@ -53,6 +53,9 @@ namespace FluentSqlBuilder.Public
         public ParameterExpression<long> Int(long value) =>
             Value(DbType.Int64, value);
 
+        public ParameterExpression<double> Float(double value) =>
+            Value(DbType.Double, value);
+
         public ParameterExpression<string> String(string value) =>
             Value(DbType.String, value);
 
