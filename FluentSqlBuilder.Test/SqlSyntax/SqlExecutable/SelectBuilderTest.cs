@@ -11,7 +11,7 @@ namespace FluentSqlBuilder.Test
         [Fact]
         public void MinimumTest()
         {
-            var employee = new Employee(Sql);
+            var employee = FakeDb.Employee;
             var c = Sql.Select()
                 .From(employee.Table)
                 .Field(employee.Name)
@@ -23,7 +23,7 @@ namespace FluentSqlBuilder.Test
         [Fact]
         public void WhereTest()
         {
-            var employee = new Employee(Sql);
+            var employee = FakeDb.Employee;
             var c = Sql.Select()
                 .From(employee.Table)
                 .Where(employee.Name.Equal(Sql.String("Miku")))
