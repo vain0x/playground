@@ -51,6 +51,7 @@
     <Compile Include="SqlSyntax\SqlExpression\SqlExpressionExtensionsTest.cs" />
     <Compile Include="SqlSyntax\SqlCondition\SqlConditionTest.cs" />
     <Compile Include="FakeDatabase\Department.cs" />
+    <Compile Include="SqlSyntax\SqlCondition\ConditionBuilderTest.cs" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\FluentSqlBuilder\FluentSqlBuilder.csproj">

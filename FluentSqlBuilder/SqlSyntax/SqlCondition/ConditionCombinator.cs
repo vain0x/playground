@@ -28,8 +28,8 @@ namespace FluentSqlBuilder.Detail
                     : new[] { Neutral };
         }
 
-        static string TrueExpression => "0 = 0";
-        static string FalseExpression => "0 = 1";
+        internal static string TrueExpression => "0 = 0";
+        internal static string FalseExpression => "0 = 1";
 
         public sealed class AndConditionCombinator
             : ConditionCombinator
