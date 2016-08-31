@@ -40,12 +40,12 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="DummyDatabase\DummySqlBuilder.cs" />
+    <Compile Include="FakeDatabase\DummySqlBuilder.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="SqlSyntax\SqlExecutable\SelectBuilderTest.cs" />
     <Compile Include="SqlBuilderTest.cs" />
     <Compile Include="Utility\DbCommandExtensions.cs" />
-    <Compile Include="DummyDatabase\Person.cs" />
+    <Compile Include="FakeDatabase\Person.cs" />
     <Compile Include="SqlSyntax\SqlExpression\SqlExpressionTest.cs" />
     <Compile Include="Utility\AssertExtensions.cs" />
     <Compile Include="SqlSyntax\SqlExpression\SqlExpressionExtensionsTest.cs" />
