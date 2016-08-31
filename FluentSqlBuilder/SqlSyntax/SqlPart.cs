@@ -46,10 +46,5 @@ namespace FluentSqlBuilder.Detail
                 parts.SelectMany(p => p.Tokens),
                 parts.SelectMany(p => p.Parameters)
             );
-
-        public static ISqlPart Concat(params ISqlPart[] parts)
-        {
-            return Concat((IEnumerable<ISqlPart>) parts);
-        }
     }
 }

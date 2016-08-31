@@ -15,11 +15,10 @@ namespace FluentSqlBuilder.Test
         {
             new CompoundExpression<IScalar<long>>(
                 Sql,
-                SqlPart.Concat(
-                    Sql.Int(1),
-                    SqlPart.FromToken("+"),
-                    Sql.Int(2)
-                ))
+                Sql.Int(1)
+                .Concat(SqlPart.FromToken("+"))
+                .Concat(Sql.Int(2))
+            )
                 .ToEmbeddedString()
                 .ShouldEqual("1 + 2");
         }

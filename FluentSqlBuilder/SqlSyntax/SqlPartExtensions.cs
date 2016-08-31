@@ -9,8 +9,13 @@ namespace FluentSqlBuilder.Detail
 {
     static class SqlPartExtensions
     {
+        internal static ISqlPart Concat(this ISqlPart lhs, ISqlPart rhs)
+        {
+            return SqlPart.Concat(new[] { lhs, rhs });
+        }
+
         /// <summary>
-        /// Values are NOT quoted. Just for test.
+        /// NOTE: Values are NOT quoted. Just for test.
         /// </summary>
         internal static string ToEmbeddedString(this ISqlPart part)
         {
