@@ -25,8 +25,7 @@ namespace FluentSqlBuilder.Detail
 
         public SelectBuilder FieldAll(INamedSqlExpression<IRelation> relation)
         {
-            var wildmark = Statement.SqlBuilder.Language.BuildWildmark(relation.RawName);
-            Statement.Fields.Add(SqlPart.FromToken(wildmark));
+            Statement.AddFieldAll(relation);
             return this;
         }
         #endregion

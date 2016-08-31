@@ -83,7 +83,15 @@ namespace FluentSqlBuilder.Detail
             .Concat(Fields.SelectMany(f => f.Parameters));
         #endregion
 
+        #region ISqlExecutable
         public DbCommand ToCommand() =>
             SqlBuilder.CreateCommand(this);
+        #endregion
+
+        public void AddFieldAll(INamedSqlExpression<IRelation> relation)
+        {
+            var wildmark = SqlBuilder.Language.BuildWildmark(relation.RawName);
+            Fields.Add(SqlPart.FromToken(wildmark));
+        }
     }
 }
