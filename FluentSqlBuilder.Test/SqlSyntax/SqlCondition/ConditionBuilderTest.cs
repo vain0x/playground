@@ -14,7 +14,7 @@ namespace FluentSqlBuilder.Test
         {
             new ConditionBuilder(Sql, ConditionCombinator.And)
                 .ToEmbeddedString()
-                .ShouldEqual($"( {ConditionCombinator.TrueExpression} )");
+                .ShouldEqual(ConditionCombinator.TrueExpression);
         }
 
         [Fact]
@@ -23,7 +23,7 @@ namespace FluentSqlBuilder.Test
             new ConditionBuilder(Sql, ConditionCombinator.And)
                 .Add(FakeDb.Employee.Name.Equal(Sql.String("Miku")))
                 .ToEmbeddedString()
-                .ShouldEqual("( `employees`.`name` = 'Miku' )");
+                .ShouldEqual("`employees`.`name` = 'Miku'");
         }
 
         [Fact]
@@ -48,7 +48,7 @@ namespace FluentSqlBuilder.Test
                 .Add(Sql.True)
                 .Add(Sql.True)
                 .ToEmbeddedString()
-                .ShouldEqual("( `employees`.`name` = 'Miku' )");
+                .ShouldEqual("`employees`.`name` = 'Miku'");
         }
 
         [Fact]

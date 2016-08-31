@@ -27,9 +27,14 @@ namespace FluentSqlBuilder.Detail
         }
 
         #region ISqlPart
-        public IEnumerable<string> Tokens =>
-            Combinator.Combine(Conditions.Select(x => x.Tokens))
-            .Enclose("(", ")");
+        public IEnumerable<string> Tokens
+        {
+            get
+            {
+                var tokens = Combinator.Combine(Conditions.Select(x => x.Tokens));
+                return Conditions.Count > 1 ? tokens.Enclose("(", ")") : tokens;
+            }
+        }
 
         public IEnumerable<DbParameter> Parameters =>
             Conditions.SelectMany(x => x.Parameters);

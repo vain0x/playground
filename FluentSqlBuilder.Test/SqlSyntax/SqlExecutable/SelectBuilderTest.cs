@@ -29,7 +29,7 @@ namespace FluentSqlBuilder.Test
                 .Field(employee.Age)
                 .ToCommand();
             Assert.Equal(
-                "select `employees`.`age` from `employees` where ( `employees`.`name` = @p0 )",
+                "select `employees`.`age` from `employees` where `employees`.`name` = @p0",
                 c.ToParameterizedString()
             );
         }
