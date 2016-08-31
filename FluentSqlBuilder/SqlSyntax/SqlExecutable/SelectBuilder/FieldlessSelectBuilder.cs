@@ -85,6 +85,16 @@ namespace FluentSqlBuilder.Detail
             Statement.Fields.Add(SqlPart.FromToken(wildmark));
             return new SelectBuilder(Statement);
         }
+
+        public ISqlExpression<IScalar<X>> ToScalar<X>(ISqlExpression<IScalar<X>> expression)
+        {
+            Field(expression);
+            return
+                new CompoundExpression<IScalar<X>>(
+                    Statement.SqlBuilder,
+                    Statement.Enclose("(", ")")
+                );
+        }
         #endregion
     }
 }

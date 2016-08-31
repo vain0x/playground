@@ -48,6 +48,21 @@ namespace FluentSqlBuilder.Test
         }
 
         [Fact]
+        public void TestToScalar()
+        {
+            var employee = FakeDb.Employee;
+            Sql.Select()
+                .From(employee.Table)
+                .Where(employee.Name.Equal(Sql.String("Miku")))
+                .ToScalar(employee.Age)
+                .ToEmbeddedString()
+                .ShouldEqual(
+                    "( select `employees`.`age` from `employees`"
+                    + " where `employees`.`name` = 'Miku' )"
+                );
+        }
+
+        [Fact]
         public void TestToRelation()
         {
             var employee = FakeDb.Employee;
@@ -59,7 +74,8 @@ namespace FluentSqlBuilder.Test
                 .ToEmbeddedString()
                 .ShouldEqual(
                     "( select `employees`.* from `employees`"
-                    + " where `employees`.`name` = 'Miku' )");
+                    + " where `employees`.`name` = 'Miku' )"
+                );
         }
     }
 }
