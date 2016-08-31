@@ -108,7 +108,7 @@ namespace FluentSqlBuilder.Detail
     }
 
     public class AliasedExpression<TType>
-        : SqlExpression<IScalar<object>>
+        : SqlExpression<TType>
         , IAliasedSqlExpression<TType>
         where TType: ISqlTypeTag
     {
