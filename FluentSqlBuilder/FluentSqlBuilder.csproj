@@ -40,9 +40,9 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="SqlSyntax\ConditionBuilder\ConditionBuilder.cs" />
-    <Compile Include="SqlSyntax\ConditionBuilder\ConditionCombinator.cs" />
-    <Compile Include="SqlSyntax\ConditionBuilder\SqlCondition.cs" />
+    <Compile Include="SqlSyntax\SqlCondition\ConditionBuilder.cs" />
+    <Compile Include="SqlSyntax\SqlCondition\ConditionCombinator.cs" />
+    <Compile Include="SqlSyntax\SqlCondition\SqlCondition.cs" />
     <Compile Include="SqlSyntax\SqlExpression\SqlExpression.cs" />
     <Compile Include="SqlSyntax\SqlExpression\JoinBuilder\Join.cs" />
     <Compile Include="SqlSyntax\SqlExpression\JoinBuilder\JoinBuilder.cs" />
