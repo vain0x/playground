@@ -48,7 +48,7 @@ namespace FluentSqlBuilder.Public
         #region Condition operators
         public static ISqlCondition
             IsNull<X>(this ISqlExpression<IScalar<X>> lhs) =>
-            new SqlCondition(lhs.SqlBuilder, SqlPart.FromToken("is null"));
+            new SqlCondition(lhs.SqlBuilder, lhs, SqlPart.FromToken("is null"));
 
         public static ISqlCondition
             Equal<X>(
