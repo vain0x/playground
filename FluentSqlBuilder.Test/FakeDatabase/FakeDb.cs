@@ -10,5 +10,8 @@ namespace FluentSqlBuilder.Test
 
         public static SqlBuilder Sql { get; } =
             new SqlBuilder(Provider);
+
+        public static Department Department { get; } =
+            new Department(Sql);
     }
 }
