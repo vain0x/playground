@@ -80,9 +80,8 @@ namespace FluentSqlBuilder.Detail
         }
     }
 
-    public class ParameterExpression<TType>
-        : SqlExpression<TType>
-        where TType: ISqlTypeTag
+    public class ParameterExpression<TValue>
+        : SqlExpression<IScalar<TValue>>
     {
         string Name { get; }
         DbParameter Parameter { get; }
