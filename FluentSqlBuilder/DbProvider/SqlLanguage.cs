@@ -41,5 +41,12 @@ namespace FluentSqlBuilder.Provider
                     ? quoted
                     : QualifyIdentifier(QuoteIdentifier(qualifierOrNull), quoted);
         }
+
+        /// <summary>
+        /// ワイルドマーク * またはそれを修飾した形の文字列を取得します。
+        /// </summary>
+        /// <param name="qualifierOrNull"></param>
+        /// <returns></returns>
+        public abstract string BuildWildmark(string qualifierOrNull);
     }
 }

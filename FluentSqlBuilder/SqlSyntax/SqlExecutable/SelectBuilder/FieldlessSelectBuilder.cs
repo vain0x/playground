@@ -78,6 +78,13 @@ namespace FluentSqlBuilder.Detail
             Statement.Fields.Add(expression.Box());
             return new SelectBuilder(Statement);
         }
+
+        public SelectBuilder FieldAll(INamedSqlExpression<IRelation> relation)
+        {
+            var wildmark = Statement.SqlBuilder.Language.BuildWildmark(relation.RawName);
+            Statement.Fields.Add(SqlPart.FromToken(wildmark));
+            return new SelectBuilder(Statement);
+        }
         #endregion
     }
 }

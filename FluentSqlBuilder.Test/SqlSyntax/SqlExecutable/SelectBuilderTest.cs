@@ -36,17 +36,28 @@ namespace FluentSqlBuilder.Test
         }
 
         [Fact]
+        public void TestFieldAll()
+        {
+            var employee = FakeDb.Employee;
+            Sql.Select()
+                .From(employee.Table)
+                .FieldAll(employee.Table)
+                .ToEmbeddedString()
+                .ShouldEqual("select `employees`.* from `employees`");
+        }
+
+        [Fact]
         public void TestToRelation()
         {
             var employee = FakeDb.Employee;
             Sql.Select()
                 .From(employee.Table)
                 .Where(employee.Name.Equal(Sql.String("Miku")))
-                .Field(employee.Age)
+                .FieldAll(employee.Table)
                 .ToRelation()
                 .ToEmbeddedString()
                 .ShouldEqual(
-                    "( select `employees`.`age` from `employees`"
+                    "( select `employees`.* from `employees`"
                     + " where `employees`.`name` = 'Miku' )");
         }
     }

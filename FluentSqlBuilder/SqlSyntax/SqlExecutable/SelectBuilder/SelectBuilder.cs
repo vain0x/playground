@@ -17,7 +17,7 @@ namespace FluentSqlBuilder.Detail
         }
 
         #region ISqlPart
-        public IEnumerable<string> Tokens => Statement.Tokens.Enclose("(", ")");
+        public IEnumerable<string> Tokens => Statement.Tokens;
         public IEnumerable<DbParameter> Parameters => Statement.Parameters;
         #endregion
 
@@ -29,6 +29,13 @@ namespace FluentSqlBuilder.Detail
         public SelectBuilder Field<X>(ISqlExpression<IScalar<X>> expression)
         {
             Statement.Fields.Add(expression.Box());
+            return this;
+        }
+
+        public SelectBuilder FieldAll(INamedSqlExpression<IRelation> relation)
+        {
+            var wildmark = Statement.SqlBuilder.Language.BuildWildmark(relation.RawName);
+            Statement.Fields.Add(SqlPart.FromToken(wildmark));
             return this;
         }
         #endregion

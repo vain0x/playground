@@ -23,8 +23,8 @@ namespace FluentSqlBuilder.Detail
         public List<OrderKey> OrderKeys { get; } =
             new List<OrderKey>();
 
-        public List<ISqlExpression<IScalar<object>>> Fields { get; } =
-            new List<ISqlExpression<IScalar<object>>>();
+        public List<ISqlPart> Fields { get; } =
+            new List<ISqlPart>();
 
         public SelectStatement(SqlBuilder sqlBuilder)
             : base(sqlBuilder)

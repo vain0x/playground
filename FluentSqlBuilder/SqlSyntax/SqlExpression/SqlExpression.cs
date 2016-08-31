@@ -106,8 +106,16 @@ namespace FluentSqlBuilder.Detail
         #endregion
     }
 
+    public interface INamedSqlExpression<out TType>
+        : ISqlExpression<TType>
+        where TType: ISqlTypeTag
+    {
+        string RawName { get; }
+    }
+
     public interface IAliasedSqlExpression<out TType>
-        : ISqlPart
+        : INamedSqlExpression<TType>
+        where TType: ISqlTypeTag
     {
     }
 
@@ -143,6 +151,10 @@ namespace FluentSqlBuilder.Detail
 
         public override IEnumerable<DbParameter> Parameters =>
             Expression.Parameters;
+        #endregion
+
+        #region INamedSqlExpression
+        string INamedSqlExpression<TType>.RawName => Alias;
         #endregion
     }
 }

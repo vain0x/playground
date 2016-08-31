@@ -1,4 +1,5 @@
-﻿using System.Text.RegularExpressions;
+﻿using System;
+using System.Text.RegularExpressions;
 
 namespace FluentSqlBuilder.Provider.Fake
 {
@@ -21,6 +22,15 @@ namespace FluentSqlBuilder.Provider.Fake
         public override string QualifyIdentifier(string qualifier, string identifier)
         {
             return $"{qualifier}.{identifier}";
+        }
+
+        public override string BuildWildmark(string qualifierOrNull)
+        {
+            if (qualifierOrNull != null && !IsIdentifier(qualifierOrNull))
+            {
+                throw new ArgumentException(qualifierOrNull);
+            }
+            return qualifierOrNull == null ? "*" : $"`{qualifierOrNull}`.*";
         }
     }
 }
