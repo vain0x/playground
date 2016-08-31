@@ -14,6 +14,12 @@ namespace FluentSqlBuilder.Detail
             return SqlPart.Concat(new[] { lhs, rhs });
         }
 
+        internal static ISqlPart Enclose(this ISqlPart part, string left, string right)
+        {
+            var parts = new[] { SqlPart.FromToken(left), part, SqlPart.FromToken(right) };
+            return SqlPart.Concat(parts);
+        }
+
         /// <summary>
         /// NOTE: Values are NOT quoted. Just for test.
         /// </summary>

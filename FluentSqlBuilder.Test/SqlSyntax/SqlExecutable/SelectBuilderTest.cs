@@ -1,4 +1,5 @@
 ﻿using Xunit;
+using FluentSqlBuilder.Detail;
 using FluentSqlBuilder.Public;
 
 namespace FluentSqlBuilder.Test
@@ -32,6 +33,21 @@ namespace FluentSqlBuilder.Test
                 "select `employees`.`age` from `employees` where `employees`.`name` = @p0",
                 c.ToParameterizedString()
             );
+        }
+
+        [Fact]
+        public void TestToRelation()
+        {
+            var employee = FakeDb.Employee;
+            Sql.Select()
+                .From(employee.Table)
+                .Where(employee.Name.Equal(Sql.String("Miku")))
+                .Field(employee.Age)
+                .ToRelation()
+                .ToEmbeddedString()
+                .ShouldEqual(
+                    "( select `employees`.`age` from `employees`"
+                    + " where `employees`.`name` = 'Miku' )");
         }
     }
 }

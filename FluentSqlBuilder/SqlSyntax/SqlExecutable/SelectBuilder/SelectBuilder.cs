@@ -39,5 +39,14 @@ namespace FluentSqlBuilder.Detail
             throw new NotImplementedException();
         }
         #endregion
+
+        public ISqlExpression<IRelation> ToRelation()
+        {
+            return
+                new CompoundExpression<IRelation>(
+                    Statement.SqlBuilder,
+                    Statement.Enclose("(", ")")
+                );
+        }
     }
 }
