@@ -6,8 +6,6 @@ using FluentSqlBuilder.Public;
 namespace FluentSqlBuilder.Detail
 {
     public class SelectBuilder
-        : ISqlPart
-        , ISqlExecutable
     {
         SelectStatement Statement { get; }
 
@@ -16,14 +14,7 @@ namespace FluentSqlBuilder.Detail
             Statement = statement;
         }
 
-        #region ISqlPart
-        public IEnumerable<string> Tokens => Statement.Tokens;
-        public IEnumerable<DbParameter> Parameters => Statement.Parameters;
-        #endregion
-
-        #region ISqlExecutable
         public DbCommand ToCommand() => Statement.ToCommand();
-        #endregion
 
         #region Field
         public SelectBuilder Field<X>(ISqlExpression<IScalar<X>> expression)

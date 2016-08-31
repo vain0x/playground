@@ -42,7 +42,8 @@ namespace FluentSqlBuilder.Test
             Sql.Select()
                 .From(employee.Table)
                 .FieldAll(employee.Table)
-                .ToEmbeddedString()
+                .ToCommand()
+                .ToParameterizedString()
                 .ShouldEqual("select `employees`.* from `employees`");
         }
 
