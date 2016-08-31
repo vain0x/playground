@@ -17,7 +17,7 @@ namespace FluentSqlBuilder.Public
             );
         }
 
-        static ISqlExpression<T>
+        internal static ISqlExpression<T>
             Invoke<T>(
                 SqlBuilder sqlBuilder,
                 string functionName,

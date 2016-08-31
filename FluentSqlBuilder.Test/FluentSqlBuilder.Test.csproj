@@ -46,6 +46,10 @@
     <Compile Include="SqlBuilderTest.cs" />
     <Compile Include="Utility\DbCommandExtensions.cs" />
     <Compile Include="DummyDatabase\Person.cs" />
+    <Compile Include="SqlSyntax\SqlExpression\SqlExpressionTest.cs" />
+    <Compile Include="Utility\AssertExtensions.cs" />
+    <Compile Include="SqlSyntax\SqlExpression\SqlExpressionExtensionsTest.cs" />
+    <Compile Include="SqlSyntax\SqlCondition\SqlConditionTest.cs" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\FluentSqlBuilder\FluentSqlBuilder.csproj">
@@ -55,6 +59,7 @@
   </ItemGroup>
   <ItemGroup>
     <Folder Include="SqlSyntax\SqlExpression\" />
+    <Folder Include="SqlSyntax\SqlCondition\" />
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <Choose>

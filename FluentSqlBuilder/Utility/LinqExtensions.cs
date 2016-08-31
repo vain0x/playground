@@ -38,6 +38,14 @@ namespace FluentSqlBuilder.Detail
         ) =>
             xxs.Intersperse(separator).Concat();
 
+        public static string Intercalate(
+            this IEnumerable<string> ss,
+            char separator
+        )
+        {
+            return string.Join(separator.ToString(), ss);
+        }
+
         public static IEnumerable<X> Enclose<X>(this IEnumerable<X> xs, X left, X right)
         {
             yield return left;

@@ -1,4 +1,5 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 using System.Data.Common;
 using System.Linq;
 
@@ -32,6 +33,11 @@ namespace FluentSqlBuilder.Detail
         {
         }
 
+        public override string ToString()
+        {
+            return string.Join(" ", Tokens);
+        }
+
         public static ISqlPart FromToken(string token) =>
             new SqlPart(new[] { token });
 
@@ -40,5 +46,10 @@ namespace FluentSqlBuilder.Detail
                 parts.SelectMany(p => p.Tokens),
                 parts.SelectMany(p => p.Parameters)
             );
+
+        public static ISqlPart Concat(params ISqlPart[] parts)
+        {
+            return Concat((IEnumerable<ISqlPart>) parts);
+        }
     }
 }

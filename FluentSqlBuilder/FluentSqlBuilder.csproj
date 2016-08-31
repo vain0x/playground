@@ -71,6 +71,7 @@
     <Compile Include="SqlSyntax\SqlExpression\Table\IColumn.cs" />
     <Compile Include="SqlSyntax\SqlExpression\Table\Table.cs" />
     <Compile Include="SqlSyntax\SqlExpression\Table\Column.cs" />
+    <Compile Include="SqlSyntax\SqlPartExtensions.cs" />
   </ItemGroup>
   <ItemGroup />
   <ItemGroup />
