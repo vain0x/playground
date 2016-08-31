@@ -79,7 +79,7 @@ namespace FluentSqlBuilder.Detail
         }
 
         public override IEnumerable<DbParameter> Parameters =>
-            Enumerable.Concat(Relation.Parameters, Condition.Parameters);
+            Relation.Parameters.Concat(Condition.Parameters);
     }
 
     public class JoinUsing
@@ -110,6 +110,6 @@ namespace FluentSqlBuilder.Detail
         }
 
         public override IEnumerable<DbParameter> Parameters =>
-            Enumerable.Concat(Relation.Parameters, Column.Parameters);
+            Relation.Parameters.Concat(Column.Parameters);
     }
 }
