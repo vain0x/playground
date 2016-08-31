@@ -4,7 +4,7 @@
         : DbProvider
     {
         public FakeDbProvider()
-        : base(new FakeSqlLanguage(), new FakeDbProviderFactory())
+            : base(new FakeSqlLanguage(), new FakeDbProviderFactory())
         {
         }
     }

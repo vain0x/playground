@@ -20,9 +20,19 @@ namespace FluentSqlBuilder.Detail
         #endregion
 
         #region Join
-        JoinBuilder<FieldlessSelectBuilder> Join(ISqlExpression<IRelation> relation, JoinType joinType)
+        JoinBuilder<FieldlessSelectBuilder> Join(
+            ISqlExpression<IRelation> relation,
+            JoinType joinType
+        )
         {
-            return new JoinBuilder<FieldlessSelectBuilder>(Statement.SqlBuilder, Statement, joinType, relation, this);
+            return
+                new JoinBuilder<FieldlessSelectBuilder>(
+                    Statement.SqlBuilder,
+                    Statement,
+                    joinType,
+                    relation,
+                    this
+                );
         }
 
         public JoinBuilder<FieldlessSelectBuilder> Join(ISqlExpression<IRelation> relation) =>
@@ -46,7 +56,10 @@ namespace FluentSqlBuilder.Detail
         #endregion
 
         #region OrderBy
-        FieldlessSelectBuilder OrderByImpl<X>(ISqlExpression<IScalar<X>> expression, OrderDirection direction)
+        FieldlessSelectBuilder OrderByImpl<X>(
+            ISqlExpression<IScalar<X>> expression,
+            OrderDirection direction
+        )
         {
             Statement.OrderKeys.Add(new OrderKey(expression.Box(), direction));
             return this;

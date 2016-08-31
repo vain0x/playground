@@ -86,7 +86,11 @@ namespace FluentSqlBuilder.Detail
         string Name { get; }
         DbParameter Parameter { get; }
 
-        internal ParameterExpression(SqlBuilder sqlBuilder, string name, DbParameter parameter)
+        internal ParameterExpression(
+            SqlBuilder sqlBuilder,
+            string name,
+            DbParameter parameter
+        )
             : base(sqlBuilder)
         {
             Name = "@" + name;
@@ -115,7 +119,11 @@ namespace FluentSqlBuilder.Detail
         public ISqlExpression<TType> Expression { get; }
         public string Alias { get; }
 
-        public AliasedExpression(SqlBuilder sqlBuilder, ISqlExpression<TType> expression, string alias)
+        public AliasedExpression(
+            SqlBuilder sqlBuilder,
+            ISqlExpression<TType> expression,
+            string alias
+        )
             : base(sqlBuilder)
         {
             Expression = expression;
