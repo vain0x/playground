@@ -3,15 +3,15 @@ using FluentSqlBuilder.Public;
 
 namespace FluentSqlBuilder.Test
 {
-    public class Person
+    public class Employee
     {
         public ITable Table { get; }
         public IColumn<string> Name { get; }
         public IColumn<long> Age { get; }
 
-        public Person(SqlBuilder sqlBuilder)
+        public Employee(SqlBuilder sqlBuilder)
         {
-            Table = sqlBuilder.Table("persons");
+            Table = sqlBuilder.Table("employees");
             Name = Table.Column<string>("name");
             Age = Table.Column<long>("age");
         }

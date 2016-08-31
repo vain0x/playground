@@ -10,26 +10,26 @@ namespace FluentSqlBuilder.Test
         [Fact]
         public void MinimumTest()
         {
-            var person = new Person(Sql);
+            var employee = new Employee(Sql);
             var c = Sql.Select()
-                .From(person.Table)
-                .Field(person.Name)
+                .From(employee.Table)
+                .Field(employee.Name)
                 .ToCommand();
-            Assert.Equal("select `persons`.`name` from `persons`", c.CommandText);
+            Assert.Equal("select `employees`.`name` from `employees`", c.CommandText);
             Assert.True(c.Parameters.Count == 0);
         }
 
         [Fact]
         public void WhereTest()
         {
-            var person = new Person(Sql);
+            var employee = new Employee(Sql);
             var c = Sql.Select()
-                .From(person.Table)
-                .Where(person.Name.Equal(Sql.String("Miku")))
-                .Field(person.Age)
+                .From(employee.Table)
+                .Where(employee.Name.Equal(Sql.String("Miku")))
+                .Field(employee.Age)
                 .ToCommand();
             Assert.Equal(
-                "select `persons`.`age` from `persons` where ( `persons`.`name` = @p0 )",
+                "select `employees`.`age` from `employees` where ( `employees`.`name` = @p0 )",
                 c.ToParameterizedString()
             );
         }
