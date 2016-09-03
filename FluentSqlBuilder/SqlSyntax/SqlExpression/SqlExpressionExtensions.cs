@@ -48,14 +48,20 @@ namespace FluentSqlBuilder.Public
         #region Condition operators
         public static ISqlCondition
             IsNull<X>(this ISqlExpression<IScalar<X>> lhs) =>
-            new SqlCondition(lhs.SqlBuilder, lhs, SqlPart.FromToken("is null"));
+            new SqlCondition(
+                lhs.SqlBuilder,
+                lhs.Concat(SqlPart.FromToken("is null"))
+            );
 
         public static ISqlCondition
             Equal<X>(
                 this ISqlExpression<IScalar<X>> lhs,
                 ISqlExpression<IScalar<X>> rhs
             ) =>
-            new SqlCondition(lhs.SqlBuilder, lhs, SqlPart.FromToken("="), rhs);
+            new SqlCondition(
+                lhs.SqlBuilder,
+                lhs.Concat(SqlPart.FromToken("=")).Concat(rhs)
+            );
         #endregion
     }
 }

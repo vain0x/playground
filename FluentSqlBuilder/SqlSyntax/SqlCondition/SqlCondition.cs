@@ -22,25 +22,17 @@ namespace FluentSqlBuilder.Detail
     {
         public SqlBuilder SqlBuilder { get; }
 
-        IEnumerable<ISqlPart> Parts { get; }
+        ISqlPart Part { get; }
 
-        public SqlCondition(SqlBuilder sqlBuilder, IEnumerable<ISqlPart> parts)
+        public SqlCondition(SqlBuilder sqlBuilder, ISqlPart part)
         {
             SqlBuilder = sqlBuilder;
-            Parts = parts;
-        }
-
-        public SqlCondition(SqlBuilder sqlBuilder, params ISqlPart[] parts)
-            : this(sqlBuilder, (IEnumerable<ISqlPart>)parts)
-        {
+            Part = part;
         }
 
         #region ISqlPart
-        public IEnumerable<string> Tokens =>
-            Parts.SelectMany(part => part.Tokens);
-
-        public IEnumerable<DbParameter> Parameters =>
-            Parts.SelectMany(part => part.Parameters);
+        public IEnumerable<string> Tokens => Part.Tokens;
+        public IEnumerable<DbParameter> Parameters => Part.Parameters;
         #endregion
 
         #region ISqlCondition
