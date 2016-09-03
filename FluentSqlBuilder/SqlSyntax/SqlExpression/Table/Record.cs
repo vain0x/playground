@@ -19,22 +19,4 @@ namespace FluentSqlBuilder.Public
         ISqlExpression<IScalar> GetValue(string columnName);
         void SetValue(string columnName, ISqlExpression<IScalar> value);
     }
-
-    public class DictionaryRecord
-        : Dictionary<string, object>
-        , IValueRecord
-    {
-        #region IRecord
-        public Option<object> GetValue(string columnName)
-        {
-            object value;
-            return TryGetValue(columnName, out value) ? value.Some() : value.None();
-        }
-
-        public void SetValue(string columnName, object value)
-        {
-            this[columnName] = value;
-        }
-        #endregion
-    }
 }
