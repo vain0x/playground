@@ -17,5 +17,6 @@ namespace FluentSqlBuilder.Public
     {
         TValue this[DataRow row] { get; set; }
         TValue this[IRecord record] { get; set; }
+        ISqlExpression<IScalar> this[IExpressionRecord record] { get; set; }
     }
 }

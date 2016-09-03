@@ -1,4 +1,6 @@
-﻿using FluentSqlBuilder.Public;
+﻿using System;
+using System.Data.Common;
+using FluentSqlBuilder.Public;
 
 namespace FluentSqlBuilder.Detail
 {
@@ -93,6 +95,13 @@ namespace FluentSqlBuilder.Detail
                     Statement.SqlBuilder,
                     Statement.Enclose("(", ")")
                 );
+        }
+        #endregion
+
+        #region Insert
+        public DbCommand Insert(ITable table, Action<IExpressionRecord> setter)
+        {
+            return InsertBuilder.InsertSelectCommand(Statement, (Table)table, setter);
         }
         #endregion
     }

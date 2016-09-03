@@ -85,6 +85,28 @@ namespace FluentSqlBuilder.Test
         }
 
         [Fact]
+        public void TestInsertSelect()
+        {
+            var employee = FakeDb.Employee;
+            Sql.Select()
+                .From(employee.Table)
+                .Insert(employee.Table, r =>
+                {
+                    employee.Name[r] = employee.Name.Concat(Sql.String("-san"));
+                    employee.Age[r] = Sql.Int(17L);
+                    employee.DepartmentId[r] = employee.DepartmentId;
+                })
+                .ToEmbeddedString()
+                .ShouldEqual(
+                    "insert into `employees` (`name`,`age`,`department_id`)"
+                    + " select concat ( `employees`.`name` , '-san' )"
+                    + " , 17"
+                    + " , `employees`.`department_id`"
+                    + " from `employees`"
+                );
+        }
+
+        [Fact]
         public void TestToRelation()
         {
             var employee = FakeDb.Employee;

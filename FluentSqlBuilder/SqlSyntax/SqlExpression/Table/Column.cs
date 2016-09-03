@@ -49,6 +49,19 @@ namespace FluentSqlBuilder.Detail
             }
         }
 
+        public ISqlExpression<IScalar> this[IExpressionRecord record]
+        {
+            get
+            {
+                return record.GetValue(UniqueName);
+            }
+            set
+            {
+                record.SetValue(UniqueName, value);
+            }
+        }
+
+
         #region SqlExpression
         public override IEnumerable<string> Tokens
         {

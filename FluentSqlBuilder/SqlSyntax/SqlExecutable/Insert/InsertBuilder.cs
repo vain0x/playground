@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Data.Common;
 using System.Linq;
 using System.Text;
@@ -38,6 +39,34 @@ namespace FluentSqlBuilder.Detail
             dbCommand.CommandText =
                 $"insert into {table.QuotedName} ({columnNameList}) values ({parameterList})";
             dbCommand.Parameters.AddRange(parameters);
+            return dbCommand;
+        }
+
+        public static DbCommand InsertSelectCommand(
+            SelectStatement selectStatement,
+            Table table,
+            Action<IExpressionRecord> setter
+        )
+        {
+            var sqlBuilder = selectStatement.SqlBuilder;
+            var columns = table.Columns.ToArray();
+
+            var assignment = new AssignmentRecord();
+            foreach (var column in columns)
+            {
+                assignment.Add(column.UniqueName, sqlBuilder.Null);
+            }
+
+            setter(assignment);
+
+            Debug.Assert(selectStatement.Fields.IsEmpty());
+            selectStatement.Fields.AddRange(columns.Select(c => assignment[c.UniqueName]));
+
+            var dbCommand = sqlBuilder.Provider.Factory.CreateCommand();
+            var body = selectStatement.Tokens.Intercalate(' ');
+            dbCommand.CommandText =
+                $"insert into {table.QuotedName} ({table.ColumnNameList.Value}) {body}";
+            dbCommand.Parameters.AddRange(selectStatement.Parameters.Distinct().ToArray());
             return dbCommand;
         }
     }
