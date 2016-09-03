@@ -52,8 +52,7 @@ namespace FluentSqlBuilder.Detail
         #region Reflection
         bool IsColumnType(Type type)
         {
-            return type.IsGenericType
-                && type.GetGenericTypeDefinition() == typeof(IColumn<>);
+            return type.GetInterface(nameof(IColumn)) != null;
         }
 
         internal IEnumerable<PropertyInfo> ColumnProperties()
