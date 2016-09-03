@@ -85,12 +85,12 @@ namespace FluentSqlBuilder.Detail
     public class JoinUsing
         : Join
     {
-        public ISqlExpression<IScalar> Column { get; }
+        public string Column { get; }
 
         public JoinUsing(
             JoinType joinType,
             ISqlExpression<IRelation> relation,
-            ISqlExpression<IScalar> column
+            string column
         )
             : base(joinType, relation)
         {
@@ -103,13 +103,14 @@ namespace FluentSqlBuilder.Detail
             {
                 yield return JoinWord;
                 foreach (var token in Relation.Tokens) yield return token;
+                yield return "using";
                 yield return "(";
-                foreach (var token in Column.Tokens) yield return token;
+                yield return Column;
                 yield return ")";
             }
         }
 
         public override IEnumerable<DbParameter> Parameters =>
-            Relation.Parameters.Concat(Column.Parameters);
+            Relation.Parameters;
     }
 }

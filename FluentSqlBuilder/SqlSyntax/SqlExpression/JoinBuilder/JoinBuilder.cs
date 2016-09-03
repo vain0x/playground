@@ -31,9 +31,10 @@ namespace FluentSqlBuilder.Detail
             return Result;
         }
 
-        public TResult Using(ISqlExpression<IScalar> column)
+        public TResult Using(IColumn column)
         {
-            Statement.Source.Add(new JoinUsing(JoinType, Relation, column));
+            var columnName = SqlBuilder.Language.QuoteIdentifier(column.RawName);
+            Statement.Source.Add(new JoinUsing(JoinType, Relation, columnName));
             return Result;
         }
     }

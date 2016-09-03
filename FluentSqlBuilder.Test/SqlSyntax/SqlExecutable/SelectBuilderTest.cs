@@ -49,6 +49,24 @@ namespace FluentSqlBuilder.Test
         }
 
         [Fact]
+        public void TestJoinUsing()
+        {
+            var employee = FakeDb.Employee;
+            var department = FakeDb.Department;
+            Sql.Select()
+                .From(employee.Table)
+                .Join(department.Table).Using(employee.DepartmentId)
+                .FieldAll(employee.Table)
+                .FieldAll(department.Table)
+                .ToCommand()
+                .ToEmbeddedString()
+                .ShouldEqual(
+                    "select `employees`.* , `departments`.* from `employees`"
+                    + " join `departments` using ( `department_id` )"
+                );
+        }
+
+        [Fact]
         public void TestUnion()
         {
             var employee = new Employee(Sql, "e".Some());
