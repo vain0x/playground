@@ -5,9 +5,9 @@ namespace FluentSqlBuilder.Provider
     public abstract class SqlLanguage
     {
         /// <summary>
-        /// 文字列が有効な識別子であることを検査します。
+        /// 文字列がクオートも修飾もされていない識別子であることを検査します。
         /// </summary>
-        public abstract bool IsIdentifier(string identifier);
+        public abstract bool IsRawIdentifier(string identifier);
 
         /// <summary>
         /// 名前をクオートした文字列を取得します。

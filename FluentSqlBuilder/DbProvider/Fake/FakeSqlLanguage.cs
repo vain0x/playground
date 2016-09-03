@@ -9,14 +9,14 @@ namespace FluentSqlBuilder.Provider.Fake
         static readonly Regex _identifier =
             new Regex(@"^[a-zA-Z_]\w*$");
 
-        public override bool IsIdentifier(string identifier)
+        public override bool IsRawIdentifier(string identifier)
         {
             return _identifier.IsMatch(identifier);
         }
 
         public override string QuoteIdentifier(string identifier)
         {
-            if (!IsIdentifier(identifier))
+            if (!IsRawIdentifier(identifier))
             {
                 throw new ArgumentException(nameof(identifier));
             }
@@ -25,11 +25,11 @@ namespace FluentSqlBuilder.Provider.Fake
 
         public override string QualifyIdentifier(string qualifier, string identifier)
         {
-            if (!IsIdentifier(qualifier))
+            if (!IsRawIdentifier(qualifier))
             {
                 throw new ArgumentException(nameof(qualifier));
             }
-            if (!IsIdentifier(identifier))
+            if (!IsRawIdentifier(identifier))
             {
                 throw new ArgumentException(nameof(identifier));
             }
