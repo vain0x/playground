@@ -14,7 +14,7 @@ namespace FluentSqlBuilder.Detail
         IEnumerable<DbParameter> Parameters { get; }
     }
 
-    public class SqlPart
+    public class ConcreteSqlPart
         : ISqlPart
     {
         #region ISqlPart
@@ -22,13 +22,13 @@ namespace FluentSqlBuilder.Detail
         public IEnumerable<DbParameter> Parameters { get; }
         #endregion
 
-        public SqlPart(IEnumerable<string> tokens, IEnumerable<DbParameter> parameters)
+        public ConcreteSqlPart(IEnumerable<string> tokens, IEnumerable<DbParameter> parameters)
         {
             Tokens = tokens;
             Parameters = parameters;
         }
 
-        public SqlPart(IEnumerable<string> tokens)
+        public ConcreteSqlPart(IEnumerable<string> tokens)
             : this(tokens, Enumerable.Empty<DbParameter>())
         {
         }
@@ -37,12 +37,15 @@ namespace FluentSqlBuilder.Detail
         {
             return string.Join(" ", Tokens);
         }
+    }
 
+    public static class SqlPart
+    {
         public static ISqlPart FromToken(string token) =>
-            new SqlPart(new[] { token });
+            new ConcreteSqlPart(new[] { token });
 
         public static ISqlPart Concat(IEnumerable<ISqlPart> parts) =>
-            new SqlPart(
+            new ConcreteSqlPart(
                 parts.SelectMany(p => p.Tokens),
                 parts.SelectMany(p => p.Parameters)
             );

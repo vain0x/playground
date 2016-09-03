@@ -13,7 +13,7 @@ namespace FluentSqlBuilder.Public
         {
             return new CompoundExpression<IScalar<object>>(
                 expression.SqlBuilder,
-                new SqlPart(expression.Tokens, expression.Parameters)
+                new ConcreteSqlPart(expression.Tokens, expression.Parameters)
             );
         }
 
