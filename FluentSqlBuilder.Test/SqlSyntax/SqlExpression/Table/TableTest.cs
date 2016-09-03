@@ -10,11 +10,12 @@ namespace FluentSqlBuilder.Test
 {
     public class TableTest
     {
+        static Table<Employee> EmployeeTable => (Table<Employee>)FakeDb.Employee.Table;
+
         [Fact]
         public void TestColumnProperties()
         {
-            var table = (Table<Employee>)FakeDb.Employee.Table;
-            table
+            EmployeeTable
                 .ColumnProperties()
                 .Select(propertyInfo => propertyInfo.Name)
                 .ToArray()
