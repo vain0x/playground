@@ -24,13 +24,13 @@ namespace FluentSqlBuilder.Provider.Fake
             return $"{qualifier}.{identifier}";
         }
 
-        public override string BuildWildmark(string qualifierOrNull)
+        public override string BuildWildmark(string qualifier)
         {
-            if (qualifierOrNull != null && !IsIdentifier(qualifierOrNull))
+            if (!IsIdentifier(qualifier))
             {
-                throw new ArgumentException(qualifierOrNull);
+                throw new ArgumentException(qualifier);
             }
-            return qualifierOrNull == null ? "*" : $"`{qualifierOrNull}`.*";
+            return $"`{qualifier}`.*";
         }
     }
 }

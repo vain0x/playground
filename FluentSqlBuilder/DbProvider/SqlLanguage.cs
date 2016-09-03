@@ -43,10 +43,8 @@ namespace FluentSqlBuilder.Provider
         }
 
         /// <summary>
-        /// ワイルドマーク * またはそれを修飾した形の文字列を取得します。
+        /// ワイルドマーク * を修飾した形の文字列を取得します。
         /// </summary>
-        /// <param name="qualifierOrNull"></param>
-        /// <returns></returns>
-        public abstract string BuildWildmark(string qualifierOrNull);
+        public abstract string BuildWildmark(string qualifier);
     }
 }
