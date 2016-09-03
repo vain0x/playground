@@ -1,4 +1,6 @@
-﻿using FluentSqlBuilder.Detail;
+﻿using System;
+using System.Data.Common;
+using FluentSqlBuilder.Detail;
 
 namespace FluentSqlBuilder.Public
 {
@@ -8,5 +10,7 @@ namespace FluentSqlBuilder.Public
         string RawName { get; }
 
         IColumn<X> Column<X>(string columnName);
+
+        DbCommand InsertCommand(Action<IRecord> setter);
     }
 }
