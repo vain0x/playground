@@ -18,7 +18,7 @@ namespace FluentSqlBuilder.Detail
         {
             get
             {
-                return base[columnName];
+                return base[columnName].Value;
             }
             set
             {
