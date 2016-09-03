@@ -76,7 +76,7 @@ namespace FluentSqlBuilder.Detail
         #endregion
         #endregion
 
-        public Column(SqlBuilder sqlBuilder, ITable table, string rawName)
+        public Column(SqlBuilder sqlBuilder, Table table, string rawName)
             : base(sqlBuilder)
         {
             RawName = rawName;

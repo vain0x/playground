@@ -5,26 +5,24 @@ using System.Data.Common;
 using System.Linq;
 using System.Reflection;
 using Optional;
-using FluentSqlBuilder.Public;
+using FluentSqlBuilder.Detail;
 
-namespace FluentSqlBuilder.Detail
+namespace FluentSqlBuilder.Public
 {
     public class Table
         : SqlExpression<IRelation>
-        , ITable
+        , IAliasedSqlExpression<IRelation>
     {
         object Relation { get; }
-        public Option<string> OptionalAlias { get; }
+        Option<string> OptionalAlias { get; }
 
-        #region ITable
         public string RawName { get; }
 
-        public string QuotedName => SqlBuilder.Language.BuildTableName(RawName);
+        internal string QuotedName => SqlBuilder.Language.BuildTableName(RawName);
         public string Alias => OptionalAlias.ValueOr(RawName);
 
         public IColumn<X> Column<X>(string columnName) =>
             new Column<X>(SqlBuilder, this, columnName);
-        #endregion
 
         #region SqlExpression
         public sealed override IEnumerable<string> Tokens
@@ -60,7 +58,7 @@ namespace FluentSqlBuilder.Detail
                 .Where(propertyInfo => IsColumnType(propertyInfo.PropertyType));
         }
 
-        public IEnumerable<IColumn> Columns =>
+        internal IEnumerable<IColumn> Columns =>
             ColumnProperties()
             .Select(p => (IColumn)p.GetValue(Relation))
             .ToArray();
@@ -70,17 +68,22 @@ namespace FluentSqlBuilder.Detail
         /// "`name`,`age`" など
         /// insert 文に使用するためにキャッシュされる。
         /// </summary>
-        public Lazy<string> ColumnNameList { get; }
+        internal Lazy<string> ColumnNameList { get; }
 
         /// <summary>
         /// 各カラムのユニーク名をパラメーター名として使用するときの、パラメーターのリスト。
         /// "@t__c1,@t__c2" など。
         /// insert-values 文に使用するためにキャッシュされる。
         /// </summary>
-        public Lazy<string> ColumnUniqueNameParameterList { get; }
+        internal Lazy<string> ColumnUniqueNameParameterList { get; }
         #endregion
 
-        public Table(SqlBuilder sqlBuilder, object relation, string rawName, Option<string> alias)
+        internal Table(
+            SqlBuilder sqlBuilder,
+            object relation,
+            string rawName,
+            Option<string> alias
+        )
             : base(sqlBuilder)
         {
             Relation = relation;

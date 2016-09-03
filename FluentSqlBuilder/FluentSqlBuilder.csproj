@@ -72,7 +72,6 @@
     <Compile Include="SqlSyntax\SqlPart.cs" />
     <Compile Include="SqlSyntax\SqlExpression\SqlTypeTags.cs" />
     <Compile Include="SqlBuilder.cs" />
-    <Compile Include="Accessor\Table\ITable.cs" />
     <Compile Include="Accessor\Table\IColumn.cs" />
     <Compile Include="Accessor\Table\Table.cs" />
     <Compile Include="Accessor\Table\Column.cs" />

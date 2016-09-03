@@ -11,7 +11,7 @@ namespace FluentSqlBuilder.Test
     public class TableTest
     {
         static SqlBuilder Sql => FakeDb.Sql;
-        static Table EmployeeTable => (Table)FakeDb.Employee.Table;
+        static Table EmployeeTable => FakeDb.Employee.Table;
 
         [Fact]
         public void TestColumnProperties()

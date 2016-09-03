@@ -39,7 +39,7 @@ namespace FluentSqlBuilder.Public
         }
 
         #region Expression
-        public ITable Table(object r, string tableName, Option<string> alias) =>
+        public Table Table(object r, string tableName, Option<string> alias) =>
             new Table(this, r, tableName, alias);
 
         internal string GenerateUniqueName()
@@ -98,9 +98,9 @@ namespace FluentSqlBuilder.Public
             return new FromlessSelectBuilder(new SelectStatement(this));
         }
 
-        public DbCommand InsertValues(ITable table, Action<IValueRecord> setter)
+        public DbCommand InsertValues(Table table, Action<IValueRecord> setter)
         {
-            return InsertBuilder.InsertValuesCommand(this, (Table)table, setter);
+            return InsertBuilder.InsertValuesCommand(this, table, setter);
         }
         #endregion
     }

@@ -99,9 +99,9 @@ namespace FluentSqlBuilder.Detail
         #endregion
 
         #region Insert
-        public DbCommand Insert(ITable table, Action<IExpressionRecord> setter)
+        public DbCommand Insert(Table table, Action<IExpressionRecord> setter)
         {
-            return InsertBuilder.InsertSelectCommand(Statement, (Table)table, setter);
+            return InsertBuilder.InsertSelectCommand(Statement, table, setter);
         }
         #endregion
     }

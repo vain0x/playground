@@ -6,7 +6,7 @@ namespace FluentSqlBuilder.Test
 {
     public class Employee
     {
-        public ITable Table { get; }
+        public Table Table { get; }
         public IColumn<string> Name { get; }
         public IColumn<long> Age { get; }
         public IColumn<long> DepartmentId { get; }
