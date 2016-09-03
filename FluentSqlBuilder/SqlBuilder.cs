@@ -34,9 +34,14 @@ namespace FluentSqlBuilder.Public
         public ITable Table<R>(R r, string tableName, Option<string> alias) =>
             new Table<R>(this, r, tableName, alias);
 
+        internal string GenerateUniqueName()
+        {
+            return "p" + Guid.NewGuid().ToString().Replace("-", "");
+        }
+
         public ParameterExpression<X> Value<X>(DbType type, X value)
         {
-            var name = "p" + Guid.NewGuid().ToString().Replace("-", "");
+            var name = GenerateUniqueName();
             var parameter = Factory.CreateParameter();
             parameter.ParameterName = name;
             parameter.DbType = type;
