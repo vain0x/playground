@@ -41,7 +41,7 @@ namespace FluentSqlBuilder.Detail
         {
             get
             {
-                return (TValue)record.GetValue(UniqueName).ValueOr(default(TValue));
+                return (TValue)record.GetValue(UniqueName);
             }
             set
             {

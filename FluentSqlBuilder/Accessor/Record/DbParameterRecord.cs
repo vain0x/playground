@@ -14,12 +14,9 @@ namespace FluentSqlBuilder.Detail
         , IValueRecord
     {
         #region IRecord
-        public Option<object> GetValue(string columnName)
+        public object GetValue(string columnName)
         {
-            DbParameter parameter;
-            return TryGetValue(columnName, out parameter)
-                ? Option.Some<object>(parameter)
-                : Option.None<object>();
+            return this[columnName];
         }
 
         public void SetValue(string columnName, object value)
