@@ -64,6 +64,20 @@ namespace FluentSqlBuilder.Detail
             ColumnProperties()
             .Select(p => (IColumn)p.GetValue(Relation))
             .ToArray();
+
+        /// <summary>
+        /// 修飾されていないクオートされたカラム名のリスト。
+        /// "`name`,`age`" など
+        /// insert 文に使用するためにキャッシュされる。
+        /// </summary>
+        public Lazy<string> ColumnNameList { get; }
+
+        /// <summary>
+        /// 各カラムのユニーク名をパラメーター名として使用するときの、パラメーターのリスト。
+        /// "@t__c1,@t__c2" など。
+        /// insert-values 文に使用するためにキャッシュされる。
+        /// </summary>
+        public Lazy<string> ColumnUniqueNameParameterList { get; }
         #endregion
 
         public Table(SqlBuilder sqlBuilder, object relation, string rawName, Option<string> alias)
@@ -72,6 +86,20 @@ namespace FluentSqlBuilder.Detail
             Relation = relation;
             OptionalAlias = alias;
             RawName = rawName;
+
+            ColumnNameList =
+                Lazy.Create(() =>
+                    Columns
+                    .Select(c => sqlBuilder.Language.QuoteIdentifier(c.RawName))
+                    .Intercalate(',')
+                );
+
+            ColumnUniqueNameParameterList =
+                Lazy.Create(() =>
+                    Columns
+                    .Select(c => "@" + c.UniqueName)
+                    .Intercalate(',')
+                );
         }
     }
 }

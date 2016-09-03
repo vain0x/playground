@@ -31,14 +31,8 @@ namespace FluentSqlBuilder.Detail
 
             setter(record);
 
-            var columnNameList =
-                columns
-                .Select(c => sqlBuilder.Language.QuoteIdentifier(c.RawName))
-                .Intercalate(',');
-            var parameterList =
-                columns
-                .Select(c => "@" + c.UniqueName)
-                .Intercalate(',');
+            var columnNameList = table.ColumnNameList.Value;
+            var parameterList = table.ColumnUniqueNameParameterList.Value;
 
             var dbCommand = sqlBuilder.Provider.Factory.CreateCommand();
             dbCommand.CommandText =

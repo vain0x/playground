@@ -58,6 +58,7 @@
     <Compile Include="SqlSyntax\SqlExpression\SqlExpressionExtensions.cs" />
     <Compile Include="SqlSyntax\SqlExpression\Table\Record.cs" />
     <Compile Include="Utility\LinqExtensions.cs" />
+    <Compile Include="Utility\Lazy.cs" />
     <Compile Include="Utility\Unit.cs" />
     <Compile Include="DbProvider\DbProvider.cs" />
     <Compile Include="DbProvider\Fake\FakeDbProvider.cs" />
