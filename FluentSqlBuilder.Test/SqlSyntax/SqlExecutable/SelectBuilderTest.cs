@@ -67,6 +67,25 @@ namespace FluentSqlBuilder.Test
         }
 
         [Fact]
+        public void TestJoinOn()
+        {
+            var employee = FakeDb.Employee;
+            var department = FakeDb.Department;
+            Sql.Select()
+                .From(employee.Table)
+                .Join(department.Table).On(employee.DepartmentId.Equal(department.Id))
+                .FieldAll(employee.Table)
+                .FieldAll(department.Table)
+                .ToCommand()
+                .ToEmbeddedString()
+                .ShouldEqual(
+                    "select `employees`.* , `departments`.*"
+                    + " from `employees` join `departments`"
+                    + " on `employees`.`department_id` = `departments`.`department_id`"
+                );
+        }
+
+        [Fact]
         public void TestUnion()
         {
             var employee = new Employee(Sql, "e".Some());

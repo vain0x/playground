@@ -25,7 +25,7 @@ namespace FluentSqlBuilder.Detail
             Result = result;
         }
 
-        public TResult On(ConditionBuilder condition)
+        public TResult On(ISqlCondition condition)
         {
             Statement.Source.Add(new JoinOn(JoinType, Relation, condition));
             return Result;

@@ -55,12 +55,12 @@ namespace FluentSqlBuilder.Detail
     public class JoinOn
         : Join
     {
-        public ConditionBuilder Condition { get; }
+        public ISqlCondition Condition { get; }
 
         public JoinOn(
             JoinType joinType,
             ISqlExpression<IRelation> relation,
-            ConditionBuilder condition
+            ISqlCondition condition
         )
             : base(joinType, relation)
         {
