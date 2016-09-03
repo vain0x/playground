@@ -27,7 +27,7 @@ namespace FluentSqlBuilder.Detail
             var record = new DbParameterRecord();
             foreach (var parameter in parameters)
             {
-                record[parameter.ParameterName] = parameter;
+                record.Add(parameter.ParameterName, parameter);
             }
 
             setter(record);

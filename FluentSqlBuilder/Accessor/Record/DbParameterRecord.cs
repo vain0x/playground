@@ -14,21 +14,23 @@ namespace FluentSqlBuilder.Detail
         , IValueRecord
     {
         #region IRecord
-        public object GetValue(string columnName)
+        public new object this[string columnName]
         {
-            return this[columnName];
-        }
-
-        public void SetValue(string columnName, object value)
-        {
-            DbParameter parameter;
-            if (TryGetValue(columnName, out parameter))
+            get
             {
-                parameter.Value = value;
+                return base[columnName];
             }
-            else
+            set
             {
-                throw new KeyNotFoundException(nameof(columnName));
+                DbParameter parameter;
+                if (TryGetValue(columnName, out parameter))
+                {
+                    parameter.Value = value;
+                }
+                else
+                {
+                    throw new KeyNotFoundException(nameof(columnName));
+                }
             }
         }
         #endregion

@@ -9,13 +9,11 @@ namespace FluentSqlBuilder.Public
 {
     public interface IValueRecord
     {
-        object GetValue(string columnName);
-        void SetValue(string columnName, object value);
+        object this[string columnName] { get; set; }
     }
 
     public interface IExpressionRecord
     {
-        ISqlExpression<IScalar> GetValue(string columnName);
-        void SetValue(string columnName, ISqlExpression<IScalar> value);
+        ISqlExpression<IScalar> this[string columnName] { get; set; }
     }
 }

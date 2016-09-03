@@ -12,16 +12,5 @@ namespace FluentSqlBuilder.Detail
         : Dictionary<string, ISqlExpression<IScalar>>
         , IExpressionRecord
     {
-        #region IRecord
-        public ISqlExpression<IScalar> GetValue(string columnName)
-        {
-            return this[columnName];
-        }
-
-        public void SetValue(string columnName, ISqlExpression<IScalar> value)
-        {
-            this[columnName] = value;
-        }
-        #endregion
     }
 }

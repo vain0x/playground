@@ -41,11 +41,11 @@ namespace FluentSqlBuilder.Detail
         {
             get
             {
-                return (TValue)record.GetValue(UniqueName);
+                return (TValue)record[UniqueName];
             }
             set
             {
-                record.SetValue(UniqueName, value);
+                record[UniqueName] = value;
             }
         }
 
@@ -53,14 +53,13 @@ namespace FluentSqlBuilder.Detail
         {
             get
             {
-                return record.GetValue(UniqueName);
+                return record[UniqueName];
             }
             set
             {
-                record.SetValue(UniqueName, value);
+                record[UniqueName] = value;
             }
         }
-
 
         #region SqlExpression
         public override IEnumerable<string> Tokens
