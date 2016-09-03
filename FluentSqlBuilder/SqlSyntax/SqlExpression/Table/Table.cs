@@ -9,11 +9,11 @@ using FluentSqlBuilder.Public;
 
 namespace FluentSqlBuilder.Detail
 {
-    public class Table<TRelation>
+    public class Table
         : SqlExpression<IRelation>
         , ITable
     {
-        TRelation Relation { get; }
+        object Relation { get; }
         public Option<string> OptionalAlias { get; }
 
         public string QuotedName => SqlBuilder.Language.BuildTableName(RawName);
@@ -46,7 +46,7 @@ namespace FluentSqlBuilder.Detail
         #endregion
         #endregion
 
-        public Table(SqlBuilder sqlBuilder, TRelation relation, string rawName, Option<string> alias)
+        public Table(SqlBuilder sqlBuilder, object relation, string rawName, Option<string> alias)
             : base(sqlBuilder)
         {
             Relation = relation;
@@ -63,7 +63,7 @@ namespace FluentSqlBuilder.Detail
         internal IEnumerable<PropertyInfo> ColumnProperties()
         {
             return
-                typeof(TRelation)
+                Relation.GetType()
                 .GetProperties()
                 .Where(propertyInfo => IsColumnType(propertyInfo.PropertyType));
         }
