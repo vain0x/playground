@@ -41,8 +41,7 @@ namespace FluentSqlBuilder.Detail
 
         public IAliasedSqlExpression<TType> As(string alias)
         {
-            var quotedAlias = SqlBuilder.Language.QuoteIdentifier(alias);
-            return new AliasedExpression<TType>(SqlBuilder, this, quotedAlias);
+            return new AliasedExpression<TType>(SqlBuilder, this, alias);
         }
         #endregion
     }
@@ -127,15 +126,8 @@ namespace FluentSqlBuilder.Detail
         }
 
         #region ISqlPart
-        public override IEnumerable<string> Tokens
-        {
-            get
-            {
-                foreach (var token in Expression.Tokens) yield return token;
-                yield return "as";
-                yield return Alias;
-            }
-        }
+        public override IEnumerable<string> Tokens =>
+            SqlBuilder.Language.ConstructAliasedExpression(Expression.Tokens, Alias);
 
         public override IEnumerable<DbParameter> Parameters =>
             Expression.Parameters;

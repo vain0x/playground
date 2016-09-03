@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 
 namespace FluentSqlBuilder.Provider
 {
@@ -38,6 +39,19 @@ namespace FluentSqlBuilder.Provider
         public virtual string BuildColumnName(string tableAlias, string columnName)
         {
             return QualifyIdentifier(tableAlias, columnName);
+        }
+
+        /// <summary>
+        /// 別名つきの式の字句列を構築する。
+        /// </summary>
+        public virtual IEnumerable<string> ConstructAliasedExpression(
+            IEnumerable<string> tokens,
+            string alias
+        )
+        {
+            foreach (var token in tokens) yield return token;
+            yield return "as";
+            yield return QuoteIdentifier(alias);
         }
     }
 }

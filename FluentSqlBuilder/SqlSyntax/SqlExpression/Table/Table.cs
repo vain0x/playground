@@ -22,12 +22,11 @@ namespace FluentSqlBuilder.Detail
         {
             get
             {
-                yield return SqlBuilder.Language.BuildTableName(RawName);
-                if (Alias != RawName)
-                {
-                    yield return "as";
-                    yield return SqlBuilder.Language.QuoteIdentifier(Alias);
-                }
+                var tableName = new[] { SqlBuilder.Language.BuildTableName(RawName) };
+                return
+                    Alias == RawName
+                    ? tableName
+                    : SqlBuilder.Language.ConstructAliasedExpression(tableName, Alias);
             }
         }
 

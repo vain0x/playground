@@ -27,7 +27,9 @@ namespace FluentSqlBuilder.Test
         [Fact]
         public void TestAs_error()
         {
-            Assert.Throws<ArgumentException>(() => Sql.Null.As("invalid-alias"));
+            Assert.Throws<ArgumentException>(() =>
+                Sql.Null.As("invalid-alias").ToEmbeddedString()
+            );
         }
 
         [Fact]
