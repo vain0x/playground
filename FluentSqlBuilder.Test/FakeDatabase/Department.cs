@@ -13,7 +13,7 @@ namespace FluentSqlBuilder.Test
 
         public Department(SqlBuilder sqlBuilder, Option<string> tableAlias)
         {
-            Table = sqlBuilder.Table("departments", tableAlias);
+            Table = sqlBuilder.Table<Department>("departments", tableAlias);
             Id = Table.Column<long>("department_id");
             Name = Table.Column<string>("department_name");
             Email = Table.Column<string>("department_email");

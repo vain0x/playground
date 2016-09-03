@@ -18,19 +18,19 @@ namespace FluentSqlBuilder.Test
         {
             var injectionalName = "'; delete from users 0 = 0 or '' = '";
 
-            Assert.Equal("`person`", Sql.Table("person", Option.None<string>()).ToString());
+            Assert.Equal("`person`", Sql.Table<object>("person", Option.None<string>()).ToString());
             Assert.ThrowsAny<Exception>(() =>
-                Sql.Table(injectionalName, "p".Some()).ToEmbeddedString()
+                Sql.Table<object>(injectionalName, "p".Some()).ToEmbeddedString()
             );
         }
 
         [Fact]
         public void TableAsTest()
         {
-            Assert.Equal("`person` as `p`", Sql.Table("person", "p".Some()).ToString());
+            Assert.Equal("`person` as `p`", Sql.Table<object>("person", "p".Some()).ToString());
 
             Assert.ThrowsAny<Exception>(() =>
-                Sql.Table("person", "p; delete from users".Some()).ToEmbeddedString()
+                Sql.Table<object>("person", "p; delete from users".Some()).ToEmbeddedString()
             );
         }
         #endregion

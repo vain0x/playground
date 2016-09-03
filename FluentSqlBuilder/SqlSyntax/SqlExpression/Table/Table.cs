@@ -2,12 +2,13 @@
 using System.Collections.Generic;
 using System.Data.Common;
 using System.Linq;
+using System.Reflection;
 using Optional;
 using FluentSqlBuilder.Public;
 
 namespace FluentSqlBuilder.Detail
 {
-    public class Table
+    public class Table<TRelation>
         : SqlExpression<IRelation>
         , ITable
     {
@@ -47,5 +48,21 @@ namespace FluentSqlBuilder.Detail
             OptionalAlias = alias;
             RawName = rawName;
         }
+
+        #region Reflection
+        bool IsColumnType(Type type)
+        {
+            return type.IsGenericType
+                && type.GetGenericTypeDefinition() == typeof(IColumn<>);
+        }
+
+        internal IEnumerable<PropertyInfo> ColumnProperties()
+        {
+            return
+                typeof(TRelation)
+                .GetProperties()
+                .Where(propertyInfo => IsColumnType(propertyInfo.PropertyType));
+        }
+        #endregion
     }
 }
