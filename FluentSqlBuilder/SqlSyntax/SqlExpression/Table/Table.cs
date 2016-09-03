@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Data;
 using System.Data.Common;
 using System.Linq;
 using System.Reflection;
@@ -15,6 +16,8 @@ namespace FluentSqlBuilder.Detail
         TRelation Relation { get; }
         public Option<string> OptionalAlias { get; }
 
+        public string QuotedName => SqlBuilder.Language.BuildTableName(RawName);
+
         #region ITable
         public string RawName { get; }
         public string Alias => OptionalAlias.ValueOr(RawName);
@@ -27,7 +30,7 @@ namespace FluentSqlBuilder.Detail
         {
             get
             {
-                var tableName = new[] { SqlBuilder.Language.BuildTableName(RawName) };
+                var tableName = new[] { QuotedName };
                 return
                     OptionalAlias.Match(
                         alias =>
