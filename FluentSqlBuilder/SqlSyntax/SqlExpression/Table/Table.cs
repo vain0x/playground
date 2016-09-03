@@ -11,7 +11,6 @@ namespace FluentSqlBuilder.Detail
         , ITable
     {
         #region ITable
-        public string QualifiedName { get; }
         public string RawName { get; }
         public string Alias { get; }
 
@@ -23,7 +22,7 @@ namespace FluentSqlBuilder.Detail
         {
             get
             {
-                yield return QualifiedName;
+                yield return SqlBuilder.Language.BuildTableName(RawName);
                 if (Alias != RawName)
                 {
                     yield return "as";
@@ -42,7 +41,6 @@ namespace FluentSqlBuilder.Detail
         {
             Alias = alias;
             RawName = rawName;
-            QualifiedName = sqlBuilder.Language.BuildTableName(rawName);
         }
     }
 }

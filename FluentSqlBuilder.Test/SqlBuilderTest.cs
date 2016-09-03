@@ -18,7 +18,9 @@ namespace FluentSqlBuilder.Test
             var injectionalName = "'; delete from users 0 = 0 or '' = '";
 
             Assert.Equal("`person`", Sql.Table("person", "person").ToString());
-            Assert.ThrowsAny<Exception>(() => Sql.Table(injectionalName, "p"));
+            Assert.ThrowsAny<Exception>(() =>
+                Sql.Table(injectionalName, "p").ToEmbeddedString()
+            );
         }
 
         [Fact]

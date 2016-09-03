@@ -6,7 +6,6 @@ namespace FluentSqlBuilder.Public
         : IAliasedSqlExpression<IRelation>
     {
         string RawName { get; }
-        string QualifiedName { get; }
 
         IColumn<X> Column<X>(string columnName);
     }
