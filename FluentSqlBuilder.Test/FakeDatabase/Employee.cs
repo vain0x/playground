@@ -13,7 +13,7 @@ namespace FluentSqlBuilder.Test
 
         public Employee(SqlBuilder sqlBuilder, Option<string> tableAlias)
         {
-            Table = sqlBuilder.Table<Employee>("employees", tableAlias);
+            Table = sqlBuilder.Table(this, "employees", tableAlias);
             Name = Table.Column<string>("name");
             Age = Table.Column<long>("age");
             DepartmentId = Table.Column<long>("department_id");

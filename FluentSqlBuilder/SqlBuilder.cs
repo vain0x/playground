@@ -31,8 +31,8 @@ namespace FluentSqlBuilder.Public
         }
 
         #region Expression
-        public ITable Table<TRelation>(string tableName, Option<string> alias) =>
-            new Table<TRelation>(this, tableName, alias);
+        public ITable Table<R>(R r, string tableName, Option<string> alias) =>
+            new Table<R>(this, r, tableName, alias);
 
         public ParameterExpression<X> Value<X>(DbType type, X value)
         {

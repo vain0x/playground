@@ -12,6 +12,7 @@ namespace FluentSqlBuilder.Detail
         : SqlExpression<IRelation>
         , ITable
     {
+        TRelation Relation { get; }
         public Option<string> OptionalAlias { get; }
 
         #region ITable
@@ -42,9 +43,10 @@ namespace FluentSqlBuilder.Detail
         #endregion
         #endregion
 
-        public Table(SqlBuilder sqlBuilder, string rawName, Option<string> alias)
+        public Table(SqlBuilder sqlBuilder, TRelation relation, string rawName, Option<string> alias)
             : base(sqlBuilder)
         {
+            Relation = relation;
             OptionalAlias = alias;
             RawName = rawName;
         }
