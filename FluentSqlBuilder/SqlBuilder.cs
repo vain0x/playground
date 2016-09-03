@@ -16,6 +16,14 @@ namespace FluentSqlBuilder.Public
         internal SqlLanguage Language => Provider.Language;
         internal DbProviderFactory Factory => Provider.Factory;
 
+        internal DbParameter CreateParameter(string name, DbType dbType)
+        {
+            var parameter = Factory.CreateParameter();
+            parameter.ParameterName = name;
+            parameter.DbType = dbType;
+            return parameter;
+        }
+
         internal DbCommand CreateCommand(ISqlExecutable expression)
         {
             var command = Factory.CreateCommand();
