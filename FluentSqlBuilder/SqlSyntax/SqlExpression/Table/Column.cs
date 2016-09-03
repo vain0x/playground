@@ -13,6 +13,7 @@ namespace FluentSqlBuilder.Detail
     {
         #region IColumn
         public string QualifiedName { get; }
+        public string UniqueName { get; }
         public string RawName { get; }
 
         public DbType DbType
@@ -27,12 +28,12 @@ namespace FluentSqlBuilder.Detail
         {
             get
             {
-                return row.Field<TValue>(RawName);
+                return row.Field<TValue>(UniqueName);
             }
 
             set
             {
-                row.SetField(RawName, value);
+                row.SetField(UniqueName, value);
             }
         }
 
@@ -40,11 +41,11 @@ namespace FluentSqlBuilder.Detail
         {
             get
             {
-                return (TValue)record.GetValue(RawName).ValueOr(default(TValue));
+                return (TValue)record.GetValue(UniqueName).ValueOr(default(TValue));
             }
             set
             {
-                record.SetValue(RawName, value);
+                record.SetValue(UniqueName, value);
             }
         }
 
@@ -66,6 +67,7 @@ namespace FluentSqlBuilder.Detail
             : base(sqlBuilder)
         {
             RawName = rawName;
+            UniqueName = SqlBuilder.Language.ConcatIdentifiers(table.Alias, RawName);
             QualifiedName = sqlBuilder.Language.BuildColumnName(table.Alias, rawName);
         }
     }

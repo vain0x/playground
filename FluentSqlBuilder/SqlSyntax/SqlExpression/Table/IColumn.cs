@@ -6,6 +6,7 @@ namespace FluentSqlBuilder.Public
     public interface IColumn
     {
         string QualifiedName { get; }
+        string UniqueName { get; }
         string RawName { get; }
         DbType DbType { get; }
     }

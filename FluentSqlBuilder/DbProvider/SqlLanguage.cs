@@ -42,6 +42,14 @@ namespace FluentSqlBuilder.Provider
         }
 
         /// <summary>
+        /// 識別子を連結する。
+        /// </summary>
+        public virtual string ConcatIdentifiers(string first, string second)
+        {
+            return $"{first}__{second}";
+        }
+
+        /// <summary>
         /// 別名つきの式の字句列を構築する。
         /// </summary>
         public virtual IEnumerable<string> ConstructAliasedExpression(
