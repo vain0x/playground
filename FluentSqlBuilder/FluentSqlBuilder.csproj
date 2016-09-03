@@ -57,7 +57,7 @@
     <Compile Include="SqlSyntax\SqlExecutable\SelectBuilder\OrderKey.cs" />
     <Compile Include="SqlSyntax\SqlExecutable\SelectBuilder\SelectBuilder.cs" />
     <Compile Include="SqlSyntax\SqlExpression\SqlExpressionExtensions.cs" />
-    <Compile Include="SqlSyntax\SqlExpression\Table\Record.cs" />
+    <Compile Include="Accessor\Record\Record.cs" />
     <Compile Include="Utility\LinqExtensions.cs" />
     <Compile Include="Utility\Lazy.cs" />
     <Compile Include="Utility\Unit.cs" />
@@ -72,10 +72,10 @@
     <Compile Include="SqlSyntax\SqlPart.cs" />
     <Compile Include="SqlSyntax\SqlExpression\SqlTypeTags.cs" />
     <Compile Include="SqlBuilder.cs" />
-    <Compile Include="SqlSyntax\SqlExpression\Table\ITable.cs" />
-    <Compile Include="SqlSyntax\SqlExpression\Table\IColumn.cs" />
-    <Compile Include="SqlSyntax\SqlExpression\Table\Table.cs" />
-    <Compile Include="SqlSyntax\SqlExpression\Table\Column.cs" />
+    <Compile Include="Accessor\Table\ITable.cs" />
+    <Compile Include="Accessor\Table\IColumn.cs" />
+    <Compile Include="Accessor\Table\Table.cs" />
+    <Compile Include="Accessor\Table\Column.cs" />
     <Compile Include="SqlSyntax\SqlPartExtensions.cs" />
   </ItemGroup>
   <ItemGroup />
