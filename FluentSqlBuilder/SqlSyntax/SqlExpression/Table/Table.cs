@@ -16,14 +16,15 @@ namespace FluentSqlBuilder.Detail
         object Relation { get; }
         public Option<string> OptionalAlias { get; }
 
-        public string QuotedName => SqlBuilder.Language.BuildTableName(RawName);
-
         #region ITable
         public string RawName { get; }
+
+        public string QuotedName => SqlBuilder.Language.BuildTableName(RawName);
         public string Alias => OptionalAlias.ValueOr(RawName);
 
         public IColumn<X> Column<X>(string columnName) =>
             new Column<X>(SqlBuilder, this, columnName);
+        #endregion
 
         #region SqlExpression
         public sealed override IEnumerable<string> Tokens
@@ -44,15 +45,6 @@ namespace FluentSqlBuilder.Detail
         public sealed override IEnumerable<DbParameter> Parameters =>
             Enumerable.Empty<DbParameter>();
         #endregion
-        #endregion
-
-        public Table(SqlBuilder sqlBuilder, object relation, string rawName, Option<string> alias)
-            : base(sqlBuilder)
-        {
-            Relation = relation;
-            OptionalAlias = alias;
-            RawName = rawName;
-        }
 
         #region Reflection
         bool IsColumnType(Type type)
@@ -73,5 +65,13 @@ namespace FluentSqlBuilder.Detail
             .Select(p => (IColumn)p.GetValue(Relation))
             .ToArray();
         #endregion
+
+        public Table(SqlBuilder sqlBuilder, object relation, string rawName, Option<string> alias)
+            : base(sqlBuilder)
+        {
+            Relation = relation;
+            OptionalAlias = alias;
+            RawName = rawName;
+        }
     }
 }
