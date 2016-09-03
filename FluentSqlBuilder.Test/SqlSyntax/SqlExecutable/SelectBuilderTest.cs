@@ -48,6 +48,27 @@ namespace FluentSqlBuilder.Test
         }
 
         [Fact]
+        public void TestUnion()
+        {
+            var employee = new Employee(Sql, "e");
+            Sql.Select()
+                .From(employee.Table)
+                .Where(employee.Name.Equal(Sql.String("Miku")))
+                .FieldAll(employee.Table)
+                .Union()
+                .From(employee.Table)
+                .Where(employee.Age.IsNull())
+                .FieldAll(employee.Table)
+                .ToRelation()
+                .ToEmbeddedString()
+                .ShouldEqual(
+                    "( select `e`.* from `employees` as `e` where `e`.`name` = 'Miku'"
+                    + " union"
+                    + " select `e`.* from `employees` as `e` where `e`.`age` is null )"
+                );
+        }
+
+        [Fact]
         public void TestToScalar()
         {
             var employee = FakeDb.Employee;

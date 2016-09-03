@@ -33,7 +33,7 @@ namespace FluentSqlBuilder.Detail
         #region Union
         public FromlessSelectBuilder Union()
         {
-            throw new NotImplementedException();
+            return new FromlessSelectBuilder(Statement.Combine("union"));
         }
         #endregion
 

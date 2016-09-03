@@ -1,6 +1,7 @@
 ﻿using System.Collections.Generic;
 using System.Data.Common;
 using System.Linq;
+using Optional;
 using FluentSqlBuilder.Public;
 
 namespace FluentSqlBuilder.Detail
@@ -10,6 +11,8 @@ namespace FluentSqlBuilder.Detail
         , IRelationalQueryOrCommand
         , ISqlExecutable
     {
+        Option<CombinedSelectStatement> Combined { get; }
+
         public JoinedRelation Source { get; } =
             new JoinedRelation();
 
@@ -26,11 +29,17 @@ namespace FluentSqlBuilder.Detail
         public List<ISqlPart> Fields { get; } =
             new List<ISqlPart>();
 
-        public SelectStatement(SqlBuilder sqlBuilder)
+        public SelectStatement(SqlBuilder sqlBuilder, Option<CombinedSelectStatement> combined)
             : base(sqlBuilder)
         {
+            Combined = combined;
             WhereCondition = new ConditionBuilder(SqlBuilder);
             HavingCondition = new ConditionBuilder(SqlBuilder);
+        }
+
+        public SelectStatement(SqlBuilder sqlBuilder)
+            : this(sqlBuilder, Option.None<CombinedSelectStatement>())
+        {
         }
 
         #region SqlExpression
@@ -38,6 +47,12 @@ namespace FluentSqlBuilder.Detail
         {
             get
             {
+                foreach (var combined in Combined)
+                {
+                    foreach (var token in combined.Statement.Tokens) yield return token;
+                    yield return combined.Combinator;
+                }
+
                 yield return "select";
 
                 var fieldListTokens = Fields.Select(f => f.Tokens).Intercalate(new[] { "," });
@@ -76,6 +91,11 @@ namespace FluentSqlBuilder.Detail
 
         public override IEnumerable<DbParameter> Parameters =>
             Source.Parameters
+            .Concat(
+                Combined.Match(
+                    combined => combined.Statement.Parameters,
+                    () => Enumerable.Empty<DbParameter>()
+                ))
             .Concat(WhereCondition.Parameters)
             .Concat(HavingCondition.Parameters)
             .Concat(GroupKeys.SelectMany(g => g.Parameters))
@@ -92,6 +112,12 @@ namespace FluentSqlBuilder.Detail
         {
             var wildmark = SqlBuilder.Language.BuildWildmark(relation.Alias);
             Fields.Add(SqlPart.FromToken(wildmark));
+        }
+
+        public SelectStatement Combine(string combinator)
+        {
+            var combined = new CombinedSelectStatement(this, combinator);
+            return new SelectStatement(SqlBuilder, combined.Some());
         }
     }
 }
