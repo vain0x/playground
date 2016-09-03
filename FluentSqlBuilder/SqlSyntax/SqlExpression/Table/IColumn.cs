@@ -7,6 +7,7 @@ namespace FluentSqlBuilder.Public
     {
         string QualifiedName { get; }
         string RawName { get; }
+        DbType DbType { get; }
     }
 
     public interface IColumn<TValue>

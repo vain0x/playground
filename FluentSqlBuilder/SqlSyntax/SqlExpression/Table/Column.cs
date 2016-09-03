@@ -15,6 +15,14 @@ namespace FluentSqlBuilder.Detail
         public string QualifiedName { get; }
         public string RawName { get; }
 
+        public DbType DbType
+        {
+            get
+            {
+                return SqlBuilder.Provider.DbTypeFromType[typeof(TValue)];
+            }
+        }
+
         public TValue this[DataRow row]
         {
             get
