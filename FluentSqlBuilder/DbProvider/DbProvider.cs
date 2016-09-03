@@ -16,14 +16,14 @@ namespace FluentSqlBuilder.Provider
         readonly Dictionary<Type, DbType> dbTypeFromType;
 
         /// <summary>
-        /// A dictionary to Type from DbType. This mapping is one-to-one.
+        /// Gets Type from DbType. This mapping is one-to-one.
         /// </summary>
-        public IReadOnlyDictionary<DbType, Type> TypeFromDbType => typeFromDbType;
+        public Type TypeFromDbType(DbType dbType) => typeFromDbType[dbType];
 
         /// <summary>
-        /// A dictionary to DbType from Type. This mapping is one-to-one.
+        /// Gets DbType from Type. This mapping is one-to-one.
         /// </summary>
-        public IReadOnlyDictionary<Type, DbType> DbTypeFromType => dbTypeFromType;
+        public DbType DbTypeFromType(Type type) => dbTypeFromType[type];
 
         // TODO: Complete the list.
         Dictionary<Type, DbType> CreateDbTypeFromType()
@@ -41,7 +41,7 @@ namespace FluentSqlBuilder.Provider
 
         Dictionary<DbType, Type> CreateTypeFromDbType()
         {
-            return DbTypeFromType.ToDictionary(kv => kv.Value, kv => kv.Key);
+            return dbTypeFromType.ToDictionary(kv => kv.Value, kv => kv.Key);
         }
 
         /// <summary>

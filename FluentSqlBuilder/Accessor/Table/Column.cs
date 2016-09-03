@@ -20,7 +20,7 @@ namespace FluentSqlBuilder.Detail
         {
             get
             {
-                return SqlBuilder.Provider.DbTypeFromType[typeof(TValue)];
+                return SqlBuilder.Provider.DbTypeFromType(typeof(TValue));
             }
         }
 
