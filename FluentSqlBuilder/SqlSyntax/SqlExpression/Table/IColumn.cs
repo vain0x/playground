@@ -3,12 +3,16 @@ using FluentSqlBuilder.Detail;
 
 namespace FluentSqlBuilder.Public
 {
-    public interface IColumn<TValue>
-        : ISqlExpression<IScalar<TValue>>
+    public interface IColumn
     {
         string QualifiedName { get; }
         string RawName { get; }
+    }
 
+    public interface IColumn<TValue>
+        : IColumn
+        , ISqlExpression<IScalar<TValue>>
+    {
         TValue this[DataRow row] { get; set; }
         TValue this[IRecord record] { get; set; }
     }
