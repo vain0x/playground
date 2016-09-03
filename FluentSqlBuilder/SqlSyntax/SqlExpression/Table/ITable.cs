@@ -3,8 +3,9 @@
 namespace FluentSqlBuilder.Public
 {
     public interface ITable
-        : INamedSqlExpression<IRelation>
+        : IAliasedSqlExpression<IRelation>
     {
+        string RawName { get; }
         string QualifiedName { get; }
 
         IColumn<X> Column<X>(string columnName);

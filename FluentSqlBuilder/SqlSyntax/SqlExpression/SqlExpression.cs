@@ -105,18 +105,11 @@ namespace FluentSqlBuilder.Detail
             new[] { Parameter };
         #endregion
     }
-
-    public interface INamedSqlExpression<out TType>
+    public interface IAliasedSqlExpression<out TType>
         : ISqlExpression<TType>
         where TType: ISqlTypeTag
     {
-        string RawName { get; }
-    }
-
-    public interface IAliasedSqlExpression<out TType>
-        : INamedSqlExpression<TType>
-        where TType: ISqlTypeTag
-    {
+        string Alias { get; }
     }
 
     public class AliasedExpression<TType>
@@ -151,10 +144,6 @@ namespace FluentSqlBuilder.Detail
 
         public override IEnumerable<DbParameter> Parameters =>
             Expression.Parameters;
-        #endregion
-
-        #region INamedSqlExpression
-        string INamedSqlExpression<TType>.RawName => Alias;
         #endregion
     }
 }

@@ -58,7 +58,7 @@ namespace FluentSqlBuilder.Detail
             : base(sqlBuilder)
         {
             RawName = rawName;
-            QualifiedName = sqlBuilder.Language.BuildIdentifier(table.RawName, rawName);
+            QualifiedName = sqlBuilder.Language.BuildIdentifier(table.Alias, rawName);
         }
     }
 }

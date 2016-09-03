@@ -10,12 +10,17 @@ namespace FluentSqlBuilder.Test
         public IColumn<long> Age { get; }
         public IColumn<long> DepartmentId { get; }
 
-        public Employee(SqlBuilder sqlBuilder)
+        public Employee(SqlBuilder sqlBuilder, string tableAlias)
         {
-            Table = sqlBuilder.Table("employees");
+            Table = sqlBuilder.Table("employees", tableAlias);
             Name = Table.Column<string>("name");
             Age = Table.Column<long>("age");
             DepartmentId = Table.Column<long>("department_id");
+        }
+
+        public Employee(SqlBuilder sqlBuilder)
+            : this(sqlBuilder, "employees")
+        {
         }
     }
 }

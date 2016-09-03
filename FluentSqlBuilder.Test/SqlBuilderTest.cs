@@ -2,6 +2,7 @@
 using System.Data;
 using System.Linq;
 using Xunit;
+using FluentSqlBuilder.Detail;
 using FluentSqlBuilder.Public;
 
 namespace FluentSqlBuilder.Test
@@ -16,16 +17,18 @@ namespace FluentSqlBuilder.Test
         {
             var injectionalName = "'; delete from users 0 = 0 or '' = '";
 
-            Assert.Equal("`person`", Sql.Table("person").ToString());
-            Assert.ThrowsAny<Exception>(() => Sql.Table(injectionalName));
+            Assert.Equal("`person`", Sql.Table("person", "person").ToString());
+            Assert.ThrowsAny<Exception>(() => Sql.Table(injectionalName, "p"));
         }
 
         [Fact]
         public void TableAsTest()
         {
-            Assert.Equal("`person` as `p`", Sql.Table("person").As("p").ToString());
+            Assert.Equal("`person` as `p`", Sql.Table("person", "p").ToString());
 
-            Assert.ThrowsAny<Exception>(() => Sql.Table("person").As("p; delete from users"));
+            Assert.ThrowsAny<Exception>(() =>
+                Sql.Table("person", "p; delete from users").ToEmbeddedString()
+            );
         }
         #endregion
     }

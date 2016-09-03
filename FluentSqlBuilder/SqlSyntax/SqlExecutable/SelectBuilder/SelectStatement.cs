@@ -88,9 +88,9 @@ namespace FluentSqlBuilder.Detail
             SqlBuilder.CreateCommand(this);
         #endregion
 
-        public void AddFieldAll(INamedSqlExpression<IRelation> relation)
+        public void AddFieldAll(IAliasedSqlExpression<IRelation> relation)
         {
-            var wildmark = SqlBuilder.Language.BuildWildmark(relation.RawName);
+            var wildmark = SqlBuilder.Language.BuildWildmark(relation.Alias);
             Fields.Add(SqlPart.FromToken(wildmark));
         }
     }
