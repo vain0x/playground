@@ -15,7 +15,7 @@ namespace FluentSqlBuilder.Test
         public void TestInvoke_no_arguments()
         {
             SqlExpressionExtensions
-                .Invoke<IRelation>(Sql, "f", Enumerable.Empty<ISqlExpression<IScalar<object>>>())
+                .Invoke<IRelation>(Sql, "f", Enumerable.Empty<ISqlExpression<IScalar>>())
                 .ToEmbeddedString()
                 .ShouldEqual("f ( )");
         }
@@ -27,7 +27,7 @@ namespace FluentSqlBuilder.Test
                 .Invoke<IScalar<long>>(
                     Sql,
                     "max",
-                    new[] { Sql.Int(1).Box(), Sql.Int(2).Box() }
+                    new[] { Sql.Int(1), Sql.Int(2) }
                 )
                 .ToEmbeddedString()
                 .ShouldEqual("max ( 1 , 2 )");

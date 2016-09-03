@@ -20,8 +20,8 @@ namespace FluentSqlBuilder.Detail
 
         public ConditionBuilder HavingCondition { get; }
 
-        public List<ISqlExpression<IScalar<object>>> GroupKeys { get; } =
-            new List<ISqlExpression<IScalar<object>>>();
+        public List<ISqlExpression<IScalar>> GroupKeys { get; } =
+            new List<ISqlExpression<IScalar>>();
 
         public List<OrderKey> OrderKeys { get; } =
             new List<OrderKey>();

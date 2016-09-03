@@ -85,12 +85,12 @@ namespace FluentSqlBuilder.Detail
     public class JoinUsing
         : Join
     {
-        public ISqlExpression<IScalar<object>> Column { get; }
+        public ISqlExpression<IScalar> Column { get; }
 
         public JoinUsing(
             JoinType joinType,
             ISqlExpression<IRelation> relation,
-            ISqlExpression<IScalar<object>> column
+            ISqlExpression<IScalar> column
         )
             : base(joinType, relation)
         {

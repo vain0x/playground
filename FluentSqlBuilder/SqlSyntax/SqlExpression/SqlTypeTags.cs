@@ -4,8 +4,13 @@
     {
     }
 
-    public interface IScalar<out T>
+    public interface IScalar
         : ISqlTypeTag
+    {
+    }
+
+    public interface IScalar<out T>
+        : IScalar
     {
     }
 

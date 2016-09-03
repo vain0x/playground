@@ -31,7 +31,7 @@ namespace FluentSqlBuilder.Detail
             return Result;
         }
 
-        public TResult Using(ISqlExpression<IScalar<object>> column)
+        public TResult Using(ISqlExpression<IScalar> column)
         {
             Statement.Source.Add(new JoinUsing(JoinType, Relation, column));
             return Result;

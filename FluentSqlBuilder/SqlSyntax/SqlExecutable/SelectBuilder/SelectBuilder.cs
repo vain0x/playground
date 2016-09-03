@@ -19,7 +19,7 @@ namespace FluentSqlBuilder.Detail
         #region Field
         public SelectBuilder Field<X>(ISqlExpression<IScalar<X>> expression)
         {
-            Statement.Fields.Add(expression.Box());
+            Statement.Fields.Add(expression);
             return this;
         }
 
