@@ -32,7 +32,7 @@ namespace FluentSqlBuilder.Detail
         {
             get
             {
-                return (TValue)record.GetValueOrAlternative(RawName, default(TValue));
+                return (TValue)record.GetValue(RawName).ValueOr(default(TValue));
             }
             set
             {

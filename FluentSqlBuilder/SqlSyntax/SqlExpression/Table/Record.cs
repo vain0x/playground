@@ -3,12 +3,13 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using Optional;
 
 namespace FluentSqlBuilder.Public
 {
     public interface IRecord
     {
-        object GetValueOrAlternative(string columnName, object alternative);
+        Option<object> GetValue(string columnName);
         void SetValue(string columnName, object value);
     }
 
@@ -17,10 +18,10 @@ namespace FluentSqlBuilder.Public
         , IRecord
     {
         #region IRecord
-        public object GetValueOrAlternative(string columnName, object alternative)
+        public Option<object> GetValue(string columnName)
         {
             object value;
-            return TryGetValue(columnName, out value) ? value : alternative;
+            return TryGetValue(columnName, out value) ? value.Some() : value.None();
         }
 
         public void SetValue(string columnName, object value)
