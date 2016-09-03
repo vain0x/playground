@@ -68,42 +68,10 @@ namespace FluentSqlBuilder.Detail
                 .Where(propertyInfo => IsColumnType(propertyInfo.PropertyType));
         }
 
-        IEnumerable<IColumn> Columns =>
+        public IEnumerable<IColumn> Columns =>
             ColumnProperties()
             .Select(p => (IColumn)p.GetValue(Relation))
             .ToArray();
         #endregion
-
-        public DbCommand InsertCommand(Action<IRecord> setter)
-        {
-            var columns = Columns;
-            var parameters =
-                columns
-                .Select(column => SqlBuilder.CreateParameter(column.UniqueName, column.DbType))
-                .ToArray();
-
-            var record = new DbParameterRecord();
-            foreach (var parameter in parameters)
-            {
-                record[parameter.ParameterName] = parameter;
-            }
-
-            setter(record);
-
-            var columnNameList =
-                columns
-                .Select(c => SqlBuilder.Language.QuoteIdentifier(c.RawName))
-                .Intercalate(',');
-            var parameterList =
-                columns
-                .Select(c => "@" + c.UniqueName)
-                .Intercalate(',');
-
-            var dbCommand = SqlBuilder.Provider.Factory.CreateCommand();
-            dbCommand.CommandText =
-                $"insert into {QuotedName} ({columnNameList}) values ({parameterList})";
-            dbCommand.Parameters.AddRange(parameters);
-            return dbCommand;
-        }
     }
 }

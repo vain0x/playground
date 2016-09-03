@@ -10,6 +10,7 @@ namespace FluentSqlBuilder.Test
 {
     public class TableTest
     {
+        static SqlBuilder Sql => FakeDb.Sql;
         static Table EmployeeTable => (Table)FakeDb.Employee.Table;
 
         [Fact]
@@ -26,7 +27,7 @@ namespace FluentSqlBuilder.Test
         public void TestInsert()
         {
             var employee = FakeDb.Employee;
-            EmployeeTable.InsertCommand(record =>
+            Sql.InsertValues(employee.Table, record =>
             {
                 employee.Name[record] = "Miku";
                 employee.Age[record] = 16L;

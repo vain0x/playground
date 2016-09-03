@@ -1,0 +1,50 @@
+﻿using System;
+using System.Collections.Generic;
+using System.Data.Common;
+using System.Linq;
+using System.Text;
+using System.Threading.Tasks;
+using FluentSqlBuilder.Public;
+
+namespace FluentSqlBuilder.Detail
+{
+    public static class InsertBuilder
+    {
+        public static DbCommand InsertValuesCommand(
+            SqlBuilder sqlBuilder,
+            Table table,
+            Action<IRecord> setter
+        )
+        {
+            var columns = table.Columns.ToArray();
+
+            var parameters =
+                columns
+                .Select(column => sqlBuilder.CreateParameter(column.UniqueName, column.DbType))
+                .ToArray();
+
+            var record = new DbParameterRecord();
+            foreach (var parameter in parameters)
+            {
+                record[parameter.ParameterName] = parameter;
+            }
+
+            setter(record);
+
+            var columnNameList =
+                columns
+                .Select(c => sqlBuilder.Language.QuoteIdentifier(c.RawName))
+                .Intercalate(',');
+            var parameterList =
+                columns
+                .Select(c => "@" + c.UniqueName)
+                .Intercalate(',');
+
+            var dbCommand = sqlBuilder.Provider.Factory.CreateCommand();
+            dbCommand.CommandText =
+                $"insert into {table.QuotedName} ({columnNameList}) values ({parameterList})";
+            dbCommand.Parameters.AddRange(parameters);
+            return dbCommand;
+        }
+    }
+}

@@ -10,7 +10,5 @@ namespace FluentSqlBuilder.Public
         string RawName { get; }
 
         IColumn<X> Column<X>(string columnName);
-
-        DbCommand InsertCommand(Action<IRecord> setter);
     }
 }
