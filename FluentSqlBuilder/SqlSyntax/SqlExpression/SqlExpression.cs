@@ -7,7 +7,7 @@ using FluentSqlBuilder.Public;
 namespace FluentSqlBuilder.Detail
 {
     /// <summary>
-    /// SQLの式を表します。
+    /// SQLの式を表す。
     /// </summary>
     /// <typeparam name="TType"></typeparam>
     public interface ISqlExpression<out TType>

@@ -6,27 +6,27 @@ namespace FluentSqlBuilder.Provider
     public abstract class SqlLanguage
     {
         /// <summary>
-        /// 文字列がクオートも修飾もされていない識別子であることを検査します。
+        /// 文字列がクオートも修飾もされていない識別子であることを検査する。
         /// </summary>
         public abstract bool IsRawIdentifier(string identifier);
 
         /// <summary>
-        /// 名前をクオートした文字列を取得します。
+        /// 名前をクオートした文字列を取得する。
         /// </summary>
         public abstract string QuoteIdentifier(string identifier);
 
         /// <summary>
-        /// 修飾された文字列を取得します。
+        /// 修飾された文字列を取得する。
         /// </summary>
         public abstract string QualifyIdentifier(string qualifier, string columnName);
 
         /// <summary>
-        /// ワイルドマーク * を修飾した形の文字列を取得します。
+        /// ワイルドマーク * を修飾した形の文字列を組み立てる。
         /// </summary>
         public abstract string BuildWildmark(string tableAlias);
 
         /// <summary>
-        /// テーブル名を表す文字列を取得します。
+        /// テーブル名を表す文字列を組み立てる。
         /// </summary>
         public virtual string BuildTableName(string tableName)
         {
@@ -34,7 +34,7 @@ namespace FluentSqlBuilder.Provider
         }
 
         /// <summary>
-        /// カラム名を表す文字列を取得します。
+        /// カラム名を表す文字列を組み立てる。
         /// </summary>
         public virtual string BuildColumnName(string tableAlias, string columnName)
         {

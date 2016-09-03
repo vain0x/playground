@@ -6,7 +6,7 @@ using System.Linq;
 namespace FluentSqlBuilder.Detail
 {
     /// <summary>
-    /// SQL文の断片を表します。
+    /// SQL文の断片を表す。
     /// </summary>
     public interface ISqlPart
     {

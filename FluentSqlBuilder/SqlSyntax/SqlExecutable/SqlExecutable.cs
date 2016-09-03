@@ -4,7 +4,7 @@ using System.Data.Common;
 namespace FluentSqlBuilder.Detail
 {
     /// <summary>
-    /// コマンドとして実行可能なSQL文であることを表します。
+    /// コマンドとして実行可能なSQL文であることを表す。
     /// </summary>
     public interface ISqlExecutable
         : ISqlPart
@@ -13,8 +13,8 @@ namespace FluentSqlBuilder.Detail
     }
 
     /// <summary>
-    /// リレーションを操作するコマンドを表します。
-    /// 具体的には select クエリーか insert, update, delete コマンドです。
+    /// リレーションを操作するコマンドを表す。
+    /// 具体的には select クエリーか insert, update, delete コマンドのいずれか。
     /// </summary>
     public interface IRelationalQueryOrCommand
     {

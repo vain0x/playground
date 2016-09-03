@@ -12,7 +12,7 @@ namespace FluentSqlBuilder.Detail
             xxs.SelectMany(xs => xs);
 
         /// <summary>
-        /// シーケンスの各要素の間に separator を挟んだシーケンスを取得します。
+        /// シーケンスの各要素の間に separator を挟んだシーケンスを取得する。
         /// </summary>
         public static IEnumerable<X> Intersperse<X>(this IEnumerable<X> xs, X separator)
         {
