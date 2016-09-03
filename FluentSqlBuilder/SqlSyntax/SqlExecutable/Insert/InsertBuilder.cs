@@ -17,7 +17,7 @@ namespace FluentSqlBuilder.Detail
             Action<IValueRecord> setter
         )
         {
-            var columns = table.Columns.ToArray();
+            var columns = table.Columns.Value;
 
             var parameters =
                 columns
@@ -49,7 +49,7 @@ namespace FluentSqlBuilder.Detail
         )
         {
             var sqlBuilder = selectStatement.SqlBuilder;
-            var columns = table.Columns.ToArray();
+            var columns = table.Columns.Value;
 
             var assignment = new AssignmentRecord();
             foreach (var column in columns)

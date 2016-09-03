@@ -58,10 +58,7 @@ namespace FluentSqlBuilder.Public
                 .Where(propertyInfo => IsColumnType(propertyInfo.PropertyType));
         }
 
-        internal IEnumerable<IColumn> Columns =>
-            ColumnProperties()
-            .Select(p => (IColumn)p.GetValue(Relation))
-            .ToArray();
+        internal Lazy<IReadOnlyList<IColumn>> Columns { get; }
 
         /// <summary>
         /// 修飾されていないクオートされたカラム名のリスト。
@@ -90,16 +87,24 @@ namespace FluentSqlBuilder.Public
             OptionalAlias = alias;
             RawName = rawName;
 
+            Columns =
+                Lazy.Create(() =>
+                    (IReadOnlyList<IColumn>)
+                    ColumnProperties()
+                    .Select(p => (IColumn)p.GetValue(Relation))
+                    .ToArray()
+                );
+
             ColumnNameList =
                 Lazy.Create(() =>
-                    Columns
+                    Columns.Value
                     .Select(c => sqlBuilder.Language.QuoteIdentifier(c.RawName))
                     .Intercalate(',')
                 );
 
             ColumnUniqueNameParameterList =
                 Lazy.Create(() =>
-                    Columns
+                    Columns.Value
                     .Select(c => "@" + c.UniqueName)
                     .Intercalate(',')
                 );
