@@ -2,6 +2,7 @@
 using System.Data;
 using System.Data.Common;
 using System.Linq;
+using Optional;
 using FluentSqlBuilder.Detail;
 using FluentSqlBuilder.Provider;
 
@@ -30,7 +31,7 @@ namespace FluentSqlBuilder.Public
         }
 
         #region Expression
-        public ITable Table(string tableName, string alias) =>
+        public ITable Table(string tableName, Option<string> alias) =>
             new Table(this, tableName, alias);
 
         public ParameterExpression<X> Value<X>(DbType type, X value)

@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Data.Common;
 using System.Linq;
+using Optional;
 using FluentSqlBuilder.Public;
 
 namespace FluentSqlBuilder.Detail
@@ -10,9 +11,11 @@ namespace FluentSqlBuilder.Detail
         : SqlExpression<IRelation>
         , ITable
     {
+        public Option<string> OptionalAlias { get; }
+
         #region ITable
         public string RawName { get; }
-        public string Alias { get; }
+        public string Alias => OptionalAlias.ValueOr(RawName);
 
         public IColumn<X> Column<X>(string columnName) =>
             new Column<X>(SqlBuilder, this, columnName);
@@ -24,9 +27,12 @@ namespace FluentSqlBuilder.Detail
             {
                 var tableName = new[] { SqlBuilder.Language.BuildTableName(RawName) };
                 return
-                    Alias == RawName
-                    ? tableName
-                    : SqlBuilder.Language.ConstructAliasedExpression(tableName, Alias);
+                    OptionalAlias.Match(
+                        alias =>
+                            SqlBuilder.Language
+                            .ConstructAliasedExpression(tableName, alias),
+                        () => tableName
+                    );
             }
         }
 
@@ -35,10 +41,10 @@ namespace FluentSqlBuilder.Detail
         #endregion
         #endregion
 
-        public Table(SqlBuilder sqlBuilder, string rawName, string alias)
+        public Table(SqlBuilder sqlBuilder, string rawName, Option<string> alias)
             : base(sqlBuilder)
         {
-            Alias = alias;
+            OptionalAlias = alias;
             RawName = rawName;
         }
     }

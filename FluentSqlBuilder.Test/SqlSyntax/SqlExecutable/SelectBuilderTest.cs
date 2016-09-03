@@ -1,4 +1,5 @@
-﻿using Xunit;
+﻿using Optional;
+using Xunit;
 using FluentSqlBuilder.Detail;
 using FluentSqlBuilder.Public;
 
@@ -50,7 +51,7 @@ namespace FluentSqlBuilder.Test
         [Fact]
         public void TestUnion()
         {
-            var employee = new Employee(Sql, "e");
+            var employee = new Employee(Sql, "e".Some());
             Sql.Select()
                 .From(employee.Table)
                 .Where(employee.Name.Equal(Sql.String("Miku")))

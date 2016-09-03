@@ -1,4 +1,5 @@
 ﻿using System;
+using Optional;
 using FluentSqlBuilder.Public;
 
 namespace FluentSqlBuilder.Test
@@ -10,7 +11,7 @@ namespace FluentSqlBuilder.Test
         public IColumn<string> Name { get; }
         public IColumn<string> Email { get; }
 
-        public Department(SqlBuilder sqlBuilder, string tableAlias)
+        public Department(SqlBuilder sqlBuilder, Option<string> tableAlias)
         {
             Table = sqlBuilder.Table("departments", tableAlias);
             Id = Table.Column<long>("department_id");
@@ -19,7 +20,7 @@ namespace FluentSqlBuilder.Test
         }
 
         public Department(SqlBuilder sqlBuilder)
-            : this(sqlBuilder, "departments")
+            : this(sqlBuilder, Option.None<string>())
         {
         }
     }
