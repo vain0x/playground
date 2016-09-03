@@ -60,9 +60,6 @@ namespace FluentSqlBuilder.Public
         public ParameterExpression<string> String(string value) =>
             Value(DbType.String, value);
 
-        public ParameterExpression<DateTime> Date(DateTime value) =>
-            Value(DbType.Date, value);
-
         public ParameterExpression<DateTime> DateTime(DateTime value) =>
             Value(DbType.DateTime, value);
 
