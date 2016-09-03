@@ -11,40 +11,33 @@ namespace FluentSqlBuilder.Provider
 
         /// <summary>
         /// 名前をクオートした文字列を取得します。
-        /// 事前保証: identifier は有効な識別子である。
         /// </summary>
         public abstract string QuoteIdentifier(string identifier);
 
         /// <summary>
-        /// 名前を修飾した文字列を取得します。
-        /// 事前保証: identifier は有効な識別子である。
+        /// 修飾された文字列を取得します。
         /// </summary>
-        public abstract string QualifyIdentifier(string qualifier, string identifier);
-
-        /// <summary>
-        /// 名前を修飾およびクオートした文字列を取得します。
-        /// </summary>
-        public string BuildIdentifier(string qualifierOrNull, string identifier)
-        {
-            if (qualifierOrNull != null && !IsIdentifier(qualifierOrNull))
-            {
-                throw new ArgumentException(nameof(qualifierOrNull));
-            }
-            if (identifier == null || !IsIdentifier(identifier))
-            {
-                throw new ArgumentException(nameof(identifier));
-            }
-
-            var quoted = QuoteIdentifier(identifier);
-            return
-                qualifierOrNull == null
-                    ? quoted
-                    : QualifyIdentifier(QuoteIdentifier(qualifierOrNull), quoted);
-        }
+        public abstract string QualifyIdentifier(string qualifier, string columnName);
 
         /// <summary>
         /// ワイルドマーク * を修飾した形の文字列を取得します。
         /// </summary>
-        public abstract string BuildWildmark(string qualifier);
+        public abstract string BuildWildmark(string tableAlias);
+
+        /// <summary>
+        /// テーブル名を表す文字列を取得します。
+        /// </summary>
+        public virtual string BuildTableName(string tableName)
+        {
+            return QuoteIdentifier(tableName);
+        }
+
+        /// <summary>
+        /// カラム名を表す文字列を取得します。
+        /// </summary>
+        public virtual string BuildColumnName(string tableAlias, string columnName)
+        {
+            return QualifyIdentifier(tableAlias, columnName);
+        }
     }
 }

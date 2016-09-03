@@ -27,7 +27,7 @@ namespace FluentSqlBuilder.Detail
                 if (Alias != RawName)
                 {
                     yield return "as";
-                    yield return SqlBuilder.Language.BuildIdentifier(null, Alias);
+                    yield return SqlBuilder.Language.QuoteIdentifier(Alias);
                 }
             }
         }
@@ -42,7 +42,7 @@ namespace FluentSqlBuilder.Detail
         {
             Alias = alias;
             RawName = rawName;
-            QualifiedName = sqlBuilder.Language.BuildIdentifier(null, rawName);
+            QualifiedName = sqlBuilder.Language.BuildTableName(rawName);
         }
     }
 }

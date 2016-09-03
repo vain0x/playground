@@ -16,21 +16,29 @@ namespace FluentSqlBuilder.Provider.Fake
 
         public override string QuoteIdentifier(string identifier)
         {
+            if (!IsIdentifier(identifier))
+            {
+                throw new ArgumentException(nameof(identifier));
+            }
             return $"`{identifier}`";
         }
 
         public override string QualifyIdentifier(string qualifier, string identifier)
         {
-            return $"{qualifier}.{identifier}";
-        }
-
-        public override string BuildWildmark(string qualifier)
-        {
             if (!IsIdentifier(qualifier))
             {
-                throw new ArgumentException(qualifier);
+                throw new ArgumentException(nameof(qualifier));
             }
-            return $"`{qualifier}`.*";
+            if (!IsIdentifier(identifier))
+            {
+                throw new ArgumentException(nameof(identifier));
+            }
+            return $"{QuoteIdentifier(qualifier)}.{QuoteIdentifier(identifier)}";
+        }
+
+        public override string BuildWildmark(string tableAlias)
+        {
+            return $"{QuoteIdentifier(tableAlias)}.*";
         }
     }
 }

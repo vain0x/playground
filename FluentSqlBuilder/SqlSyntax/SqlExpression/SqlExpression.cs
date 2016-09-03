@@ -41,12 +41,7 @@ namespace FluentSqlBuilder.Detail
 
         public IAliasedSqlExpression<TType> As(string alias)
         {
-            if (!SqlBuilder.Language.IsIdentifier(alias))
-            {
-                throw new ArgumentException(nameof(alias));
-            }
-
-            var quotedAlias = SqlBuilder.Language.BuildIdentifier(null, alias);
+            var quotedAlias = SqlBuilder.Language.QuoteIdentifier(alias);
             return new AliasedExpression<TType>(SqlBuilder, this, quotedAlias);
         }
         #endregion
