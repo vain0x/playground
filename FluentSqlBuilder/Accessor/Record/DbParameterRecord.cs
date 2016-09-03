@@ -11,7 +11,7 @@ namespace FluentSqlBuilder.Detail
 {
     public class DbParameterRecord
         : Dictionary<string, DbParameter>
-        , IRecord
+        , IValueRecord
     {
         #region IRecord
         public Option<object> GetValue(string columnName)

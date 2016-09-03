@@ -14,7 +14,7 @@ namespace FluentSqlBuilder.Detail
         public static DbCommand InsertValuesCommand(
             SqlBuilder sqlBuilder,
             Table table,
-            Action<IRecord> setter
+            Action<IValueRecord> setter
         )
         {
             var columns = table.Columns.ToArray();

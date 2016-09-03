@@ -8,7 +8,7 @@ using FluentSqlBuilder.Detail;
 
 namespace FluentSqlBuilder.Public
 {
-    public interface IRecord
+    public interface IValueRecord
     {
         Option<object> GetValue(string columnName);
         void SetValue(string columnName, object value);
@@ -22,7 +22,7 @@ namespace FluentSqlBuilder.Public
 
     public class DictionaryRecord
         : Dictionary<string, object>
-        , IRecord
+        , IValueRecord
     {
         #region IRecord
         public Option<object> GetValue(string columnName)

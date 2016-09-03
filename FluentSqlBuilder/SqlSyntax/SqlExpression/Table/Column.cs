@@ -37,7 +37,7 @@ namespace FluentSqlBuilder.Detail
             }
         }
 
-        public TValue this[IRecord record]
+        public TValue this[IValueRecord record]
         {
             get
             {

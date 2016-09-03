@@ -98,7 +98,7 @@ namespace FluentSqlBuilder.Public
             return new FromlessSelectBuilder(new SelectStatement(this));
         }
 
-        public DbCommand InsertValues(ITable table, Action<IRecord> setter)
+        public DbCommand InsertValues(ITable table, Action<IValueRecord> setter)
         {
             return InsertBuilder.InsertValuesCommand(this, (Table)table, setter);
         }
