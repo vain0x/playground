@@ -105,7 +105,7 @@ namespace FluentSqlBuilder.Detail
 
         #region ISqlExecutable
         public DbCommand ToCommand() =>
-            SqlBuilder.CreateCommand(this);
+            SqlBuilder.CreateCommand(ToString(), Parameters.ToArray());
         #endregion
 
         public void AddFieldAll(IAliasedSqlExpression<IRelation> relation)

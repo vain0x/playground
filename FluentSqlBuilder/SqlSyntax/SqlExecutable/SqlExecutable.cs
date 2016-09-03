@@ -7,7 +7,6 @@ namespace FluentSqlBuilder.Detail
     /// コマンドとして実行可能なSQL文であることを表す。
     /// </summary>
     public interface ISqlExecutable
-        : ISqlPart
     {
         DbCommand ToCommand();
     }

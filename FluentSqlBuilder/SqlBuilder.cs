@@ -24,11 +24,11 @@ namespace FluentSqlBuilder.Public
             return parameter;
         }
 
-        internal DbCommand CreateCommand(ISqlExecutable expression)
+        internal DbCommand CreateCommand(string sql, DbParameter[] parameters)
         {
             var command = Factory.CreateCommand();
-            command.CommandText = expression.ToString();
-            command.Parameters.AddRange(expression.Parameters.ToArray());
+            command.CommandText = sql;
+            command.Parameters.AddRange(parameters);
             return command;
         }
         #endregion
