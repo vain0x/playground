@@ -90,11 +90,7 @@ namespace FluentSqlBuilder.Detail
         public ISqlExpression<IScalar<X>> ToScalar<X>(ISqlExpression<IScalar<X>> expression)
         {
             Field(expression);
-            return
-                new CompoundExpression<IScalar<X>>(
-                    Statement.SqlBuilder,
-                    Statement.Enclose("(", ")")
-                );
+            return Statement.ToScalar<X>();
         }
         #endregion
 

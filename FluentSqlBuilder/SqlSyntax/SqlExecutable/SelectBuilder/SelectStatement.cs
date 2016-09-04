@@ -127,6 +127,12 @@ namespace FluentSqlBuilder.Detail
             return new SelectStatement(SqlBuilder, combined.Some());
         }
 
+        public ISqlExpression<IScalar<X>> ToScalar<X>()
+        {
+            Debug.Assert(Fields.Count == 1);
+            return new CompoundExpression<IScalar<X>>(SqlBuilder, this.Enclose("(", ")"));
+        }
+
         public ISqlExpression<IRelation> ToRelation()
         {
             Debug.Assert(Fields.Any());
