@@ -92,6 +92,12 @@ namespace FluentSqlBuilder.Detail
             Field(expression);
             return Statement.ToScalar<X>();
         }
+
+        public ISqlExpression<IRelation<X>> ToSequence<X>(ISqlExpression<IScalar<X>> expression)
+        {
+            Field(expression);
+            return Statement.ToSequence<X>();
+        }
         #endregion
 
         #region Exists

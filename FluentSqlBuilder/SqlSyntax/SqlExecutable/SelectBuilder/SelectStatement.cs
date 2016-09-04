@@ -133,6 +133,12 @@ namespace FluentSqlBuilder.Detail
             return new CompoundExpression<IScalar<X>>(SqlBuilder, this.Enclose("(", ")"));
         }
 
+        public ISqlExpression<IRelation<X>> ToSequence<X>()
+        {
+            Debug.Assert(Fields.Count == 1);
+            return new CompoundExpression<IRelation<X>>(SqlBuilder, this.Enclose("(", ")"));
+        }
+
         public ISqlExpression<IRelation> ToRelation()
         {
             Debug.Assert(Fields.Any());

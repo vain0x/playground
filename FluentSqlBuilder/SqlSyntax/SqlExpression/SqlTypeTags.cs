@@ -18,4 +18,9 @@
         : ISqlTypeTag
     {
     }
+
+    public interface IRelation<out T0>
+        : IRelation
+    {
+    }
 }

@@ -137,6 +137,21 @@ namespace FluentSqlBuilder.Test
         }
 
         [Fact]
+        public void TestToSequence()
+        {
+            var employee = FakeDb.Employee;
+            Sql.Select()
+               .From(employee.Table)
+               .Where(employee.Age.Equal(Sql.Int(16L)))
+               .ToSequence(employee.Name)
+               .ToEmbeddedString()
+               .ShouldEqual(
+                   "( select `employees`.`name` from `employees`"
+                   + " where `employees`.`age` = 16 )"
+                  );
+        }
+
+        [Fact]
         public void TestExists()
         {
             var employee = FakeDb.Employee;
