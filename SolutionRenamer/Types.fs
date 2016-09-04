@@ -32,8 +32,16 @@ module Constants =
   let extensions =
     [
       ".sln"
+      ".txt"
+      ".md"
+      ".html"
+      ".xml"
+      ".bat"
+      ".sh"
       // F#
       ".fs"
+      ".fsi"
+      ".fsx"
       ".fsproj"
       // C#
       ".cs"
