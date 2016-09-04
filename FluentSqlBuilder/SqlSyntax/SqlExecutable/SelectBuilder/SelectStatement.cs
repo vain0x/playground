@@ -119,5 +119,11 @@ namespace FluentSqlBuilder.Detail
             var combined = new CombinedSelectStatement(this, combinator);
             return new SelectStatement(SqlBuilder, combined.Some());
         }
+
+        public ISqlExpression<IRelation> ToRelation()
+        {
+            Debug.Assert(Fields.Any());
+            return new CompoundExpression<IRelation>(SqlBuilder, this.Enclose("(", ")"));
+        }
     }
 }

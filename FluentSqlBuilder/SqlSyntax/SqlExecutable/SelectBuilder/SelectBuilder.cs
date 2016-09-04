@@ -39,11 +39,7 @@ namespace FluentSqlBuilder.Detail
 
         public ISqlExpression<IRelation> ToRelation()
         {
-            return
-                new CompoundExpression<IRelation>(
-                    Statement.SqlBuilder,
-                    Statement.Enclose("(", ")")
-                );
+            return Statement.ToRelation();
         }
     }
 }
