@@ -21,6 +21,14 @@ namespace FluentSqlBuilder.Provider
         public abstract string QualifyIdentifier(string qualifier, string columnName);
 
         /// <summary>
+        /// ワイルドマーク * を取得する。
+        /// </summary>
+        public virtual string GetWildmark()
+        {
+            return "*";
+        }
+
+        /// <summary>
         /// ワイルドマーク * を修飾した形の文字列を組み立てる。
         /// </summary>
         public abstract string BuildWildmark(string tableAlias);

@@ -98,6 +98,18 @@ namespace FluentSqlBuilder.Detail
         }
         #endregion
 
+        #region Exists
+        public ISqlCondition Exists()
+        {
+            Statement.AddFieldAll();
+            return
+                new SqlCondition(
+                    Statement.SqlBuilder,
+                    SqlPart.FromToken("exists").Concat(Statement.ToRelation())
+                );
+        }
+        #endregion
+
         #region Insert
         public DbCommand Insert(Table table, Action<IExpressionRecord> setter)
         {

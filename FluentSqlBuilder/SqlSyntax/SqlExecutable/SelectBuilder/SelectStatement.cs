@@ -1,5 +1,6 @@
 ﻿using System.Collections.Generic;
 using System.Data.Common;
+using System.Diagnostics;
 using System.Linq;
 using Optional;
 using FluentSqlBuilder.Public;
@@ -107,6 +108,12 @@ namespace FluentSqlBuilder.Detail
         public DbCommand ToCommand() =>
             SqlBuilder.CreateCommand(ToString(), Parameters);
         #endregion
+
+        public void AddFieldAll()
+        {
+            var wildmark = SqlPart.FromToken(SqlBuilder.Language.GetWildmark());
+            Fields.Add(wildmark);
+        }
 
         public void AddFieldAll(IAliasedSqlExpression<IRelation> relation)
         {

@@ -137,6 +137,21 @@ namespace FluentSqlBuilder.Test
         }
 
         [Fact]
+        public void TestExists()
+        {
+            var employee = FakeDb.Employee;
+            Sql.Select()
+                .From(employee.Table)
+                .Where(employee.Name.Equal(Sql.String("Miku")))
+                .Exists()
+                .ToEmbeddedString()
+                .ShouldEqual(
+                   "exists ( select * from `employees`"
+                   + " where `employees`.`name` = 'Miku' )"
+                );
+        }
+
+        [Fact]
         public void TestInsertSelect()
         {
             var employee = FakeDb.Employee;
