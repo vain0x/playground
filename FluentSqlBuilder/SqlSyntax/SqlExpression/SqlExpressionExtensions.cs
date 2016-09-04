@@ -63,5 +63,26 @@ namespace FluentSqlBuilder.Public
                 lhs.Concat(SqlPart.FromToken("=")).Concat(rhs)
             );
         #endregion
+
+        #region Quantification
+        static ISqlExpression<IScalar<X>> Quantify<X>(
+            this ISqlExpression<IRelation> relation,
+            string quantifier
+        )
+        {
+            var part = SqlPart.FromToken(quantifier).Concat(relation);
+            return new CompoundExpression<IScalar<X>>(relation.SqlBuilder, part);
+        }
+
+        public static ISqlExpression<IScalar<X>> Any<X>(this ISqlExpression<IRelation<X>> relation)
+        {
+            return relation.Quantify<X>("any");
+        }
+
+        public static ISqlExpression<IScalar<X>> All<X>(this ISqlExpression<IRelation<X>> relation)
+        {
+            return relation.Quantify<X>("all");
+        }
+        #endregion
     }
 }

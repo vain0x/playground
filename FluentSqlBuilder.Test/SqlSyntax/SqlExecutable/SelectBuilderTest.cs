@@ -137,16 +137,16 @@ namespace FluentSqlBuilder.Test
         }
 
         [Fact]
-        public void TestToSequence()
+        public void TestAny()
         {
             var employee = FakeDb.Employee;
             Sql.Select()
                .From(employee.Table)
                .Where(employee.Age.Equal(Sql.Int(16L)))
-               .ToSequence(employee.Name)
+               .Any(employee.Name)
                .ToEmbeddedString()
                .ShouldEqual(
-                   "( select `employees`.`name` from `employees`"
+                   "any ( select `employees`.`name` from `employees`"
                    + " where `employees`.`age` = 16 )"
                   );
         }

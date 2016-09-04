@@ -93,10 +93,23 @@ namespace FluentSqlBuilder.Detail
             return Statement.ToScalar<X>();
         }
 
-        public ISqlExpression<IRelation<X>> ToSequence<X>(ISqlExpression<IScalar<X>> expression)
+        ISqlExpression<IScalar<X>> Quantify<X>(
+            ISqlExpression<IScalar<X>> expression,
+            string quantifier
+        )
         {
             Field(expression);
-            return Statement.ToSequence<X>();
+            return Statement.Quantify<X>(quantifier);
+        }
+
+        public ISqlExpression<IScalar<X>> Any<X>(ISqlExpression<IScalar<X>> expression)
+        {
+            return Quantify(expression, "any");
+        }
+
+        public ISqlExpression<IScalar<X>> All<X>(ISqlExpression<IScalar<X>> expression)
+        {
+            return Quantify(expression, "all");
         }
         #endregion
 

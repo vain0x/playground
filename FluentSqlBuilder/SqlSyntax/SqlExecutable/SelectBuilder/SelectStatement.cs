@@ -133,10 +133,11 @@ namespace FluentSqlBuilder.Detail
             return new CompoundExpression<IScalar<X>>(SqlBuilder, this.Enclose("(", ")"));
         }
 
-        public ISqlExpression<IRelation<X>> ToSequence<X>()
+        internal ISqlExpression<IScalar<X>> Quantify<X>(string quantifier)
         {
             Debug.Assert(Fields.Count == 1);
-            return new CompoundExpression<IRelation<X>>(SqlBuilder, this.Enclose("(", ")"));
+            var part = SqlPart.FromToken(quantifier).Concat(this.Enclose("(", ")"));
+            return new CompoundExpression<IScalar<X>>(SqlBuilder, part);
         }
 
         public ISqlExpression<IRelation> ToRelation()

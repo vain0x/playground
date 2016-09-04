@@ -39,5 +39,9 @@ namespace FluentSqlBuilder.Test
                .ShouldEqual("null as `nil`");
         }
         #endregion
+
+        #region Test: Quantification
+
+        #endregion
     }
 }
