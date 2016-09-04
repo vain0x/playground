@@ -162,6 +162,26 @@ namespace FluentSqlBuilder.Test
         }
 
         [Fact]
+        public void TestInsertSelect_null()
+        {
+            var department = new Department(Sql, "d".Some());
+            Sql.Select()
+                .From(department.Table)
+                .Insert(department.Table, r =>
+                {
+                    department.Id[r] = Sql.Null<long>();
+                    department.Name[r] = department.Name;
+                    department.Email[r] = Sql.String("department at example.com");
+                })
+                .ToEmbeddedString()
+                .ShouldEqual(
+                    "insert into `departments` (`department_id`,`department_name`,`department_email`)"
+                    + " select null , `d`.`department_name` , 'department at example.com'"
+                    + " from `departments` as `d`"
+                );
+        }
+
+        [Fact]
         public void TestToRelation()
         {
             var employee = FakeDb.Employee;

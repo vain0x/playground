@@ -49,7 +49,7 @@ namespace FluentSqlBuilder.Test
         [Fact]
         public void TestIsNull()
         {
-            Sql.Null.IsNull()
+            Sql.Null<object>().IsNull()
                .ToEmbeddedString()
                .ShouldEqual("null is null");
         }

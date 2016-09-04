@@ -76,8 +76,8 @@ namespace FluentSqlBuilder.Public
         public ParameterExpression<DateTime> DateTime(DateTime value) =>
             Value(DbType.DateTime, value);
 
-        public ISqlExpression<IScalar<object>> Null =>
-            new AtomicExpression<IScalar<object>>(this, "null");
+        public ISqlExpression<IScalar<X>> Null<X>() =>
+            new AtomicExpression<IScalar<X>>(this, "null");
 
         public ConditionBuilder True =>
             new ConditionBuilder(this, ConditionCombinator.And);

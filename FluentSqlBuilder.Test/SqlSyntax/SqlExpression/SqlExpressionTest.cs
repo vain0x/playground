@@ -28,14 +28,14 @@ namespace FluentSqlBuilder.Test
         public void TestAs_error()
         {
             Assert.Throws<ArgumentException>(() =>
-                Sql.Null.As("invalid-alias").ToEmbeddedString()
+                Sql.Null<object>().As("invalid-alias").ToEmbeddedString()
             );
         }
 
         [Fact]
         public void TestAs_atomic()
         {
-            Sql.Null.As("nil").ToEmbeddedString()
+            Sql.Null<object>().As("nil").ToEmbeddedString()
                .ShouldEqual("null as `nil`");
         }
         #endregion

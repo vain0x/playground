@@ -56,7 +56,7 @@ namespace FluentSqlBuilder.Test
         {
             new ConditionBuilder(Sql, ConditionCombinator.And)
                 .Add(FakeDb.Employee.Name.Equal(Sql.String("Miku")))
-                .Add(Sql.Null.IsNull().Or(Sql.Int(1L).IsNull()))
+                .Add(Sql.Null<long>().IsNull().Or(Sql.Int(1L).IsNull()))
                 .ToEmbeddedString()
                 .ShouldEqual("( `employees`.`name` = 'Miku' and ( null is null or 1 is null ) )");
         }
