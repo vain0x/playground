@@ -49,11 +49,11 @@ namespace FluentSqlBuilder.Detail
             }
         }
 
-        public ISqlExpression<IScalar> this[IExpressionRecord record]
+        public ISqlExpression<IScalar<TValue>> this[IExpressionRecord record]
         {
             get
             {
-                return record[UniqueName];
+                return (ISqlExpression<IScalar<TValue>>)record[UniqueName];
             }
             set
             {

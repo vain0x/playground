@@ -54,10 +54,16 @@ namespace FluentSqlBuilder.Detail
             var assignment = new AssignmentRecord();
             foreach (var column in columns)
             {
-                assignment.Add(column.UniqueName, sqlBuilder.Null);
+                assignment.Add(column.UniqueName, null);
             }
 
             setter(assignment);
+
+            if (assignment.Values.Contains(null))
+            {
+                var keys = assignment.Where(kv => kv.Value == null).Select(kv => kv.Key);
+                throw new Exception($"No expressions assigned to: {keys.Intercalate(',')}");
+            }
 
             Debug.Assert(selectStatement.Fields.IsEmpty());
             selectStatement.Fields.AddRange(columns.Select(c => assignment[c.UniqueName]));

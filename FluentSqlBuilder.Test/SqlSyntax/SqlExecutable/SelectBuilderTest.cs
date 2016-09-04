@@ -1,4 +1,5 @@
-﻿using Optional;
+﻿using System;
+using Optional;
 using Xunit;
 using FluentSqlBuilder.Detail;
 using FluentSqlBuilder.Public;
@@ -141,6 +142,23 @@ namespace FluentSqlBuilder.Test
                     + " , `employees`.`department_id`"
                     + " from `employees`"
                 );
+        }
+
+        [Fact]
+        public void TestInsertSelect_missing()
+        {
+            var department = FakeDb.Department;
+            Assert.ThrowsAny<Exception>(() =>
+            {
+                Sql.Select()
+                    .From(department.Table)
+                    .Insert(department.Table, r =>
+                    {
+                        department.Name[r] = Sql.String("Personal");
+                        department.Email[r] = Sql.String("personal@example.com");
+                    })
+                    .ToEmbeddedString();
+            });
         }
 
         [Fact]
