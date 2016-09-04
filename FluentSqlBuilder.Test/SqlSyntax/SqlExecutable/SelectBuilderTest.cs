@@ -38,6 +38,20 @@ namespace FluentSqlBuilder.Test
         }
 
         [Fact]
+        public void TestWhere_use_parameter_twice()
+        {
+            var employee = FakeDb.Employee;
+            var zero = Sql.Int(0);
+            Sql.Select()
+                .From(employee.Table)
+                .Where(zero.Equal(zero))
+                .FieldAll(employee.Table)
+                .ToCommand()
+                .ToEmbeddedString()
+                .ShouldEqual("select `employees`.* from `employees` where 0 = 0");
+        }
+
+        [Fact]
         public void TestFieldAll()
         {
             var employee = FakeDb.Employee;

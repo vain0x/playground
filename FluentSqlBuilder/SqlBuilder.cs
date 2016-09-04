@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.Data;
 using System.Data.Common;
 using System.Linq;
@@ -24,11 +25,11 @@ namespace FluentSqlBuilder.Public
             return parameter;
         }
 
-        internal DbCommand CreateCommand(string sql, DbParameter[] parameters)
+        internal DbCommand CreateCommand(string sql, IEnumerable<DbParameter> parameters)
         {
             var command = Factory.CreateCommand();
             command.CommandText = sql;
-            command.Parameters.AddRange(parameters);
+            command.Parameters.AddRange(parameters.Distinct().ToArray());
             return command;
         }
         #endregion
