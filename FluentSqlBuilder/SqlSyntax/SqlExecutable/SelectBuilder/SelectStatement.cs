@@ -14,8 +14,7 @@ namespace FluentSqlBuilder.Detail
     {
         Option<CombinedSelectStatement> Combined { get; }
 
-        public JoinedRelation Source { get; } =
-            new JoinedRelation();
+        public JoinedRelation Source { get; }
 
         public ConditionBuilder WhereCondition { get; }
 
@@ -30,10 +29,15 @@ namespace FluentSqlBuilder.Detail
         public List<ISqlPart> Fields { get; } =
             new List<ISqlPart>();
 
-        public SelectStatement(SqlBuilder sqlBuilder, Option<CombinedSelectStatement> combined)
+        public SelectStatement(
+            SqlBuilder sqlBuilder,
+            Option<CombinedSelectStatement> combined,
+            ISqlExpression<IRelation> relation
+        )
             : base(sqlBuilder)
         {
             Combined = combined;
+            Source = new JoinedRelation(relation);
             WhereCondition = new ConditionBuilder(SqlBuilder);
             HavingCondition = new ConditionBuilder(SqlBuilder);
         }

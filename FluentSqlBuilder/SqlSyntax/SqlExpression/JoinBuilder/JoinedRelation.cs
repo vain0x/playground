@@ -8,18 +8,17 @@ namespace FluentSqlBuilder.Detail
     public class JoinedRelation
         : ISqlPart
     {
-        public List<ISqlExpression<IRelation>> Relations { get; } =
-            new List<ISqlExpression<IRelation>>();
+        public ISqlExpression<IRelation> Relation { get; }
 
         public List<Join> Joins { get; } =
             new List<Join>();
 
-        #region Add
-        public void Add(ISqlExpression<IRelation> relation)
+        public JoinedRelation(ISqlExpression<IRelation> relation)
         {
-            Relations.Add(relation);
+            Relation = relation;
         }
 
+        #region Add
         public void Add(Join join)
         {
             Joins.Add(join);
@@ -31,11 +30,7 @@ namespace FluentSqlBuilder.Detail
         {
             get
             {
-                var relationTokens =
-                    Relations
-                    .Select(relation => relation.Tokens)
-                    .Intercalate(new[] { "," });
-                foreach (var token in relationTokens) yield return token;
+                foreach (var token in Relation.Tokens) yield return token;
 
                 foreach (var join in Joins)
                 {
@@ -46,7 +41,7 @@ namespace FluentSqlBuilder.Detail
 
         public IEnumerable<DbParameter> Parameters =>
             Enumerable.Concat(
-                Relations.SelectMany(r => r.Parameters),
+                Relation.Parameters,
                 Joins.SelectMany(j => j.Parameters)
             );
         #endregion

@@ -18,8 +18,7 @@ namespace FluentSqlBuilder.Detail
         #region From
         public FieldlessSelectBuilder From(ISqlExpression<IRelation> relation)
         {
-            var statement = new SelectStatement(SqlBuilder, Combined);
-            statement.Source.Add(relation);
+            var statement = new SelectStatement(SqlBuilder, Combined, relation);
             return new FieldlessSelectBuilder(statement);
         }
         #endregion
