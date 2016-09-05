@@ -10,13 +10,4 @@ namespace FluentSqlBuilder.Detail
     {
         DbCommand ToCommand();
     }
-
-    /// <summary>
-    /// リレーションを操作するコマンドを表す。
-    /// 具体的には select クエリーか insert, update, delete コマンドのいずれか。
-    /// </summary>
-    public interface IRelationalQueryOrCommand
-    {
-        JoinedRelation Source { get; }
-    }
 }

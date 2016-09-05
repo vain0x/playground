@@ -9,13 +9,11 @@ namespace FluentSqlBuilder.Detail
 {
     public class SelectStatement
         : SqlExpression<IRelation>
-        , IRelationalQueryOrCommand
         , ISqlExecutable
     {
         Option<CombinedSelectStatement> Combined { get; }
 
-        public JoinedRelation Source { get; } =
-            new JoinedRelation();
+        public ISqlExpression<IRelation> Source { get; private set; }
 
         public ConditionBuilder WhereCondition { get; }
 
@@ -30,17 +28,17 @@ namespace FluentSqlBuilder.Detail
         public List<ISqlPart> Fields { get; } =
             new List<ISqlPart>();
 
-        public SelectStatement(SqlBuilder sqlBuilder, Option<CombinedSelectStatement> combined)
+        public SelectStatement(
+            SqlBuilder sqlBuilder,
+            Option<CombinedSelectStatement> combined,
+            ISqlExpression<IRelation> relation
+        )
             : base(sqlBuilder)
         {
             Combined = combined;
+            Source = relation;
             WhereCondition = new ConditionBuilder(SqlBuilder);
             HavingCondition = new ConditionBuilder(SqlBuilder);
-        }
-
-        public SelectStatement(SqlBuilder sqlBuilder)
-            : this(sqlBuilder, Option.None<CombinedSelectStatement>())
-        {
         }
 
         #region SqlExpression
@@ -109,6 +107,11 @@ namespace FluentSqlBuilder.Detail
             SqlBuilder.CreateCommand(ToString(), Parameters);
         #endregion
 
+        public void Join(Join join)
+        {
+            Source = new JoinedRelation(Source, join);
+        }
+
         public void AddFieldAll()
         {
             var wildmark = SqlPart.FromToken(SqlBuilder.Language.GetWildmark());
@@ -119,12 +122,6 @@ namespace FluentSqlBuilder.Detail
         {
             var wildmark = SqlBuilder.Language.BuildWildmark(relation.Alias);
             Fields.Add(SqlPart.FromToken(wildmark));
-        }
-
-        public SelectStatement Combine(string combinator)
-        {
-            var combined = new CombinedSelectStatement(this, combinator);
-            return new SelectStatement(SqlBuilder, combined.Some());
         }
 
         public ISqlExpression<IScalar<X>> ToScalar<X>()

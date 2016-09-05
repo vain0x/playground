@@ -1,22 +1,25 @@
 ﻿using System;
+using Optional;
 using FluentSqlBuilder.Public;
 
 namespace FluentSqlBuilder.Detail
 {
     public class FromlessSelectBuilder
     {
-        SelectStatement Statement { get; }
+        SqlBuilder SqlBuilder { get; }
+        Option<CombinedSelectStatement> Combined { get; }
 
-        public FromlessSelectBuilder(SelectStatement statement)
+        public FromlessSelectBuilder(SqlBuilder sqlBuilder, Option<CombinedSelectStatement> combined)
         {
-            Statement = statement;
+            SqlBuilder = sqlBuilder;
+            Combined = combined;
         }
 
         #region From
         public FieldlessSelectBuilder From(ISqlExpression<IRelation> relation)
         {
-            Statement.Source.Add(relation);
-            return new FieldlessSelectBuilder(Statement);
+            var statement = new SelectStatement(SqlBuilder, Combined, relation);
+            return new FieldlessSelectBuilder(statement);
         }
         #endregion
     }

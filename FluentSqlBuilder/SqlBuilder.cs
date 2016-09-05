@@ -96,7 +96,7 @@ namespace FluentSqlBuilder.Public
         #region Mainpulation
         public FromlessSelectBuilder Select()
         {
-            return new FromlessSelectBuilder(new SelectStatement(this));
+            return new FromlessSelectBuilder(this, Option.None<CombinedSelectStatement>());
         }
 
         public DbCommand InsertValues(Table table, Action<IValueRecord> setter)
