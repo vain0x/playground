@@ -103,6 +103,11 @@ namespace FluentSqlBuilder.Public
         {
             return InsertBuilder.InsertValuesCommand(this, table, setter);
         }
+
+        public AssignmentlessUpdateBuilder Update(Table table)
+        {
+            return new AssignmentlessUpdateBuilder(new UpdateStatement(this, table));
+        }
         #endregion
     }
 }

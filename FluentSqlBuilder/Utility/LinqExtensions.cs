@@ -1,5 +1,8 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 using System.Linq;
+using Optional;
+using Optional.Unsafe;
 
 namespace FluentSqlBuilder.Detail
 {
@@ -58,5 +61,20 @@ namespace FluentSqlBuilder.Detail
 
         public static bool IsSingle<X>(this IEnumerable<X> xs, X x) =>
             xs.Any() && !xs.Skip(1).Any() && Equals(xs.First(), x);
+
+        public static IEnumerable<Y> Choose<X, Y>(this IEnumerable<X> xs, Func<X, Option<Y>> f)
+        {
+            foreach (var x in xs)
+            {
+                var y = f(x);
+                if (y.HasValue) yield return y.ValueOrFailure();
+            }
+        }
+
+        public static Option<V> GetValueOrNone<K, V>(this IReadOnlyDictionary<K, V> dictionary, K key)
+        {
+            V value;
+            return dictionary.TryGetValue(key, out value) ? value.Some() : value.None();
+        }
     }
 }

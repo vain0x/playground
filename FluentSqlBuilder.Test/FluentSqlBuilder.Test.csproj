@@ -45,6 +45,7 @@
     <Compile Include="SqlSyntax\SqlExecutable\SelectBuilderTest.cs" />
     <Compile Include="SqlBuilderTest.cs" />
     <Compile Include="Accessor\Table\TableTest.cs" />
+    <Compile Include="SqlSyntax\SqlExecutable\UpdateBuilderTest.cs" />
     <Compile Include="Utility\DbCommandExtensions.cs" />
     <Compile Include="FakeDatabase\Employee.cs" />
     <Compile Include="SqlSyntax\SqlExpression\SqlExpressionTest.cs" />
