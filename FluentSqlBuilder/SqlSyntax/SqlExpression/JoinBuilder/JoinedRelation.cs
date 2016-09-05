@@ -6,44 +6,24 @@ using FluentSqlBuilder.Public;
 namespace FluentSqlBuilder.Detail
 {
     public class JoinedRelation
-        : ISqlPart
+        : SqlExpression<IRelation>
     {
         public ISqlExpression<IRelation> Relation { get; }
+        public Join Join { get; }
 
-        public List<Join> Joins { get; } =
-            new List<Join>();
-
-        public JoinedRelation(ISqlExpression<IRelation> relation)
+        public JoinedRelation(ISqlExpression<IRelation> relation, Join join)
+            : base(relation.SqlBuilder)
         {
             Relation = relation;
+            Join = join;
         }
-
-        #region Add
-        public void Add(Join join)
-        {
-            Joins.Add(join);
-        }
-        #endregion
 
         #region ISqlPart
-        public IEnumerable<string> Tokens
-        {
-            get
-            {
-                foreach (var token in Relation.Tokens) yield return token;
+        public override IEnumerable<string> Tokens =>
+            Relation.Tokens.Concat(Join.Tokens);
 
-                foreach (var join in Joins)
-                {
-                    foreach (var token in join.Tokens) yield return token;
-                }
-            }
-        }
-
-        public IEnumerable<DbParameter> Parameters =>
-            Enumerable.Concat(
-                Relation.Parameters,
-                Joins.SelectMany(j => j.Parameters)
-            );
+        public override IEnumerable<DbParameter> Parameters =>
+            Relation.Parameters.Concat(Join.Parameters);
         #endregion
     }
 }

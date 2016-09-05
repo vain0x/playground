@@ -9,12 +9,11 @@ namespace FluentSqlBuilder.Detail
 {
     public class SelectStatement
         : SqlExpression<IRelation>
-        , IRelationalQueryOrCommand
         , ISqlExecutable
     {
         Option<CombinedSelectStatement> Combined { get; }
 
-        public JoinedRelation Source { get; }
+        public ISqlExpression<IRelation> Source { get; private set; }
 
         public ConditionBuilder WhereCondition { get; }
 
@@ -37,7 +36,7 @@ namespace FluentSqlBuilder.Detail
             : base(sqlBuilder)
         {
             Combined = combined;
-            Source = new JoinedRelation(relation);
+            Source = relation;
             WhereCondition = new ConditionBuilder(SqlBuilder);
             HavingCondition = new ConditionBuilder(SqlBuilder);
         }
@@ -107,6 +106,11 @@ namespace FluentSqlBuilder.Detail
         public DbCommand ToCommand() =>
             SqlBuilder.CreateCommand(ToString(), Parameters);
         #endregion
+
+        public void Join(Join join)
+        {
+            Source = new JoinedRelation(Source, join);
+        }
 
         public void AddFieldAll()
         {

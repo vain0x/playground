@@ -22,12 +22,11 @@ namespace FluentSqlBuilder.Detail
             return
                 new JoinBuilder<FieldlessSelectBuilder>(
                     Statement.SqlBuilder,
-                    Statement,
                     joinType,
                     relation,
                     join =>
                     {
-                        Statement.Source.Add(join);
+                        Statement.Join(join);
                         return this;
                     }
                 );

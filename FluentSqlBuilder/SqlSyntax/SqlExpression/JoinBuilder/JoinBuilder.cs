@@ -6,21 +6,18 @@ namespace FluentSqlBuilder.Detail
     public class JoinBuilder<TResult>
     {
         SqlBuilder SqlBuilder { get; }
-        IRelationalQueryOrCommand Statement { get; }
         JoinType JoinType { get; }
         ISqlExpression<IRelation> Relation { get; }
         Func<Join, TResult> Run { get; }
 
         public JoinBuilder(
             SqlBuilder sqlBuilder,
-            IRelationalQueryOrCommand statement,
             JoinType joinType,
             ISqlExpression<IRelation> relation,
             Func<Join, TResult> run
         )
         {
             SqlBuilder = sqlBuilder;
-            Statement = statement;
             JoinType = joinType;
             Relation = relation;
             Run = run;
