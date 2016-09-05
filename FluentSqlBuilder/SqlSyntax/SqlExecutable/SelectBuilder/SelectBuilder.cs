@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Data.Common;
+using Optional;
 using FluentSqlBuilder.Public;
 
 namespace FluentSqlBuilder.Detail
@@ -31,9 +32,15 @@ namespace FluentSqlBuilder.Detail
         #endregion
 
         #region Union
+        FromlessSelectBuilder Combine(string combinator)
+        {
+            var combined = new CombinedSelectStatement(Statement, combinator);
+            return new FromlessSelectBuilder(Statement.SqlBuilder, combined.Some());
+        }
+
         public FromlessSelectBuilder Union()
         {
-            return new FromlessSelectBuilder(Statement.Combine("union"));
+            return Combine("union");
         }
         #endregion
 

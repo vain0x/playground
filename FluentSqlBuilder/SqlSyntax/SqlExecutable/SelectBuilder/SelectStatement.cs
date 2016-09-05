@@ -121,12 +121,6 @@ namespace FluentSqlBuilder.Detail
             Fields.Add(SqlPart.FromToken(wildmark));
         }
 
-        public SelectStatement Combine(string combinator)
-        {
-            var combined = new CombinedSelectStatement(this, combinator);
-            return new SelectStatement(SqlBuilder, combined.Some());
-        }
-
         public ISqlExpression<IScalar<X>> ToScalar<X>()
         {
             Debug.Assert(Fields.Count == 1);
