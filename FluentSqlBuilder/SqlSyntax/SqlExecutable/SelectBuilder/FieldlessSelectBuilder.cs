@@ -13,14 +13,6 @@ namespace FluentSqlBuilder.Detail
             Statement = statement;
         }
 
-        #region From
-        public FieldlessSelectBuilder From(ISqlExpression<IRelation> relation)
-        {
-            Statement.Source.Add(relation);
-            return this;
-        }
-        #endregion
-
         #region Join
         JoinBuilder<FieldlessSelectBuilder> Join(
             ISqlExpression<IRelation> relation,
