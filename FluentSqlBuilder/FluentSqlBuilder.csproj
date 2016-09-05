@@ -64,7 +64,6 @@
     <Compile Include="Utility\KeyValuePair.cs" />
     <Compile Include="Utility\LinqExtensions.cs" />
     <Compile Include="Utility\Lazy.cs" />
-    <Compile Include="Utility\Unit.cs" />
     <Compile Include="DbProvider\DbProvider.cs" />
     <Compile Include="DbProvider\Fake\FakeDbProvider.cs" />
     <Compile Include="DbProvider\Fake\FakeDbProviderFactory.cs" />
