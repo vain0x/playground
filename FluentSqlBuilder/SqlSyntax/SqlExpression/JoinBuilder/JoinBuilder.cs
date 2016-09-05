@@ -1,4 +1,5 @@
-﻿using FluentSqlBuilder.Public;
+﻿using System;
+using FluentSqlBuilder.Public;
 
 namespace FluentSqlBuilder.Detail
 {
@@ -8,34 +9,32 @@ namespace FluentSqlBuilder.Detail
         IRelationalQueryOrCommand Statement { get; }
         JoinType JoinType { get; }
         ISqlExpression<IRelation> Relation { get; }
-        TResult Result { get; }
+        Func<Join, TResult> Run { get; }
 
         public JoinBuilder(
             SqlBuilder sqlBuilder,
             IRelationalQueryOrCommand statement,
             JoinType joinType,
             ISqlExpression<IRelation> relation,
-            TResult result
+            Func<Join, TResult> run
         )
         {
             SqlBuilder = sqlBuilder;
             Statement = statement;
             JoinType = joinType;
             Relation = relation;
-            Result = result;
+            Run = run;
         }
 
         public TResult On(ISqlCondition condition)
         {
-            Statement.Source.Add(new JoinOn(JoinType, Relation, condition));
-            return Result;
+            return Run(new JoinOn(JoinType, Relation, condition));
         }
 
         public TResult Using(IColumn column)
         {
             var columnName = SqlBuilder.Language.QuoteIdentifier(column.RawName);
-            Statement.Source.Add(new JoinUsing(JoinType, Relation, columnName));
-            return Result;
+            return Run(new JoinUsing(JoinType, Relation, columnName));
         }
     }
 }

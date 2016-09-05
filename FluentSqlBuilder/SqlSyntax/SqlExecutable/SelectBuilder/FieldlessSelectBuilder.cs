@@ -33,7 +33,11 @@ namespace FluentSqlBuilder.Detail
                     Statement,
                     joinType,
                     relation,
-                    this
+                    join =>
+                    {
+                        Statement.Source.Add(join);
+                        return this;
+                    }
                 );
         }
 
