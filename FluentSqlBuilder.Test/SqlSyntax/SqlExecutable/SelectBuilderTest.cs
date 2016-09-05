@@ -101,6 +101,27 @@ namespace FluentSqlBuilder.Test
         }
 
         [Fact]
+        public void TestJoin_self()
+        {
+            var e0 = new Employee(Sql, "e0".Some());
+            var e1 = new Employee(Sql, "e1".Some());
+            var e2 = new Employee(Sql, "e2".Some());
+            Sql
+                .Select()
+                .From(e0.Table)
+                .Join(e1.Table).On(e0.Name.Equal(e1.Name))
+                .Join(e2.Table).On(e1.Age.Equal(e2.Age))
+                .Field(e2.DepartmentId)
+                .ToCommand()
+                .ToEmbeddedString()
+                .ShouldEqual(
+                    "select `e2`.`department_id` from `employees` as `e0`"
+                    + " join `employees` as `e1` on `e0`.`name` = `e1`.`name`"
+                    + " join `employees` as `e2` on `e1`.`age` = `e2`.`age`"
+                );
+        }
+
+        [Fact]
         public void TestUnion()
         {
             var employee = new Employee(Sql, "e".Some());
