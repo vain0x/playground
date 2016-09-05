@@ -38,11 +38,6 @@ namespace FluentSqlBuilder.Detail
             HavingCondition = new ConditionBuilder(SqlBuilder);
         }
 
-        public SelectStatement(SqlBuilder sqlBuilder)
-            : this(sqlBuilder, Option.None<CombinedSelectStatement>())
-        {
-        }
-
         #region SqlExpression
         public override IEnumerable<string> Tokens
         {
