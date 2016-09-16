@@ -33,21 +33,14 @@ namespace FluentSqlBuilder.Detail
             Part = part;
         }
 
-        #region SqlPart
-        internal override IEnumerable<string> Tokens => Part.Tokens;
-        internal override IEnumerable<DbParameter> Parameters => Part.Parameters;
-        #endregion
+        internal override IEnumerable<SqlToken> Tokens => Part.Tokens;
 
         #region SqlCondition
         public override ConditionBuilder And(SqlCondition rhs) =>
-            new ConditionBuilder(SqlBuilder, ConditionCombinator.And)
-            .Add(this)
-            .Add(rhs);
+            SqlBuilder.And().Add(this).Add(rhs);
 
         public override ConditionBuilder Or(SqlCondition rhs) =>
-            new ConditionBuilder(SqlBuilder, ConditionCombinator.Or)
-            .Add(this)
-            .Add(rhs);
+            SqlBuilder.Or().Add(this).Add(rhs);
         #endregion
     }
 }

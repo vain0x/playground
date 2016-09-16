@@ -60,18 +60,8 @@ namespace FluentSqlBuilder.Detail
             }
         }
 
-        #region SqlPart
-        internal override IEnumerable<string> Tokens
-        {
-            get
-            {
-                yield return QualifiedName;
-            }
-        }
-
-        internal override IEnumerable<DbParameter> Parameters =>
-            Enumerable.Empty<DbParameter>();
-        #endregion
+        internal override IEnumerable<SqlToken> Tokens =>
+            new[] { SqlToken.FromString(QualifiedName) };
         #endregion
 
         public ConcreteColumn(SqlBuilder sqlBuilder, Table table, string rawName)

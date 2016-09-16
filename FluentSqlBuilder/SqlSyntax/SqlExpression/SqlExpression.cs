@@ -36,10 +36,7 @@ namespace FluentSqlBuilder.Detail
     {
         SqlPart Part { get; }
 
-        #region SqlPart
-        internal sealed override IEnumerable<string> Tokens => Part.Tokens;
-        internal sealed override IEnumerable<DbParameter> Parameters => Part.Parameters;
-        #endregion
+        internal override IEnumerable<SqlToken> Tokens => Part.Tokens;
 
         internal CompoundExpression(SqlBuilder sqlBuilder, SqlPart part)
             : base(sqlBuilder)
@@ -48,17 +45,17 @@ namespace FluentSqlBuilder.Detail
         }
     }
 
-    public class AtomicExpression<TType>
+    public sealed class AtomicExpression<TType>
         : CompoundExpression<TType>
         where TType: ISqlTypeTag
     {
         internal AtomicExpression(SqlBuilder sqlBuilder, string @string)
-            : base(sqlBuilder, SqlPart.FromToken(@string))
+            : base(sqlBuilder, SqlPart.FromString(@string))
         {
         }
     }
 
-    public class ParameterExpression<TValue>
+    public sealed class ParameterExpression<TValue>
         : SqlExpression<IScalar<TValue>>
     {
         string Name { get; }
@@ -75,13 +72,8 @@ namespace FluentSqlBuilder.Detail
             Parameter = parameter;
         }
 
-        #region SqlExpression
-        internal sealed override IEnumerable<string> Tokens =>
-            new[] { Name };
-
-        internal sealed override IEnumerable<DbParameter> Parameters =>
-            new[] { Parameter };
-        #endregion
+        internal override IEnumerable<SqlToken> Tokens =>
+            new[] { SqlToken.Create(Name, new[] { Parameter }) };
     }
 
     public abstract class AliasedSqlExpression<TType>
@@ -114,12 +106,13 @@ namespace FluentSqlBuilder.Detail
             Alias = alias;
         }
 
-        #region SqlPart
-        internal override IEnumerable<string> Tokens =>
-            SqlBuilder.Language.ConstructAliasedExpression(Expression.Tokens, Alias);
-
-        internal override IEnumerable<DbParameter> Parameters =>
-            Expression.Parameters;
-        #endregion
+        internal override IEnumerable<SqlToken> Tokens =>
+            Expression.Tokens
+            .Concat(
+                new[]
+                {
+                    SqlToken.FromString("as"),
+                    SqlToken.FromString(SqlBuilder.Language.QuoteIdentifier(Alias))
+                });
     }
 }

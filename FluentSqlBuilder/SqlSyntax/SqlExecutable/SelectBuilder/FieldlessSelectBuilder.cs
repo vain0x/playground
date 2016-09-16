@@ -115,7 +115,7 @@ namespace FluentSqlBuilder.Detail
             return
                 new AtomicSqlCondition(
                     Statement.SqlBuilder,
-                    SqlPart.FromToken("exists").Concat(Statement.ToRelation())
+                    SqlPart.FromString("exists").Concat(Statement.ToRelation())
                 );
         }
         #endregion

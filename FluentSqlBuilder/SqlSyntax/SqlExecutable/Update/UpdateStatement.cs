@@ -29,43 +29,40 @@ namespace FluentSqlBuilder.Detail
                 });
         }
 
-        #region SqlPart
-        internal override IEnumerable<string> Tokens
-        {
-            get
-            {
-                yield return "update";
-                foreach (var token in Table.Tokens) yield return token;
-                yield return "set";
-                var assignmentTokens =
-                    AssignmentList()
-                    .Select(kv => new[] { kv.Key.QualifiedName, "=" }.Concat(kv.Value.Tokens))
-                    .Intercalate(new[] { "," });
-                foreach (var token in assignmentTokens) yield return token;
-                if (!WhereCondition.IsTrivial)
+        #region Tokens
+        IEnumerable<SqlToken> AssignmentTokens =>
+            AssignmentList()
+            .Select(kv =>
+                new[]
                 {
-                    yield return "where";
-                    foreach (var token in WhereCondition.Tokens) yield return token;
+                    SqlToken.FromString(kv.Key.QualifiedName),
+                    SqlToken.FromString("=")
                 }
-            }
-        }
+                .Concat(kv.Value.Tokens)
+            )
+            .Intercalate(new[] { SqlToken.FromString(",") });
 
-        internal override IEnumerable<DbParameter> Parameters
-        {
-            get
-            {
-                return
-                    Table.Parameters
-                    .Concat(AssignmentList().SelectMany(kv => kv.Value.Parameters))
-                    .Concat(WhereCondition.Parameters);
-            }
-        }
+        IEnumerable<SqlToken> SetTokens =>
+            new[] { SqlToken.FromString("set") }.Concat(AssignmentTokens);
+
+        IEnumerable<SqlToken> WhereTokens =>
+            WhereCondition.IsTrivial
+            ? Enumerable.Empty<SqlToken>()
+            :
+                new[] { SqlToken.FromString("where") }
+                .Concat(WhereCondition.Tokens);
+
+        internal override IEnumerable<SqlToken> Tokens =>
+            new[] { SqlToken.FromString("update") }
+            .Concat(Table.Tokens)
+            .Concat(SetTokens)
+            .Concat(WhereTokens);
         #endregion
 
         #region ISqlExecutable
         public DbCommand ToCommand()
         {
-            return SqlBuilder.CreateCommand(Tokens.Intercalate(' '), Parameters);
+            return SqlBuilder.CreateCommand(Tokens);
         }
         #endregion
 

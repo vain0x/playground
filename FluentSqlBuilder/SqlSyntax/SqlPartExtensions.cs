@@ -16,7 +16,7 @@ namespace FluentSqlBuilder.Detail
 
         internal static SqlPart Enclose(this SqlPart part, string left, string right)
         {
-            var parts = new[] { SqlPart.FromToken(left), part, SqlPart.FromToken(right) };
+            var parts = new[] { SqlPart.FromString(left), part, SqlPart.FromString(right) };
             return SqlPart.Concat(parts);
         }
 
@@ -25,14 +25,18 @@ namespace FluentSqlBuilder.Detail
         /// </summary>
         internal static string ToEmbeddedString(this SqlPart part)
         {
-            var parameterDictionary = part.Parameters.ToDictionary(p => p.ParameterName);
+            var parameterDictionary =
+                part.Tokens
+                .SelectMany(t => t.Parameters)
+                .ToDictionary(p => p.ParameterName);
+
             var tokens = new List<string>();
             foreach (var token in part.Tokens)
             {
-                if (token.StartsWith("@", StringComparison.CurrentCulture))
+                if (token.String.StartsWith("@", StringComparison.CurrentCulture))
                 {
                     var parameter = (DbParameter)null;
-                    if (parameterDictionary.TryGetValue(token.Substring(1), out parameter))
+                    if (parameterDictionary.TryGetValue(token.String.Substring(1), out parameter))
                     {
                         if (parameter.DbType == DbType.String)
                         {
@@ -46,7 +50,7 @@ namespace FluentSqlBuilder.Detail
                 }
                 else
                 {
-                    tokens.Add(token);
+                    tokens.Add(token.String);
                 }
             }
             return tokens.Intercalate(' ');

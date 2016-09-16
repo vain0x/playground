@@ -68,9 +68,16 @@ namespace FluentSqlBuilder.Detail
             Debug.Assert(selectStatement.Fields.IsEmpty());
             selectStatement.Fields.AddRange(columns.Select(c => assignment[c.UniqueName]));
 
-            var body = selectStatement.Tokens.Intercalate(' ');
-            var sql = $"insert into {table.QuotedName} ({table.ColumnNameList.Value}) {body}";
-            return sqlBuilder.CreateCommand(sql, selectStatement.Parameters);
+            var tokens =
+                new[]
+                {
+                    SqlToken.FromString("insert"),
+                    SqlToken.FromString("into"),
+                    SqlToken.FromString(table.QuotedName),
+                    SqlToken.FromString($"({table.ColumnNameList.Value})")
+                }
+                .Concat(selectStatement.Tokens);
+            return sqlBuilder.CreateCommand(tokens);
         }
     }
 }

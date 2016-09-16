@@ -1,67 +1,53 @@
 ﻿using System.Collections.Generic;
 using System.Linq;
+using FluentSqlBuilder.Public;
 
 namespace FluentSqlBuilder.Detail
 {
-    public abstract class ConditionCombinator
+    public sealed class ConditionCombinator
     {
         /// <summary>
         /// 中立元
         /// </summary>
-        public abstract string Neutral { get; }
+        public SqlCondition Neutral { get; }
 
         /// <summary>
         /// 吸収元
         /// </summary>
-        public abstract string Absorbing { get; }
+        public SqlCondition Absorbing { get; }
 
-        public abstract string Combinator { get; }
+        public SqlPart Combinator { get; }
 
-        public IEnumerable<string> Combine(IEnumerable<IEnumerable<string>> expressions)
+        public bool IsAnd { get; }
+        public bool IsOr { get; }
+
+        /// <summary>
+        /// Combines conditions with the combinator simplifying a bit.
+        /// </summary>
+        /// <param name="xs"></param>
+        /// <returns></returns>
+        public IEnumerable<SqlPart> Combine(IEnumerable<SqlCondition> xs)
         {
-            var xs = expressions.Where(x => !x.IsSingle(Neutral)).ToArray();
             return
-                xs.Any(x => x.IsSingle(Absorbing))
+                xs.Any(x => ReferenceEquals(x, Absorbing))
                     ? new[] { Absorbing } :
                 xs.Any()
-                    ? xs.Intercalate(new[] { Combinator })
+                    ? xs.Intersperse(Combinator)
                     : new[] { Neutral };
         }
 
-        internal static string TrueExpression => "0 = 0";
-        internal static string FalseExpression => "0 = 1";
-
-        public sealed class AndConditionCombinator
-            : ConditionCombinator
+        internal ConditionCombinator(
+            SqlCondition neutral,
+            SqlCondition absorbing,
+            string combinator,
+            bool isAnd
+        )
         {
-            public override string Neutral => TrueExpression;
-            public override string Absorbing => FalseExpression;
-            public override string Combinator => "and";
-            
-            AndConditionCombinator()
-            {
-            }
-
-            public static AndConditionCombinator Instance { get; } =
-                new AndConditionCombinator();
+            Neutral = neutral;
+            Absorbing = absorbing;
+            Combinator = SqlPart.FromString(combinator);
+            IsAnd = isAnd;
+            IsOr = !isAnd;
         }
-
-        public sealed class OrConditionCombinator
-            : ConditionCombinator
-        {
-            public override string Neutral => FalseExpression;
-            public override string Absorbing => TrueExpression;
-            public override string Combinator => "or";
-
-            OrConditionCombinator()
-            {
-            }
-
-            public static OrConditionCombinator Instance { get; } =
-                new OrConditionCombinator();
-        }
-
-        public static ConditionCombinator And => AndConditionCombinator.Instance;
-        public static ConditionCombinator Or => OrConditionCombinator.Instance;
     }
 }

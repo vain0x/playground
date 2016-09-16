@@ -20,22 +20,25 @@ namespace FluentSqlBuilder.Detail
         }
 
         public ConditionBuilder(SqlBuilder sqlBuilder)
-            : this(sqlBuilder, ConditionCombinator.And)
+            : this(sqlBuilder, sqlBuilder.SqlConditionConstant.And)
         {
         }
 
-        #region SqlPart
-        internal override IEnumerable<string> Tokens
+        #region Tokens
+        IEnumerable<SqlPart> Parts
         {
             get
             {
-                var tokens = Combinator.Combine(Conditions.Select(x => x.Tokens));
-                return Conditions.Count > 1 ? tokens.Enclose("(", ")") : tokens;
+                var parts = Combinator.Combine(Conditions);
+                return
+                    Conditions.Count > 1
+                        ? parts.Enclose(SqlPart.FromString("("), SqlPart.FromString(")"))
+                        : parts;
             }
         }
 
-        internal override IEnumerable<DbParameter> Parameters =>
-            Conditions.SelectMany(x => x.Parameters);
+        internal override IEnumerable<SqlToken> Tokens =>
+            Parts.SelectMany(part => part.Tokens);
         #endregion
 
         public bool IsTrivial =>
@@ -43,7 +46,11 @@ namespace FluentSqlBuilder.Detail
 
         internal ConditionBuilder Add(SqlCondition condition)
         {
-            Conditions.Add(condition);
+            if (condition != Combinator.Neutral)
+            {
+                Conditions.Add(condition);
+            }
+
             return this;
         }
 
@@ -62,18 +69,14 @@ namespace FluentSqlBuilder.Detail
 
         #region SqlCondition
         public override ConditionBuilder And(SqlCondition rhs) =>
-            ReferenceEquals(Combinator, ConditionCombinator.And)
+            Combinator.IsAnd
                 ? Add(rhs)
-                : new ConditionBuilder(SqlBuilder, ConditionCombinator.And)
-                    .Add(this)
-                    .Add(rhs);
+                : SqlBuilder.And().Add(this).Add(rhs);
 
         public override ConditionBuilder Or(SqlCondition rhs) =>
-            ReferenceEquals(Combinator, ConditionCombinator.Or)
+            Combinator.IsOr
                 ? Add(rhs)
-                : new ConditionBuilder(SqlBuilder, ConditionCombinator.Or)
-                    .Add(this)
-                    .Add(rhs);
+                : SqlBuilder.Or().Add(this).Add(rhs);
         #endregion
     }
 }

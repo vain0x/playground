@@ -12,15 +12,15 @@ namespace FluentSqlBuilder.Test
         [Fact]
         public void TestAnd_trivial()
         {
-            new ConditionBuilder(Sql, ConditionCombinator.And)
+            Sql.And()
                 .ToEmbeddedString()
-                .ShouldEqual(ConditionCombinator.TrueExpression);
+                .ShouldEqual(SqlConditionConstant.TrueExpression);
         }
 
         [Fact]
         public void TestAnd_single_condition()
         {
-            new ConditionBuilder(Sql, ConditionCombinator.And)
+            Sql.And()
                 .Add(FakeDb.Employee.Name.Equal(Sql.String("Miku")))
                 .ToEmbeddedString()
                 .ShouldEqual("`employees`.`name` = 'Miku'");
@@ -29,7 +29,7 @@ namespace FluentSqlBuilder.Test
         [Fact]
         public void TestAnd_three_conditions()
         {
-            new ConditionBuilder(Sql, ConditionCombinator.And)
+            Sql.And()
                 .Add(FakeDb.Employee.Name.Equal(Sql.String("Miku")))
                 .Add(FakeDb.Employee.Age.Equal(Sql.Int(16L)))
                 .Add(FakeDb.Employee.DepartmentId.Equal(FakeDb.Department.Id))
@@ -43,7 +43,7 @@ namespace FluentSqlBuilder.Test
         [Fact]
         public void TestAnd_collapse_true()
         {
-            new ConditionBuilder(Sql, ConditionCombinator.And)
+            Sql.And()
                 .Add(FakeDb.Employee.Name.Equal(Sql.String("Miku")))
                 .Add(Sql.True)
                 .Add(Sql.True)
@@ -54,7 +54,7 @@ namespace FluentSqlBuilder.Test
         [Fact]
         public void TestAnd_combine_or_condition()
         {
-            new ConditionBuilder(Sql, ConditionCombinator.And)
+            Sql.And()
                 .Add(FakeDb.Employee.Name.Equal(Sql.String("Miku")))
                 .Add(Sql.Null<long>().IsNull().Or(Sql.Int(1L).IsNull()))
                 .ToEmbeddedString()

@@ -18,12 +18,7 @@ namespace FluentSqlBuilder.Detail
             Join = join;
         }
 
-        #region SqlPart
-        internal override IEnumerable<string> Tokens =>
+        internal override IEnumerable<SqlToken> Tokens =>
             Relation.Tokens.Concat(Join.Tokens);
-
-        internal override IEnumerable<DbParameter> Parameters =>
-            Relation.Parameters.Concat(Join.Parameters);
-        #endregion
     }
 }

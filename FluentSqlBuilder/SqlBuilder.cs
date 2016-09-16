@@ -25,18 +25,33 @@ namespace FluentSqlBuilder.Public
             return parameter;
         }
 
-        internal DbCommand CreateCommand(string sql, IEnumerable<DbParameter> parameters)
+        internal DbCommand CreateCommand(IEnumerable<SqlToken> tokens)
         {
+            // Coerce the enumerable.
+            var tokenList =
+                tokens.ToArray();
+            var sql =
+                string.Join(" ", tokenList.Select(t => t.String));
+            var parameterList =
+                tokenList
+                .SelectMany(t => t.Parameters)
+                .Distinct()
+                .ToArray();
+
             var command = Factory.CreateCommand();
             command.CommandText = sql;
-            command.Parameters.AddRange(parameters.Distinct().ToArray());
+            command.Parameters.AddRange(parameterList);
             return command;
         }
         #endregion
 
+        internal SqlConditionConstant SqlConditionConstant { get; }
+
         public SqlBuilder(DbProvider provider)
         {
             Provider = provider;
+
+            SqlConditionConstant = new SqlConditionConstant(this);
         }
 
         #region Expression
@@ -80,17 +95,20 @@ namespace FluentSqlBuilder.Public
         public SqlExpression<IScalar<X>> Null<X>() =>
             new AtomicExpression<IScalar<X>>(this, "null");
 
-        public ConditionBuilder True =>
-            new ConditionBuilder(this, ConditionCombinator.And);
+        public SqlCondition True =>
+            SqlConditionConstant.True;
 
-        public ConditionBuilder False =>
-            new ConditionBuilder(this, ConditionCombinator.Or);
+        public SqlCondition False =>
+            SqlConditionConstant.False;
         #endregion
         #endregion
 
         #region Condition
-        public ConditionBuilder And() => True;
-        public ConditionBuilder Or() => False;
+        public ConditionBuilder And() =>
+            new ConditionBuilder(this, SqlConditionConstant.And);
+
+        public ConditionBuilder Or() =>
+            new ConditionBuilder(this, SqlConditionConstant.Or);
         #endregion
 
         #region Mainpulation

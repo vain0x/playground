@@ -19,11 +19,11 @@ namespace FluentSqlBuilder.Public
             new CompoundExpression<T>(
                 sqlBuilder,
                 SqlPart.Concat(
-                    new[] { SqlPart.FromToken(functionName) }
+                    new[] { SqlPart.FromString(functionName) }
                     .Concat(
                         arguments
-                        .Intersperse(SqlPart.FromToken(","))
-                        .Enclose(SqlPart.FromToken("("), SqlPart.FromToken(")"))
+                        .Intersperse(SqlPart.FromString(","))
+                        .Enclose(SqlPart.FromString("("), SqlPart.FromString(")"))
                     )));
         #endregion
 
@@ -33,11 +33,7 @@ namespace FluentSqlBuilder.Public
             where X : ISqlTypeTag
             where Y : ISqlTypeTag
         {
-            return
-                new CompoundExpression<Y>(
-                    expression.SqlBuilder,
-                    new ConcreteSqlPart(expression.Tokens, expression.Parameters)
-                );
+            return new CompoundExpression<Y>(expression.SqlBuilder, expression);
         }
 
         public static SqlExpression<IScalar>
@@ -73,7 +69,7 @@ namespace FluentSqlBuilder.Public
             IsNull<X>(this SqlExpression<IScalar<X>> lhs) =>
             new AtomicSqlCondition(
                 lhs.SqlBuilder,
-                lhs.Concat(SqlPart.FromToken("is null"))
+                lhs.Concat(SqlPart.FromString("is null"))
             );
 
         public static SqlCondition
@@ -83,7 +79,7 @@ namespace FluentSqlBuilder.Public
             ) =>
             new AtomicSqlCondition(
                 lhs.SqlBuilder,
-                lhs.Concat(SqlPart.FromToken("=")).Concat(rhs)
+                lhs.Concat(SqlPart.FromString("=")).Concat(rhs)
             );
         #endregion
 
@@ -93,7 +89,7 @@ namespace FluentSqlBuilder.Public
             string quantifier
         )
         {
-            var part = SqlPart.FromToken(quantifier).Concat(relation);
+            var part = SqlPart.FromString(quantifier).Concat(relation);
             return new CompoundExpression<IScalar<X>>(relation.SqlBuilder, part);
         }
 

@@ -16,7 +16,7 @@ namespace FluentSqlBuilder.Test
             new CompoundExpression<IScalar<long>>(
                 Sql,
                 Sql.Int(1)
-                .Concat(SqlPart.FromToken("+"))
+                .Concat(SqlPart.FromString("+"))
                 .Concat(Sql.Int(2))
             )
                 .ToEmbeddedString()

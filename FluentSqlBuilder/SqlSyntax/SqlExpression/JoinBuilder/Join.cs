@@ -62,19 +62,11 @@ namespace FluentSqlBuilder.Detail
             Condition = condition;
         }
 
-        internal override IEnumerable<string> Tokens
-        {
-            get
-            {
-                yield return JoinWord;
-                foreach (var token in Relation.Tokens) yield return token;
-                yield return "on";
-                foreach (var token in Condition.Tokens) yield return token;
-            }
-        }
-
-        internal override IEnumerable<DbParameter> Parameters =>
-            Relation.Parameters.Concat(Condition.Parameters);
+        internal override IEnumerable<SqlToken> Tokens =>
+            new[] { SqlToken.FromString(JoinWord) }
+            .Concat(Relation.Tokens)
+            .Concat(new[] { SqlToken.FromString("on") })
+            .Concat(Condition.Tokens);
     }
 
     public sealed class JoinUsing
@@ -92,20 +84,16 @@ namespace FluentSqlBuilder.Detail
             Column = column;
         }
 
-        internal override IEnumerable<string> Tokens
-        {
-            get
-            {
-                yield return JoinWord;
-                foreach (var token in Relation.Tokens) yield return token;
-                yield return "using";
-                yield return "(";
-                yield return Column;
-                yield return ")";
-            }
-        }
-
-        internal override IEnumerable<DbParameter> Parameters =>
-            Relation.Parameters;
+        internal override IEnumerable<SqlToken> Tokens =>
+            new[] { SqlToken.FromString(JoinWord) }
+            .Concat(Relation.Tokens)
+            .Concat(
+                new[]
+                {
+                    SqlToken.FromString("using"),
+                    SqlToken.FromString("("),
+                    SqlToken.FromString(Column),
+                    SqlToken.FromString(")")
+                });
     }
 }

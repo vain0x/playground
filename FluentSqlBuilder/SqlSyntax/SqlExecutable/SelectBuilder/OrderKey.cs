@@ -1,4 +1,5 @@
 using System.Collections.Generic;
+using System.Linq;
 using System.Data.Common;
 using FluentSqlBuilder.Public;
 
@@ -16,21 +17,14 @@ namespace FluentSqlBuilder.Detail
             Direction = direction;
         }
 
-        #region SqlPart
-        internal override IEnumerable<string> Tokens
-        {
-            get
-            {
-                foreach (var token in Expression.Tokens) yield return token;
-                if (Direction == OrderDirection.Descending)
-                {
-                    yield return "desc";
-                }
-            }
-        }
+        #region Tokens
+        IEnumerable<SqlToken> OrderKeywordTokens =>
+            Direction == OrderDirection.Descending
+            ? new[] { SqlToken.FromString("desc") }
+            : Enumerable.Empty<SqlToken>();
 
-        internal override IEnumerable<DbParameter> Parameters =>
-            Expression.Parameters;
+        internal override IEnumerable<SqlToken> Tokens =>
+            Expression.Tokens.Concat(OrderKeywordTokens);
         #endregion
     }
 }

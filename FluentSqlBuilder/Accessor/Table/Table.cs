@@ -23,25 +23,18 @@ namespace FluentSqlBuilder.Public
         public Column<X> Column<X>(string columnName) =>
             new ConcreteColumn<X>(SqlBuilder, this, columnName);
 
-        #region SqlPart
-        internal override IEnumerable<string> Tokens
+        internal override IEnumerable<SqlToken> Tokens
         {
             get
             {
-                var tableName = new[] { QuotedName };
-                return
-                    OptionalAlias.Match(
-                        alias =>
-                            SqlBuilder.Language
-                            .ConstructAliasedExpression(tableName, alias),
-                        () => tableName
-                    );
+                yield return SqlToken.FromString(QuotedName);
+                foreach (var alias in OptionalAlias)
+                {
+                    yield return SqlToken.FromString("as");
+                    yield return SqlToken.FromString(SqlBuilder.Language.QuoteIdentifier(alias));
+                }
             }
         }
-
-        internal override IEnumerable<DbParameter> Parameters =>
-            Enumerable.Empty<DbParameter>();
-        #endregion
 
         #region Reflection
         bool IsColumnType(Type type)

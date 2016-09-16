@@ -45,6 +45,7 @@
     <Compile Include="SqlSyntax\SqlCondition\ConditionBuilder.cs" />
     <Compile Include="SqlSyntax\SqlCondition\ConditionCombinator.cs" />
     <Compile Include="SqlSyntax\SqlCondition\AtomicSqlCondition.cs" />
+    <Compile Include="SqlSyntax\SqlCondition\SqlConditionConstant.cs" />
     <Compile Include="SqlSyntax\SqlExecutable\Insert\InsertBuilder.cs" />
     <Compile Include="SqlSyntax\SqlExecutable\SelectBuilder\CombinedSelectStatement.cs" />
     <Compile Include="SqlSyntax\SqlExecutable\Update\AssignmentlessUpdateBuilder.cs" />
@@ -61,6 +62,7 @@
     <Compile Include="SqlSyntax\SqlExecutable\SelectBuilder\SelectBuilder.cs" />
     <Compile Include="SqlSyntax\SqlExpression\SqlExpressionExtensions.cs" />
     <Compile Include="Accessor\Record\Record.cs" />
+    <Compile Include="SqlSyntax\SqlToken.cs" />
     <Compile Include="Utility\KeyValuePair.cs" />
     <Compile Include="Utility\LinqExtensions.cs" />
     <Compile Include="Utility\Lazy.cs" />
