@@ -12,7 +12,7 @@ namespace FluentSqlBuilder.Test
         [Fact]
         public void TestCompoundExpression()
         {
-            new CompoundSqlExpression<IScalar<long>>(
+            new ConcreteSqlExpression<IScalar<long>>(
                 Sql,
                 Sql.Int(1)
                 .Concat(SqlPart.FromString("+"))

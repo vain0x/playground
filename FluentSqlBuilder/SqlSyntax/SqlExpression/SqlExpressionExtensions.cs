@@ -15,7 +15,7 @@ namespace FluentSqlBuilder.SqlSyntax
             ) 
             where T: ISqlTypeTag
             =>
-            new CompoundSqlExpression<T>(
+            new ConcreteSqlExpression<T>(
                 sqlBuilder,
                 SqlPart.Concat(
                     new[] { SqlPart.FromString(functionName) }
@@ -32,7 +32,7 @@ namespace FluentSqlBuilder.SqlSyntax
             where X : ISqlTypeTag
             where Y : ISqlTypeTag
         {
-            return new CompoundSqlExpression<Y>(expression.SqlBuilder, expression);
+            return new ConcreteSqlExpression<Y>(expression.SqlBuilder, expression);
         }
 
         public static SqlExpression<IScalar>
@@ -89,7 +89,7 @@ namespace FluentSqlBuilder.SqlSyntax
         )
         {
             var part = SqlPart.FromString(quantifier).Concat(relation);
-            return new CompoundSqlExpression<IScalar<X>>(relation.SqlBuilder, part);
+            return new ConcreteSqlExpression<IScalar<X>>(relation.SqlBuilder, part);
         }
 
         public static SqlExpression<IScalar<X>> Any<X>(this SqlExpression<IRelation<X>> relation)

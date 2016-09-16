@@ -7,13 +7,13 @@ using System.Threading.Tasks;
 
 namespace FluentSqlBuilder.SqlSyntax
 {
-    sealed class CompoundSqlExpression<TType>
+    sealed class ConcreteSqlExpression<TType>
         : SqlExpression<TType>
         where TType : ISqlTypeTag
     {
         internal override IEnumerable<SqlToken> Tokens { get; }
 
-        internal CompoundSqlExpression(SqlBuilder sqlBuilder, IEnumerable<SqlToken> tokens)
+        internal ConcreteSqlExpression(SqlBuilder sqlBuilder, IEnumerable<SqlToken> tokens)
             : base(sqlBuilder)
         {
             Tokens = tokens;
