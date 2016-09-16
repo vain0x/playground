@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Data.Common;
 using System.Linq;
@@ -8,11 +8,11 @@ using FluentSqlBuilder.Public;
 
 namespace FluentSqlBuilder.Detail
 {
-    public class UpdateBuilder
+    public sealed class UpdateBuilder
     {
         UpdateStatement Statement { get; }
 
-        public UpdateBuilder Where(ISqlCondition condition)
+        public UpdateBuilder Where(SqlCondition condition)
         {
             Statement.WhereCondition.Add(condition);
             return this;

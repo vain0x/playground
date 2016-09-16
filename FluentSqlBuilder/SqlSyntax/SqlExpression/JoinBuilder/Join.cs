@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Data.Common;
 using System.Linq;
@@ -16,14 +16,14 @@ namespace FluentSqlBuilder.Detail
     }
 
     public abstract class Join
-        : ISqlPart
+        : SqlPart
     {
         public JoinType JoinType { get; }
-        public ISqlExpression<IRelation> Relation { get; }
+        public SqlExpression<IRelation> Relation { get; }
 
         public Join(
             JoinType joinType,
-            ISqlExpression<IRelation> relation
+            SqlExpression<IRelation> relation
         )
         {
             JoinType = joinType;
@@ -45,29 +45,24 @@ namespace FluentSqlBuilder.Detail
                 }
             }
         }
-
-        #region ISqlPart
-        public abstract IEnumerable<string> Tokens { get; }
-        public abstract IEnumerable<DbParameter> Parameters { get; }
-        #endregion
     }
 
-    public class JoinOn
+    public sealed class JoinOn
         : Join
     {
-        public ISqlCondition Condition { get; }
+        public SqlCondition Condition { get; }
 
         public JoinOn(
             JoinType joinType,
-            ISqlExpression<IRelation> relation,
-            ISqlCondition condition
+            SqlExpression<IRelation> relation,
+            SqlCondition condition
         )
             : base(joinType, relation)
         {
             Condition = condition;
         }
 
-        public override IEnumerable<string> Tokens
+        internal override IEnumerable<string> Tokens
         {
             get
             {
@@ -78,18 +73,18 @@ namespace FluentSqlBuilder.Detail
             }
         }
 
-        public override IEnumerable<DbParameter> Parameters =>
+        internal override IEnumerable<DbParameter> Parameters =>
             Relation.Parameters.Concat(Condition.Parameters);
     }
 
-    public class JoinUsing
+    public sealed class JoinUsing
         : Join
     {
         public string Column { get; }
 
         public JoinUsing(
             JoinType joinType,
-            ISqlExpression<IRelation> relation,
+            SqlExpression<IRelation> relation,
             string column
         )
             : base(joinType, relation)
@@ -97,7 +92,7 @@ namespace FluentSqlBuilder.Detail
             Column = column;
         }
 
-        public override IEnumerable<string> Tokens
+        internal override IEnumerable<string> Tokens
         {
             get
             {
@@ -110,7 +105,7 @@ namespace FluentSqlBuilder.Detail
             }
         }
 
-        public override IEnumerable<DbParameter> Parameters =>
+        internal override IEnumerable<DbParameter> Parameters =>
             Relation.Parameters;
     }
 }

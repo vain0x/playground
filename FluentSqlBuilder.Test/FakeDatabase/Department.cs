@@ -7,9 +7,9 @@ namespace FluentSqlBuilder.Test
     public class Department
     {
         public Table Table { get; }
-        public IColumn<long> Id { get; }
-        public IColumn<string> Name { get; }
-        public IColumn<string> Email { get; }
+        public Column<long> Id { get; }
+        public Column<string> Name { get; }
+        public Column<string> Email { get; }
 
         public Department(SqlBuilder sqlBuilder, Option<string> tableAlias)
         {

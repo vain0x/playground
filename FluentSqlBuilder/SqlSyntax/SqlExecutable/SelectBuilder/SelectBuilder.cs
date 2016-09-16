@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Data.Common;
 using Optional;
@@ -6,7 +6,7 @@ using FluentSqlBuilder.Public;
 
 namespace FluentSqlBuilder.Detail
 {
-    public class SelectBuilder
+    public sealed class SelectBuilder
     {
         SelectStatement Statement { get; }
 
@@ -18,13 +18,13 @@ namespace FluentSqlBuilder.Detail
         public DbCommand ToCommand() => Statement.ToCommand();
 
         #region Field
-        public SelectBuilder Field<X>(ISqlExpression<IScalar<X>> expression)
+        public SelectBuilder Field<X>(SqlExpression<IScalar<X>> expression)
         {
             Statement.Fields.Add(expression);
             return this;
         }
 
-        public SelectBuilder FieldAll(IAliasedSqlExpression<IRelation> relation)
+        public SelectBuilder FieldAll(AliasedSqlExpression<IRelation> relation)
         {
             Statement.AddFieldAll(relation);
             return this;
@@ -44,7 +44,7 @@ namespace FluentSqlBuilder.Detail
         }
         #endregion
 
-        public ISqlExpression<IRelation> ToRelation()
+        public SqlExpression<IRelation> ToRelation()
         {
             return Statement.ToRelation();
         }

@@ -1,19 +1,19 @@
-﻿using System;
+using System;
 using FluentSqlBuilder.Public;
 
 namespace FluentSqlBuilder.Detail
 {
-    public class JoinBuilder<TResult>
+    public sealed class JoinBuilder<TResult>
     {
         SqlBuilder SqlBuilder { get; }
         JoinType JoinType { get; }
-        ISqlExpression<IRelation> Relation { get; }
+        SqlExpression<IRelation> Relation { get; }
         Func<Join, TResult> Run { get; }
 
         public JoinBuilder(
             SqlBuilder sqlBuilder,
             JoinType joinType,
-            ISqlExpression<IRelation> relation,
+            SqlExpression<IRelation> relation,
             Func<Join, TResult> run
         )
         {
@@ -23,7 +23,7 @@ namespace FluentSqlBuilder.Detail
             Run = run;
         }
 
-        public TResult On(ISqlCondition condition)
+        public TResult On(SqlCondition condition)
         {
             return Run(new JoinOn(JoinType, Relation, condition));
         }

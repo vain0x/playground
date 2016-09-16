@@ -7,7 +7,7 @@ using FluentSqlBuilder.Public;
 
 namespace FluentSqlBuilder.Detail
 {
-    public class AssignmentlessUpdateBuilder
+    public sealed class AssignmentlessUpdateBuilder
     {
         UpdateStatement Statement { get; }
 

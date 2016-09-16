@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
@@ -9,7 +9,7 @@ using FluentSqlBuilder.Public;
 namespace FluentSqlBuilder.Detail
 {
     public class AssignmentRecord
-        : Dictionary<string, ISqlExpression<IScalar>>
+        : Dictionary<string, SqlExpression<IScalar>>
         , IExpressionRecord
     {
     }

@@ -44,7 +44,7 @@
     <Compile Include="Accessor\Record\DbParameterRecord.cs" />
     <Compile Include="SqlSyntax\SqlCondition\ConditionBuilder.cs" />
     <Compile Include="SqlSyntax\SqlCondition\ConditionCombinator.cs" />
-    <Compile Include="SqlSyntax\SqlCondition\SqlCondition.cs" />
+    <Compile Include="SqlSyntax\SqlCondition\AtomicSqlCondition.cs" />
     <Compile Include="SqlSyntax\SqlExecutable\Insert\InsertBuilder.cs" />
     <Compile Include="SqlSyntax\SqlExecutable\SelectBuilder\CombinedSelectStatement.cs" />
     <Compile Include="SqlSyntax\SqlExecutable\Update\AssignmentlessUpdateBuilder.cs" />
@@ -75,9 +75,9 @@
     <Compile Include="SqlSyntax\SqlPart.cs" />
     <Compile Include="SqlSyntax\SqlExpression\SqlTypeTags.cs" />
     <Compile Include="SqlBuilder.cs" />
-    <Compile Include="Accessor\Table\IColumn.cs" />
-    <Compile Include="Accessor\Table\Table.cs" />
     <Compile Include="Accessor\Table\Column.cs" />
+    <Compile Include="Accessor\Table\Table.cs" />
+    <Compile Include="Accessor\Table\ConcreteColumn.cs" />
     <Compile Include="SqlSyntax\SqlPartExtensions.cs" />
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />

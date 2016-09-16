@@ -1,23 +1,23 @@
-﻿using System.Collections.Generic;
+using System.Collections.Generic;
 using System.Data.Common;
 using FluentSqlBuilder.Public;
 
 namespace FluentSqlBuilder.Detail
 {
-    public class OrderKey
-        : ISqlPart
+    public sealed class OrderKey
+        : SqlPart
     {
-        public ISqlExpression<IScalar> Expression { get; }
+        public SqlExpression<IScalar> Expression { get; }
         public OrderDirection Direction { get; }
 
-        public OrderKey(ISqlExpression<IScalar> expression, OrderDirection direction)
+        public OrderKey(SqlExpression<IScalar> expression, OrderDirection direction)
         {
             Expression = expression;
             Direction = direction;
         }
 
-        #region ISqlPart
-        public IEnumerable<string> Tokens
+        #region SqlPart
+        internal override IEnumerable<string> Tokens
         {
             get
             {
@@ -29,7 +29,7 @@ namespace FluentSqlBuilder.Detail
             }
         }
 
-        public IEnumerable<DbParameter> Parameters =>
+        internal override IEnumerable<DbParameter> Parameters =>
             Expression.Parameters;
         #endregion
     }

@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Data;
 using System.Data.Common;
@@ -9,12 +9,12 @@ namespace FluentSqlBuilder.Detail
 {
     static class SqlPartExtensions
     {
-        internal static ISqlPart Concat(this ISqlPart lhs, ISqlPart rhs)
+        internal static SqlPart Concat(this SqlPart lhs, SqlPart rhs)
         {
             return SqlPart.Concat(new[] { lhs, rhs });
         }
 
-        internal static ISqlPart Enclose(this ISqlPart part, string left, string right)
+        internal static SqlPart Enclose(this SqlPart part, string left, string right)
         {
             var parts = new[] { SqlPart.FromToken(left), part, SqlPart.FromToken(right) };
             return SqlPart.Concat(parts);
@@ -23,7 +23,7 @@ namespace FluentSqlBuilder.Detail
         /// <summary>
         /// NOTE: Values are NOT quoted. Just for test.
         /// </summary>
-        internal static string ToEmbeddedString(this ISqlPart part)
+        internal static string ToEmbeddedString(this SqlPart part)
         {
             var parameterDictionary = part.Parameters.ToDictionary(p => p.ParameterName);
             var tokens = new List<string>();

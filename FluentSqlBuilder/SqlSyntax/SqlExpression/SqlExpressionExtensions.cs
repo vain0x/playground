@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using FluentSqlBuilder.Detail;
@@ -8,20 +8,11 @@ namespace FluentSqlBuilder.Public
     public static class SqlExpressionExtensions
     {
         #region Internal
-        public static ISqlExpression<IScalar>
-            Box<X>(this ISqlExpression<IScalar<X>> expression)
-        {
-            return new CompoundExpression<IScalar>(
-                expression.SqlBuilder,
-                new ConcreteSqlPart(expression.Tokens, expression.Parameters)
-            );
-        }
-
-        internal static ISqlExpression<T>
+        internal static SqlExpression<T>
             Invoke<T>(
                 SqlBuilder sqlBuilder,
                 string functionName,
-                IEnumerable<ISqlExpression<IScalar>> arguments
+                IEnumerable<SqlExpression<IScalar>> arguments
             ) 
             where T: ISqlTypeTag
             =>
@@ -36,37 +27,69 @@ namespace FluentSqlBuilder.Public
                     )));
         #endregion
 
+        #region Cast operators
+        internal static SqlExpression<Y>
+            ForceCast<X, Y>(this SqlExpression<X> expression)
+            where X : ISqlTypeTag
+            where Y : ISqlTypeTag
+        {
+            return
+                new CompoundExpression<Y>(
+                    expression.SqlBuilder,
+                    new ConcreteSqlPart(expression.Tokens, expression.Parameters)
+                );
+        }
+
+        public static SqlExpression<IScalar>
+            Box<X>(this SqlExpression<IScalar<X>> expression)
+        {
+            return expression.ForceCast<IScalar<X>, IScalar>();
+        }
+
+        public static SqlExpression<IScalar<X>>
+            Unbox<X>(this SqlExpression<IScalar> expression)
+        {
+            return expression.ForceCast<IScalar, IScalar<X>>();
+        }
+
+        public static SqlExpression<IRelation>
+            Box<X>(this SqlExpression<IRelation<X>> expression)
+        {
+            return expression.ForceCast<IRelation<X>, IRelation>();
+        }
+        #endregion
+
         #region Normal operators
-        public static ISqlExpression<IScalar<string>>
+        public static SqlExpression<IScalar<string>>
             Concat(
-                this ISqlExpression<IScalar<string>> lhs,
-                params ISqlExpression<IScalar<string>>[] rhs
+                this SqlExpression<IScalar<string>> lhs,
+                params SqlExpression<IScalar<string>>[] rhs
             ) =>
-            Invoke<IScalar<string>>(lhs.SqlBuilder, "concat", new[] { lhs }.Concat(rhs));
+            Invoke<IScalar<string>>(lhs.SqlBuilder, "concat", new[] { lhs.Box() }.Concat(rhs.Select(Box)));
         #endregion
 
         #region Condition operators
-        public static ISqlCondition
-            IsNull<X>(this ISqlExpression<IScalar<X>> lhs) =>
-            new SqlCondition(
+        public static SqlCondition
+            IsNull<X>(this SqlExpression<IScalar<X>> lhs) =>
+            new AtomicSqlCondition(
                 lhs.SqlBuilder,
                 lhs.Concat(SqlPart.FromToken("is null"))
             );
 
-        public static ISqlCondition
+        public static SqlCondition
             Equal<X>(
-                this ISqlExpression<IScalar<X>> lhs,
-                ISqlExpression<IScalar<X>> rhs
+                this SqlExpression<IScalar<X>> lhs,
+                SqlExpression<IScalar<X>> rhs
             ) =>
-            new SqlCondition(
+            new AtomicSqlCondition(
                 lhs.SqlBuilder,
                 lhs.Concat(SqlPart.FromToken("=")).Concat(rhs)
             );
         #endregion
 
         #region Quantification
-        static ISqlExpression<IScalar<X>> Quantify<X>(
-            this ISqlExpression<IRelation> relation,
+        static SqlExpression<IScalar<X>> Quantify<X>(
+            this SqlExpression<IRelation> relation,
             string quantifier
         )
         {
@@ -74,14 +97,14 @@ namespace FluentSqlBuilder.Public
             return new CompoundExpression<IScalar<X>>(relation.SqlBuilder, part);
         }
 
-        public static ISqlExpression<IScalar<X>> Any<X>(this ISqlExpression<IRelation<X>> relation)
+        public static SqlExpression<IScalar<X>> Any<X>(this SqlExpression<IRelation<X>> relation)
         {
-            return relation.Quantify<X>("any");
+            return relation.Box().Quantify<X>("any");
         }
 
-        public static ISqlExpression<IScalar<X>> All<X>(this ISqlExpression<IRelation<X>> relation)
+        public static SqlExpression<IScalar<X>> All<X>(this SqlExpression<IRelation<X>> relation)
         {
-            return relation.Quantify<X>("all");
+            return relation.Box().Quantify<X>("all");
         }
         #endregion
     }

@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Data.Common;
 using System.Linq;
@@ -10,23 +10,11 @@ namespace FluentSqlBuilder.Detail
     /// SQLの式を表す。
     /// </summary>
     /// <typeparam name="TType"></typeparam>
-    public interface ISqlExpression<out TType>
-        : ISqlPart
-        where TType: ISqlTypeTag
-    {
-        SqlBuilder SqlBuilder { get; }
-
-        IAliasedSqlExpression<TType> As(string alias);
-    }
-
     public abstract class SqlExpression<TType>
-        : ISqlExpression<TType>
+        : SqlPart
         where TType: ISqlTypeTag
     {
-        #region ISqlPart
-        public abstract IEnumerable<string> Tokens { get; }
-        public abstract IEnumerable<DbParameter> Parameters { get; }
-        #endregion
+        internal SqlBuilder SqlBuilder { get; }
 
         protected SqlExpression(SqlBuilder sqlBuilder)
         {
@@ -36,28 +24,24 @@ namespace FluentSqlBuilder.Detail
         public override string ToString() =>
             string.Join(" ", Tokens);
 
-        #region ISqlExpression
-        public SqlBuilder SqlBuilder { get; }
-
-        public IAliasedSqlExpression<TType> As(string alias)
+        public AliasedSqlExpression<TType> As(string alias)
         {
             return new AliasedExpression<TType>(SqlBuilder, this, alias);
         }
-        #endregion
     }
 
     public class CompoundExpression<TType>
         : SqlExpression<TType>
         where TType: ISqlTypeTag
     {
-        ISqlPart Part { get; }
+        SqlPart Part { get; }
 
-        #region SqlExpression
-        public sealed override IEnumerable<string> Tokens => Part.Tokens;
-        public sealed override IEnumerable<DbParameter> Parameters => Part.Parameters;
+        #region SqlPart
+        internal sealed override IEnumerable<string> Tokens => Part.Tokens;
+        internal sealed override IEnumerable<DbParameter> Parameters => Part.Parameters;
         #endregion
 
-        internal CompoundExpression(SqlBuilder sqlBuilder, ISqlPart part)
+        internal CompoundExpression(SqlBuilder sqlBuilder, SqlPart part)
             : base(sqlBuilder)
         {
             Part = part;
@@ -92,31 +76,36 @@ namespace FluentSqlBuilder.Detail
         }
 
         #region SqlExpression
-        public sealed override IEnumerable<string> Tokens =>
+        internal sealed override IEnumerable<string> Tokens =>
             new[] { Name };
 
-        public sealed override IEnumerable<DbParameter> Parameters =>
+        internal sealed override IEnumerable<DbParameter> Parameters =>
             new[] { Parameter };
         #endregion
     }
-    public interface IAliasedSqlExpression<out TType>
-        : ISqlExpression<TType>
+
+    public abstract class AliasedSqlExpression<TType>
+        : SqlExpression<TType>
         where TType: ISqlTypeTag
     {
-        string Alias { get; }
+        public abstract string Alias { get; }
+
+        protected AliasedSqlExpression(SqlBuilder sqlBuilder)
+            : base(sqlBuilder)
+        {
+        }
     }
 
     public class AliasedExpression<TType>
-        : SqlExpression<TType>
-        , IAliasedSqlExpression<TType>
+        : AliasedSqlExpression<TType>
         where TType: ISqlTypeTag
     {
-        public ISqlExpression<TType> Expression { get; }
-        public string Alias { get; }
+        public SqlExpression<TType> Expression { get; }
+        public sealed override string Alias { get; }
 
         public AliasedExpression(
             SqlBuilder sqlBuilder,
-            ISqlExpression<TType> expression,
+            SqlExpression<TType> expression,
             string alias
         )
             : base(sqlBuilder)
@@ -125,11 +114,11 @@ namespace FluentSqlBuilder.Detail
             Alias = alias;
         }
 
-        #region ISqlPart
-        public override IEnumerable<string> Tokens =>
+        #region SqlPart
+        internal override IEnumerable<string> Tokens =>
             SqlBuilder.Language.ConstructAliasedExpression(Expression.Tokens, Alias);
 
-        public override IEnumerable<DbParameter> Parameters =>
+        internal override IEnumerable<DbParameter> Parameters =>
             Expression.Parameters;
         #endregion
     }

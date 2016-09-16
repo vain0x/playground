@@ -5,19 +5,17 @@ using FluentSqlBuilder.Public;
 
 namespace FluentSqlBuilder.Detail
 {
-    public class ConditionBuilder
-        : ISqlCondition
+    public sealed class ConditionBuilder
+        : SqlCondition
     {
-        public SqlBuilder SqlBuilder { get; }
-
         ConditionCombinator Combinator { get; }
 
-        List<ISqlCondition> Conditions { get; } =
-            new List<ISqlCondition>();
+        List<SqlCondition> Conditions { get; } =
+            new List<SqlCondition>();
 
         public ConditionBuilder(SqlBuilder sqlBuilder, ConditionCombinator combinator)
+            : base(sqlBuilder)
         {
-            SqlBuilder = sqlBuilder;
             Combinator = combinator;
         }
 
@@ -26,8 +24,8 @@ namespace FluentSqlBuilder.Detail
         {
         }
 
-        #region ISqlPart
-        public IEnumerable<string> Tokens
+        #region SqlPart
+        internal override IEnumerable<string> Tokens
         {
             get
             {
@@ -36,14 +34,14 @@ namespace FluentSqlBuilder.Detail
             }
         }
 
-        public IEnumerable<DbParameter> Parameters =>
+        internal override IEnumerable<DbParameter> Parameters =>
             Conditions.SelectMany(x => x.Parameters);
         #endregion
 
         public bool IsTrivial =>
             Conditions.IsEmpty();
 
-        internal ConditionBuilder Add(ISqlCondition condition)
+        internal ConditionBuilder Add(SqlCondition condition)
         {
             Conditions.Add(condition);
             return this;
@@ -62,15 +60,15 @@ namespace FluentSqlBuilder.Detail
             return this;
         }
 
-        #region ISqlCondition
-        public ConditionBuilder And(ISqlCondition rhs) =>
+        #region SqlCondition
+        public override ConditionBuilder And(SqlCondition rhs) =>
             ReferenceEquals(Combinator, ConditionCombinator.And)
                 ? Add(rhs)
                 : new ConditionBuilder(SqlBuilder, ConditionCombinator.And)
                     .Add(this)
                     .Add(rhs);
 
-        public ConditionBuilder Or(ISqlCondition rhs) =>
+        public override ConditionBuilder Or(SqlCondition rhs) =>
             ReferenceEquals(Combinator, ConditionCombinator.Or)
                 ? Add(rhs)
                 : new ConditionBuilder(SqlBuilder, ConditionCombinator.Or)

@@ -7,7 +7,7 @@ using FluentSqlBuilder.Public;
 
 namespace FluentSqlBuilder.Detail
 {
-    public class CombinedSelectStatement
+    public sealed class CombinedSelectStatement
     {
         public SelectStatement Statement { get; }
         public string Combinator { get; }

@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Data;
 using System.Data.Common;
@@ -77,7 +77,7 @@ namespace FluentSqlBuilder.Public
         public ParameterExpression<DateTime> DateTime(DateTime value) =>
             Value(DbType.DateTime, value);
 
-        public ISqlExpression<IScalar<X>> Null<X>() =>
+        public SqlExpression<IScalar<X>> Null<X>() =>
             new AtomicExpression<IScalar<X>>(this, "null");
 
         public ConditionBuilder True =>

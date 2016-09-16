@@ -9,9 +9,8 @@ using FluentSqlBuilder.Detail;
 
 namespace FluentSqlBuilder.Public
 {
-    public class Table
-        : SqlExpression<IRelation>
-        , IAliasedSqlExpression<IRelation>
+    public sealed class Table
+        : AliasedSqlExpression<IRelation>
     {
         object Relation { get; }
         Option<string> OptionalAlias { get; }
@@ -19,13 +18,13 @@ namespace FluentSqlBuilder.Public
         public string RawName { get; }
 
         internal string QuotedName => SqlBuilder.Language.BuildTableName(RawName);
-        public string Alias => OptionalAlias.ValueOr(RawName);
+        public override string Alias => OptionalAlias.ValueOr(RawName);
 
-        public IColumn<X> Column<X>(string columnName) =>
-            new Column<X>(SqlBuilder, this, columnName);
+        public Column<X> Column<X>(string columnName) =>
+            new ConcreteColumn<X>(SqlBuilder, this, columnName);
 
-        #region SqlExpression
-        public sealed override IEnumerable<string> Tokens
+        #region SqlPart
+        internal override IEnumerable<string> Tokens
         {
             get
             {
@@ -40,7 +39,7 @@ namespace FluentSqlBuilder.Public
             }
         }
 
-        public sealed override IEnumerable<DbParameter> Parameters =>
+        internal override IEnumerable<DbParameter> Parameters =>
             Enumerable.Empty<DbParameter>();
         #endregion
 

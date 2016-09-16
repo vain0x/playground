@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Data.Common;
 using System.Linq;
@@ -8,16 +8,16 @@ using FluentSqlBuilder.Public;
 
 namespace FluentSqlBuilder.Detail
 {
-    public class UpdateStatement
-        : ISqlExecutable
-        , ISqlPart
+    public sealed class UpdateStatement
+        : SqlPart
+        , ISqlExecutable
     {
         public SqlBuilder SqlBuilder { get; }
         public Table Table { get; }
         public AssignmentRecord Assignment { get; }
         public ConditionBuilder WhereCondition { get; }
 
-        public IEnumerable<KeyValuePair<IColumn, ISqlExpression<IScalar>>> AssignmentList()
+        public IEnumerable<KeyValuePair<IColumn, SqlExpression<IScalar>>> AssignmentList()
         {
             return
                 Table.Columns.Value
@@ -29,8 +29,8 @@ namespace FluentSqlBuilder.Detail
                 });
         }
 
-        #region ISqlPart
-        public IEnumerable<string> Tokens
+        #region SqlPart
+        internal override IEnumerable<string> Tokens
         {
             get
             {
@@ -50,7 +50,7 @@ namespace FluentSqlBuilder.Detail
             }
         }
 
-        public IEnumerable<DbParameter> Parameters
+        internal override IEnumerable<DbParameter> Parameters
         {
             get
             {

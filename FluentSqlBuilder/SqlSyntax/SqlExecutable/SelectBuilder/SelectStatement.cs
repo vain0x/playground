@@ -1,4 +1,4 @@
-﻿using System.Collections.Generic;
+using System.Collections.Generic;
 using System.Data.Common;
 using System.Diagnostics;
 using System.Linq;
@@ -7,31 +7,31 @@ using FluentSqlBuilder.Public;
 
 namespace FluentSqlBuilder.Detail
 {
-    public class SelectStatement
+    public sealed class SelectStatement
         : SqlExpression<IRelation>
         , ISqlExecutable
     {
         Option<CombinedSelectStatement> Combined { get; }
 
-        public ISqlExpression<IRelation> Source { get; private set; }
+        public SqlExpression<IRelation> Source { get; private set; }
 
         public ConditionBuilder WhereCondition { get; }
 
         public ConditionBuilder HavingCondition { get; }
 
-        public List<ISqlExpression<IScalar>> GroupKeys { get; } =
-            new List<ISqlExpression<IScalar>>();
+        public List<SqlExpression<IScalar>> GroupKeys { get; } =
+            new List<SqlExpression<IScalar>>();
 
         public List<OrderKey> OrderKeys { get; } =
             new List<OrderKey>();
 
-        public List<ISqlPart> Fields { get; } =
-            new List<ISqlPart>();
+        public List<SqlPart> Fields { get; } =
+            new List<SqlPart>();
 
         public SelectStatement(
             SqlBuilder sqlBuilder,
             Option<CombinedSelectStatement> combined,
-            ISqlExpression<IRelation> relation
+            SqlExpression<IRelation> relation
         )
             : base(sqlBuilder)
         {
@@ -41,8 +41,8 @@ namespace FluentSqlBuilder.Detail
             HavingCondition = new ConditionBuilder(SqlBuilder);
         }
 
-        #region SqlExpression
-        public override IEnumerable<string> Tokens
+        #region SqlPart
+        internal override IEnumerable<string> Tokens
         {
             get
             {
@@ -88,7 +88,7 @@ namespace FluentSqlBuilder.Detail
             }
         }
 
-        public override IEnumerable<DbParameter> Parameters =>
+        internal override IEnumerable<DbParameter> Parameters =>
             Source.Parameters
             .Concat(
                 Combined.Match(
@@ -118,26 +118,26 @@ namespace FluentSqlBuilder.Detail
             Fields.Add(wildmark);
         }
 
-        public void AddFieldAll(IAliasedSqlExpression<IRelation> relation)
+        public void AddFieldAll(AliasedSqlExpression<IRelation> relation)
         {
             var wildmark = SqlBuilder.Language.BuildWildmark(relation.Alias);
             Fields.Add(SqlPart.FromToken(wildmark));
         }
 
-        public ISqlExpression<IScalar<X>> ToScalar<X>()
+        public SqlExpression<IScalar<X>> ToScalar<X>()
         {
             Debug.Assert(Fields.Count == 1);
             return new CompoundExpression<IScalar<X>>(SqlBuilder, this.Enclose("(", ")"));
         }
 
-        internal ISqlExpression<IScalar<X>> Quantify<X>(string quantifier)
+        internal SqlExpression<IScalar<X>> Quantify<X>(string quantifier)
         {
             Debug.Assert(Fields.Count == 1);
             var part = SqlPart.FromToken(quantifier).Concat(this.Enclose("(", ")"));
             return new CompoundExpression<IScalar<X>>(SqlBuilder, part);
         }
 
-        public ISqlExpression<IRelation> ToRelation()
+        public SqlExpression<IRelation> ToRelation()
         {
             Debug.Assert(Fields.Any());
             return new CompoundExpression<IRelation>(SqlBuilder, this.Enclose("(", ")"));
