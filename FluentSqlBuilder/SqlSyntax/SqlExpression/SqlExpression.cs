@@ -25,7 +25,7 @@ namespace FluentSqlBuilder.SqlSyntax
 
         public AliasedSqlExpression<TType> As(string alias)
         {
-            return new AliasedExpression<TType>(SqlBuilder, this, alias);
+            return new ConcreteAliasedSqlExpression<TType>(SqlBuilder, this, alias);
         }
     }
 }

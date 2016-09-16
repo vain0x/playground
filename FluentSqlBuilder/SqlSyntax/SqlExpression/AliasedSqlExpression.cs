@@ -18,14 +18,14 @@ namespace FluentSqlBuilder.SqlSyntax
         }
     }
 
-    class AliasedExpression<TType>
+    class ConcreteAliasedSqlExpression<TType>
         : AliasedSqlExpression<TType>
         where TType : ISqlTypeTag
     {
         public SqlExpression<TType> Expression { get; }
         public sealed override string Alias { get; }
 
-        public AliasedExpression(
+        public ConcreteAliasedSqlExpression(
             SqlBuilder sqlBuilder,
             SqlExpression<TType> expression,
             string alias
