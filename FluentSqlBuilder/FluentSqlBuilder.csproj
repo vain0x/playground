@@ -53,7 +53,7 @@
     <Compile Include="SqlSyntax\SqlExecutable\Update\UpdateBuilder.cs" />
     <Compile Include="SqlSyntax\SqlExecutable\Update\UpdateStatement.cs" />
     <Compile Include="SqlSyntax\SqlExpression\AliasedSqlExpression.cs" />
-    <Compile Include="SqlSyntax\SqlExpression\CompoundSqlExpression.cs" />
+    <Compile Include="SqlSyntax\SqlExpression\ConcreteSqlExpression.cs" />
     <Compile Include="SqlSyntax\SqlExpression\JoinBuilder\JoinType.cs" />
     <Compile Include="SqlSyntax\SqlExpression\SqlExpression.cs" />
     <Compile Include="SqlSyntax\SqlExpression\JoinBuilder\Join.cs" />
