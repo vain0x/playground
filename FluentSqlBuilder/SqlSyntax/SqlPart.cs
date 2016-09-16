@@ -1,4 +1,5 @@
 using System;
+using System.Collections;
 using System.Collections.Generic;
 using System.Data.Common;
 using System.Linq;
@@ -9,6 +10,7 @@ namespace FluentSqlBuilder.SqlSyntax
     /// SQL文の断片を表す。
     /// </summary>
     public abstract class SqlPart
+        : IEnumerable<SqlToken>
     {
         internal abstract IEnumerable<SqlToken> Tokens { get; }
 
@@ -16,6 +18,14 @@ namespace FluentSqlBuilder.SqlSyntax
         {
             return string.Join(" ", Tokens.Select(t => t.String));
         }
+
+        #region IEnumerable
+        IEnumerator IEnumerable.GetEnumerator() =>
+            Tokens.GetEnumerator();
+
+        IEnumerator<SqlToken> IEnumerable<SqlToken>.GetEnumerator() =>
+            Tokens.GetEnumerator();
+        #endregion
 
         public static SqlPart Singleton(SqlToken token) =>
             new ConcreteSqlPart(new[] { token });
