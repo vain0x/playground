@@ -18,7 +18,7 @@ namespace FluentSqlBuilder.SqlSyntax
         }
     }
 
-    class ConcreteAliasedSqlExpression<TType>
+    sealed class ConcreteAliasedSqlExpression<TType>
         : AliasedSqlExpression<TType>
         where TType : ISqlTypeTag
     {
