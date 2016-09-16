@@ -45,12 +45,16 @@
     <Compile Include="SqlSyntax\SqlCondition\ConditionBuilder.cs" />
     <Compile Include="SqlSyntax\SqlCondition\ConditionCombinator.cs" />
     <Compile Include="SqlSyntax\SqlCondition\AtomicSqlCondition.cs" />
+    <Compile Include="SqlSyntax\SqlCondition\SqlCondition.cs" />
     <Compile Include="SqlSyntax\SqlCondition\SqlConditionConstant.cs" />
     <Compile Include="SqlSyntax\SqlExecutable\Insert\InsertBuilder.cs" />
     <Compile Include="SqlSyntax\SqlExecutable\SelectBuilder\CombinedSelectStatement.cs" />
     <Compile Include="SqlSyntax\SqlExecutable\Update\AssignmentlessUpdateBuilder.cs" />
     <Compile Include="SqlSyntax\SqlExecutable\Update\UpdateBuilder.cs" />
     <Compile Include="SqlSyntax\SqlExecutable\Update\UpdateStatement.cs" />
+    <Compile Include="SqlSyntax\SqlExpression\AliasedSqlExpression.cs" />
+    <Compile Include="SqlSyntax\SqlExpression\CompoundSqlExpression.cs" />
+    <Compile Include="SqlSyntax\SqlExpression\JoinBuilder\JoinType.cs" />
     <Compile Include="SqlSyntax\SqlExpression\SqlExpression.cs" />
     <Compile Include="SqlSyntax\SqlExpression\JoinBuilder\Join.cs" />
     <Compile Include="SqlSyntax\SqlExpression\JoinBuilder\JoinBuilder.cs" />

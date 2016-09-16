@@ -5,15 +5,6 @@ using System.Linq;
 
 namespace FluentSqlBuilder.SqlSyntax
 {
-    enum JoinType
-    {
-        Inner,
-        Cross,
-        LeftOuter,
-        RightOuter,
-        FullOuter,
-    }
-
     abstract class Join
         : SqlPart
     {
