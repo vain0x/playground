@@ -7,7 +7,7 @@ using System.Threading.Tasks;
 
 namespace FluentSqlBuilder.SqlSyntax
 {
-    class CompoundSqlExpression<TType>
+    sealed class CompoundSqlExpression<TType>
         : SqlExpression<TType>
         where TType : ISqlTypeTag
     {
@@ -23,12 +23,18 @@ namespace FluentSqlBuilder.SqlSyntax
     }
 
     sealed class AtomicSqlExpression<TType>
-        : CompoundSqlExpression<TType>
+        : SqlExpression<TType>
         where TType : ISqlTypeTag
     {
+        string String { get; }
+
+        internal override IEnumerable<SqlToken> Tokens =>
+            new[] { SqlToken.FromString(String) };
+
         internal AtomicSqlExpression(SqlBuilder sqlBuilder, string @string)
-            : base(sqlBuilder, SqlPart.FromString(@string))
+            : base(sqlBuilder)
         {
+            String = @string;
         }
     }
 
