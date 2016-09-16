@@ -11,14 +11,12 @@ namespace FluentSqlBuilder.SqlSyntax
         : SqlExpression<TType>
         where TType : ISqlTypeTag
     {
-        SqlPart Part { get; }
+        internal override IEnumerable<SqlToken> Tokens { get; }
 
-        internal override IEnumerable<SqlToken> Tokens => Part.Tokens;
-
-        internal CompoundSqlExpression(SqlBuilder sqlBuilder, SqlPart part)
+        internal CompoundSqlExpression(SqlBuilder sqlBuilder, IEnumerable<SqlToken> tokens)
             : base(sqlBuilder)
         {
-            Part = part;
+            Tokens = tokens;
         }
     }
 
