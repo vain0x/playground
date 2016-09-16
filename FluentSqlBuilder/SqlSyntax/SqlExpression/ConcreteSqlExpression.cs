@@ -36,7 +36,7 @@ namespace FluentSqlBuilder.SqlSyntax
         }
     }
 
-    public sealed class ParameterSqlExpression<TValue>
+    sealed class ParameterSqlExpression<TValue>
         : SqlExpression<IScalar<TValue>>
     {
         string Name { get; }

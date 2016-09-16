@@ -64,7 +64,7 @@ namespace FluentSqlBuilder
             return "p" + Guid.NewGuid().ToString().Replace("-", "");
         }
 
-        public ParameterSqlExpression<X> Value<X>(DbType type, X value)
+        public SqlExpression<IScalar<X>> Value<X>(DbType type, X value)
         {
             var name = GenerateUniqueName();
             var parameter = Factory.CreateParameter();
@@ -75,22 +75,22 @@ namespace FluentSqlBuilder
         }
         
         #region Typed value expressions
-        public ParameterSqlExpression<bool> Bool(bool value) =>
+        public SqlExpression<IScalar<bool>> Bool(bool value) =>
             Value(DbType.Boolean, value);
 
-        public ParameterSqlExpression<int> Int32(int value) =>
+        public SqlExpression<IScalar<int>> Int32(int value) =>
             Value(DbType.Int32, value);
 
-        public ParameterSqlExpression<long> Int(long value) =>
+        public SqlExpression<IScalar<long>> Int(long value) =>
             Value(DbType.Int64, value);
 
-        public ParameterSqlExpression<double> Float(double value) =>
+        public SqlExpression<IScalar<double>> Float(double value) =>
             Value(DbType.Double, value);
 
-        public ParameterSqlExpression<string> String(string value) =>
+        public SqlExpression<IScalar<string>> String(string value) =>
             Value(DbType.String, value);
 
-        public ParameterSqlExpression<DateTime> DateTime(DateTime value) =>
+        public SqlExpression<IScalar<DateTime>> DateTime(DateTime value) =>
             Value(DbType.DateTime, value);
 
         public SqlExpression<IScalar<X>> Null<X>() =>
