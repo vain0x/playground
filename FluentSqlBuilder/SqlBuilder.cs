@@ -64,37 +64,37 @@ namespace FluentSqlBuilder
             return "p" + Guid.NewGuid().ToString().Replace("-", "");
         }
 
-        public ParameterExpression<X> Value<X>(DbType type, X value)
+        public ParameterSqlExpression<X> Value<X>(DbType type, X value)
         {
             var name = GenerateUniqueName();
             var parameter = Factory.CreateParameter();
             parameter.ParameterName = name;
             parameter.DbType = type;
             parameter.Value = value;
-            return new ParameterExpression<X>(this, name, parameter);
+            return new ParameterSqlExpression<X>(this, name, parameter);
         }
         
         #region Typed value expressions
-        public ParameterExpression<bool> Bool(bool value) =>
+        public ParameterSqlExpression<bool> Bool(bool value) =>
             Value(DbType.Boolean, value);
 
-        public ParameterExpression<int> Int32(int value) =>
+        public ParameterSqlExpression<int> Int32(int value) =>
             Value(DbType.Int32, value);
 
-        public ParameterExpression<long> Int(long value) =>
+        public ParameterSqlExpression<long> Int(long value) =>
             Value(DbType.Int64, value);
 
-        public ParameterExpression<double> Float(double value) =>
+        public ParameterSqlExpression<double> Float(double value) =>
             Value(DbType.Double, value);
 
-        public ParameterExpression<string> String(string value) =>
+        public ParameterSqlExpression<string> String(string value) =>
             Value(DbType.String, value);
 
-        public ParameterExpression<DateTime> DateTime(DateTime value) =>
+        public ParameterSqlExpression<DateTime> DateTime(DateTime value) =>
             Value(DbType.DateTime, value);
 
         public SqlExpression<IScalar<X>> Null<X>() =>
-            new AtomicExpression<IScalar<X>>(this, "null");
+            new AtomicSqlExpression<IScalar<X>>(this, "null");
 
         public SqlCondition True =>
             SqlConditionConstant.True;

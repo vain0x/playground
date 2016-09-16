@@ -7,7 +7,7 @@ using System.Threading.Tasks;
 
 namespace FluentSqlBuilder.SqlSyntax
 {
-    class CompoundExpression<TType>
+    class CompoundSqlExpression<TType>
         : SqlExpression<TType>
         where TType : ISqlTypeTag
     {
@@ -15,30 +15,30 @@ namespace FluentSqlBuilder.SqlSyntax
 
         internal override IEnumerable<SqlToken> Tokens => Part.Tokens;
 
-        internal CompoundExpression(SqlBuilder sqlBuilder, SqlPart part)
+        internal CompoundSqlExpression(SqlBuilder sqlBuilder, SqlPart part)
             : base(sqlBuilder)
         {
             Part = part;
         }
     }
 
-    sealed class AtomicExpression<TType>
-        : CompoundExpression<TType>
+    sealed class AtomicSqlExpression<TType>
+        : CompoundSqlExpression<TType>
         where TType : ISqlTypeTag
     {
-        internal AtomicExpression(SqlBuilder sqlBuilder, string @string)
+        internal AtomicSqlExpression(SqlBuilder sqlBuilder, string @string)
             : base(sqlBuilder, SqlPart.FromString(@string))
         {
         }
     }
 
-    public sealed class ParameterExpression<TValue>
+    public sealed class ParameterSqlExpression<TValue>
         : SqlExpression<IScalar<TValue>>
     {
         string Name { get; }
         DbParameter Parameter { get; }
 
-        internal ParameterExpression(
+        internal ParameterSqlExpression(
             SqlBuilder sqlBuilder,
             string name,
             DbParameter parameter

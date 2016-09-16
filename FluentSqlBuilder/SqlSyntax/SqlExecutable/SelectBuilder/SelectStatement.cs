@@ -134,20 +134,20 @@ namespace FluentSqlBuilder.SqlSyntax
         public SqlExpression<IScalar<X>> ToScalar<X>()
         {
             Debug.Assert(Fields.Count == 1);
-            return new CompoundExpression<IScalar<X>>(SqlBuilder, this.Enclose("(", ")"));
+            return new CompoundSqlExpression<IScalar<X>>(SqlBuilder, this.Enclose("(", ")"));
         }
 
         internal SqlExpression<IScalar<X>> Quantify<X>(string quantifier)
         {
             Debug.Assert(Fields.Count == 1);
             var part = SqlPart.FromString(quantifier).Concat(this.Enclose("(", ")"));
-            return new CompoundExpression<IScalar<X>>(SqlBuilder, part);
+            return new CompoundSqlExpression<IScalar<X>>(SqlBuilder, part);
         }
 
         public SqlExpression<IRelation> ToRelation()
         {
             Debug.Assert(Fields.Any());
-            return new CompoundExpression<IRelation>(SqlBuilder, this.Enclose("(", ")"));
+            return new CompoundSqlExpression<IRelation>(SqlBuilder, this.Enclose("(", ")"));
         }
     }
 }
