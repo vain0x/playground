@@ -1,15 +1,14 @@
 using System;
 using Optional;
-using FluentSqlBuilder.Public;
 
-namespace FluentSqlBuilder.Detail
+namespace FluentSqlBuilder.SqlSyntax
 {
     public sealed class FromlessSelectBuilder
     {
         SqlBuilder SqlBuilder { get; }
         Option<CombinedSelectStatement> Combined { get; }
 
-        public FromlessSelectBuilder(SqlBuilder sqlBuilder, Option<CombinedSelectStatement> combined)
+        internal FromlessSelectBuilder(SqlBuilder sqlBuilder, Option<CombinedSelectStatement> combined)
         {
             SqlBuilder = sqlBuilder;
             Combined = combined;

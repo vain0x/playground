@@ -3,11 +3,11 @@ using System.Collections.Generic;
 using System.Data;
 using System.Data.Common;
 using System.Linq;
-using FluentSqlBuilder.Public;
+using FluentSqlBuilder.SqlSyntax;
 
-namespace FluentSqlBuilder.Detail
+namespace FluentSqlBuilder.Accessor
 {
-    public sealed class ConcreteColumn<TValue>
+    sealed class ConcreteColumn<TValue>
         : Column<TValue>
     {
         #region IColumn

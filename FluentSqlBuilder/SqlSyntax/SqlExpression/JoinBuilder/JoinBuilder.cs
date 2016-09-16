@@ -1,7 +1,7 @@
 using System;
-using FluentSqlBuilder.Public;
+using FluentSqlBuilder.Accessor;
 
-namespace FluentSqlBuilder.Detail
+namespace FluentSqlBuilder.SqlSyntax
 {
     public sealed class JoinBuilder<TResult>
     {
@@ -10,7 +10,7 @@ namespace FluentSqlBuilder.Detail
         SqlExpression<IRelation> Relation { get; }
         Func<Join, TResult> Run { get; }
 
-        public JoinBuilder(
+        internal JoinBuilder(
             SqlBuilder sqlBuilder,
             JoinType joinType,
             SqlExpression<IRelation> relation,

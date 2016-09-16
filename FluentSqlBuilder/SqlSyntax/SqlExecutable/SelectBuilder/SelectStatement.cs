@@ -3,11 +3,10 @@ using System.Data.Common;
 using System.Diagnostics;
 using System.Linq;
 using Optional;
-using FluentSqlBuilder.Public;
 
-namespace FluentSqlBuilder.Detail
+namespace FluentSqlBuilder.SqlSyntax
 {
-    public sealed class SelectStatement
+    sealed class SelectStatement
         : SqlExpression<IRelation>
         , ISqlExecutable
     {

@@ -1,6 +1,6 @@
 ﻿using System;
 using Optional;
-using FluentSqlBuilder.Public;
+using FluentSqlBuilder.Accessor;
 
 namespace FluentSqlBuilder.Test
 {

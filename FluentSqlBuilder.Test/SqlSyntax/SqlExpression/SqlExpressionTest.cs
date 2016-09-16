@@ -1,8 +1,7 @@
 ﻿using System;
 using System.Data;
-using FluentSqlBuilder.Detail;
-using FluentSqlBuilder.Public;
 using Xunit;
+using FluentSqlBuilder.SqlSyntax;
 
 namespace FluentSqlBuilder.Test
 {

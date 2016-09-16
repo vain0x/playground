@@ -3,7 +3,7 @@ using System.Collections.Generic;
 using System.Data.Common;
 using System.Linq;
 
-namespace FluentSqlBuilder.Detail
+namespace FluentSqlBuilder.SqlSyntax
 {
     /// <summary>
     /// SQL文の断片を表す。
@@ -27,7 +27,7 @@ namespace FluentSqlBuilder.Detail
             new ConcreteSqlPart(parts.SelectMany(part => part.Tokens));
     }
 
-    public sealed class ConcreteSqlPart
+    sealed class ConcreteSqlPart
         : SqlPart
     {
         #region SqlPart

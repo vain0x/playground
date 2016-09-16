@@ -1,9 +1,8 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using FluentSqlBuilder.Detail;
 
-namespace FluentSqlBuilder.Public
+namespace FluentSqlBuilder.SqlSyntax
 {
     public static class SqlExpressionExtensions
     {

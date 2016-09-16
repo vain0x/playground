@@ -2,11 +2,10 @@ using System;
 using System.Collections.Generic;
 using System.Data.Common;
 using System.Linq;
-using FluentSqlBuilder.Public;
 
-namespace FluentSqlBuilder.Detail
+namespace FluentSqlBuilder.SqlSyntax
 {
-    public enum JoinType
+    enum JoinType
     {
         Inner,
         Cross,
@@ -15,7 +14,7 @@ namespace FluentSqlBuilder.Detail
         FullOuter,
     }
 
-    public abstract class Join
+    abstract class Join
         : SqlPart
     {
         public JoinType JoinType { get; }
@@ -47,7 +46,7 @@ namespace FluentSqlBuilder.Detail
         }
     }
 
-    public sealed class JoinOn
+    sealed class JoinOn
         : Join
     {
         public SqlCondition Condition { get; }
@@ -69,7 +68,7 @@ namespace FluentSqlBuilder.Detail
             .Concat(Condition.Tokens);
     }
 
-    public sealed class JoinUsing
+    sealed class JoinUsing
         : Join
     {
         public string Column { get; }

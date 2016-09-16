@@ -4,9 +4,9 @@ using System.Linq;
 using Optional;
 using Optional.Unsafe;
 
-namespace FluentSqlBuilder.Detail
+namespace FluentSqlBuilder
 {
-    public static class LinqExtensions
+    static class LinqExtensions
     {
         public static bool IsEmpty<X>(this IEnumerable<X> xs) =>
             !xs.Any();

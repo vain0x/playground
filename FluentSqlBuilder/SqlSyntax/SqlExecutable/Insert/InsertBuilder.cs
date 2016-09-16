@@ -5,11 +5,11 @@ using System.Data.Common;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
-using FluentSqlBuilder.Public;
+using FluentSqlBuilder.Accessor;
 
-namespace FluentSqlBuilder.Detail
+namespace FluentSqlBuilder.SqlSyntax
 {
-    public static class InsertBuilder
+    static class InsertBuilder
     {
         public static DbCommand InsertValuesCommand(
             SqlBuilder sqlBuilder,

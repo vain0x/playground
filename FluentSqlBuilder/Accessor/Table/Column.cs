@@ -1,7 +1,7 @@
 using System.Data;
-using FluentSqlBuilder.Detail;
+using FluentSqlBuilder.SqlSyntax;
 
-namespace FluentSqlBuilder.Public
+namespace FluentSqlBuilder.Accessor
 {
     public interface IColumn
     {
@@ -15,7 +15,7 @@ namespace FluentSqlBuilder.Public
         : SqlExpression<IScalar<TValue>>
         , IColumn
     {
-        protected Column(SqlBuilder sqlBuilder)
+        internal Column(SqlBuilder sqlBuilder)
             : base(sqlBuilder)
         {
         }

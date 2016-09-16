@@ -1,11 +1,9 @@
 using System.Collections.Generic;
 using System.Linq;
-using System.Data.Common;
-using FluentSqlBuilder.Public;
 
-namespace FluentSqlBuilder.Detail
+namespace FluentSqlBuilder.SqlSyntax
 {
-    public sealed class OrderKey
+    sealed class OrderKey
         : SqlPart
     {
         public SqlExpression<IScalar> Expression { get; }

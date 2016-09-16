@@ -4,10 +4,11 @@ using System.Data;
 using System.Data.Common;
 using System.Linq;
 using Optional;
-using FluentSqlBuilder.Detail;
+using FluentSqlBuilder.Accessor;
+using FluentSqlBuilder.SqlSyntax;
 using FluentSqlBuilder.Provider;
 
-namespace FluentSqlBuilder.Public
+namespace FluentSqlBuilder
 {
     public class SqlBuilder
     {
@@ -104,10 +105,10 @@ namespace FluentSqlBuilder.Public
         #endregion
 
         #region Condition
-        public ConditionBuilder And() =>
+        public SqlCondition And() =>
             new ConditionBuilder(this, SqlConditionConstant.And);
 
-        public ConditionBuilder Or() =>
+        public SqlCondition Or() =>
             new ConditionBuilder(this, SqlConditionConstant.Or);
         #endregion
 

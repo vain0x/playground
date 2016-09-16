@@ -3,8 +3,7 @@ using System.Data;
 using System.Linq;
 using Optional;
 using Xunit;
-using FluentSqlBuilder.Detail;
-using FluentSqlBuilder.Public;
+using FluentSqlBuilder.SqlSyntax;
 
 namespace FluentSqlBuilder.Test
 {

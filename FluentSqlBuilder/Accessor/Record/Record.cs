@@ -3,9 +3,9 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
-using FluentSqlBuilder.Detail;
+using FluentSqlBuilder.SqlSyntax;
 
-namespace FluentSqlBuilder.Public
+namespace FluentSqlBuilder.Accessor
 {
     public interface IValueRecord
     {

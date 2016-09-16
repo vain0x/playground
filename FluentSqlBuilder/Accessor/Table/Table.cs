@@ -5,9 +5,9 @@ using System.Data.Common;
 using System.Linq;
 using System.Reflection;
 using Optional;
-using FluentSqlBuilder.Detail;
+using FluentSqlBuilder.SqlSyntax;
 
-namespace FluentSqlBuilder.Public
+namespace FluentSqlBuilder.Accessor
 {
     public sealed class Table
         : AliasedSqlExpression<IRelation>

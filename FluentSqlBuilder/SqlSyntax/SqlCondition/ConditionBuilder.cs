@@ -1,11 +1,10 @@
 ﻿using System.Collections.Generic;
 using System.Data.Common;
 using System.Linq;
-using FluentSqlBuilder.Public;
 
-namespace FluentSqlBuilder.Detail
+namespace FluentSqlBuilder.SqlSyntax
 {
-    public sealed class ConditionBuilder
+    sealed class ConditionBuilder
         : SqlCondition
     {
         ConditionCombinator Combinator { get; }
@@ -68,15 +67,15 @@ namespace FluentSqlBuilder.Detail
         }
 
         #region SqlCondition
-        public override ConditionBuilder And(SqlCondition rhs) =>
+        public override SqlCondition And(SqlCondition rhs) =>
             Combinator.IsAnd
                 ? Add(rhs)
-                : SqlBuilder.And().Add(this).Add(rhs);
+                : SqlBuilder.And().And(this).And(rhs);
 
-        public override ConditionBuilder Or(SqlCondition rhs) =>
+        public override SqlCondition Or(SqlCondition rhs) =>
             Combinator.IsOr
                 ? Add(rhs)
-                : SqlBuilder.Or().Add(this).Add(rhs);
+                : SqlBuilder.Or().Or(this).Or(rhs);
         #endregion
     }
 }

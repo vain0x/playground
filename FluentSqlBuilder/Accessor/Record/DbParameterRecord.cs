@@ -5,11 +5,10 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using Optional;
-using FluentSqlBuilder.Public;
 
-namespace FluentSqlBuilder.Detail
+namespace FluentSqlBuilder.Accessor
 {
-    public class DbParameterRecord
+    sealed class DbParameterRecord
         : Dictionary<string, DbParameter>
         , IValueRecord
     {

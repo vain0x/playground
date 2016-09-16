@@ -4,9 +4,9 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace FluentSqlBuilder.Detail
+namespace FluentSqlBuilder
 {
-    public static class Lazy
+    static class Lazy
     {
         public static Lazy<X> Create<X>(Func<X> f)
         {

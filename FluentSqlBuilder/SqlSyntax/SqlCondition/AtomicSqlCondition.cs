@@ -4,9 +4,8 @@ using System.Data.Common;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
-using FluentSqlBuilder.Public;
 
-namespace FluentSqlBuilder.Detail
+namespace FluentSqlBuilder.SqlSyntax
 {
     public abstract class SqlCondition
         : SqlPart
@@ -18,11 +17,11 @@ namespace FluentSqlBuilder.Detail
             SqlBuilder = sqlBuilder;
         }
 
-        public abstract ConditionBuilder And(SqlCondition rhs);
-        public abstract ConditionBuilder Or(SqlCondition rhs);
+        public abstract SqlCondition And(SqlCondition rhs);
+        public abstract SqlCondition Or(SqlCondition rhs);
     }
 
-    public sealed class AtomicSqlCondition
+    sealed class AtomicSqlCondition
         : SqlCondition
     {
         SqlPart Part { get; }
@@ -36,11 +35,11 @@ namespace FluentSqlBuilder.Detail
         internal override IEnumerable<SqlToken> Tokens => Part.Tokens;
 
         #region SqlCondition
-        public override ConditionBuilder And(SqlCondition rhs) =>
-            SqlBuilder.And().Add(this).Add(rhs);
+        public override SqlCondition And(SqlCondition rhs) =>
+            SqlBuilder.And().And(this).And(rhs);
 
-        public override ConditionBuilder Or(SqlCondition rhs) =>
-            SqlBuilder.Or().Add(this).Add(rhs);
+        public override SqlCondition Or(SqlCondition rhs) =>
+            SqlBuilder.Or().Or(this).Or(rhs);
         #endregion
     }
 }

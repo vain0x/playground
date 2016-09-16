@@ -1,14 +1,14 @@
 ﻿using System;
 using System.Data.Common;
-using FluentSqlBuilder.Public;
+using FluentSqlBuilder.Accessor;
 
-namespace FluentSqlBuilder.Detail
+namespace FluentSqlBuilder.SqlSyntax
 {
     public sealed class FieldlessSelectBuilder
     {
         SelectStatement Statement { get; }
         
-        public FieldlessSelectBuilder(SelectStatement statement)
+        internal FieldlessSelectBuilder(SelectStatement statement)
         {
             Statement = statement;
         }

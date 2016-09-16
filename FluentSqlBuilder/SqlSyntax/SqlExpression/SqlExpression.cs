@@ -2,9 +2,8 @@ using System;
 using System.Collections.Generic;
 using System.Data.Common;
 using System.Linq;
-using FluentSqlBuilder.Public;
 
-namespace FluentSqlBuilder.Detail
+namespace FluentSqlBuilder.SqlSyntax
 {
     /// <summary>
     /// SQLの式を表す。
@@ -30,7 +29,7 @@ namespace FluentSqlBuilder.Detail
         }
     }
 
-    public class CompoundExpression<TType>
+    class CompoundExpression<TType>
         : SqlExpression<TType>
         where TType: ISqlTypeTag
     {
@@ -45,7 +44,7 @@ namespace FluentSqlBuilder.Detail
         }
     }
 
-    public sealed class AtomicExpression<TType>
+    sealed class AtomicExpression<TType>
         : CompoundExpression<TType>
         where TType: ISqlTypeTag
     {
@@ -88,7 +87,7 @@ namespace FluentSqlBuilder.Detail
         }
     }
 
-    public class AliasedExpression<TType>
+    class AliasedExpression<TType>
         : AliasedSqlExpression<TType>
         where TType: ISqlTypeTag
     {

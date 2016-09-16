@@ -1,11 +1,10 @@
 using System.Collections.Generic;
 using System.Data.Common;
 using System.Linq;
-using FluentSqlBuilder.Public;
 
-namespace FluentSqlBuilder.Detail
+namespace FluentSqlBuilder.SqlSyntax
 {
-    public sealed class JoinedRelation
+    sealed class JoinedRelation
         : SqlExpression<IRelation>
     {
         public SqlExpression<IRelation> Relation { get; }

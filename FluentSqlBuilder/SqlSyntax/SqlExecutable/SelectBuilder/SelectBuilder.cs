@@ -2,15 +2,14 @@ using System;
 using System.Collections.Generic;
 using System.Data.Common;
 using Optional;
-using FluentSqlBuilder.Public;
 
-namespace FluentSqlBuilder.Detail
+namespace FluentSqlBuilder.SqlSyntax
 {
     public sealed class SelectBuilder
     {
         SelectStatement Statement { get; }
 
-        public SelectBuilder(SelectStatement statement)
+        internal SelectBuilder(SelectStatement statement)
         {
             Statement = statement;
         }
