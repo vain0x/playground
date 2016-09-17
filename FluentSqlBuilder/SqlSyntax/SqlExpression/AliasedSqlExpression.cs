@@ -12,7 +12,7 @@ namespace FluentSqlBuilder.SqlSyntax
     {
         public abstract string Alias { get; }
 
-        protected AliasedSqlExpression(SqlBuilder sqlBuilder)
+        internal AliasedSqlExpression(SqlBuilder sqlBuilder)
             : base(sqlBuilder)
         {
         }

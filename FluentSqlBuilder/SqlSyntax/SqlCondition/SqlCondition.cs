@@ -11,7 +11,7 @@ namespace FluentSqlBuilder.SqlSyntax
     {
         internal SqlBuilder SqlBuilder { get; }
 
-        protected SqlCondition(SqlBuilder sqlBuilder)
+        internal SqlCondition(SqlBuilder sqlBuilder)
         {
             SqlBuilder = sqlBuilder;
         }
