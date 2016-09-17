@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using FluentSqlBuilder.SqlSyntax;
 
 namespace FluentSqlBuilder.Provider
 {
@@ -60,14 +61,14 @@ namespace FluentSqlBuilder.Provider
         /// <summary>
         /// 別名つきの式の字句列を構築する。
         /// </summary>
-        public virtual IEnumerable<string> ConstructAliasedExpression(
-            IEnumerable<string> tokens,
+        public virtual IEnumerable<SqlToken> ConstructAliasedExpression(
+            IEnumerable<SqlToken> tokens,
             string alias
         )
         {
             foreach (var token in tokens) yield return token;
-            yield return "as";
-            yield return QuoteIdentifier(alias);
+            yield return SqlToken.FromString("as");
+            yield return SqlToken.FromString(QuoteIdentifier(alias));
         }
     }
 }

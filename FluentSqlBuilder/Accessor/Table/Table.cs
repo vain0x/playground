@@ -28,12 +28,12 @@ namespace FluentSqlBuilder.Accessor
         {
             get
             {
-                yield return SqlToken.FromString(QuotedName);
-                foreach (var alias in OptionalAlias)
-                {
-                    yield return SqlToken.FromString("as");
-                    yield return SqlToken.FromString(SqlBuilder.Language.QuoteIdentifier(alias));
-                }
+                var tableName = new[] { SqlToken.FromString(QuotedName) };
+                return
+                    OptionalAlias.Match(
+                        alias => SqlBuilder.Language.ConstructAliasedExpression(tableName, alias),
+                        () => tableName
+                    );
             }
         }
 

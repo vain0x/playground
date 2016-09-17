@@ -19,13 +19,7 @@ namespace FluentSqlBuilder.SqlSyntax
         public string Alias { get; }
 
         internal override IEnumerable<SqlToken> Tokens =>
-            Expression.Tokens
-            .Concat(
-                new[]
-                {
-                    SqlToken.FromString("as"),
-                    SqlToken.FromString(SqlBuilder.Language.QuoteIdentifier(Alias))
-                });
+            SqlBuilder.Language.ConstructAliasedExpression(Expression, Alias);
 
         internal AliasedScalarSqlExpression(ScalarSqlExpression<TValue> expression, string alias)
             : base(expression.SqlBuilder)
@@ -43,13 +37,7 @@ namespace FluentSqlBuilder.SqlSyntax
         public string Alias { get; }
 
         internal override IEnumerable<SqlToken> Tokens =>
-            Expression.Tokens
-            .Concat(
-                new[]
-                {
-                    SqlToken.FromString("as"),
-                    SqlToken.FromString(SqlBuilder.Language.QuoteIdentifier(Alias))
-                });
+            SqlBuilder.Language.ConstructAliasedExpression(Expression, Alias);
 
         internal AliasedRelationSqlExpression(RelationSqlExpression expression, string alias)
             : base(expression.SqlBuilder)
