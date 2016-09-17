@@ -27,11 +27,8 @@ namespace FluentSqlBuilder.SqlSyntax
             Tokens.GetEnumerator();
         #endregion
 
-        public static SqlPart Singleton(SqlToken token) =>
-            new ConcreteSqlPart(new[] { token });
-
         public static SqlPart FromString(string token) =>
-            Singleton(SqlToken.FromString(token));
+            new ConcreteSqlPart(new[] { SqlToken.FromString(token) });
 
         public static SqlPart Concat(IEnumerable<SqlPart> parts) =>
             new ConcreteSqlPart(parts.SelectMany(part => part.Tokens));
