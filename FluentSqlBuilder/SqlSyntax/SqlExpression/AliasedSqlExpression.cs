@@ -6,8 +6,14 @@ using System.Threading.Tasks;
 
 namespace FluentSqlBuilder.SqlSyntax
 {
+    public interface IAliasedSqlExpression
+    {
+        string Alias { get; }
+    }
+
     public abstract class AliasedSqlExpression<TType>
         : SqlExpression<TType>
+        , IAliasedSqlExpression
         where TType : ISqlTypeTag
     {
         public abstract string Alias { get; }

@@ -10,7 +10,8 @@ using FluentSqlBuilder.SqlSyntax;
 namespace FluentSqlBuilder.Accessor
 {
     public sealed class Table
-        : AliasedSqlExpression<IRelation>
+        : SqlExpression<IRelation>
+        , IAliasedSqlExpression
     {
         object Relation { get; }
         Option<string> OptionalAlias { get; }
@@ -18,7 +19,7 @@ namespace FluentSqlBuilder.Accessor
         public string RawName { get; }
 
         internal string QuotedName => SqlBuilder.Language.BuildTableName(RawName);
-        public override string Alias => OptionalAlias.ValueOr(RawName);
+        public string Alias => OptionalAlias.ValueOr(RawName);
 
         public Column<X> Column<X>(string columnName) =>
             new ConcreteColumn<X>(SqlBuilder, this, columnName);

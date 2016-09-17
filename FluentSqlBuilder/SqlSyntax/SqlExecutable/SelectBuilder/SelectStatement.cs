@@ -125,7 +125,7 @@ namespace FluentSqlBuilder.SqlSyntax
             Fields.Add(wildmark);
         }
 
-        public void AddFieldAll(AliasedSqlExpression<IRelation> relation)
+        public void AddFieldAll(IAliasedSqlExpression relation)
         {
             var wildmark = SqlBuilder.Language.BuildWildmark(relation.Alias);
             Fields.Add(SqlPart.FromString(wildmark));

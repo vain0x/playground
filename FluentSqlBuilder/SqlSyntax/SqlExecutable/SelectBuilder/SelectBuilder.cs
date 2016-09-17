@@ -23,7 +23,8 @@ namespace FluentSqlBuilder.SqlSyntax
             return this;
         }
 
-        public SelectBuilder FieldAll(AliasedSqlExpression<IRelation> relation)
+        public SelectBuilder FieldAll<R>(R relation)
+            where R: SqlExpression<IRelation>, IAliasedSqlExpression
         {
             Statement.AddFieldAll(relation);
             return this;

@@ -76,7 +76,8 @@ namespace FluentSqlBuilder.SqlSyntax
             return new SelectBuilder(Statement);
         }
 
-        public SelectBuilder FieldAll(AliasedSqlExpression<IRelation> relation)
+        public SelectBuilder FieldAll<R>(R relation)
+            where R: SqlExpression<IRelation>, IAliasedSqlExpression
         {
             Statement.AddFieldAll(relation);
             return new SelectBuilder(Statement);
