@@ -25,19 +25,17 @@ namespace FluentSqlBuilder.SqlSyntax
         #endregion
 
         #region Cast operators
-        public static ScalarSqlExpression<X>
-            Unbox<X>(this ScalarSqlExpression expression)
+        public static ScalarSqlExpression<X> Unbox<X>(this ScalarSqlExpression expression)
         {
             return new ConcreteScalarSqlExpression<X>(expression.SqlBuilder, expression.Tokens);
         }
         #endregion
 
         #region Normal operators
-        public static ScalarSqlExpression<string>
-            Concat(
-                this ScalarSqlExpression<string> lhs,
-                params ScalarSqlExpression<string>[] rhs
-            )
+        public static ScalarSqlExpression<string> Concat(
+            this ScalarSqlExpression<string> lhs,
+            params ScalarSqlExpression<string>[] rhs
+        )
         {
             var part = Invoke("concat", new[] { lhs }.Concat(rhs));
             return new ConcreteScalarSqlExpression<string>(lhs.SqlBuilder, part);
@@ -45,18 +43,18 @@ namespace FluentSqlBuilder.SqlSyntax
         #endregion
 
         #region Condition operators
-        public static SqlCondition
-            IsNull<X>(this ScalarSqlExpression<X> lhs) =>
+        public static SqlCondition IsNull<X>(
+            this ScalarSqlExpression<X> lhs
+        ) =>
             new AtomicSqlCondition(
                 lhs.SqlBuilder,
                 lhs.Concat(SqlPart.FromString("is null"))
             );
 
-        public static SqlCondition
-            Equal<X>(
-                this ScalarSqlExpression<X> lhs,
-                ScalarSqlExpression<X> rhs
-            ) =>
+        public static SqlCondition Equal<X>(
+            this ScalarSqlExpression<X> lhs,
+            ScalarSqlExpression<X> rhs
+        ) =>
             new AtomicSqlCondition(
                 lhs.SqlBuilder,
                 lhs.Concat(SqlPart.FromString("=")).Concat(rhs)
