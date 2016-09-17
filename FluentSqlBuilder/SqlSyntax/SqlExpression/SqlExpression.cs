@@ -20,9 +20,6 @@ namespace FluentSqlBuilder.SqlSyntax
             SqlBuilder = sqlBuilder;
         }
 
-        public override string ToString() =>
-            string.Join(" ", Tokens);
-
         public AliasedSqlExpression<TType> As(string alias)
         {
             return new ConcreteAliasedSqlExpression<TType>(SqlBuilder, this, alias);
