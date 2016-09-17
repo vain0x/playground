@@ -9,11 +9,11 @@ namespace FluentSqlBuilder.SqlSyntax
         : SqlPart
     {
         public JoinType JoinType { get; }
-        public SqlExpression<IRelation> Relation { get; }
+        public RelationSqlExpression Relation { get; }
 
         public Join(
             JoinType joinType,
-            SqlExpression<IRelation> relation
+            RelationSqlExpression relation
         )
         {
             JoinType = joinType;
@@ -44,7 +44,7 @@ namespace FluentSqlBuilder.SqlSyntax
 
         public JoinOn(
             JoinType joinType,
-            SqlExpression<IRelation> relation,
+            RelationSqlExpression relation,
             SqlCondition condition
         )
             : base(joinType, relation)
@@ -66,7 +66,7 @@ namespace FluentSqlBuilder.SqlSyntax
 
         public JoinUsing(
             JoinType joinType,
-            SqlExpression<IRelation> relation,
+            RelationSqlExpression relation,
             string column
         )
             : base(joinType, relation)

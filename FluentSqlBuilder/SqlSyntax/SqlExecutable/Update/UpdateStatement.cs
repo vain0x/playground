@@ -17,7 +17,7 @@ namespace FluentSqlBuilder.SqlSyntax
         internal AssignmentRecord Assignment { get; }
         internal ConditionBuilder WhereCondition { get; }
 
-        internal IEnumerable<KeyValuePair<IColumn, SqlExpression<IScalar>>> AssignmentList()
+        internal IEnumerable<KeyValuePair<IColumn, ScalarSqlExpression>> AssignmentList()
         {
             return
                 Table.Columns.Value

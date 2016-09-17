@@ -79,7 +79,6 @@
     <Compile Include="SqlSyntax\SqlExecutable\SelectBuilder\SelectStatement.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="SqlSyntax\SqlPart.cs" />
-    <Compile Include="SqlSyntax\SqlExpression\SqlTypeTags.cs" />
     <Compile Include="SqlBuilder.cs" />
     <Compile Include="Accessor\Table\Column.cs" />
     <Compile Include="Accessor\Table\Table.cs" />

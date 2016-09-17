@@ -8,7 +8,7 @@ using FluentSqlBuilder.SqlSyntax;
 namespace FluentSqlBuilder.Accessor
 {
     sealed class AssignmentRecord
-        : Dictionary<string, SqlExpression<IScalar>>
+        : Dictionary<string, ScalarSqlExpression>
         , IExpressionRecord
     {
     }

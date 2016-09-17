@@ -10,7 +10,7 @@ using FluentSqlBuilder.SqlSyntax;
 namespace FluentSqlBuilder.Accessor
 {
     public sealed class Table
-        : SqlExpression<IRelation>
+        : RelationSqlExpression
         , IAliasedSqlExpression
     {
         object Relation { get; }

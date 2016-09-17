@@ -17,14 +17,14 @@ namespace FluentSqlBuilder.SqlSyntax
         public DbCommand ToCommand() => Statement.ToCommand();
 
         #region Field
-        public SelectBuilder Field<X>(SqlExpression<IScalar<X>> expression)
+        public SelectBuilder Field<X>(ScalarSqlExpression<X> expression)
         {
             Statement.Fields.Add(expression);
             return this;
         }
 
         public SelectBuilder FieldAll<R>(R relation)
-            where R: SqlExpression<IRelation>, IAliasedSqlExpression
+            where R: RelationSqlExpression, IAliasedSqlExpression
         {
             Statement.AddFieldAll(relation);
             return this;
@@ -44,7 +44,7 @@ namespace FluentSqlBuilder.SqlSyntax
         }
         #endregion
 
-        public SqlExpression<IRelation> ToRelation()
+        public RelationSqlExpression ToRelation()
         {
             return Statement.ToRelation();
         }

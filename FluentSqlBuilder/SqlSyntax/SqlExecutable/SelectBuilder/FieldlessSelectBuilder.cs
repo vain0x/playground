@@ -15,7 +15,7 @@ namespace FluentSqlBuilder.SqlSyntax
 
         #region Join
         JoinBuilder<FieldlessSelectBuilder> Join(
-            SqlExpression<IRelation> relation,
+            RelationSqlExpression relation,
             JoinType joinType
         )
         {
@@ -32,7 +32,7 @@ namespace FluentSqlBuilder.SqlSyntax
                 );
         }
 
-        public JoinBuilder<FieldlessSelectBuilder> Join(SqlExpression<IRelation> relation) =>
+        public JoinBuilder<FieldlessSelectBuilder> Join(RelationSqlExpression relation) =>
             Join(relation, JoinType.Inner);
         #endregion
 
@@ -45,52 +45,52 @@ namespace FluentSqlBuilder.SqlSyntax
         #endregion
 
         #region GroupBy
-        public FieldlessSelectBuilder GroupBy<X>(SqlExpression<IScalar<X>> expression)
+        public FieldlessSelectBuilder GroupBy<X>(ScalarSqlExpression<X> expression)
         {
-            Statement.GroupKeys.Add(expression.Box());
+            Statement.GroupKeys.Add(expression);
             return this;
         }
         #endregion
 
         #region OrderBy
         FieldlessSelectBuilder OrderByImpl<X>(
-            SqlExpression<IScalar<X>> expression,
+            ScalarSqlExpression<X> expression,
             OrderDirection direction
         )
         {
-            Statement.OrderKeys.Add(new OrderKey(expression.Box(), direction));
+            Statement.OrderKeys.Add(new OrderKey(expression, direction));
             return this;
         }
 
-        public FieldlessSelectBuilder OrderBy<X>(SqlExpression<IScalar<X>> column) =>
+        public FieldlessSelectBuilder OrderBy<X>(ScalarSqlExpression<X> column) =>
             OrderByImpl(column, OrderDirection.Ascending);
 
-        public FieldlessSelectBuilder OrderByDescending<X>(SqlExpression<IScalar<X>> column) =>
+        public FieldlessSelectBuilder OrderByDescending<X>(ScalarSqlExpression<X> column) =>
             OrderByImpl(column, OrderDirection.Descending);
         #endregion
 
         #region Field
-        public SelectBuilder Field<X>(SqlExpression<IScalar<X>> expression)
+        public SelectBuilder Field<X>(ScalarSqlExpression<X> expression)
         {
             Statement.Fields.Add(expression);
             return new SelectBuilder(Statement);
         }
 
         public SelectBuilder FieldAll<R>(R relation)
-            where R: SqlExpression<IRelation>, IAliasedSqlExpression
+            where R: RelationSqlExpression, IAliasedSqlExpression
         {
             Statement.AddFieldAll(relation);
             return new SelectBuilder(Statement);
         }
 
-        public SqlExpression<IScalar<X>> ToScalar<X>(SqlExpression<IScalar<X>> expression)
+        public ScalarSqlExpression<X> ToScalar<X>(ScalarSqlExpression<X> expression)
         {
             Field(expression);
             return Statement.ToScalar<X>();
         }
 
-        SqlExpression<IScalar<X>> Quantify<X>(
-            SqlExpression<IScalar<X>> expression,
+        ScalarSqlExpression<X> Quantify<X>(
+            ScalarSqlExpression<X> expression,
             string quantifier
         )
         {
@@ -98,12 +98,12 @@ namespace FluentSqlBuilder.SqlSyntax
             return Statement.Quantify<X>(quantifier);
         }
 
-        public SqlExpression<IScalar<X>> Any<X>(SqlExpression<IScalar<X>> expression)
+        public ScalarSqlExpression<X> Any<X>(ScalarSqlExpression<X> expression)
         {
             return Quantify(expression, "any");
         }
 
-        public SqlExpression<IScalar<X>> All<X>(SqlExpression<IScalar<X>> expression)
+        public ScalarSqlExpression<X> All<X>(ScalarSqlExpression<X> expression)
         {
             return Quantify(expression, "all");
         }

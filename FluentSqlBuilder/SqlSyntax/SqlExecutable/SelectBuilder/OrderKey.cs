@@ -6,10 +6,10 @@ namespace FluentSqlBuilder.SqlSyntax
     sealed class OrderKey
         : SqlPart
     {
-        public SqlExpression<IScalar> Expression { get; }
+        public ScalarSqlExpression Expression { get; }
         public OrderDirection Direction { get; }
 
-        public OrderKey(SqlExpression<IScalar> expression, OrderDirection direction)
+        public OrderKey(ScalarSqlExpression expression, OrderDirection direction)
         {
             Expression = expression;
             Direction = direction;

@@ -8,10 +8,8 @@ namespace FluentSqlBuilder.SqlSyntax
     /// <summary>
     /// SQLの式を表す。
     /// </summary>
-    /// <typeparam name="TType"></typeparam>
-    public abstract class SqlExpression<TType>
+    public abstract class SqlExpression
         : SqlPart
-        where TType: ISqlTypeTag
     {
         internal SqlBuilder SqlBuilder { get; }
 
@@ -19,10 +17,42 @@ namespace FluentSqlBuilder.SqlSyntax
         {
             SqlBuilder = sqlBuilder;
         }
+    }
 
-        public AliasedSqlExpression<TType> As(string alias)
+    public abstract class ScalarSqlExpression
+        : SqlExpression
+    {
+        internal ScalarSqlExpression(SqlBuilder sqlBuilder)
+            : base(sqlBuilder)
         {
-            return new ConcreteAliasedSqlExpression<TType>(SqlBuilder, this, alias);
+        }
+    }
+
+    public abstract class ScalarSqlExpression<TValue>
+        : ScalarSqlExpression
+    {
+        internal ScalarSqlExpression(SqlBuilder sqlBuilder)
+            : base(sqlBuilder)
+        {
+        }
+
+        public AliasedScalarSqlExpression<TValue> As(string alias)
+        {
+            return new AliasedScalarSqlExpression<TValue>(this, alias);
+        }
+    }
+
+    public abstract class RelationSqlExpression
+        : SqlExpression
+    {
+        internal RelationSqlExpression(SqlBuilder sqlBuilder)
+            : base(sqlBuilder)
+        {
+        }
+
+        public AliasedRelationSqlExpression As(string alias)
+        {
+            return new AliasedRelationSqlExpression(this, alias);
         }
     }
 }

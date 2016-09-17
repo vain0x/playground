@@ -64,7 +64,7 @@ namespace FluentSqlBuilder
             return "p" + Guid.NewGuid().ToString().Replace("-", "");
         }
 
-        public SqlExpression<IScalar<X>> Value<X>(DbType type, X value)
+        public ScalarSqlExpression<X> Value<X>(DbType type, X value)
         {
             var name = GenerateUniqueName();
             var parameter = Factory.CreateParameter();
@@ -75,26 +75,26 @@ namespace FluentSqlBuilder
         }
         
         #region Typed value expressions
-        public SqlExpression<IScalar<bool>> Bool(bool value) =>
+        public ScalarSqlExpression<bool> Bool(bool value) =>
             Value(DbType.Boolean, value);
 
-        public SqlExpression<IScalar<int>> Int32(int value) =>
+        public ScalarSqlExpression<int> Int32(int value) =>
             Value(DbType.Int32, value);
 
-        public SqlExpression<IScalar<long>> Int(long value) =>
+        public ScalarSqlExpression<long> Int(long value) =>
             Value(DbType.Int64, value);
 
-        public SqlExpression<IScalar<double>> Float(double value) =>
+        public ScalarSqlExpression<double> Float(double value) =>
             Value(DbType.Double, value);
 
-        public SqlExpression<IScalar<string>> String(string value) =>
+        public ScalarSqlExpression<string> String(string value) =>
             Value(DbType.String, value);
 
-        public SqlExpression<IScalar<DateTime>> DateTime(DateTime value) =>
+        public ScalarSqlExpression<DateTime> DateTime(DateTime value) =>
             Value(DbType.DateTime, value);
 
-        public SqlExpression<IScalar<X>> Null<X>() =>
-            new AtomicSqlExpression<IScalar<X>>(this, "null");
+        public ScalarSqlExpression<X> Null<X>() =>
+            new ConcreteScalarSqlExpression<X>(this, SqlPart.FromString("null"));
 
         public SqlCondition True =>
             SqlConditionConstant.True;

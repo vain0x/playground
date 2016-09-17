@@ -7,13 +7,13 @@ namespace FluentSqlBuilder.SqlSyntax
     {
         SqlBuilder SqlBuilder { get; }
         JoinType JoinType { get; }
-        SqlExpression<IRelation> Relation { get; }
+        RelationSqlExpression Relation { get; }
         Func<Join, TResult> Run { get; }
 
         internal JoinBuilder(
             SqlBuilder sqlBuilder,
             JoinType joinType,
-            SqlExpression<IRelation> relation,
+            RelationSqlExpression relation,
             Func<Join, TResult> run
         )
         {

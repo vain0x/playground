@@ -12,7 +12,7 @@ namespace FluentSqlBuilder.Test
         [Fact]
         public void TestCompoundExpression()
         {
-            new ConcreteSqlExpression<IScalar<long>>(
+            new ConcreteScalarSqlExpression<long>(
                 Sql,
                 Sql.Int(1)
                 .Concat(SqlPart.FromString("+"))
@@ -36,6 +36,13 @@ namespace FluentSqlBuilder.Test
         {
             Sql.Null<object>().As("nil").ToEmbeddedString()
                .ShouldEqual("null as `nil`");
+        }
+
+        [Fact]
+        public void TestAs_relation()
+        {
+            FakeDb.Employee.Table.As("t").ToEmbeddedString()
+                .ShouldEqual("`employees` as `t`");
         }
         #endregion
 

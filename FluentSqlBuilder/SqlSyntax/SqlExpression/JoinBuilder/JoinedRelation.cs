@@ -5,12 +5,12 @@ using System.Linq;
 namespace FluentSqlBuilder.SqlSyntax
 {
     sealed class JoinedRelation
-        : SqlExpression<IRelation>
+        : RelationSqlExpression
     {
-        public SqlExpression<IRelation> Relation { get; }
+        public RelationSqlExpression Relation { get; }
         public Join Join { get; }
 
-        public JoinedRelation(SqlExpression<IRelation> relation, Join join)
+        public JoinedRelation(RelationSqlExpression relation, Join join)
             : base(relation.SqlBuilder)
         {
             Relation = relation;

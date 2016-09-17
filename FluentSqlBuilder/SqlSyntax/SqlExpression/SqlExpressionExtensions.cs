@@ -7,65 +7,46 @@ namespace FluentSqlBuilder.SqlSyntax
     public static class SqlExpressionExtensions
     {
         #region Internal
-        internal static SqlExpression<T>
-            Invoke<T>(
-                SqlBuilder sqlBuilder,
-                string functionName,
-                IEnumerable<SqlExpression<IScalar>> arguments
-            ) 
-            where T: ISqlTypeTag
-            =>
-            new ConcreteSqlExpression<T>(
-                sqlBuilder,
+        internal static SqlPart Invoke(
+            string functionName,
+            IEnumerable<ScalarSqlExpression> arguments
+        )
+        {
+            return
                 SqlPart.Concat(
                     new[] { SqlPart.FromString(functionName) }
                     .Concat(
                         arguments
                         .Intersperse(SqlPart.FromString(","))
                         .Enclose(SqlPart.FromString("("), SqlPart.FromString(")"))
-                    )));
+                    ));
+        }
+
         #endregion
 
         #region Cast operators
-        internal static SqlExpression<Y>
-            ForceCast<X, Y>(this SqlExpression<X> expression)
-            where X : ISqlTypeTag
-            where Y : ISqlTypeTag
+        public static ScalarSqlExpression<X>
+            Unbox<X>(this ScalarSqlExpression expression)
         {
-            return new ConcreteSqlExpression<Y>(expression.SqlBuilder, expression);
-        }
-
-        public static SqlExpression<IScalar>
-            Box<X>(this SqlExpression<IScalar<X>> expression)
-        {
-            return expression.ForceCast<IScalar<X>, IScalar>();
-        }
-
-        public static SqlExpression<IScalar<X>>
-            Unbox<X>(this SqlExpression<IScalar> expression)
-        {
-            return expression.ForceCast<IScalar, IScalar<X>>();
-        }
-
-        public static SqlExpression<IRelation>
-            Box<X>(this SqlExpression<IRelation<X>> expression)
-        {
-            return expression.ForceCast<IRelation<X>, IRelation>();
+            return new ConcreteScalarSqlExpression<X>(expression.SqlBuilder, expression.Tokens);
         }
         #endregion
 
         #region Normal operators
-        public static SqlExpression<IScalar<string>>
+        public static ScalarSqlExpression<string>
             Concat(
-                this SqlExpression<IScalar<string>> lhs,
-                params SqlExpression<IScalar<string>>[] rhs
-            ) =>
-            Invoke<IScalar<string>>(lhs.SqlBuilder, "concat", new[] { lhs.Box() }.Concat(rhs.Select(Box)));
+                this ScalarSqlExpression<string> lhs,
+                params ScalarSqlExpression<string>[] rhs
+            )
+        {
+            var part = Invoke("concat", new[] { lhs }.Concat(rhs));
+            return new ConcreteScalarSqlExpression<string>(lhs.SqlBuilder, part);
+        }
         #endregion
 
         #region Condition operators
         public static SqlCondition
-            IsNull<X>(this SqlExpression<IScalar<X>> lhs) =>
+            IsNull<X>(this ScalarSqlExpression<X> lhs) =>
             new AtomicSqlCondition(
                 lhs.SqlBuilder,
                 lhs.Concat(SqlPart.FromString("is null"))
@@ -73,8 +54,8 @@ namespace FluentSqlBuilder.SqlSyntax
 
         public static SqlCondition
             Equal<X>(
-                this SqlExpression<IScalar<X>> lhs,
-                SqlExpression<IScalar<X>> rhs
+                this ScalarSqlExpression<X> lhs,
+                ScalarSqlExpression<X> rhs
             ) =>
             new AtomicSqlCondition(
                 lhs.SqlBuilder,

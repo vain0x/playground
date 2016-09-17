@@ -14,6 +14,6 @@ namespace FluentSqlBuilder.Accessor
 
     public interface IExpressionRecord
     {
-        SqlExpression<IScalar> this[string columnName] { get; set; }
+        ScalarSqlExpression this[string columnName] { get; set; }
     }
 }

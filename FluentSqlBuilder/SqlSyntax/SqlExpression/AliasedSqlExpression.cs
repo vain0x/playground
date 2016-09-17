@@ -11,36 +11,12 @@ namespace FluentSqlBuilder.SqlSyntax
         string Alias { get; }
     }
 
-    public abstract class AliasedSqlExpression<TType>
-        : SqlExpression<TType>
+    public sealed class AliasedScalarSqlExpression<TValue>
+        : ScalarSqlExpression<TValue>
         , IAliasedSqlExpression
-        where TType : ISqlTypeTag
     {
-        public abstract string Alias { get; }
-
-        internal AliasedSqlExpression(SqlBuilder sqlBuilder)
-            : base(sqlBuilder)
-        {
-        }
-    }
-
-    sealed class ConcreteAliasedSqlExpression<TType>
-        : AliasedSqlExpression<TType>
-        where TType : ISqlTypeTag
-    {
-        public SqlExpression<TType> Expression { get; }
-        public sealed override string Alias { get; }
-
-        public ConcreteAliasedSqlExpression(
-            SqlBuilder sqlBuilder,
-            SqlExpression<TType> expression,
-            string alias
-        )
-            : base(sqlBuilder)
-        {
-            Expression = expression;
-            Alias = alias;
-        }
+        ScalarSqlExpression<TValue> Expression { get; }
+        public string Alias { get; }
 
         internal override IEnumerable<SqlToken> Tokens =>
             Expression.Tokens
@@ -50,5 +26,36 @@ namespace FluentSqlBuilder.SqlSyntax
                     SqlToken.FromString("as"),
                     SqlToken.FromString(SqlBuilder.Language.QuoteIdentifier(Alias))
                 });
+
+        internal AliasedScalarSqlExpression(ScalarSqlExpression<TValue> expression, string alias)
+            : base(expression.SqlBuilder)
+        {
+            Expression = expression;
+            Alias = alias;
+        }
+    }
+
+    public sealed class AliasedRelationSqlExpression
+        : RelationSqlExpression
+        , IAliasedSqlExpression
+    {
+        RelationSqlExpression Expression { get; }
+        public string Alias { get; }
+
+        internal override IEnumerable<SqlToken> Tokens =>
+            Expression.Tokens
+            .Concat(
+                new[]
+                {
+                    SqlToken.FromString("as"),
+                    SqlToken.FromString(SqlBuilder.Language.QuoteIdentifier(Alias))
+                });
+
+        internal AliasedRelationSqlExpression(RelationSqlExpression expression, string alias)
+            : base(expression.SqlBuilder)
+        {
+            Expression = expression;
+            Alias = alias;
+        }
     }
 }

@@ -15,7 +15,7 @@ namespace FluentSqlBuilder.SqlSyntax
         }
 
         #region From
-        public FieldlessSelectBuilder From(SqlExpression<IRelation> relation)
+        public FieldlessSelectBuilder From(RelationSqlExpression relation)
         {
             var statement = new SelectStatement(SqlBuilder, Combined, relation);
             return new FieldlessSelectBuilder(statement);

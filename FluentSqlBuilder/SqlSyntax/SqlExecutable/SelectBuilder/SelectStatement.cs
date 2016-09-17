@@ -7,19 +7,19 @@ using Optional;
 namespace FluentSqlBuilder.SqlSyntax
 {
     sealed class SelectStatement
-        : SqlExpression<IRelation>
+        : RelationSqlExpression
         , ISqlExecutable
     {
         Option<CombinedSelectStatement> Combined { get; }
 
-        public SqlExpression<IRelation> Source { get; private set; }
+        public RelationSqlExpression Source { get; private set; }
 
         public ConditionBuilder WhereCondition { get; }
 
         public ConditionBuilder HavingCondition { get; }
 
-        public List<SqlExpression<IScalar>> GroupKeys { get; } =
-            new List<SqlExpression<IScalar>>();
+        public List<ScalarSqlExpression> GroupKeys { get; } =
+            new List<ScalarSqlExpression>();
 
         public List<OrderKey> OrderKeys { get; } =
             new List<OrderKey>();
@@ -30,7 +30,7 @@ namespace FluentSqlBuilder.SqlSyntax
         public SelectStatement(
             SqlBuilder sqlBuilder,
             Option<CombinedSelectStatement> combined,
-            SqlExpression<IRelation> relation
+            RelationSqlExpression relation
         )
             : base(sqlBuilder)
         {
@@ -131,23 +131,23 @@ namespace FluentSqlBuilder.SqlSyntax
             Fields.Add(SqlPart.FromString(wildmark));
         }
 
-        public SqlExpression<IScalar<X>> ToScalar<X>()
+        public ScalarSqlExpression<X> ToScalar<X>()
         {
             Debug.Assert(Fields.Count == 1);
-            return new ConcreteSqlExpression<IScalar<X>>(SqlBuilder, this.Enclose("(", ")"));
+            return new ConcreteScalarSqlExpression<X>(SqlBuilder, this.Enclose("(", ")"));
         }
 
-        internal SqlExpression<IScalar<X>> Quantify<X>(string quantifier)
+        internal ScalarSqlExpression<X> Quantify<X>(string quantifier)
         {
             Debug.Assert(Fields.Count == 1);
             var part = SqlPart.FromString(quantifier).Concat(this.Enclose("(", ")"));
-            return new ConcreteSqlExpression<IScalar<X>>(SqlBuilder, part);
+            return new ConcreteScalarSqlExpression<X>(SqlBuilder, part);
         }
 
-        public SqlExpression<IRelation> ToRelation()
+        public RelationSqlExpression ToRelation()
         {
             Debug.Assert(Fields.Any());
-            return new ConcreteSqlExpression<IRelation>(SqlBuilder, this.Enclose("(", ")"));
+            return new ConcreteRelationSqlExpression(SqlBuilder, this.Enclose("(", ")"));
         }
     }
 }

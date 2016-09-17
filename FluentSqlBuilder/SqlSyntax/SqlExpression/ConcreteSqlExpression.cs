@@ -7,37 +7,32 @@ using System.Threading.Tasks;
 
 namespace FluentSqlBuilder.SqlSyntax
 {
-    sealed class ConcreteSqlExpression<TType>
-        : SqlExpression<TType>
-        where TType : ISqlTypeTag
+    sealed class ConcreteScalarSqlExpression<TValue>
+        : ScalarSqlExpression<TValue>
     {
         internal override IEnumerable<SqlToken> Tokens { get; }
 
-        internal ConcreteSqlExpression(SqlBuilder sqlBuilder, IEnumerable<SqlToken> tokens)
+        internal ConcreteScalarSqlExpression(SqlBuilder sqlBuilder, IEnumerable<SqlToken> tokens)
             : base(sqlBuilder)
         {
             Tokens = tokens;
         }
     }
 
-    sealed class AtomicSqlExpression<TType>
-        : SqlExpression<TType>
-        where TType : ISqlTypeTag
+    sealed class ConcreteRelationSqlExpression
+        : RelationSqlExpression
     {
-        string String { get; }
+        internal override IEnumerable<SqlToken> Tokens { get; }
 
-        internal override IEnumerable<SqlToken> Tokens =>
-            new[] { SqlToken.FromString(String) };
-
-        internal AtomicSqlExpression(SqlBuilder sqlBuilder, string @string)
+        internal ConcreteRelationSqlExpression(SqlBuilder sqlBuilder, IEnumerable<SqlToken> tokens)
             : base(sqlBuilder)
         {
-            String = @string;
+            Tokens = tokens;
         }
     }
 
     sealed class ParameterSqlExpression<TValue>
-        : SqlExpression<IScalar<TValue>>
+        : ScalarSqlExpression<TValue>
     {
         string Name { get; }
         DbParameter Parameter { get; }

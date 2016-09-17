@@ -48,7 +48,7 @@ namespace FluentSqlBuilder.Accessor
             }
         }
 
-        public override SqlExpression<IScalar<TValue>> this[IExpressionRecord record]
+        public override ScalarSqlExpression<TValue> this[IExpressionRecord record]
         {
             get
             {
@@ -56,7 +56,7 @@ namespace FluentSqlBuilder.Accessor
             }
             set
             {
-                record[UniqueName] = value.Box();
+                record[UniqueName] = value;
             }
         }
 

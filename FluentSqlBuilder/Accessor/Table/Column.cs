@@ -12,7 +12,7 @@ namespace FluentSqlBuilder.Accessor
     }
 
     public abstract class Column<TValue>
-        : SqlExpression<IScalar<TValue>>
+        : ScalarSqlExpression<TValue>
         , IColumn
     {
         internal Column(SqlBuilder sqlBuilder)
@@ -22,7 +22,7 @@ namespace FluentSqlBuilder.Accessor
 
         public abstract TValue this[DataRow row] { get; set; }
         public abstract TValue this[IValueRecord record] { get; set; }
-        public abstract SqlExpression<IScalar<TValue>> this[IExpressionRecord record] { get; set; }
+        public abstract ScalarSqlExpression<TValue> this[IExpressionRecord record] { get; set; }
 
         #region IColumn
         public abstract string QualifiedName { get; }
