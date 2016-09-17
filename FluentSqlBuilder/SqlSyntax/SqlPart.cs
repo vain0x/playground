@@ -29,9 +29,6 @@ namespace FluentSqlBuilder.SqlSyntax
 
         public static SqlPart FromString(string token) =>
             new ConcreteSqlPart(new[] { SqlToken.FromString(token) });
-
-        public static SqlPart Concat(IEnumerable<SqlPart> parts) =>
-            new ConcreteSqlPart(parts.SelectMany(part => part.Tokens));
     }
 
     sealed class ConcreteSqlPart
