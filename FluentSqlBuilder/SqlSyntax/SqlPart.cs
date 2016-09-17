@@ -40,9 +40,7 @@ namespace FluentSqlBuilder.SqlSyntax
     sealed class ConcreteSqlPart
         : SqlPart
     {
-        #region SqlPart
         internal override IEnumerable<SqlToken> Tokens { get; }
-        #endregion
 
         public ConcreteSqlPart(IEnumerable<SqlToken> tokens)
         {

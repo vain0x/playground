@@ -36,21 +36,17 @@ namespace FluentSqlBuilder.SqlSyntax
             Join(relation, JoinType.Inner);
         #endregion
 
-        #region Where
         public FieldlessSelectBuilder Where(SqlCondition condition)
         {
             Statement.WhereCondition.Add(condition);
             return this;
         }
-        #endregion
 
-        #region GroupBy
         public FieldlessSelectBuilder GroupBy(ScalarSqlExpression expression)
         {
             Statement.GroupKeys.Add(expression);
             return this;
         }
-        #endregion
 
         #region OrderBy
         FieldlessSelectBuilder OrderByImpl(
@@ -109,7 +105,6 @@ namespace FluentSqlBuilder.SqlSyntax
         }
         #endregion
 
-        #region Exists
         public SqlCondition Exists()
         {
             Statement.AddFieldAll();
@@ -119,13 +114,10 @@ namespace FluentSqlBuilder.SqlSyntax
                     SqlPart.FromString("exists").Concat(Statement.ToRelation())
                 );
         }
-        #endregion
 
-        #region Insert
         public DbCommand Insert(Table table, Action<IExpressionRecord> setter)
         {
             return InsertBuilder.InsertSelectCommand(Statement, table, setter);
         }
-        #endregion
     }
 }

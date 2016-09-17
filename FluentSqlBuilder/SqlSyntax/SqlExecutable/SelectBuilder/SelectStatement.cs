@@ -109,10 +109,8 @@ namespace FluentSqlBuilder.SqlSyntax
             CombinedTokens.Concat(SelectTokens);
         #endregion
 
-        #region ISqlExecutable
         public DbCommand ToCommand() =>
             SqlBuilder.CreateCommand(Tokens);
-        #endregion
 
         public void Join(Join join)
         {

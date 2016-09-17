@@ -45,9 +45,5 @@ namespace FluentSqlBuilder.Test
                 .ShouldEqual("`employees` as `t`");
         }
         #endregion
-
-        #region Test: Quantification
-
-        #endregion
     }
 }

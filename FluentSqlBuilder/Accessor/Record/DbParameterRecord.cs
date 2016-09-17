@@ -12,7 +12,6 @@ namespace FluentSqlBuilder.Accessor
         : Dictionary<string, DbParameter>
         , IValueRecord
     {
-        #region IRecord
         public new object this[string columnName]
         {
             get
@@ -32,6 +31,5 @@ namespace FluentSqlBuilder.Accessor
                 }
             }
         }
-        #endregion
     }
 }

@@ -59,12 +59,10 @@ namespace FluentSqlBuilder.SqlSyntax
             .Concat(WhereTokens);
         #endregion
 
-        #region ISqlExecutable
         public DbCommand ToCommand()
         {
             return SqlBuilder.CreateCommand(Tokens);
         }
-        #endregion
 
         public UpdateStatement(SqlBuilder sqlBuilder, Table table)
         {

@@ -14,12 +14,10 @@ namespace FluentSqlBuilder.SqlSyntax
             Combined = combined;
         }
 
-        #region From
         public FieldlessSelectBuilder From(RelationSqlExpression relation)
         {
             var statement = new SelectStatement(SqlBuilder, Combined, relation);
             return new FieldlessSelectBuilder(statement);
         }
-        #endregion
     }
 }
