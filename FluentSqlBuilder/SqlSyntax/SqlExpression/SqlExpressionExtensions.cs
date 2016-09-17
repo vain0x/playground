@@ -7,19 +7,17 @@ namespace FluentSqlBuilder.SqlSyntax
     public static class SqlExpressionExtensions
     {
         #region Internal
-        internal static SqlPart Invoke(
+        internal static IEnumerable<SqlToken> Invoke(
             string functionName,
             IEnumerable<ScalarSqlExpression> arguments
         )
         {
+            var argumentList =
+                arguments
+                .Intercalate(new[] { SqlToken.FromString(",") })
+                .Enclose("(", ")");
             return
-                SqlPart.Concat(
-                    new[] { SqlPart.FromString(functionName) }
-                    .Concat(
-                        arguments
-                        .Intersperse(SqlPart.FromString(","))
-                        .Enclose(SqlPart.FromString("("), SqlPart.FromString(")"))
-                    ));
+                new[] { SqlToken.FromString(functionName) }.Concat(argumentList);
         }
 
         #endregion

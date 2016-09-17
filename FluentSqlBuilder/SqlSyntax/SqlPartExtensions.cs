@@ -9,29 +9,29 @@ namespace FluentSqlBuilder.SqlSyntax
 {
     static class SqlPartExtensions
     {
-        internal static SqlPart Concat(this SqlPart lhs, SqlPart rhs)
+        internal static IEnumerable<SqlToken> Enclose(
+            this IEnumerable<SqlToken> part,
+            string left,
+            string right
+        )
         {
-            return SqlPart.Concat(new[] { lhs, rhs });
-        }
-
-        internal static SqlPart Enclose(this SqlPart part, string left, string right)
-        {
-            var parts = new[] { SqlPart.FromString(left), part, SqlPart.FromString(right) };
-            return SqlPart.Concat(parts);
+            yield return SqlToken.FromString(left);
+            foreach (var token in part) yield return token;
+            yield return SqlToken.FromString(right);
         }
 
         /// <summary>
         /// NOTE: Values are NOT quoted. Just for test.
         /// </summary>
-        internal static string ToEmbeddedString(this SqlPart part)
+        internal static string ToEmbeddedString(this IEnumerable<SqlToken> part)
         {
             var parameterDictionary =
-                part.Tokens
+                part
                 .SelectMany(t => t.Parameters)
                 .ToDictionary(p => p.ParameterName);
 
             var tokens = new List<string>();
-            foreach (var token in part.Tokens)
+            foreach (var token in part)
             {
                 if (token.String.StartsWith("@", StringComparison.CurrentCulture))
                 {

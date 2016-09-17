@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Data.Common;
+using System.Linq;
 using FluentSqlBuilder.Accessor;
 
 namespace FluentSqlBuilder.SqlSyntax
@@ -111,7 +112,8 @@ namespace FluentSqlBuilder.SqlSyntax
             return
                 new AtomicSqlCondition(
                     Statement.SqlBuilder,
-                    SqlPart.FromString("exists").Concat(Statement.ToRelation())
+                    new[] { SqlToken.FromString("exists") }
+                    .Concat(Statement.ToRelation().Tokens)
                 );
         }
 

@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Data;
+using System.Linq;
 using Xunit;
 using FluentSqlBuilder.SqlSyntax;
 
@@ -15,8 +16,8 @@ namespace FluentSqlBuilder.Test
             new ConcreteScalarSqlExpression<long>(
                 Sql,
                 Sql.Int(1)
-                .Concat(SqlPart.FromString("+"))
-                .Concat(Sql.Int(2))
+                    .Concat(new[] { SqlToken.FromString("+") })
+                    .Concat(Sql.Int(2))
             )
                 .ToEmbeddedString()
                 .ShouldEqual("1 + 2");
