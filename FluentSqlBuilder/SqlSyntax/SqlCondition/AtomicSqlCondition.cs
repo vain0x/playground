@@ -10,15 +10,13 @@ namespace FluentSqlBuilder.SqlSyntax
     sealed class AtomicSqlCondition
         : SqlCondition
     {
-        SqlPart Part { get; }
+        internal override IEnumerable<SqlToken> Tokens { get; }
 
-        public AtomicSqlCondition(SqlBuilder sqlBuilder, SqlPart part)
+        public AtomicSqlCondition(SqlBuilder sqlBuilder, IEnumerable<SqlToken> tokens)
             : base(sqlBuilder)
         {
-            Part = part;
+            Tokens = tokens;
         }
-
-        internal override IEnumerable<SqlToken> Tokens => Part.Tokens;
 
         #region SqlCondition
         public override SqlCondition And(SqlCondition rhs) =>
