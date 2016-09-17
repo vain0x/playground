@@ -81,26 +81,5 @@ namespace FluentSqlBuilder.SqlSyntax
                 lhs.Concat(SqlPart.FromString("=")).Concat(rhs)
             );
         #endregion
-
-        #region Quantification
-        static SqlExpression<IScalar<X>> Quantify<X>(
-            this SqlExpression<IRelation> relation,
-            string quantifier
-        )
-        {
-            var part = SqlPart.FromString(quantifier).Concat(relation);
-            return new ConcreteSqlExpression<IScalar<X>>(relation.SqlBuilder, part);
-        }
-
-        public static SqlExpression<IScalar<X>> Any<X>(this SqlExpression<IRelation<X>> relation)
-        {
-            return relation.Box().Quantify<X>("any");
-        }
-
-        public static SqlExpression<IScalar<X>> All<X>(this SqlExpression<IRelation<X>> relation)
-        {
-            return relation.Box().Quantify<X>("all");
-        }
-        #endregion
     }
 }
