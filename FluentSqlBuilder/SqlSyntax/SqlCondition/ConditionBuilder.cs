@@ -24,7 +24,7 @@ namespace FluentSqlBuilder.SqlSyntax
         }
 
         #region Tokens
-        IEnumerable<SqlPart> Parts
+        IEnumerable<IEnumerable<SqlToken>> TokenSeqSeq
         {
             get
             {
@@ -37,7 +37,7 @@ namespace FluentSqlBuilder.SqlSyntax
         }
 
         internal override IEnumerable<SqlToken> Tokens =>
-            Parts.SelectMany(part => part.Tokens);
+            TokenSeqSeq.SelectMany(x => x);
         #endregion
 
         public bool IsTrivial =>
