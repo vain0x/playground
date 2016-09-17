@@ -45,7 +45,7 @@ namespace FluentSqlBuilder.SqlSyntax
         #endregion
 
         #region GroupBy
-        public FieldlessSelectBuilder GroupBy<X>(ScalarSqlExpression<X> expression)
+        public FieldlessSelectBuilder GroupBy(ScalarSqlExpression expression)
         {
             Statement.GroupKeys.Add(expression);
             return this;
@@ -53,8 +53,8 @@ namespace FluentSqlBuilder.SqlSyntax
         #endregion
 
         #region OrderBy
-        FieldlessSelectBuilder OrderByImpl<X>(
-            ScalarSqlExpression<X> expression,
+        FieldlessSelectBuilder OrderByImpl(
+            ScalarSqlExpression expression,
             OrderDirection direction
         )
         {
@@ -62,15 +62,15 @@ namespace FluentSqlBuilder.SqlSyntax
             return this;
         }
 
-        public FieldlessSelectBuilder OrderBy<X>(ScalarSqlExpression<X> column) =>
+        public FieldlessSelectBuilder OrderBy(ScalarSqlExpression column) =>
             OrderByImpl(column, OrderDirection.Ascending);
 
-        public FieldlessSelectBuilder OrderByDescending<X>(ScalarSqlExpression<X> column) =>
+        public FieldlessSelectBuilder OrderByDescending(ScalarSqlExpression column) =>
             OrderByImpl(column, OrderDirection.Descending);
         #endregion
 
         #region Field
-        public SelectBuilder Field<X>(ScalarSqlExpression<X> expression)
+        public SelectBuilder Field(ScalarSqlExpression expression)
         {
             Statement.Fields.Add(expression);
             return new SelectBuilder(Statement);

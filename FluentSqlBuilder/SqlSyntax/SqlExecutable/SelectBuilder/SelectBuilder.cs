@@ -17,7 +17,7 @@ namespace FluentSqlBuilder.SqlSyntax
         public DbCommand ToCommand() => Statement.ToCommand();
 
         #region Field
-        public SelectBuilder Field<X>(ScalarSqlExpression<X> expression)
+        public SelectBuilder Field(ScalarSqlExpression expression)
         {
             Statement.Fields.Add(expression);
             return this;
