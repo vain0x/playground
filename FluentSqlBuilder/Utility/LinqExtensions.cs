@@ -8,11 +8,32 @@ namespace FluentSqlBuilder
 {
     static class LinqExtensions
     {
+        static IEnumerable<X> Enumerate<X>(IEnumerator<X> enumerator)
+        {
+            while (enumerator.MoveNext())
+            {
+                yield return enumerator.Current;
+            }
+        }
+
         public static bool IsEmpty<X>(this IEnumerable<X> xs) =>
             !xs.Any();
 
         public static IEnumerable<X> Concat<X>(this IEnumerable<IEnumerable<X>> xxs) =>
             xxs.SelectMany(xs => xs);
+
+        public static Option<Tuple<X, IEnumerable<X>>> UnconsOrNone<X>(this IEnumerable<X> xs)
+        {
+            using (var enumerator = xs.GetEnumerator())
+            {
+                if (!enumerator.MoveNext())
+                {
+                    return Option.None<Tuple<X, IEnumerable<X>>>();
+                }
+
+                return Tuple.Create(enumerator.Current, Enumerate(enumerator)).Some();
+            }
+        }
 
         /// <summary>
         /// シーケンスの各要素の間に separator を挟んだシーケンスを取得する。

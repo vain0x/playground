@@ -41,6 +41,7 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="Accessor\Table\Relation.cs" />
+    <Compile Include="Accessor\Table\RelationExtensions.cs" />
     <Compile Include="DbProvider\DbTypeMap.cs" />
     <Compile Include="Accessor\Record\AssignmentRecord.cs" />
     <Compile Include="Accessor\Record\DbParameterRecord.cs" />

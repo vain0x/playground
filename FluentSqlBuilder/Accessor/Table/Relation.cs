@@ -40,6 +40,9 @@ namespace FluentSqlBuilder.Accessor
         internal IReadOnlyList<IColumn> Columns => LazyColumns.Value;
         #endregion
 
+        internal static InvalidOperationException NoColumnException =>
+            new InvalidOperationException("A relation class must contain at least one property of Column<T>. (リレーションクラスは、Column<T> 型のプロパティを少なくとも1つ含む必要がある。)");
+
         public Relation()
         {
             LazyColumns = Lazy.Create(() => GetColumns());

@@ -41,6 +41,8 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="Accessor\Table\ColumnTest.cs" />
+    <Compile Include="Accessor\Table\RelationTest.cs" />
+    <Compile Include="FakeDatabase\ColumnlessTable.cs" />
     <Compile Include="FakeDatabase\FakeDb.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="SqlSyntax\SqlExecutable\SelectBuilderTest.cs" />
