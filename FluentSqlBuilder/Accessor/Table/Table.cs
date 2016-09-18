@@ -38,20 +38,7 @@ namespace FluentSqlBuilder.Accessor
         }
 
         #region Reflection
-        bool IsColumnType(Type type)
-        {
-            return type.GetInterface(nameof(IColumn)) != null;
-        }
-
-        internal IEnumerable<PropertyInfo> ColumnProperties()
-        {
-            return
-                Relation.GetType()
-                .GetProperties()
-                .Where(propertyInfo => IsColumnType(propertyInfo.PropertyType));
-        }
-
-        internal Lazy<IReadOnlyList<IColumn>> Columns { get; }
+        internal IReadOnlyList<IColumn> Columns => Relation.Columns;
 
         /// <summary>
         /// 修飾されていないクオートされたカラム名のリスト。
@@ -80,24 +67,16 @@ namespace FluentSqlBuilder.Accessor
             OptionalAlias = alias;
             RawName = rawName;
 
-            Columns =
-                Lazy.Create(() =>
-                    (IReadOnlyList<IColumn>)
-                    ColumnProperties()
-                    .Select(p => (IColumn)p.GetValue(Relation))
-                    .ToArray()
-                );
-
             ColumnNameList =
                 Lazy.Create(() =>
-                    Columns.Value
+                    Columns
                     .Select(c => sqlBuilder.Language.QuoteIdentifier(c.RawName))
                     .Intercalate(',')
                 );
 
             ColumnUniqueNameParameterList =
                 Lazy.Create(() =>
-                    Columns.Value
+                    Columns
                     .Select(c => "@" + c.UniqueName)
                     .Intercalate(',')
                 );

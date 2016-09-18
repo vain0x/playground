@@ -17,8 +17,7 @@ namespace FluentSqlBuilder.Test
         [Fact]
         public void TestColumnProperties()
         {
-            EmployeeTable
-                .ColumnProperties()
+            Relation.ColumnProperties(typeof(Employee))
                 .Select(propertyInfo => propertyInfo.Name)
                 .ToArray()
                 .ShouldEqual(new[] { "Name", "Age", "DepartmentId" });
