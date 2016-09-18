@@ -102,9 +102,9 @@ namespace FluentSqlBuilder.Test
         [Fact]
         public void TestJoin_self()
         {
-            var e0 = new Employee(Sql, "e0".Some());
-            var e1 = new Employee(Sql, "e1".Some());
-            var e2 = new Employee(Sql, "e2".Some());
+            var e0 = new Employee(Sql).As("e0");
+            var e1 = new Employee(Sql).As("e1");
+            var e2 = new Employee(Sql).As("e2");
             Sql
                 .Select()
                 .From(e0.Table)
@@ -123,7 +123,7 @@ namespace FluentSqlBuilder.Test
         [Fact]
         public void TestUnion()
         {
-            var employee = new Employee(Sql, "e".Some());
+            var employee = new Employee(Sql).As("e");
             Sql.Select()
                 .From(employee.Table)
                 .Where(employee.Name.Equal(Sql.String("Miku")))
@@ -228,7 +228,7 @@ namespace FluentSqlBuilder.Test
         [Fact]
         public void TestInsertSelect_null()
         {
-            var department = new Department(Sql, "d".Some());
+            var department = new Department(Sql).As("d");
             Sql.Select()
                 .From(department.Table)
                 .Insert(department.Table, r =>

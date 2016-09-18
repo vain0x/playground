@@ -11,7 +11,7 @@ namespace FluentSqlBuilder.Test
         public Column<string> Name { get; }
         public Column<string> Email { get; }
 
-        public Department(SqlBuilder sqlBuilder, Option<string> tableAlias)
+        Department(SqlBuilder sqlBuilder, Option<string> tableAlias)
         {
             Table = sqlBuilder.Table(this, "departments", tableAlias);
             Id = Table.Column<long>("department_id");
@@ -22,6 +22,11 @@ namespace FluentSqlBuilder.Test
         public Department(SqlBuilder sqlBuilder)
             : this(sqlBuilder, Option.None<string>())
         {
+        }
+
+        public Department As(string alias)
+        {
+            return new Department(Table.SqlBuilder, alias.Some());
         }
     }
 }
