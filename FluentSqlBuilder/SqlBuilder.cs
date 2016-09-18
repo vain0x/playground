@@ -1,13 +1,14 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Data;
 using System.Data.Common;
 using System.Linq;
 using Optional;
-using FluentSqlBuilder.Detail;
+using FluentSqlBuilder.Accessor;
+using FluentSqlBuilder.SqlSyntax;
 using FluentSqlBuilder.Provider;
 
-namespace FluentSqlBuilder.Public
+namespace FluentSqlBuilder
 {
     public class SqlBuilder
     {
@@ -25,18 +26,33 @@ namespace FluentSqlBuilder.Public
             return parameter;
         }
 
-        internal DbCommand CreateCommand(string sql, IEnumerable<DbParameter> parameters)
+        internal DbCommand CreateCommand(IEnumerable<SqlToken> tokens)
         {
+            // Coerce the enumerable.
+            var tokenList =
+                tokens.ToArray();
+            var sql =
+                string.Join(" ", tokenList.Select(t => t.String));
+            var parameterList =
+                tokenList
+                .SelectMany(t => t.Parameters)
+                .Distinct()
+                .ToArray();
+
             var command = Factory.CreateCommand();
             command.CommandText = sql;
-            command.Parameters.AddRange(parameters.Distinct().ToArray());
+            command.Parameters.AddRange(parameterList);
             return command;
         }
         #endregion
 
+        internal SqlConditionConstant SqlConditionConstant { get; }
+
         public SqlBuilder(DbProvider provider)
         {
             Provider = provider;
+
+            SqlConditionConstant = new SqlConditionConstant(this);
         }
 
         #region Expression
@@ -48,49 +64,52 @@ namespace FluentSqlBuilder.Public
             return "p" + Guid.NewGuid().ToString().Replace("-", "");
         }
 
-        public ParameterExpression<X> Value<X>(DbType type, X value)
+        public ScalarSqlExpression<X> Value<X>(DbType type, X value)
         {
             var name = GenerateUniqueName();
             var parameter = Factory.CreateParameter();
             parameter.ParameterName = name;
             parameter.DbType = type;
             parameter.Value = value;
-            return new ParameterExpression<X>(this, name, parameter);
+            return new ParameterSqlExpression<X>(this, name, parameter);
         }
         
         #region Typed value expressions
-        public ParameterExpression<bool> Bool(bool value) =>
+        public ScalarSqlExpression<bool> Bool(bool value) =>
             Value(DbType.Boolean, value);
 
-        public ParameterExpression<int> Int32(int value) =>
+        public ScalarSqlExpression<int> Int32(int value) =>
             Value(DbType.Int32, value);
 
-        public ParameterExpression<long> Int(long value) =>
+        public ScalarSqlExpression<long> Int(long value) =>
             Value(DbType.Int64, value);
 
-        public ParameterExpression<double> Float(double value) =>
+        public ScalarSqlExpression<double> Float(double value) =>
             Value(DbType.Double, value);
 
-        public ParameterExpression<string> String(string value) =>
+        public ScalarSqlExpression<string> String(string value) =>
             Value(DbType.String, value);
 
-        public ParameterExpression<DateTime> DateTime(DateTime value) =>
+        public ScalarSqlExpression<DateTime> DateTime(DateTime value) =>
             Value(DbType.DateTime, value);
 
-        public ISqlExpression<IScalar<X>> Null<X>() =>
-            new AtomicExpression<IScalar<X>>(this, "null");
+        public ScalarSqlExpression<X> Null<X>() =>
+            new ConcreteScalarSqlExpression<X>(this, SqlPart.FromString("null"));
 
-        public ConditionBuilder True =>
-            new ConditionBuilder(this, ConditionCombinator.And);
+        public SqlCondition True =>
+            SqlConditionConstant.True;
 
-        public ConditionBuilder False =>
-            new ConditionBuilder(this, ConditionCombinator.Or);
+        public SqlCondition False =>
+            SqlConditionConstant.False;
         #endregion
         #endregion
 
         #region Condition
-        public ConditionBuilder And() => True;
-        public ConditionBuilder Or() => False;
+        public SqlCondition And() =>
+            new ConditionBuilder(this, SqlConditionConstant.And);
+
+        public SqlCondition Or() =>
+            new ConditionBuilder(this, SqlConditionConstant.Or);
         #endregion
 
         #region Mainpulation

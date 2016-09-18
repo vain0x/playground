@@ -3,11 +3,11 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
-using FluentSqlBuilder.Public;
+using FluentSqlBuilder.Accessor;
 
-namespace FluentSqlBuilder.Detail
+namespace FluentSqlBuilder.SqlSyntax
 {
-    public class AssignmentlessUpdateBuilder
+    public sealed class AssignmentlessUpdateBuilder
     {
         UpdateStatement Statement { get; }
 

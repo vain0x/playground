@@ -1,26 +1,23 @@
-﻿using System;
+using System;
 using Optional;
-using FluentSqlBuilder.Public;
 
-namespace FluentSqlBuilder.Detail
+namespace FluentSqlBuilder.SqlSyntax
 {
-    public class FromlessSelectBuilder
+    public sealed class FromlessSelectBuilder
     {
         SqlBuilder SqlBuilder { get; }
         Option<CombinedSelectStatement> Combined { get; }
 
-        public FromlessSelectBuilder(SqlBuilder sqlBuilder, Option<CombinedSelectStatement> combined)
+        internal FromlessSelectBuilder(SqlBuilder sqlBuilder, Option<CombinedSelectStatement> combined)
         {
             SqlBuilder = sqlBuilder;
             Combined = combined;
         }
 
-        #region From
-        public FieldlessSelectBuilder From(ISqlExpression<IRelation> relation)
+        public FieldlessSelectBuilder From(RelationSqlExpression relation)
         {
             var statement = new SelectStatement(SqlBuilder, Combined, relation);
             return new FieldlessSelectBuilder(statement);
         }
-        #endregion
     }
 }

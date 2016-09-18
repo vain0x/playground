@@ -1,21 +1,22 @@
 ﻿using System;
 using System.Data.Common;
-using FluentSqlBuilder.Public;
+using System.Linq;
+using FluentSqlBuilder.Accessor;
 
-namespace FluentSqlBuilder.Detail
+namespace FluentSqlBuilder.SqlSyntax
 {
-    public class FieldlessSelectBuilder
+    public sealed class FieldlessSelectBuilder
     {
         SelectStatement Statement { get; }
         
-        public FieldlessSelectBuilder(SelectStatement statement)
+        internal FieldlessSelectBuilder(SelectStatement statement)
         {
             Statement = statement;
         }
 
         #region Join
         JoinBuilder<FieldlessSelectBuilder> Join(
-            ISqlExpression<IRelation> relation,
+            RelationSqlExpression relation,
             JoinType joinType
         )
         {
@@ -32,29 +33,25 @@ namespace FluentSqlBuilder.Detail
                 );
         }
 
-        public JoinBuilder<FieldlessSelectBuilder> Join(ISqlExpression<IRelation> relation) =>
+        public JoinBuilder<FieldlessSelectBuilder> Join(RelationSqlExpression relation) =>
             Join(relation, JoinType.Inner);
         #endregion
 
-        #region Where
-        public FieldlessSelectBuilder Where(ISqlCondition condition)
+        public FieldlessSelectBuilder Where(SqlCondition condition)
         {
             Statement.WhereCondition.Add(condition);
             return this;
         }
-        #endregion
 
-        #region GroupBy
-        public FieldlessSelectBuilder GroupBy<X>(ISqlExpression<IScalar<X>> expression)
+        public FieldlessSelectBuilder GroupBy(ScalarSqlExpression expression)
         {
             Statement.GroupKeys.Add(expression);
             return this;
         }
-        #endregion
 
         #region OrderBy
-        FieldlessSelectBuilder OrderByImpl<X>(
-            ISqlExpression<IScalar<X>> expression,
+        FieldlessSelectBuilder OrderByImpl(
+            ScalarSqlExpression expression,
             OrderDirection direction
         )
         {
@@ -62,34 +59,35 @@ namespace FluentSqlBuilder.Detail
             return this;
         }
 
-        public FieldlessSelectBuilder OrderBy<X>(ISqlExpression<IScalar<X>> column) =>
+        public FieldlessSelectBuilder OrderBy(ScalarSqlExpression column) =>
             OrderByImpl(column, OrderDirection.Ascending);
 
-        public FieldlessSelectBuilder OrderByDescending<X>(ISqlExpression<IScalar<X>> column) =>
+        public FieldlessSelectBuilder OrderByDescending(ScalarSqlExpression column) =>
             OrderByImpl(column, OrderDirection.Descending);
         #endregion
 
         #region Field
-        public SelectBuilder Field<X>(ISqlExpression<IScalar<X>> expression)
+        public SelectBuilder Field(ScalarSqlExpression expression)
         {
             Statement.Fields.Add(expression);
             return new SelectBuilder(Statement);
         }
 
-        public SelectBuilder FieldAll(IAliasedSqlExpression<IRelation> relation)
+        public SelectBuilder FieldAll<R>(R relation)
+            where R: RelationSqlExpression, IAliasedSqlExpression
         {
             Statement.AddFieldAll(relation);
             return new SelectBuilder(Statement);
         }
 
-        public ISqlExpression<IScalar<X>> ToScalar<X>(ISqlExpression<IScalar<X>> expression)
+        public ScalarSqlExpression<X> ToScalar<X>(ScalarSqlExpression<X> expression)
         {
             Field(expression);
             return Statement.ToScalar<X>();
         }
 
-        ISqlExpression<IScalar<X>> Quantify<X>(
-            ISqlExpression<IScalar<X>> expression,
+        ScalarSqlExpression<X> Quantify<X>(
+            ScalarSqlExpression<X> expression,
             string quantifier
         )
         {
@@ -97,34 +95,31 @@ namespace FluentSqlBuilder.Detail
             return Statement.Quantify<X>(quantifier);
         }
 
-        public ISqlExpression<IScalar<X>> Any<X>(ISqlExpression<IScalar<X>> expression)
+        public ScalarSqlExpression<X> Any<X>(ScalarSqlExpression<X> expression)
         {
             return Quantify(expression, "any");
         }
 
-        public ISqlExpression<IScalar<X>> All<X>(ISqlExpression<IScalar<X>> expression)
+        public ScalarSqlExpression<X> All<X>(ScalarSqlExpression<X> expression)
         {
             return Quantify(expression, "all");
         }
         #endregion
 
-        #region Exists
-        public ISqlCondition Exists()
+        public SqlCondition Exists()
         {
             Statement.AddFieldAll();
             return
-                new SqlCondition(
+                new AtomicSqlCondition(
                     Statement.SqlBuilder,
-                    SqlPart.FromToken("exists").Concat(Statement.ToRelation())
+                    new[] { SqlToken.FromString("exists") }
+                    .Concat(Statement.ToRelation().Tokens)
                 );
         }
-        #endregion
 
-        #region Insert
         public DbCommand Insert(Table table, Action<IExpressionRecord> setter)
         {
             return InsertBuilder.InsertSelectCommand(Statement, table, setter);
         }
-        #endregion
     }
 }

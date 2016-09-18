@@ -5,11 +5,11 @@ using System.Data.Common;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
-using FluentSqlBuilder.Public;
+using FluentSqlBuilder.Accessor;
 
-namespace FluentSqlBuilder.Detail
+namespace FluentSqlBuilder.SqlSyntax
 {
-    public static class InsertBuilder
+    static class InsertBuilder
     {
         public static DbCommand InsertValuesCommand(
             SqlBuilder sqlBuilder,
@@ -68,9 +68,16 @@ namespace FluentSqlBuilder.Detail
             Debug.Assert(selectStatement.Fields.IsEmpty());
             selectStatement.Fields.AddRange(columns.Select(c => assignment[c.UniqueName]));
 
-            var body = selectStatement.Tokens.Intercalate(' ');
-            var sql = $"insert into {table.QuotedName} ({table.ColumnNameList.Value}) {body}";
-            return sqlBuilder.CreateCommand(sql, selectStatement.Parameters);
+            var tokens =
+                new[]
+                {
+                    SqlToken.FromString("insert"),
+                    SqlToken.FromString("into"),
+                    SqlToken.FromString(table.QuotedName),
+                    SqlToken.FromString($"({table.ColumnNameList.Value})")
+                }
+                .Concat(selectStatement.Tokens);
+            return sqlBuilder.CreateCommand(tokens);
         }
     }
 }

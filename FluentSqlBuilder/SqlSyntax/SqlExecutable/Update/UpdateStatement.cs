@@ -1,23 +1,23 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Data.Common;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
-using FluentSqlBuilder.Public;
+using FluentSqlBuilder.Accessor;
 
-namespace FluentSqlBuilder.Detail
+namespace FluentSqlBuilder.SqlSyntax
 {
-    public class UpdateStatement
-        : ISqlExecutable
-        , ISqlPart
+    public sealed class UpdateStatement
+        : SqlPart
+        , ISqlExecutable
     {
         public SqlBuilder SqlBuilder { get; }
         public Table Table { get; }
-        public AssignmentRecord Assignment { get; }
-        public ConditionBuilder WhereCondition { get; }
+        internal AssignmentRecord Assignment { get; }
+        internal ConditionBuilder WhereCondition { get; }
 
-        public IEnumerable<KeyValuePair<IColumn, ISqlExpression<IScalar>>> AssignmentList()
+        internal IEnumerable<KeyValuePair<IColumn, ScalarSqlExpression>> AssignmentList()
         {
             return
                 Table.Columns.Value
@@ -29,45 +29,40 @@ namespace FluentSqlBuilder.Detail
                 });
         }
 
-        #region ISqlPart
-        public IEnumerable<string> Tokens
-        {
-            get
-            {
-                yield return "update";
-                foreach (var token in Table.Tokens) yield return token;
-                yield return "set";
-                var assignmentTokens =
-                    AssignmentList()
-                    .Select(kv => new[] { kv.Key.QualifiedName, "=" }.Concat(kv.Value.Tokens))
-                    .Intercalate(new[] { "," });
-                foreach (var token in assignmentTokens) yield return token;
-                if (!WhereCondition.IsTrivial)
+        #region Tokens
+        IEnumerable<SqlToken> AssignmentTokens =>
+            AssignmentList()
+            .Select(kv =>
+                new[]
                 {
-                    yield return "where";
-                    foreach (var token in WhereCondition.Tokens) yield return token;
+                    SqlToken.FromString(kv.Key.QualifiedName),
+                    SqlToken.FromString("=")
                 }
-            }
-        }
+                .Concat(kv.Value.Tokens)
+            )
+            .Intercalate(new[] { SqlToken.FromString(",") });
 
-        public IEnumerable<DbParameter> Parameters
-        {
-            get
-            {
-                return
-                    Table.Parameters
-                    .Concat(AssignmentList().SelectMany(kv => kv.Value.Parameters))
-                    .Concat(WhereCondition.Parameters);
-            }
-        }
+        IEnumerable<SqlToken> SetTokens =>
+            new[] { SqlToken.FromString("set") }.Concat(AssignmentTokens);
+
+        IEnumerable<SqlToken> WhereTokens =>
+            WhereCondition.IsTrivial
+            ? Enumerable.Empty<SqlToken>()
+            :
+                new[] { SqlToken.FromString("where") }
+                .Concat(WhereCondition.Tokens);
+
+        internal override IEnumerable<SqlToken> Tokens =>
+            new[] { SqlToken.FromString("update") }
+            .Concat(Table.Tokens)
+            .Concat(SetTokens)
+            .Concat(WhereTokens);
         #endregion
 
-        #region ISqlExecutable
         public DbCommand ToCommand()
         {
-            return SqlBuilder.CreateCommand(Tokens.Intercalate(' '), Parameters);
+            return SqlBuilder.CreateCommand(Tokens);
         }
-        #endregion
 
         public UpdateStatement(SqlBuilder sqlBuilder, Table table)
         {

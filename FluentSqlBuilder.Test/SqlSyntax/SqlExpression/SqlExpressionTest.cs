@@ -1,8 +1,8 @@
 ﻿using System;
 using System.Data;
-using FluentSqlBuilder.Detail;
-using FluentSqlBuilder.Public;
+using System.Linq;
 using Xunit;
+using FluentSqlBuilder.SqlSyntax;
 
 namespace FluentSqlBuilder.Test
 {
@@ -13,11 +13,11 @@ namespace FluentSqlBuilder.Test
         [Fact]
         public void TestCompoundExpression()
         {
-            new CompoundExpression<IScalar<long>>(
+            new ConcreteScalarSqlExpression<long>(
                 Sql,
                 Sql.Int(1)
-                .Concat(SqlPart.FromToken("+"))
-                .Concat(Sql.Int(2))
+                    .Concat(new[] { SqlToken.FromString("+") })
+                    .Concat(Sql.Int(2))
             )
                 .ToEmbeddedString()
                 .ShouldEqual("1 + 2");
@@ -38,10 +38,13 @@ namespace FluentSqlBuilder.Test
             Sql.Null<object>().As("nil").ToEmbeddedString()
                .ShouldEqual("null as `nil`");
         }
-        #endregion
 
-        #region Test: Quantification
-
+        [Fact]
+        public void TestAs_relation()
+        {
+            FakeDb.Employee.Table.As("t").ToEmbeddedString()
+                .ShouldEqual("`employees` as `t`");
+        }
         #endregion
     }
 }

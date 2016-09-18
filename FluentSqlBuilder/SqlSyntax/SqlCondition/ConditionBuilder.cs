@@ -1,51 +1,55 @@
 ﻿using System.Collections.Generic;
 using System.Data.Common;
 using System.Linq;
-using FluentSqlBuilder.Public;
 
-namespace FluentSqlBuilder.Detail
+namespace FluentSqlBuilder.SqlSyntax
 {
-    public class ConditionBuilder
-        : ISqlCondition
+    sealed class ConditionBuilder
+        : SqlCondition
     {
-        public SqlBuilder SqlBuilder { get; }
-
         ConditionCombinator Combinator { get; }
 
-        List<ISqlCondition> Conditions { get; } =
-            new List<ISqlCondition>();
+        List<SqlCondition> Conditions { get; } =
+            new List<SqlCondition>();
 
         public ConditionBuilder(SqlBuilder sqlBuilder, ConditionCombinator combinator)
+            : base(sqlBuilder)
         {
-            SqlBuilder = sqlBuilder;
             Combinator = combinator;
         }
 
         public ConditionBuilder(SqlBuilder sqlBuilder)
-            : this(sqlBuilder, ConditionCombinator.And)
+            : this(sqlBuilder, sqlBuilder.SqlConditionConstant.And)
         {
         }
 
-        #region ISqlPart
-        public IEnumerable<string> Tokens
+        #region Tokens
+        IEnumerable<IEnumerable<SqlToken>> TokenSeqSeq
         {
             get
             {
-                var tokens = Combinator.Combine(Conditions.Select(x => x.Tokens));
-                return Conditions.Count > 1 ? tokens.Enclose("(", ")") : tokens;
+                var parts = Combinator.Combine(Conditions);
+                return
+                    Conditions.Count > 1
+                        ? parts.Enclose(SqlPart.FromString("("), SqlPart.FromString(")"))
+                        : parts;
             }
         }
 
-        public IEnumerable<DbParameter> Parameters =>
-            Conditions.SelectMany(x => x.Parameters);
+        internal override IEnumerable<SqlToken> Tokens =>
+            TokenSeqSeq.SelectMany(x => x);
         #endregion
 
         public bool IsTrivial =>
             Conditions.IsEmpty();
 
-        internal ConditionBuilder Add(ISqlCondition condition)
+        internal ConditionBuilder Add(SqlCondition condition)
         {
-            Conditions.Add(condition);
+            if (condition != Combinator.Neutral)
+            {
+                Conditions.Add(condition);
+            }
+
             return this;
         }
 
@@ -62,20 +66,16 @@ namespace FluentSqlBuilder.Detail
             return this;
         }
 
-        #region ISqlCondition
-        public ConditionBuilder And(ISqlCondition rhs) =>
-            ReferenceEquals(Combinator, ConditionCombinator.And)
+        #region SqlCondition
+        public override SqlCondition And(SqlCondition rhs) =>
+            Combinator.IsAnd
                 ? Add(rhs)
-                : new ConditionBuilder(SqlBuilder, ConditionCombinator.And)
-                    .Add(this)
-                    .Add(rhs);
+                : SqlBuilder.And().And(this).And(rhs);
 
-        public ConditionBuilder Or(ISqlCondition rhs) =>
-            ReferenceEquals(Combinator, ConditionCombinator.Or)
+        public override SqlCondition Or(SqlCondition rhs) =>
+            Combinator.IsOr
                 ? Add(rhs)
-                : new ConditionBuilder(SqlBuilder, ConditionCombinator.Or)
-                    .Add(this)
-                    .Add(rhs);
+                : SqlBuilder.Or().Or(this).Or(rhs);
         #endregion
     }
 }

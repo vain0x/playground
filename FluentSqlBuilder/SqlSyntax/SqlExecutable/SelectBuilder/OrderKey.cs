@@ -1,36 +1,28 @@
-﻿using System.Collections.Generic;
-using System.Data.Common;
-using FluentSqlBuilder.Public;
+using System.Collections.Generic;
+using System.Linq;
 
-namespace FluentSqlBuilder.Detail
+namespace FluentSqlBuilder.SqlSyntax
 {
-    public class OrderKey
-        : ISqlPart
+    sealed class OrderKey
+        : SqlPart
     {
-        public ISqlExpression<IScalar> Expression { get; }
+        public ScalarSqlExpression Expression { get; }
         public OrderDirection Direction { get; }
 
-        public OrderKey(ISqlExpression<IScalar> expression, OrderDirection direction)
+        public OrderKey(ScalarSqlExpression expression, OrderDirection direction)
         {
             Expression = expression;
             Direction = direction;
         }
 
-        #region ISqlPart
-        public IEnumerable<string> Tokens
-        {
-            get
-            {
-                foreach (var token in Expression.Tokens) yield return token;
-                if (Direction == OrderDirection.Descending)
-                {
-                    yield return "desc";
-                }
-            }
-        }
+        #region Tokens
+        IEnumerable<SqlToken> OrderKeywordTokens =>
+            Direction == OrderDirection.Descending
+            ? new[] { SqlToken.FromString("desc") }
+            : Enumerable.Empty<SqlToken>();
 
-        public IEnumerable<DbParameter> Parameters =>
-            Expression.Parameters;
+        internal override IEnumerable<SqlToken> Tokens =>
+            Expression.Tokens.Concat(OrderKeywordTokens);
         #endregion
     }
 }

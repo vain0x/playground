@@ -40,16 +40,22 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="DbProvider\DbTypeMap.cs" />
     <Compile Include="Accessor\Record\AssignmentRecord.cs" />
     <Compile Include="Accessor\Record\DbParameterRecord.cs" />
     <Compile Include="SqlSyntax\SqlCondition\ConditionBuilder.cs" />
     <Compile Include="SqlSyntax\SqlCondition\ConditionCombinator.cs" />
+    <Compile Include="SqlSyntax\SqlCondition\AtomicSqlCondition.cs" />
     <Compile Include="SqlSyntax\SqlCondition\SqlCondition.cs" />
+    <Compile Include="SqlSyntax\SqlCondition\SqlConditionConstant.cs" />
     <Compile Include="SqlSyntax\SqlExecutable\Insert\InsertBuilder.cs" />
     <Compile Include="SqlSyntax\SqlExecutable\SelectBuilder\CombinedSelectStatement.cs" />
     <Compile Include="SqlSyntax\SqlExecutable\Update\AssignmentlessUpdateBuilder.cs" />
     <Compile Include="SqlSyntax\SqlExecutable\Update\UpdateBuilder.cs" />
     <Compile Include="SqlSyntax\SqlExecutable\Update\UpdateStatement.cs" />
+    <Compile Include="SqlSyntax\SqlExpression\AliasedSqlExpression.cs" />
+    <Compile Include="SqlSyntax\SqlExpression\ConcreteSqlExpression.cs" />
+    <Compile Include="SqlSyntax\SqlExpression\JoinBuilder\JoinType.cs" />
     <Compile Include="SqlSyntax\SqlExpression\SqlExpression.cs" />
     <Compile Include="SqlSyntax\SqlExpression\JoinBuilder\Join.cs" />
     <Compile Include="SqlSyntax\SqlExpression\JoinBuilder\JoinBuilder.cs" />
@@ -61,6 +67,7 @@
     <Compile Include="SqlSyntax\SqlExecutable\SelectBuilder\SelectBuilder.cs" />
     <Compile Include="SqlSyntax\SqlExpression\SqlExpressionExtensions.cs" />
     <Compile Include="Accessor\Record\Record.cs" />
+    <Compile Include="SqlSyntax\SqlToken.cs" />
     <Compile Include="Utility\KeyValuePair.cs" />
     <Compile Include="Utility\LinqExtensions.cs" />
     <Compile Include="Utility\Lazy.cs" />
@@ -73,11 +80,10 @@
     <Compile Include="SqlSyntax\SqlExecutable\SelectBuilder\SelectStatement.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="SqlSyntax\SqlPart.cs" />
-    <Compile Include="SqlSyntax\SqlExpression\SqlTypeTags.cs" />
     <Compile Include="SqlBuilder.cs" />
-    <Compile Include="Accessor\Table\IColumn.cs" />
-    <Compile Include="Accessor\Table\Table.cs" />
     <Compile Include="Accessor\Table\Column.cs" />
+    <Compile Include="Accessor\Table\Table.cs" />
+    <Compile Include="Accessor\Table\ConcreteColumn.cs" />
     <Compile Include="SqlSyntax\SqlPartExtensions.cs" />
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />

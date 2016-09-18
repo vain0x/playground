@@ -1,7 +1,6 @@
-﻿using System;
+using System;
 using System.Linq;
-using FluentSqlBuilder.Detail;
-using FluentSqlBuilder.Public;
+using FluentSqlBuilder.SqlSyntax;
 using Xunit;
 
 namespace FluentSqlBuilder.Test
@@ -15,7 +14,7 @@ namespace FluentSqlBuilder.Test
         public void TestInvoke_no_arguments()
         {
             SqlExpressionExtensions
-                .Invoke<IRelation>(Sql, "f", Enumerable.Empty<ISqlExpression<IScalar>>())
+                .Invoke("f", Enumerable.Empty<ScalarSqlExpression>())
                 .ToEmbeddedString()
                 .ShouldEqual("f ( )");
         }
@@ -24,11 +23,7 @@ namespace FluentSqlBuilder.Test
         public void TestInvoke_two_arguments()
         {
             SqlExpressionExtensions
-                .Invoke<IScalar<long>>(
-                    Sql,
-                    "max",
-                    new[] { Sql.Int(1), Sql.Int(2) }
-                )
+                .Invoke("max", new[] { Sql.Int(1), Sql.Int(2) })
                 .ToEmbeddedString()
                 .ShouldEqual("max ( 1 , 2 )");
         }

@@ -1,53 +1,44 @@
-﻿using System;
+using System;
+using System.Collections;
 using System.Collections.Generic;
 using System.Data.Common;
 using System.Linq;
 
-namespace FluentSqlBuilder.Detail
+namespace FluentSqlBuilder.SqlSyntax
 {
     /// <summary>
     /// SQL文の断片を表す。
     /// </summary>
-    public interface ISqlPart
+    public abstract class SqlPart
+        : IEnumerable<SqlToken>
     {
-        IEnumerable<string> Tokens { get; }
-        IEnumerable<DbParameter> Parameters { get; }
-    }
-
-    public class ConcreteSqlPart
-        : ISqlPart
-    {
-        #region ISqlPart
-        public IEnumerable<string> Tokens { get; }
-        public IEnumerable<DbParameter> Parameters { get; }
-        #endregion
-
-        public ConcreteSqlPart(IEnumerable<string> tokens, IEnumerable<DbParameter> parameters)
-        {
-            Tokens = tokens;
-            Parameters = parameters;
-        }
-
-        public ConcreteSqlPart(IEnumerable<string> tokens)
-            : this(tokens, Enumerable.Empty<DbParameter>())
-        {
-        }
+        internal abstract IEnumerable<SqlToken> Tokens { get; }
 
         public override string ToString()
         {
-            return string.Join(" ", Tokens);
+            return string.Join(" ", Tokens.Select(t => t.String));
         }
+
+        #region IEnumerable
+        IEnumerator IEnumerable.GetEnumerator() =>
+            Tokens.GetEnumerator();
+
+        IEnumerator<SqlToken> IEnumerable<SqlToken>.GetEnumerator() =>
+            Tokens.GetEnumerator();
+        #endregion
+
+        public static SqlPart FromString(string token) =>
+            new ConcreteSqlPart(new[] { SqlToken.FromString(token) });
     }
 
-    public static class SqlPart
+    sealed class ConcreteSqlPart
+        : SqlPart
     {
-        public static ISqlPart FromToken(string token) =>
-            new ConcreteSqlPart(new[] { token });
+        internal override IEnumerable<SqlToken> Tokens { get; }
 
-        public static ISqlPart Concat(IEnumerable<ISqlPart> parts) =>
-            new ConcreteSqlPart(
-                parts.SelectMany(p => p.Tokens),
-                parts.SelectMany(p => p.Parameters)
-            );
+        public ConcreteSqlPart(IEnumerable<SqlToken> tokens)
+        {
+            Tokens = tokens;
+        }
     }
 }

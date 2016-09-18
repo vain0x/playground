@@ -1,18 +1,17 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Data.Common;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
-using FluentSqlBuilder.Public;
 
-namespace FluentSqlBuilder.Detail
+namespace FluentSqlBuilder.SqlSyntax
 {
-    public class UpdateBuilder
+    public sealed class UpdateBuilder
     {
         UpdateStatement Statement { get; }
 
-        public UpdateBuilder Where(ISqlCondition condition)
+        public UpdateBuilder Where(SqlCondition condition)
         {
             Statement.WhereCondition.Add(condition);
             return this;

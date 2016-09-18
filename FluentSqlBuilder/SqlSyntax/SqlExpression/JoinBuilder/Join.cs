@@ -1,29 +1,19 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Data.Common;
 using System.Linq;
-using FluentSqlBuilder.Public;
 
-namespace FluentSqlBuilder.Detail
+namespace FluentSqlBuilder.SqlSyntax
 {
-    public enum JoinType
-    {
-        Inner,
-        Cross,
-        LeftOuter,
-        RightOuter,
-        FullOuter,
-    }
-
-    public abstract class Join
-        : ISqlPart
+    abstract class Join
+        : SqlPart
     {
         public JoinType JoinType { get; }
-        public ISqlExpression<IRelation> Relation { get; }
+        public RelationSqlExpression Relation { get; }
 
         public Join(
             JoinType joinType,
-            ISqlExpression<IRelation> relation
+            RelationSqlExpression relation
         )
         {
             JoinType = joinType;
@@ -45,51 +35,38 @@ namespace FluentSqlBuilder.Detail
                 }
             }
         }
-
-        #region ISqlPart
-        public abstract IEnumerable<string> Tokens { get; }
-        public abstract IEnumerable<DbParameter> Parameters { get; }
-        #endregion
     }
 
-    public class JoinOn
+    sealed class JoinOn
         : Join
     {
-        public ISqlCondition Condition { get; }
+        public SqlCondition Condition { get; }
 
         public JoinOn(
             JoinType joinType,
-            ISqlExpression<IRelation> relation,
-            ISqlCondition condition
+            RelationSqlExpression relation,
+            SqlCondition condition
         )
             : base(joinType, relation)
         {
             Condition = condition;
         }
 
-        public override IEnumerable<string> Tokens
-        {
-            get
-            {
-                yield return JoinWord;
-                foreach (var token in Relation.Tokens) yield return token;
-                yield return "on";
-                foreach (var token in Condition.Tokens) yield return token;
-            }
-        }
-
-        public override IEnumerable<DbParameter> Parameters =>
-            Relation.Parameters.Concat(Condition.Parameters);
+        internal override IEnumerable<SqlToken> Tokens =>
+            new[] { SqlToken.FromString(JoinWord) }
+            .Concat(Relation.Tokens)
+            .Concat(new[] { SqlToken.FromString("on") })
+            .Concat(Condition.Tokens);
     }
 
-    public class JoinUsing
+    sealed class JoinUsing
         : Join
     {
         public string Column { get; }
 
         public JoinUsing(
             JoinType joinType,
-            ISqlExpression<IRelation> relation,
+            RelationSqlExpression relation,
             string column
         )
             : base(joinType, relation)
@@ -97,20 +74,16 @@ namespace FluentSqlBuilder.Detail
             Column = column;
         }
 
-        public override IEnumerable<string> Tokens
-        {
-            get
-            {
-                yield return JoinWord;
-                foreach (var token in Relation.Tokens) yield return token;
-                yield return "using";
-                yield return "(";
-                yield return Column;
-                yield return ")";
-            }
-        }
-
-        public override IEnumerable<DbParameter> Parameters =>
-            Relation.Parameters;
+        internal override IEnumerable<SqlToken> Tokens =>
+            new[] { SqlToken.FromString(JoinWord) }
+            .Concat(Relation.Tokens)
+            .Concat(
+                new[]
+                {
+                    SqlToken.FromString("using"),
+                    SqlToken.FromString("("),
+                    SqlToken.FromString(Column),
+                    SqlToken.FromString(")")
+                });
     }
 }

@@ -1,6 +1,5 @@
 ﻿using Xunit;
-using FluentSqlBuilder.Detail;
-using FluentSqlBuilder.Public;
+using FluentSqlBuilder.SqlSyntax;
 
 namespace FluentSqlBuilder.Test
 {
@@ -12,16 +11,16 @@ namespace FluentSqlBuilder.Test
         [Fact]
         public void TestAnd_trivial()
         {
-            new ConditionBuilder(Sql, ConditionCombinator.And)
+            Sql.And()
                 .ToEmbeddedString()
-                .ShouldEqual(ConditionCombinator.TrueExpression);
+                .ShouldEqual(SqlConditionConstant.TrueExpression);
         }
 
         [Fact]
         public void TestAnd_single_condition()
         {
-            new ConditionBuilder(Sql, ConditionCombinator.And)
-                .Add(FakeDb.Employee.Name.Equal(Sql.String("Miku")))
+            Sql.And()
+                .And(FakeDb.Employee.Name.Equal(Sql.String("Miku")))
                 .ToEmbeddedString()
                 .ShouldEqual("`employees`.`name` = 'Miku'");
         }
@@ -29,10 +28,10 @@ namespace FluentSqlBuilder.Test
         [Fact]
         public void TestAnd_three_conditions()
         {
-            new ConditionBuilder(Sql, ConditionCombinator.And)
-                .Add(FakeDb.Employee.Name.Equal(Sql.String("Miku")))
-                .Add(FakeDb.Employee.Age.Equal(Sql.Int(16L)))
-                .Add(FakeDb.Employee.DepartmentId.Equal(FakeDb.Department.Id))
+            Sql.And()
+                .And(FakeDb.Employee.Name.Equal(Sql.String("Miku")))
+                .And(FakeDb.Employee.Age.Equal(Sql.Int(16L)))
+                .And(FakeDb.Employee.DepartmentId.Equal(FakeDb.Department.Id))
                 .ToEmbeddedString()
                 .ShouldEqual(
                     "( `employees`.`name` = 'Miku' "
@@ -43,10 +42,10 @@ namespace FluentSqlBuilder.Test
         [Fact]
         public void TestAnd_collapse_true()
         {
-            new ConditionBuilder(Sql, ConditionCombinator.And)
-                .Add(FakeDb.Employee.Name.Equal(Sql.String("Miku")))
-                .Add(Sql.True)
-                .Add(Sql.True)
+            Sql.And()
+                .And(FakeDb.Employee.Name.Equal(Sql.String("Miku")))
+                .And(Sql.True)
+                .And(Sql.True)
                 .ToEmbeddedString()
                 .ShouldEqual("`employees`.`name` = 'Miku'");
         }
@@ -54,9 +53,9 @@ namespace FluentSqlBuilder.Test
         [Fact]
         public void TestAnd_combine_or_condition()
         {
-            new ConditionBuilder(Sql, ConditionCombinator.And)
-                .Add(FakeDb.Employee.Name.Equal(Sql.String("Miku")))
-                .Add(Sql.Null<long>().IsNull().Or(Sql.Int(1L).IsNull()))
+            Sql.And()
+                .And(FakeDb.Employee.Name.Equal(Sql.String("Miku")))
+                .And(Sql.Null<long>().IsNull().Or(Sql.Int(1L).IsNull()))
                 .ToEmbeddedString()
                 .ShouldEqual("( `employees`.`name` = 'Miku' and ( null is null or 1 is null ) )");
         }

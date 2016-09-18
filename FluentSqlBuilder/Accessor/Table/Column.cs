@@ -1,86 +1,34 @@
-﻿using System;
-using System.Collections.Generic;
 using System.Data;
-using System.Data.Common;
-using System.Linq;
-using FluentSqlBuilder.Public;
+using FluentSqlBuilder.SqlSyntax;
 
-namespace FluentSqlBuilder.Detail
+namespace FluentSqlBuilder.Accessor
 {
-    public class Column<TValue>
-        : SqlExpression<IScalar<TValue>>
-        , IColumn<TValue>
+    public interface IColumn
     {
-        #region IColumn
-        public string QualifiedName { get; }
-        public string UniqueName { get; }
-        public string RawName { get; }
+        string QualifiedName { get; }
+        string UniqueName { get; }
+        string RawName { get; }
+        DbType DbType { get; }
+    }
 
-        public DbType DbType
-        {
-            get
-            {
-                return SqlBuilder.Provider.DbTypeFromType(typeof(TValue));
-            }
-        }
-
-        public TValue this[DataRow row]
-        {
-            get
-            {
-                return row.Field<TValue>(UniqueName);
-            }
-
-            set
-            {
-                row.SetField(UniqueName, value);
-            }
-        }
-
-        public TValue this[IValueRecord record]
-        {
-            get
-            {
-                return (TValue)record[UniqueName];
-            }
-            set
-            {
-                record[UniqueName] = value;
-            }
-        }
-
-        public ISqlExpression<IScalar<TValue>> this[IExpressionRecord record]
-        {
-            get
-            {
-                return (ISqlExpression<IScalar<TValue>>)record[UniqueName];
-            }
-            set
-            {
-                record[UniqueName] = value;
-            }
-        }
-
-        #region SqlExpression
-        public override IEnumerable<string> Tokens
-        {
-            get
-            {
-                yield return QualifiedName;
-            }
-        }
-
-        public override IEnumerable<DbParameter> Parameters =>
-            Enumerable.Empty<DbParameter>();
-        #endregion
-        #endregion
-
-        public Column(SqlBuilder sqlBuilder, Table table, string rawName)
+    public abstract class Column<TValue>
+        : ScalarSqlExpression<TValue>
+        , IColumn
+    {
+        internal Column(SqlBuilder sqlBuilder)
             : base(sqlBuilder)
         {
-            RawName = rawName;
-            UniqueName = SqlBuilder.Language.ConcatIdentifiers(table.Alias, RawName);
-            QualifiedName = sqlBuilder.Language.BuildColumnName(table.Alias, rawName);
         }
+
+        public abstract TValue this[DataRow row] { get; set; }
+        public abstract TValue this[IValueRecord record] { get; set; }
+        public abstract ScalarSqlExpression<TValue> this[IExpressionRecord record] { get; set; }
+
+        #region IColumn
+        public abstract string QualifiedName { get; }
+        public abstract string UniqueName { get; }
+        public abstract string RawName { get; }
+        public abstract DbType DbType { get; }
+        #endregion
     }
 }

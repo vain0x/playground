@@ -1,15 +1,14 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
-using Optional;
-using FluentSqlBuilder.Public;
+using FluentSqlBuilder.SqlSyntax;
 
-namespace FluentSqlBuilder.Detail
+namespace FluentSqlBuilder.Accessor
 {
-    public class AssignmentRecord
-        : Dictionary<string, ISqlExpression<IScalar>>
+    sealed class AssignmentRecord
+        : Dictionary<string, ScalarSqlExpression>
         , IExpressionRecord
     {
     }

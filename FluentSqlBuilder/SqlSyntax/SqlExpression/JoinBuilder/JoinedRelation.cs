@@ -1,29 +1,23 @@
-﻿using System.Collections.Generic;
+using System.Collections.Generic;
 using System.Data.Common;
 using System.Linq;
-using FluentSqlBuilder.Public;
 
-namespace FluentSqlBuilder.Detail
+namespace FluentSqlBuilder.SqlSyntax
 {
-    public class JoinedRelation
-        : SqlExpression<IRelation>
+    sealed class JoinedRelation
+        : RelationSqlExpression
     {
-        public ISqlExpression<IRelation> Relation { get; }
+        public RelationSqlExpression Relation { get; }
         public Join Join { get; }
 
-        public JoinedRelation(ISqlExpression<IRelation> relation, Join join)
+        public JoinedRelation(RelationSqlExpression relation, Join join)
             : base(relation.SqlBuilder)
         {
             Relation = relation;
             Join = join;
         }
 
-        #region ISqlPart
-        public override IEnumerable<string> Tokens =>
+        internal override IEnumerable<SqlToken> Tokens =>
             Relation.Tokens.Concat(Join.Tokens);
-
-        public override IEnumerable<DbParameter> Parameters =>
-            Relation.Parameters.Concat(Join.Parameters);
-        #endregion
     }
 }

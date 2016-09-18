@@ -1,19 +1,19 @@
-﻿using System;
-using FluentSqlBuilder.Public;
+using System;
+using FluentSqlBuilder.Accessor;
 
-namespace FluentSqlBuilder.Detail
+namespace FluentSqlBuilder.SqlSyntax
 {
-    public class JoinBuilder<TResult>
+    public sealed class JoinBuilder<TResult>
     {
         SqlBuilder SqlBuilder { get; }
         JoinType JoinType { get; }
-        ISqlExpression<IRelation> Relation { get; }
+        RelationSqlExpression Relation { get; }
         Func<Join, TResult> Run { get; }
 
-        public JoinBuilder(
+        internal JoinBuilder(
             SqlBuilder sqlBuilder,
             JoinType joinType,
-            ISqlExpression<IRelation> relation,
+            RelationSqlExpression relation,
             Func<Join, TResult> run
         )
         {
@@ -23,7 +23,7 @@ namespace FluentSqlBuilder.Detail
             Run = run;
         }
 
-        public TResult On(ISqlCondition condition)
+        public TResult On(SqlCondition condition)
         {
             return Run(new JoinOn(JoinType, Relation, condition));
         }

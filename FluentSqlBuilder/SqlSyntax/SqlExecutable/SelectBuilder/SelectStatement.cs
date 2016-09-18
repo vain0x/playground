@@ -1,37 +1,36 @@
-﻿using System.Collections.Generic;
+using System.Collections.Generic;
 using System.Data.Common;
 using System.Diagnostics;
 using System.Linq;
 using Optional;
-using FluentSqlBuilder.Public;
 
-namespace FluentSqlBuilder.Detail
+namespace FluentSqlBuilder.SqlSyntax
 {
-    public class SelectStatement
-        : SqlExpression<IRelation>
+    sealed class SelectStatement
+        : RelationSqlExpression
         , ISqlExecutable
     {
         Option<CombinedSelectStatement> Combined { get; }
 
-        public ISqlExpression<IRelation> Source { get; private set; }
+        public RelationSqlExpression Source { get; private set; }
 
         public ConditionBuilder WhereCondition { get; }
 
         public ConditionBuilder HavingCondition { get; }
 
-        public List<ISqlExpression<IScalar>> GroupKeys { get; } =
-            new List<ISqlExpression<IScalar>>();
+        public List<ScalarSqlExpression> GroupKeys { get; } =
+            new List<ScalarSqlExpression>();
 
         public List<OrderKey> OrderKeys { get; } =
             new List<OrderKey>();
 
-        public List<ISqlPart> Fields { get; } =
-            new List<ISqlPart>();
+        public List<SqlPart> Fields { get; } =
+            new List<SqlPart>();
 
         public SelectStatement(
             SqlBuilder sqlBuilder,
             Option<CombinedSelectStatement> combined,
-            ISqlExpression<IRelation> relation
+            RelationSqlExpression relation
         )
             : base(sqlBuilder)
         {
@@ -41,71 +40,77 @@ namespace FluentSqlBuilder.Detail
             HavingCondition = new ConditionBuilder(SqlBuilder);
         }
 
-        #region SqlExpression
-        public override IEnumerable<string> Tokens
+        #region Tokens
+        IEnumerable<SqlToken> FieldListTokens =>
+            Fields.Intersperse(SqlPart.FromString(","))
+            .SelectMany(p => p.Tokens);
+
+        IEnumerable<SqlToken> FromTokens =>
+            new[] { SqlToken.FromString("from") }
+            .Concat(Source.Tokens);
+
+        IEnumerable<SqlToken> WhereTokens =>
+            WhereCondition.IsTrivial
+            ? Enumerable.Empty<SqlToken>()
+            :
+                new[] { SqlToken.FromString("where") }
+                .Concat(WhereCondition.Tokens);
+
+        IEnumerable<SqlToken> GroupByTokens =>
+            GroupKeys.Any()
+            ?
+                new[] { SqlToken.FromString("group by") }
+                .Concat(
+                    GroupKeys
+                        .Intersperse(SqlPart.FromString(","))
+                        .SelectMany(p => p.Tokens)
+                )
+            : Enumerable.Empty<SqlToken>();
+
+        IEnumerable<SqlToken> HavingTokens =>
+            HavingCondition.IsTrivial
+            ? Enumerable.Empty<SqlToken>()
+            :
+                new[] { SqlToken.FromString("having") }
+                .Concat(HavingCondition.Tokens);
+
+        IEnumerable<SqlToken> OrderByTokens =>
+            OrderKeys.Any()
+            ?
+                new[] { SqlToken.FromString("order by") }
+                .Concat(
+                    OrderKeys.Select(o => o.Tokens)
+                    .Intercalate(new[] { SqlToken.FromString(",") })
+                )
+            : Enumerable.Empty<SqlToken>();
+
+        IEnumerable<SqlToken> SelectTokens =>
+            new[] { SqlToken.FromString("select") }
+            .Concat(FieldListTokens)
+            .Concat(FromTokens)
+            .Concat(WhereTokens)
+            .Concat(GroupByTokens)
+            .Concat(HavingTokens)
+            .Concat(OrderByTokens);
+
+        IEnumerable<SqlToken> CombinedTokens
         {
             get
             {
                 foreach (var combined in Combined)
                 {
                     foreach (var token in combined.Statement.Tokens) yield return token;
-                    yield return combined.Combinator;
-                }
-
-                yield return "select";
-
-                var fieldListTokens = Fields.Select(f => f.Tokens).Intercalate(new[] { "," });
-                foreach (var token in fieldListTokens) yield return token;
-
-                yield return "from";
-                foreach (var token in Source.Tokens) yield return token;
-
-                if (!WhereCondition.IsTrivial)
-                {
-                    yield return "where";
-                    foreach (var token in WhereCondition.Tokens) yield return token;
-                }
-
-                if (GroupKeys.Any())
-                {
-                    yield return "group by";
-                    var tokens = GroupKeys.Select(g => g.Tokens).Intercalate(new[] { "," });
-                    foreach (var token in tokens) yield return token;
-                }
-
-                if (!HavingCondition.IsTrivial)
-                {
-                    yield return "having";
-                    foreach (var token in HavingCondition.Tokens) yield return token;
-                }
-
-                if (OrderKeys.Any())
-                {
-                    yield return "order by";
-                    var tokens = OrderKeys.Select(o => o.Tokens).Intercalate(new[] { "," });
-                    foreach (var token in tokens) yield return token;
+                    yield return SqlToken.FromString(combined.Combinator);
                 }
             }
         }
 
-        public override IEnumerable<DbParameter> Parameters =>
-            Source.Parameters
-            .Concat(
-                Combined.Match(
-                    combined => combined.Statement.Parameters,
-                    () => Enumerable.Empty<DbParameter>()
-                ))
-            .Concat(WhereCondition.Parameters)
-            .Concat(HavingCondition.Parameters)
-            .Concat(GroupKeys.SelectMany(g => g.Parameters))
-            .Concat(OrderKeys.SelectMany(o => o.Parameters))
-            .Concat(Fields.SelectMany(f => f.Parameters));
+        internal override IEnumerable<SqlToken> Tokens =>
+            CombinedTokens.Concat(SelectTokens);
         #endregion
 
-        #region ISqlExecutable
         public DbCommand ToCommand() =>
-            SqlBuilder.CreateCommand(ToString(), Parameters);
-        #endregion
+            SqlBuilder.CreateCommand(Tokens);
 
         public void Join(Join join)
         {
@@ -114,33 +119,33 @@ namespace FluentSqlBuilder.Detail
 
         public void AddFieldAll()
         {
-            var wildmark = SqlPart.FromToken(SqlBuilder.Language.GetWildmark());
+            var wildmark = SqlPart.FromString(SqlBuilder.Language.GetWildmark());
             Fields.Add(wildmark);
         }
 
-        public void AddFieldAll(IAliasedSqlExpression<IRelation> relation)
+        public void AddFieldAll(IAliasedSqlExpression relation)
         {
             var wildmark = SqlBuilder.Language.BuildWildmark(relation.Alias);
-            Fields.Add(SqlPart.FromToken(wildmark));
+            Fields.Add(SqlPart.FromString(wildmark));
         }
 
-        public ISqlExpression<IScalar<X>> ToScalar<X>()
+        public ScalarSqlExpression<X> ToScalar<X>()
         {
             Debug.Assert(Fields.Count == 1);
-            return new CompoundExpression<IScalar<X>>(SqlBuilder, this.Enclose("(", ")"));
+            return new ConcreteScalarSqlExpression<X>(SqlBuilder, this.Enclose("(", ")"));
         }
 
-        internal ISqlExpression<IScalar<X>> Quantify<X>(string quantifier)
+        internal ScalarSqlExpression<X> Quantify<X>(string quantifier)
         {
             Debug.Assert(Fields.Count == 1);
-            var part = SqlPart.FromToken(quantifier).Concat(this.Enclose("(", ")"));
-            return new CompoundExpression<IScalar<X>>(SqlBuilder, part);
+            var part = SqlPart.FromString(quantifier).Concat(this.Enclose("(", ")"));
+            return new ConcreteScalarSqlExpression<X>(SqlBuilder, part);
         }
 
-        public ISqlExpression<IRelation> ToRelation()
+        public RelationSqlExpression ToRelation()
         {
             Debug.Assert(Fields.Any());
-            return new CompoundExpression<IRelation>(SqlBuilder, this.Enclose("(", ")"));
+            return new ConcreteRelationSqlExpression(SqlBuilder, this.Enclose("(", ")"));
         }
     }
 }

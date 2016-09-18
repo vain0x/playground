@@ -3,9 +3,10 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
-using FluentSqlBuilder.Detail;
-using FluentSqlBuilder.Public;
 using Xunit;
+using FluentSqlBuilder.SqlSyntax;
+using FluentSqlBuilder.Accessor;
+
 namespace FluentSqlBuilder.Test
 {
     public class TableTest

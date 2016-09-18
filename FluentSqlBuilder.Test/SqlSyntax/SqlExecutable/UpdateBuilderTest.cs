@@ -4,8 +4,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using Xunit;
-using FluentSqlBuilder.Detail;
-using FluentSqlBuilder.Public;
+using FluentSqlBuilder.SqlSyntax;
 
 namespace FluentSqlBuilder.Test
 {

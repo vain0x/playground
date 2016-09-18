@@ -1,11 +1,11 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
-using FluentSqlBuilder.Detail;
+using FluentSqlBuilder.SqlSyntax;
 
-namespace FluentSqlBuilder.Public
+namespace FluentSqlBuilder.Accessor
 {
     public interface IValueRecord
     {
@@ -14,6 +14,6 @@ namespace FluentSqlBuilder.Public
 
     public interface IExpressionRecord
     {
-        ISqlExpression<IScalar> this[string columnName] { get; set; }
+        ScalarSqlExpression this[string columnName] { get; set; }
     }
 }

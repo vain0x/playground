@@ -1,6 +1,6 @@
-﻿namespace FluentSqlBuilder.Detail
+﻿namespace FluentSqlBuilder.SqlSyntax
 {
-    public enum OrderDirection
+    enum OrderDirection
     {
         Ascending,
         Descending,

@@ -5,15 +5,13 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using Optional;
-using FluentSqlBuilder.Public;
 
-namespace FluentSqlBuilder.Detail
+namespace FluentSqlBuilder.Accessor
 {
-    public class DbParameterRecord
+    sealed class DbParameterRecord
         : Dictionary<string, DbParameter>
         , IValueRecord
     {
-        #region IRecord
         public new object this[string columnName]
         {
             get
@@ -33,6 +31,5 @@ namespace FluentSqlBuilder.Detail
                 }
             }
         }
-        #endregion
     }
 }

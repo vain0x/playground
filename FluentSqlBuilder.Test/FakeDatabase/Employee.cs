@@ -1,15 +1,15 @@
 ﻿using System;
 using Optional;
-using FluentSqlBuilder.Public;
+using FluentSqlBuilder.Accessor;
 
 namespace FluentSqlBuilder.Test
 {
     public class Employee
     {
         public Table Table { get; }
-        public IColumn<string> Name { get; }
-        public IColumn<long> Age { get; }
-        public IColumn<long> DepartmentId { get; }
+        public Column<string> Name { get; }
+        public Column<long> Age { get; }
+        public Column<long> DepartmentId { get; }
 
         public Employee(SqlBuilder sqlBuilder, Option<string> tableAlias)
         {

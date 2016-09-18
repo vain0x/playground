@@ -5,13 +5,13 @@ using System.Data.Common;
 using System.Linq;
 using System.Reflection;
 using Optional;
-using FluentSqlBuilder.Detail;
+using FluentSqlBuilder.SqlSyntax;
 
-namespace FluentSqlBuilder.Public
+namespace FluentSqlBuilder.Accessor
 {
-    public class Table
-        : SqlExpression<IRelation>
-        , IAliasedSqlExpression<IRelation>
+    public sealed class Table
+        : RelationSqlExpression
+        , IAliasedSqlExpression
     {
         object Relation { get; }
         Option<string> OptionalAlias { get; }
@@ -21,28 +21,21 @@ namespace FluentSqlBuilder.Public
         internal string QuotedName => SqlBuilder.Language.BuildTableName(RawName);
         public string Alias => OptionalAlias.ValueOr(RawName);
 
-        public IColumn<X> Column<X>(string columnName) =>
-            new Column<X>(SqlBuilder, this, columnName);
+        public Column<X> Column<X>(string columnName) =>
+            new ConcreteColumn<X>(SqlBuilder, this, columnName);
 
-        #region SqlExpression
-        public sealed override IEnumerable<string> Tokens
+        internal override IEnumerable<SqlToken> Tokens
         {
             get
             {
-                var tableName = new[] { QuotedName };
+                var tableName = new[] { SqlToken.FromString(QuotedName) };
                 return
                     OptionalAlias.Match(
-                        alias =>
-                            SqlBuilder.Language
-                            .ConstructAliasedExpression(tableName, alias),
+                        alias => SqlBuilder.Language.ConstructAliasedExpression(tableName, alias),
                         () => tableName
                     );
             }
         }
-
-        public sealed override IEnumerable<DbParameter> Parameters =>
-            Enumerable.Empty<DbParameter>();
-        #endregion
 
         #region Reflection
         bool IsColumnType(Type type)
