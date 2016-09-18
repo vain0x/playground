@@ -40,6 +40,8 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="Accessor\Table\Relation.cs" />
+    <Compile Include="Accessor\Table\RelationExtensions.cs" />
     <Compile Include="DbProvider\DbTypeMap.cs" />
     <Compile Include="Accessor\Record\AssignmentRecord.cs" />
     <Compile Include="Accessor\Record\DbParameterRecord.cs" />
@@ -83,7 +85,6 @@
     <Compile Include="SqlBuilder.cs" />
     <Compile Include="Accessor\Table\Column.cs" />
     <Compile Include="Accessor\Table\Table.cs" />
-    <Compile Include="Accessor\Table\ConcreteColumn.cs" />
     <Compile Include="SqlSyntax\SqlPartExtensions.cs" />
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />

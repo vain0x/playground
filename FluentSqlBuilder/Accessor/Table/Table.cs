@@ -13,7 +13,7 @@ namespace FluentSqlBuilder.Accessor
         : RelationSqlExpression
         , IAliasedSqlExpression
     {
-        object Relation { get; }
+        Relation Relation { get; }
         Option<string> OptionalAlias { get; }
 
         public string RawName { get; }
@@ -22,7 +22,7 @@ namespace FluentSqlBuilder.Accessor
         public string Alias => OptionalAlias.ValueOr(RawName);
 
         public Column<X> Column<X>(string columnName) =>
-            new ConcreteColumn<X>(SqlBuilder, this, columnName);
+            Accessor.Column.Create<X>(this, columnName);
 
         internal override IEnumerable<SqlToken> Tokens
         {
@@ -38,20 +38,7 @@ namespace FluentSqlBuilder.Accessor
         }
 
         #region Reflection
-        bool IsColumnType(Type type)
-        {
-            return type.GetInterface(nameof(IColumn)) != null;
-        }
-
-        internal IEnumerable<PropertyInfo> ColumnProperties()
-        {
-            return
-                Relation.GetType()
-                .GetProperties()
-                .Where(propertyInfo => IsColumnType(propertyInfo.PropertyType));
-        }
-
-        internal Lazy<IReadOnlyList<IColumn>> Columns { get; }
+        internal IReadOnlyList<IColumn> Columns => Relation.Columns;
 
         /// <summary>
         /// 修飾されていないクオートされたカラム名のリスト。
@@ -70,7 +57,7 @@ namespace FluentSqlBuilder.Accessor
 
         internal Table(
             SqlBuilder sqlBuilder,
-            object relation,
+            Relation relation,
             string rawName,
             Option<string> alias
         )
@@ -80,24 +67,16 @@ namespace FluentSqlBuilder.Accessor
             OptionalAlias = alias;
             RawName = rawName;
 
-            Columns =
-                Lazy.Create(() =>
-                    (IReadOnlyList<IColumn>)
-                    ColumnProperties()
-                    .Select(p => (IColumn)p.GetValue(Relation))
-                    .ToArray()
-                );
-
             ColumnNameList =
                 Lazy.Create(() =>
-                    Columns.Value
+                    Columns
                     .Select(c => sqlBuilder.Language.QuoteIdentifier(c.RawName))
                     .Intercalate(',')
                 );
 
             ColumnUniqueNameParameterList =
                 Lazy.Create(() =>
-                    Columns.Value
+                    Columns
                     .Select(c => "@" + c.UniqueName)
                     .Intercalate(',')
                 );

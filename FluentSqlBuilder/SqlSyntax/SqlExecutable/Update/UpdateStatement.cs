@@ -20,7 +20,7 @@ namespace FluentSqlBuilder.SqlSyntax
         internal IEnumerable<KeyValuePair<IColumn, ScalarSqlExpression>> AssignmentList()
         {
             return
-                Table.Columns.Value
+                Table.Columns
                 .Choose(column =>
                 {
                     return
