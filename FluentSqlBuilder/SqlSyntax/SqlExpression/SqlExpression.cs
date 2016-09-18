@@ -36,7 +36,7 @@ namespace FluentSqlBuilder.SqlSyntax
         {
         }
 
-        public AliasedScalarSqlExpression<TValue> As(string alias)
+        public virtual AliasedScalarSqlExpression<TValue> As(string alias)
         {
             return new AliasedScalarSqlExpression<TValue>(this, alias);
         }
@@ -50,7 +50,7 @@ namespace FluentSqlBuilder.SqlSyntax
         {
         }
 
-        public AliasedRelationSqlExpression As(string alias)
+        public virtual AliasedRelationSqlExpression As(string alias)
         {
             return new AliasedRelationSqlExpression(this, alias);
         }
