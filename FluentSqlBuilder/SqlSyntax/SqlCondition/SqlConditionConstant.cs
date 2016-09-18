@@ -21,12 +21,12 @@ namespace FluentSqlBuilder.SqlSyntax
             True =
                 new AtomicSqlCondition(
                     sqlBuilder,
-                    SqlPart.FromString(TrueExpression)
+                    new[] { SqlToken.FromString(TrueExpression) }
                );
             False =
                 new AtomicSqlCondition(
                     sqlBuilder,
-                    SqlPart.FromString(FalseExpression)
+                    new[] { SqlToken.FromString(FalseExpression) }
                 );
 
             And = new ConditionCombinator(True, False, "and", isAnd: true);

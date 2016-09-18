@@ -16,8 +16,9 @@ namespace FluentSqlBuilder.Test
             new ConcreteScalarSqlExpression<long>(
                 Sql,
                 Sql.Int(1)
-                    .Concat(new[] { SqlToken.FromString("+") })
+                    .Concat(SqlPart.FromString("+"))
                     .Concat(Sql.Int(2))
+                    .Tokens
             )
                 .ToEmbeddedString()
                 .ShouldEqual("1 + 2");

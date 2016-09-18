@@ -94,7 +94,7 @@ namespace FluentSqlBuilder
             Value(DbType.DateTime, value);
 
         public ScalarSqlExpression<X> Null<X>() =>
-            new ConcreteScalarSqlExpression<X>(this, SqlPart.FromString("null"));
+            new ConcreteScalarSqlExpression<X>(this, new[] { SqlToken.FromString("null") });
 
         public SqlCondition True =>
             SqlConditionConstant.True;

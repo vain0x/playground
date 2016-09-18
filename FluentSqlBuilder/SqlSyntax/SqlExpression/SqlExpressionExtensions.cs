@@ -14,6 +14,7 @@ namespace FluentSqlBuilder.SqlSyntax
         {
             var argumentList =
                 arguments
+                .Select(a => a.Tokens)
                 .Intercalate(new[] { SqlToken.FromString(",") })
                 .Enclose("(", ")");
             return
@@ -46,7 +47,7 @@ namespace FluentSqlBuilder.SqlSyntax
         ) =>
             new AtomicSqlCondition(
                 lhs.SqlBuilder,
-                lhs.Concat(SqlPart.FromString("is null"))
+                lhs.Concat(SqlPart.FromString("is null")).Tokens
             );
 
         public static SqlCondition Equal<X>(
@@ -55,7 +56,7 @@ namespace FluentSqlBuilder.SqlSyntax
         ) =>
             new AtomicSqlCondition(
                 lhs.SqlBuilder,
-                lhs.Concat(SqlPart.FromString("=")).Concat(rhs)
+                lhs.Concat(SqlPart.FromString("=")).Concat(rhs).Tokens
             );
         #endregion
     }
