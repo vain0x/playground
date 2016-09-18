@@ -10,6 +10,8 @@ namespace FluentSqlBuilder.Accessor
         string UniqueName { get; }
         string RawName { get; }
         DbType DbType { get; }
+
+        ScalarSqlExpression AsExpression { get; }
     }
 
     public sealed class Column<TValue>
@@ -36,6 +38,8 @@ namespace FluentSqlBuilder.Accessor
             QualifiedName = qualifiedName;
             Tokens = tokens;
         }
+
+        ScalarSqlExpression IColumn.AsExpression => this;
 
         public DbType DbType
         {
