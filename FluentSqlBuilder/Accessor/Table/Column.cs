@@ -20,15 +20,53 @@ namespace FluentSqlBuilder.Accessor
         {
         }
 
-        public abstract TValue this[DataRow row] { get; set; }
-        public abstract TValue this[IValueRecord record] { get; set; }
-        public abstract ScalarSqlExpression<TValue> this[IExpressionRecord record] { get; set; }
-
-        #region IColumn
         public abstract string QualifiedName { get; }
         public abstract string UniqueName { get; }
         public abstract string RawName { get; }
-        public abstract DbType DbType { get; }
-        #endregion
+
+        public virtual DbType DbType
+        {
+            get
+            {
+                return SqlBuilder.Provider.DbTypeMap.DbTypeFromType(typeof(TValue));
+            }
+        }
+
+        public virtual TValue this[DataRow row]
+        {
+            get
+            {
+                return row.Field<TValue>(UniqueName);
+            }
+
+            set
+            {
+                row.SetField(UniqueName, value);
+            }
+        }
+
+        public virtual TValue this[IValueRecord record]
+        {
+            get
+            {
+                return (TValue)record[UniqueName];
+            }
+            set
+            {
+                record[UniqueName] = value;
+            }
+        }
+
+        public virtual ScalarSqlExpression<TValue> this[IExpressionRecord record]
+        {
+            get
+            {
+                return record[UniqueName].Unbox<TValue>();
+            }
+            set
+            {
+                record[UniqueName] = value;
+            }
+        }
     }
 }
