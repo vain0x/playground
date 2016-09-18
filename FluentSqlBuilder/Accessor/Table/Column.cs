@@ -100,5 +100,21 @@ namespace FluentSqlBuilder.Accessor
             var tokens = new[] { SqlToken.FromString(qualifiedName) };
             return new Column<X>(sqlBuilder, columnName, uniqueName, qualifiedName, tokens);
         }
+
+        /// <summary>
+        /// Creates a virtual column from an expression.
+        /// (SQLéÆÇ©ÇÁâºëzÉJÉâÉÄÇê∂ê¨Ç∑ÇÈÅB)
+        /// </summary>
+        /// <typeparam name="X"></typeparam>
+        /// <param name="expression"></param>
+        /// <param name="alias"></param>
+        /// <returns></returns>
+        public static Column<X> ToColumn<X>(this ScalarSqlExpression<X> expression, string alias)
+        {
+            var sqlBuilder = expression.SqlBuilder;
+            var qualifiedName = sqlBuilder.Language.QuoteIdentifier(alias);
+            var tokens = expression.As(alias).Tokens;
+            return new Column<X>(sqlBuilder, alias, alias, qualifiedName, tokens);
+        }
     }
 }
