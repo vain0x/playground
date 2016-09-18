@@ -45,6 +45,28 @@ namespace FluentSqlBuilder.Test
             FakeDb.Employee.Table.As("t").ToEmbeddedString()
                 .ShouldEqual("`employees` as `t`");
         }
+
+        [Fact]
+        public void TestAs_idempotent()
+        {
+            Sql.Null<object>().As("nil").As("nil").ToEmbeddedString()
+                .ShouldEqual("null as `nil`");
+
+            FakeDb.Employee.Table.As("t").As("t").ToEmbeddedString()
+                .ShouldEqual("`employees` as `t`");
+        }
+
+        [Fact]
+        public void TestAs_aliased_expressions_cannot_be_aliased_as_other_name()
+        {
+            Assert.Throws<InvalidOperationException>(() =>
+                Sql.Null<object>().As("nil").As("null").ToEmbeddedString()
+            );
+
+            Assert.Throws<InvalidOperationException>(() =>
+                FakeDb.Employee.Table.As("e").As("m").ToEmbeddedString()
+            );
+        }
         #endregion
     }
 }

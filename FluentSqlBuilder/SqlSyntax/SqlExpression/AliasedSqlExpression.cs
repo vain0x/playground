@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.ComponentModel;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
@@ -21,6 +22,16 @@ namespace FluentSqlBuilder.SqlSyntax
         internal override IEnumerable<SqlToken> Tokens =>
             SqlBuilder.Language.ConstructAliasedExpression(Expression, Alias);
 
+        [EditorBrowsable(EditorBrowsableState.Never)]
+        public override AliasedScalarSqlExpression<TValue> As(string alias)
+        {
+            if (Alias != alias)
+            {
+                throw new InvalidOperationException("Aliased expression can't be aliased.");
+            }
+            return this;
+        }
+
         internal AliasedScalarSqlExpression(ScalarSqlExpression<TValue> expression, string alias)
             : base(expression.SqlBuilder)
         {
@@ -38,6 +49,16 @@ namespace FluentSqlBuilder.SqlSyntax
 
         internal override IEnumerable<SqlToken> Tokens =>
             SqlBuilder.Language.ConstructAliasedExpression(Expression, Alias);
+
+        [EditorBrowsable(EditorBrowsableState.Never)]
+        public override AliasedRelationSqlExpression As(string alias)
+        {
+            if (Alias != alias)
+            {
+                throw new InvalidOperationException("Aliased expression can't be aliased.");
+            }
+            return this;
+        }
 
         internal AliasedRelationSqlExpression(RelationSqlExpression expression, string alias)
             : base(expression.SqlBuilder)
