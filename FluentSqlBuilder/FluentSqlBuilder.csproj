@@ -83,7 +83,6 @@
     <Compile Include="SqlBuilder.cs" />
     <Compile Include="Accessor\Table\Column.cs" />
     <Compile Include="Accessor\Table\Table.cs" />
-    <Compile Include="Accessor\Table\ConcreteColumn.cs" />
     <Compile Include="SqlSyntax\SqlPartExtensions.cs" />
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />

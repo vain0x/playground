@@ -1,3 +1,4 @@
+using System.Collections.Generic;
 using System.Data;
 using FluentSqlBuilder.SqlSyntax;
 
@@ -11,20 +12,32 @@ namespace FluentSqlBuilder.Accessor
         DbType DbType { get; }
     }
 
-    public abstract class Column<TValue>
+    public sealed class Column<TValue>
         : ScalarSqlExpression<TValue>
         , IColumn
     {
-        internal Column(SqlBuilder sqlBuilder)
+        public string RawName { get; }
+        public string UniqueName { get; }
+        public string QualifiedName { get; }
+
+        internal override IEnumerable<SqlToken> Tokens { get; }
+
+        internal Column(
+            SqlBuilder sqlBuilder,
+            string rawName,
+            string uniqueName,
+            string qualifiedName,
+            IEnumerable<SqlToken> tokens
+        )
             : base(sqlBuilder)
         {
+            RawName = rawName;
+            UniqueName = uniqueName;
+            QualifiedName = qualifiedName;
+            Tokens = tokens;
         }
 
-        public abstract string QualifiedName { get; }
-        public abstract string UniqueName { get; }
-        public abstract string RawName { get; }
-
-        public virtual DbType DbType
+        public DbType DbType
         {
             get
             {
@@ -32,7 +45,7 @@ namespace FluentSqlBuilder.Accessor
             }
         }
 
-        public virtual TValue this[DataRow row]
+        public TValue this[DataRow row]
         {
             get
             {
@@ -45,7 +58,7 @@ namespace FluentSqlBuilder.Accessor
             }
         }
 
-        public virtual TValue this[IValueRecord record]
+        public TValue this[IValueRecord record]
         {
             get
             {
@@ -57,7 +70,7 @@ namespace FluentSqlBuilder.Accessor
             }
         }
 
-        public virtual ScalarSqlExpression<TValue> this[IExpressionRecord record]
+        public ScalarSqlExpression<TValue> this[IExpressionRecord record]
         {
             get
             {
@@ -67,6 +80,25 @@ namespace FluentSqlBuilder.Accessor
             {
                 record[UniqueName] = value;
             }
+        }
+    }
+
+    public static class Column
+    {
+        /// <summary>
+        /// Creates a column of a table.
+        /// </summary>
+        /// <typeparam name="X"></typeparam>
+        /// <param name="table"></param>
+        /// <param name="columnName"></param>
+        /// <returns></returns>
+        internal static Column<X> Create<X>(Table table, string columnName)
+        {
+            var sqlBuilder = table.SqlBuilder;
+            var uniqueName = sqlBuilder.Language.ConcatIdentifiers(table.Alias, columnName);
+            var qualifiedName = sqlBuilder.Language.BuildColumnName(table.Alias, columnName);
+            var tokens = new[] { SqlToken.FromString(qualifiedName) };
+            return new Column<X>(sqlBuilder, columnName, uniqueName, qualifiedName, tokens);
         }
     }
 }

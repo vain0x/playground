@@ -22,7 +22,7 @@ namespace FluentSqlBuilder.Accessor
         public string Alias => OptionalAlias.ValueOr(RawName);
 
         public Column<X> Column<X>(string columnName) =>
-            new ConcreteColumn<X>(SqlBuilder, this, columnName);
+            Accessor.Column.Create<X>(this, columnName);
 
         internal override IEnumerable<SqlToken> Tokens
         {
