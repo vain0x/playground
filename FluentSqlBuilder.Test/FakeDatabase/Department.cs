@@ -5,6 +5,7 @@ using FluentSqlBuilder.Accessor;
 namespace FluentSqlBuilder.Test
 {
     public class Department
+        : Relation
     {
         public Table Table { get; }
         public Column<long> Id { get; }

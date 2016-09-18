@@ -56,7 +56,7 @@ namespace FluentSqlBuilder
         }
 
         #region Expression
-        public Table Table(object r, string tableName, Option<string> alias) =>
+        public Table Table(Relation r, string tableName, Option<string> alias) =>
             new Table(this, r, tableName, alias);
 
         internal string GenerateUniqueName()

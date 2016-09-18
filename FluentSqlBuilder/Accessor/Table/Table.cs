@@ -13,7 +13,7 @@ namespace FluentSqlBuilder.Accessor
         : RelationSqlExpression
         , IAliasedSqlExpression
     {
-        object Relation { get; }
+        Relation Relation { get; }
         Option<string> OptionalAlias { get; }
 
         public string RawName { get; }
@@ -70,7 +70,7 @@ namespace FluentSqlBuilder.Accessor
 
         internal Table(
             SqlBuilder sqlBuilder,
-            object relation,
+            Relation relation,
             string rawName,
             Option<string> alias
         )
