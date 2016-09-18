@@ -7,9 +7,11 @@ using Optional;
 namespace FluentSqlBuilder.SqlSyntax
 {
     sealed class SelectStatement
-        : RelationSqlExpression
+        : SqlPart
         , ISqlExecutable
     {
+        internal SqlBuilder SqlBuilder { get; }
+
         Option<CombinedSelectStatement> Combined { get; }
 
         public RelationSqlExpression Source { get; private set; }
@@ -32,8 +34,8 @@ namespace FluentSqlBuilder.SqlSyntax
             Option<CombinedSelectStatement> combined,
             RelationSqlExpression relation
         )
-            : base(sqlBuilder)
         {
+            SqlBuilder = sqlBuilder;
             Combined = combined;
             Source = relation;
             WhereCondition = new ConditionBuilder(SqlBuilder);
