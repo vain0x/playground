@@ -32,3 +32,39 @@ module Chapter02 =
                 = space(suffix xs') + O(1)
         従って、S(n) = O(n)
   *)
+
+  type ISet<'e, 's> =
+    abstract member Empty: 's
+    abstract member Insert: 'e -> 's
+    abstract member Contains: 'e -> bool
+
+  /// Unbalanced binary search tree representing set.
+  type BinarySearchTree<'e when 'e: comparison> =
+    | Empty
+    | Node of BinarySearchTree<'e> * 'e * BinarySearchTree<'e>
+  with
+    member this.Insert(x) =
+      match this with
+      | Empty -> Node (Empty, x, Empty)
+      | Node (left, y, right) ->
+        if x < y then
+          Node (left.Insert(x), y, right)
+        elif x > y then
+          Node (left, y, right.Insert(x))
+        else
+          this
+
+    member this.Contains(x) =
+      match this with
+      | Empty -> false
+      | Node (left, y, right) ->
+        if x < y then
+          left.Contains(x)
+        elif x > y then
+          right.Contains(x)
+        else true
+
+    interface ISet<'e, BinarySearchTree<'e>> with
+      override this.Empty = Empty
+      override this.Insert(x) = this.Insert(x)
+      override this.Contains(x) = this.Contains(x)
