@@ -61,4 +61,16 @@ module Chapter02Test =
     testISet BinarySearchTree<int>.Empty
 
   let testEfficientBinarySearchTree =
-    testISet EfficientBinarySearchTree<int>.Empty
+    let empty = EfficientBinarySearchTree<int>.Empty
+    let insert x (s: ISet<_, _>) = s.Insert(x)
+    [
+      yield!
+        testISet empty
+      yield
+        test {
+          let xs = [4; 6; 5; 7; 2]
+          let set = xs |> List.fold (fun set x -> set |> insert x) empty
+          let set' = set.Insert(2)
+          do! obj.ReferenceEquals(set, set') |> assertEquals true
+        }
+    ]

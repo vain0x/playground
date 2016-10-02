@@ -73,16 +73,27 @@ module Chapter02 =
     | Empty
     | Node of EfficientBinarySearchTree<'e> * 'e * EfficientBinarySearchTree<'e>
   with
+    // Ex2.3
     member this.Insert(x) =
-      match this with
-      | Empty -> Node (Empty, x, Empty)
-      | Node (left, y, right) ->
-        if x < y then
-          Node (left.Insert(x), y, right)
-        elif x > y then
-          Node (left, y, right.Insert(x))
-        else
-          this
+      // Returns None if this contains x.
+      let rec loop this =
+        match this with
+        | Empty ->
+          Node (Empty, x, Empty) |> Some
+        | Node (left, y, right) ->
+          if x < y then
+            left
+            |> loop
+            |> Option.map (fun left -> Node (left, y, right))
+          elif x > y then
+            right
+            |> loop
+            |> Option.map (fun right -> Node (left, y, right))
+          else
+            None
+      match this |> loop with
+      | Some result -> result
+      | None -> this
 
     // Ex2.2
     member this.Contains(x) =
