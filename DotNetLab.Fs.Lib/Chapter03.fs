@@ -1,5 +1,7 @@
 ﻿namespace DotNetLab.Fs.Lib.PFDS
 
+open System.Collections.Generic
+
 module Chapter03 =
   type HeapSignature<'x, 'h when 'x: comparison> =
     {
@@ -9,6 +11,7 @@ module Chapter03 =
       Merge             : 'h -> 'h -> 'h
       FindMin           : 'h -> option<'x>
       DeleteMin         : 'h -> option<'x * 'h>
+      OfSeq             : seq<'x> -> 'h
     }
 
   (*
@@ -164,6 +167,47 @@ module Chapter03 =
       | Node (x, _, l, r) ->
         (x, l.Merge(r)) |> Some
 
+    (*
+      Ex3.3
+      Property.
+        This takes O(n) time.
+      Proof.
+        要素数が n である2つの leftist heap を merge するには、
+        ある定数 c があって、t(n) = c・(log n + 1) かかる。
+        このメソッドの漸近的時間計算量は、xs の長さを n とおくと、
+          T(n)
+            =Σ_i=0^∞ (n / 2^i)・t(i + 1)
+            = c・(Σ_i=0^∞ 2^(-i)・log (i + 1))・n + C
+        ここで、
+          Σ_i=0^∞ 2^(-i)・log (i + 1) ～ 1.02
+        より、
+          T(n) = O(n)
+      End Proof.
+    *)
+    static member OfSeq(xs) =
+      let rec mergeAll (hs: seq<LeftistHeap<_>>) =
+        hs
+        |> Seq.fold
+          (fun (acc, prev: option<LeftistHeap<_>>) h ->
+            match prev with
+            | Some l ->
+              (l.Merge(h) :: acc, None)
+            | None ->
+              (acc, Some h)
+          ) ([], None)
+        |>
+          function
+          | ([], None) -> Leaf
+          | ([], Some heap) -> heap
+          | (acc, None) ->
+            mergeAll acc
+          | (acc, Some heap) ->
+            mergeAll (heap :: acc)
+      in
+        xs
+        |> Seq.map (fun x -> Node (x, 1, Leaf, Leaf))
+        |> mergeAll
+
     static member AsHeap: HeapSignature<'x, LeftistHeap<'x>> =
       {
         Empty           = Leaf
@@ -172,4 +216,5 @@ module Chapter03 =
         Merge           = fun l r -> l.Merge(r)
         FindMin         = fun h -> h.FindMin()
         DeleteMin       = fun h -> h.DeleteMin()
+        OfSeq           = fun xs -> LeftistHeap<_>.OfSeq(xs)
       }

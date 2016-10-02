@@ -8,17 +8,19 @@ open DotNetLab.Fs.Lib.PFDS.Chapter03
 module Chapter03Test =
   let testHeap (heapSig: HeapSignature<_, _>) =
     let empty = heapSig.Empty
+    let ofList xs =
+      heapSig.OfSeq(xs :> seq<_>)
     let insertRange xs heap =
-      xs |> Seq.fold (fun heap x -> heap |> heapSig.Insert x) heap
-    let rec toSeq heap =
-      seq {
+      xs |> ofList |> heapSig.Merge heap
+    let rec toList heap =
+      [
         match heap |> heapSig.DeleteMin with
         | Some (x, heap) ->
           yield x
-          yield! heap |> toSeq
+          yield! heap |> toList
         | None ->
           ()
-      }
+      ]
     [
       yield
         test {
@@ -33,7 +35,15 @@ module Chapter03Test =
       yield
         test {
           let heap = empty |> insertRange [3; 1; 2]
-          do! heap |> toSeq |> Seq.toList |> assertEquals [1; 2; 3]
+          do! heap |> toList |> assertEquals [1; 2; 3]
+        }
+      yield
+        test {
+          do! [] |> ofList |> toList |> assertEquals []
+        }
+      yield
+        test {
+          do! [3; 1; 2] |> ofList |> toList |> assertEquals [1; 2; 3]
         }
     ]
 
