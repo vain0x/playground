@@ -93,3 +93,15 @@ module Chapter02Test =
             (Node (Node (Empty, x, Empty), x, Node (Empty, x, Empty)))
       }
     ]
+
+  let testBalanced =
+    [
+      let x = 0
+      for n in 0..5 do
+        yield
+          test {
+            let t = balanced n x
+            do! t |> count |> assertEquals n
+            do! t |> isBalanced |> assertEquals true
+          }
+    ]

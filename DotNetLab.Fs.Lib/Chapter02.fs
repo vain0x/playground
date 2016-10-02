@@ -122,3 +122,36 @@ module Chapter02 =
     else
       let subtree = complete (d - 1) x
       Node (subtree, x, subtree)
+
+  // Ex2.5 (b)
+  let balanced n x =
+    if n < 0 then
+      invalidArg "n" "n must be nonnegative."
+    elif n = 0 then
+      Empty
+    else
+      let rec create n =
+        if n = 0 then
+          (Empty, Node (Empty, x, Empty))
+        else
+          let (s, t) = create ((n - 1) / 2)
+          if (n - 1) % 2 = 0 then
+            (Node (s, x, s), Node (s, x, t))
+          else
+            (Node (s, x, t), Node (t, x, t))
+      in
+        create n |> fst
+
+  let rec count =
+    function
+    | Empty -> 0
+    | Node (left, _, right) ->
+      count left + count right + 1
+
+  let rec isBalanced =
+    function
+    | Empty -> true
+    | Node (left, _, right) ->
+      (left |> isBalanced)
+      && (right |> isBalanced)
+      && abs (count left - count right) <= 1
