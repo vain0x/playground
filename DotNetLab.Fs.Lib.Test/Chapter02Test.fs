@@ -20,22 +20,41 @@ module Chapter02Test =
     }
 
   let testISet (s: ISet<int, 's>) =
+    let empty = s.Empty :> ISet<int, 's>
     [
-      test {
-        let empty = s.Empty :> ISet<int, 's>
-        do! empty.Contains(0) |> assertEquals false
-      }
-      test {
-        let empty = s.Empty
-        let set = empty.Insert(0).Insert(1)
-        do! set.Contains(0) |> assertEquals true
-        do! set.Contains(1) |> assertEquals true
-        do! set.Contains(2) |> assertEquals false
-      }
-      test {
-        let set = s.Empty.Insert(0).Insert(0)
-        do! set.Contains(0) |> assertEquals true
-      }
+      yield
+        test {
+          do! empty.Contains(0) |> assertEquals false
+        }
+      yield
+        test {
+          let set = empty.Insert(0).Insert(1)
+          do! set.Contains(0) |> assertEquals true
+          do! set.Contains(1) |> assertEquals true
+          do! set.Contains(2) |> assertEquals false
+        }
+      yield
+        test {
+          let set = empty.Insert(0).Insert(0)
+          do! set.Contains(0) |> assertEquals true
+        }
+      yield!
+        seq {
+          let xs = [4; 6; 5; 7; 2]
+          let set =
+             xs |> List.fold (fun (set: 's) x -> set.Insert(x)) s.Empty
+          let cases =
+            seq {
+              let ys = [0; 1; 3; 8]
+              yield! xs |> Seq.map (fun x -> (x, true))
+              yield! ys |> Seq.map (fun y -> (y, false))
+            }
+          for (x, expected) in cases do
+            yield
+              test {
+                do! set.Contains(x) |> assertEquals expected
+              }
+        }
     ]
 
   let testBinarySearchTree =
