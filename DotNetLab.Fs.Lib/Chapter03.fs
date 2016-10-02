@@ -109,32 +109,46 @@ module Chapter03 =
       in
         loop this
 
+    member this.Rank =
+      match this with
+      | Leaf -> 0
+      | Node (_, rank, _, _) -> rank
+
+    /// Calculates the rank of a node
+    /// and swaps its children if necessary.
+    static member MakeNode(x, l, r) =
+      let rank (heap: LeftistHeap<_>) =
+        heap.Rank
+      if rank l >= rank r then
+        Node (x, rank r + 1, l, r)
+      else
+        Node (x, rank l + 1, r, l)
+
+    /// Takes O(log n) time.
     member this.Merge(r) =
-      let rank =
-        function
-        | Leaf -> 0
-        | Node (_, rank, _, _) -> rank
-      /// A helper function which calculates the rank of a node
-      /// and swaps its children if necessary.
-      let makeNode (x, l, r) =
-        if rank l >= rank r then
-          Node (x, rank r + 1, l, r)
-        else
-          Node (x, rank l + 1, r, l)
       let rec merge l r =
         match (l, r) with
         | (h, Leaf) -> h
         | (Leaf, h) -> h
         | (Node (lx, _, ll, lr), Node (rx, _, rl, rr)) ->
           if lx < rx then
-            makeNode (lx, ll, merge lr r)
+            LeftistHeap<'x>.MakeNode(lx, ll, merge lr r)
           else
-            makeNode (rx, rl, merge l rr)
+            LeftistHeap<'x>.MakeNode(rx, rl, merge l rr)
       in
         merge this r
 
+    // Ex3.2
     member this.Insert(x) =
-      this.Merge(Node (x, 1, Leaf, Leaf))
+      //this.Merge(Node (x, 1, Leaf, Leaf))
+      match this with
+      | Leaf ->
+        Node (x, 1, Leaf, Leaf)
+      | Node (lx, _, ll, lr) ->
+        if lx < x then
+          LeftistHeap<'x>.MakeNode(lx, ll, lr.Merge(Node (x, 1, Leaf, Leaf)))
+        else
+          Node (x, 1, this, Leaf)
 
     member this.FindMin() =
       match this with
