@@ -33,7 +33,7 @@ module Chapter02 =
         従って、S(n) = O(n)
   *)
 
-  type ISet<'e, 's> =
+  type ISet<'e, 's when 's :> ISet<'e, 's>> =
     abstract member Empty: 's
     abstract member Insert: 'e -> 's
     abstract member Contains: 'e -> bool
@@ -65,6 +65,39 @@ module Chapter02 =
         else true
 
     interface ISet<'e, BinarySearchTree<'e>> with
+      override this.Empty = Empty
+      override this.Insert(x) = this.Insert(x)
+      override this.Contains(x) = this.Contains(x)
+
+  type EfficientBinarySearchTree<'e when 'e: comparison> =
+    | Empty
+    | Node of EfficientBinarySearchTree<'e> * 'e * EfficientBinarySearchTree<'e>
+  with
+    member this.Insert(x) =
+      match this with
+      | Empty -> Node (Empty, x, Empty)
+      | Node (left, y, right) ->
+        if x < y then
+          Node (left.Insert(x), y, right)
+        elif x > y then
+          Node (left, y, right.Insert(x))
+        else
+          this
+
+    // Ex2.2
+    member this.Contains(x) =
+      let rec walk q this =
+        match this with
+        | Empty ->
+          q = Some x
+        | Node (left, y, _) when x < y ->
+          left |> walk q
+        | Node (_, y, right) ->
+          right |> walk (Some y)
+      in
+        walk None this
+
+    interface ISet<'e, EfficientBinarySearchTree<'e>> with
       override this.Empty = Empty
       override this.Insert(x) = this.Insert(x)
       override this.Contains(x) = this.Contains(x)

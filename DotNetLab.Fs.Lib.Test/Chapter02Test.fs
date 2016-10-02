@@ -19,10 +19,10 @@ module Chapter02Test =
       do! actual |> assertEquals expected
     }
 
-  let testISet (s: ISet<int, BinarySearchTree<int>>) =
+  let testISet (s: ISet<int, 's>) =
     [
       test {
-        let empty = s.Empty
+        let empty = s.Empty :> ISet<int, 's>
         do! empty.Contains(0) |> assertEquals false
       }
       test {
@@ -39,4 +39,7 @@ module Chapter02Test =
     ]
 
   let testBinarySearchTree =
-    testISet Empty
+    testISet BinarySearchTree<int>.Empty
+
+  let testEfficientBinarySearchTree =
+    testISet EfficientBinarySearchTree<int>.Empty
