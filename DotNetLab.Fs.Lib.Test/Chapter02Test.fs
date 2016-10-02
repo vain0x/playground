@@ -1,5 +1,6 @@
 ﻿namespace DotNetLab.Fs.Lib.PFDS
 
+open System
 open Persimmon
 open Persimmon.Syntax.UseTestNameByReflection
 open DotNetLab.Fs.Lib.PFDS.Chapter02
@@ -105,3 +106,46 @@ module Chapter02Test =
             do! t |> isBalanced |> assertEquals true
           }
     ]
+
+  open Exercise06
+
+  let testMap map =
+    let empty = map.Empty
+    [
+      yield
+        test {
+          do! empty |> map.TryFind 0 |> assertEquals None
+        }
+      yield!
+        seq {
+          let random = Random()
+          let source =
+            [
+              for i in 0..10 do
+                let x = random.Next()
+                yield (x, string x)
+            ]
+            |> List.distinctBy fst
+            |> dict
+          let m =
+            source
+            |> Seq.fold
+              (fun m (KeyValue (k, v)) -> m |> map.Insert k v)
+              empty
+          for KeyValue (k, v) in source do
+            yield
+              test {
+                do! m |> map.TryFind k |> assertEquals (Some v)
+              }
+          for i in 0..10 do
+            let x = random.Next()
+            if source.ContainsKey(x) |> not then
+              yield
+                test {
+                  do! m |> map.TryFind x |> assertEquals None
+                }
+        }
+    ]
+
+  let testBinarySearchTreeMap =
+    testMap (BinarySearchTree<int, string>.AsMap)

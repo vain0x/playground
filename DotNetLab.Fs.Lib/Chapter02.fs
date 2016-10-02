@@ -155,3 +155,46 @@ module Chapter02 =
       (left |> isBalanced)
       && (right |> isBalanced)
       && abs (count left - count right) <= 1
+
+  // Ex2.6
+  module Exercise06 =
+    type Map<'k, 'v, 'm> =
+      {
+        Empty           : 'm
+        Insert          : 'k -> 'v -> 'm -> 'm
+        TryFind         : 'k -> 'm -> option<'v>
+      }
+
+    type BinarySearchTree<'k, 'v when 'k: comparison> =
+      | Empty
+      | Node of BinarySearchTree<'k, 'v> * 'k * 'v * BinarySearchTree<'k, 'v>
+    with
+      member this.Insert(k, v) =
+        match this with
+        | Empty -> Node (Empty, k, v, Empty)
+        | Node (left, k', v', right) ->
+          if k < k' then
+            Node (left.Insert(k, v), k', v', right)
+          elif k > k' then
+            Node (left, k', v', right.Insert(k, v))
+          else
+            this
+
+      member this.TryFind(k) =
+        match this with
+        | Empty ->
+          None
+        | Node (left, k', v', right) ->
+          if k < k' then
+            left.TryFind(k)
+          elif k > k' then
+            right.TryFind(k)
+          else
+            Some v'
+
+      static member AsMap: Map<'k, 'v, BinarySearchTree<'k, 'v>> =
+        {
+          Empty         = Empty
+          Insert        = fun k v this -> this.Insert(k, v)
+          TryFind       = fun k this -> this.TryFind(k)
+        }
