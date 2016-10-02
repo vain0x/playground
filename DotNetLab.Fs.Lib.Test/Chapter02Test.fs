@@ -74,3 +74,22 @@ module Chapter02Test =
           do! obj.ReferenceEquals(set, set') |> assertEquals true
         }
     ]
+
+  let testComplete =
+    [
+      test {
+        let x = 0
+        do! complete 0 x |> assertEquals Empty
+      }
+      test {
+        let x = 0
+        do! complete 1 x |> assertEquals (Node (Empty, x, Empty))
+      }
+      test {
+        let x = 0
+        do!
+          complete 2 x
+          |> assertEquals
+            (Node (Node (Empty, x, Empty), x, Node (Empty, x, Empty)))
+      }
+    ]

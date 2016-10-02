@@ -112,3 +112,13 @@ module Chapter02 =
       override this.Empty = Empty
       override this.Insert(x) = this.Insert(x)
       override this.Contains(x) = this.Contains(x)
+
+  // Ex2.5 (a)
+  let rec complete d x =
+    if d < 0 then
+      invalidArg "d" "d must be nonnegative."
+    elif d = 0 then
+      Empty
+    else
+      let subtree = complete (d - 1) x
+      Node (subtree, x, subtree)
