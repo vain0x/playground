@@ -27,10 +27,14 @@ namespace FluentSqlBuilder.SqlSyntax
             Parameters = parameters;
         }
 
-        public static SqlToken Create(string @string, IEnumerable<DbParameter> parameters) =>
-            new SqlToken(@string, parameters);
+        public static SqlToken Create(string @string, IEnumerable<DbParameter> parameters)
+        {
+            return new SqlToken(@string, parameters);
+        }
 
-        public static SqlToken FromString(string @string) =>
-            Create(@string, Enumerable.Empty<DbParameter>());
+        public static SqlToken FromString(string @string)
+        {
+            return Create(@string, Enumerable.Empty<DbParameter>());
+        }
     }
 }

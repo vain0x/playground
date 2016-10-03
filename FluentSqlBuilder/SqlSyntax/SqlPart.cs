@@ -18,8 +18,10 @@ namespace FluentSqlBuilder.SqlSyntax
             return string.Join(" ", Tokens.Select(t => t.String));
         }
 
-        public static SqlPart FromString(string token) =>
-            new ConcreteSqlPart(new[] { SqlToken.FromString(token) });
+        public static SqlPart FromString(string token)
+        {
+            return new ConcreteSqlPart(new[] { SqlToken.FromString(token) });
+        }
     }
 
     sealed class ConcreteSqlPart

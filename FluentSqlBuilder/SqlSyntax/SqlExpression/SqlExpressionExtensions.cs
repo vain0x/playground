@@ -44,20 +44,26 @@ namespace FluentSqlBuilder.SqlSyntax
         #region Condition operators
         public static SqlCondition IsNull<X>(
             this ScalarSqlExpression<X> lhs
-        ) =>
-            new AtomicSqlCondition(
-                lhs.SqlBuilder,
-                lhs.Concat(SqlPart.FromString("is null")).Tokens
-            );
+        )
+        {
+            return
+                new AtomicSqlCondition(
+                    lhs.SqlBuilder,
+                    lhs.Concat(SqlPart.FromString("is null")).Tokens
+                );
+        }
 
         public static SqlCondition Equal<X>(
             this ScalarSqlExpression<X> lhs,
             ScalarSqlExpression<X> rhs
-        ) =>
-            new AtomicSqlCondition(
-                lhs.SqlBuilder,
-                lhs.Concat(SqlPart.FromString("=")).Concat(rhs).Tokens
-            );
+        )
+        {
+            return
+                new AtomicSqlCondition(
+                    lhs.SqlBuilder,
+                    lhs.Concat(SqlPart.FromString("=")).Concat(rhs).Tokens
+                );
+        }
         #endregion
     }
 }

@@ -16,11 +16,15 @@ namespace FluentSqlBuilder
             }
         }
 
-        public static bool IsEmpty<X>(this IEnumerable<X> xs) =>
-            !xs.Any();
+        public static bool IsEmpty<X>(this IEnumerable<X> xs)
+        {
+            return !xs.Any();
+        }
 
-        public static IEnumerable<X> Concat<X>(this IEnumerable<IEnumerable<X>> xxs) =>
-            xxs.SelectMany(xs => xs);
+        public static IEnumerable<X> Concat<X>(this IEnumerable<IEnumerable<X>> xxs)
+        {
+            return xxs.SelectMany(xs => xs);
+        }
 
         public static Option<Tuple<X, IEnumerable<X>>> UnconsOrNone<X>(this IEnumerable<X> xs)
         {
@@ -59,8 +63,10 @@ namespace FluentSqlBuilder
         public static IEnumerable<X> Intercalate<X>(
             this IEnumerable<IEnumerable<X>> xxs,
             IEnumerable<X> separator
-        ) =>
-            xxs.Intersperse(separator).Concat();
+        )
+        {
+            return xxs.Intersperse(separator).Concat();
+        }
 
         public static string Intercalate(
             this IEnumerable<string> ss,
@@ -80,8 +86,10 @@ namespace FluentSqlBuilder
             yield return right;
         }
 
-        public static bool IsSingle<X>(this IEnumerable<X> xs, X x) =>
-            xs.Any() && !xs.Skip(1).Any() && Equals(xs.First(), x);
+        public static bool IsSingle<X>(this IEnumerable<X> xs, X x)
+        {
+            return xs.Any() && !xs.Skip(1).Any() && Equals(xs.First(), x);
+        }
 
         public static IEnumerable<Y> Choose<X, Y>(this IEnumerable<X> xs, Func<X, Option<Y>> f)
         {

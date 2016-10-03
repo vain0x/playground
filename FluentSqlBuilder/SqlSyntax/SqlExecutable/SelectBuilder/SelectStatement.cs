@@ -111,8 +111,10 @@ namespace FluentSqlBuilder.SqlSyntax
             CombinedTokens.Concat(SelectTokens);
         #endregion
 
-        public DbCommand ToCommand() =>
-            SqlBuilder.CreateCommand(Tokens);
+        public DbCommand ToCommand()
+        {
+            return SqlBuilder.CreateCommand(Tokens);
+        }
 
         public void Join(Join join)
         {

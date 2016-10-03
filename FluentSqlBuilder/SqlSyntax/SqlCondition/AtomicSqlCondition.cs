@@ -19,11 +19,15 @@ namespace FluentSqlBuilder.SqlSyntax
         }
 
         #region SqlCondition
-        public override SqlCondition And(SqlCondition rhs) =>
-            SqlBuilder.And().And(this).And(rhs);
+        public override SqlCondition And(SqlCondition rhs)
+        {
+            return SqlBuilder.And().And(this).And(rhs);
+        }
 
-        public override SqlCondition Or(SqlCondition rhs) =>
-            SqlBuilder.Or().Or(this).Or(rhs);
+        public override SqlCondition Or(SqlCondition rhs)
+        {
+            return SqlBuilder.Or().Or(this).Or(rhs);
+        }
         #endregion
     }
 }
