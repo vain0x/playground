@@ -46,6 +46,7 @@
     <Compile Include="AssemblyInfo.fs" />
     <Compile Include="Chapter02Test.fs" />
     <Compile Include="Chapter0301Test.fs" />
+    <Compile Include="Chapter0302Test_BinomialHeap.fs" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\DotNetLab.Fs.Lib\DotNetLab.Fs.Lib.fsproj">

@@ -1,0 +1,136 @@
+﻿namespace DotNetLab.Fs.Lib.PFDS
+
+open System.Runtime.CompilerServices
+
+module Chapter0302 =
+  (*
+  binomial heap
+
+  2進表現ヒープと訳したい。
+
+  binomial heap は binomial tree という多分ツリーを内部に含む。
+
+  ランク 0 の binomial tree は1点。
+  ランク i の binomial tree は、
+    ランク (i - 1) の binomial tree の根から、
+    同ランクの binomial tree の根に辺を張ったもの。
+
+  Property: ランク r の binomial tree のサイズは 2^r に等しい。
+
+  binomial heap は、サイズ n を2進展開した結果が (b_i) だとすると、
+  b_r = 1 となる各 r に対応するランク r の binomial tree を1個ずつ含む。
+  *)
+
+  type private Rank = int
+
+  type BinomialTree<'x when 'x: comparison> =
+    /// ノードは、ランク、要素、子ノードのリストからなる。
+    /// 子ノードのリストは、ランクについて降順に並んでいる。
+    /// 要素は heap-order で並ぶ。
+    | Node of Rank * 'x * list<BinomialTree<'x>>
+
+  type BinomialHeap<'x when 'x: comparison> =
+    | Heap of list<BinomialTree<'x>>
+
+  [<CompilationRepresentation(CompilationRepresentationFlags.ModuleSuffix)>]
+  module BinomialTree =
+    let rank (Node (r, _, _)) = r
+    let element (Node (_, x, _)) = x
+    let children (Node (_, _, ch)) = ch
+
+    let singleton x =
+      Node (0, x, [])
+
+    /// Links a binomial tree with another one.
+    /// Expects they have the same rank.
+    let link l r =
+      assert (rank l = rank r)
+      /// heap-order で並べるため、要素の小さい方を親とする。
+      if element l < element r then
+        Node (rank l + 1, element l, r :: children l)
+      else
+        Node (rank l + 1, element r, l :: children r)
+
+  [<CompilationRepresentation(CompilationRepresentationFlags.ModuleSuffix)>]
+  module BinomialHeap =
+    let unwrap (Heap ts) = ts
+
+    let empty = Heap []
+
+    /// Takes O(log n) time because the heap contains at most O(log n) trees.
+    /// Remember the binay representation.
+    let rec internal insertTree t (Heap ts) =
+      match ts with
+      | [] ->
+        [t] |> Heap
+      | t' :: ts' ->
+        assert (BinomialTree.rank t <= BinomialTree.rank t')
+        if BinomialTree.rank t < BinomialTree.rank t' then
+          t :: ts |> Heap
+        else
+          Heap ts' |> insertTree (BinomialTree.link t t')
+
+    /// O(log n) time.
+    let rec insert x h =
+      h |> insertTree (BinomialTree.singleton x)
+
+    /// O(log n) time.
+    let rec merge l r =
+      match (l, r) with
+      | (l, Heap []) -> l
+      | (Heap [], r) -> r
+      | (Heap (lt :: lts), Heap (rt :: rts)) ->
+        let comparison = compare (BinomialTree.rank lt) (BinomialTree.rank rt)
+        if comparison < 0 then
+          lt :: (merge (Heap lts) r |> unwrap) |> Heap
+        else if comparison > 0 then
+          rt :: (merge l (Heap rts) |> unwrap) |> Heap
+        else
+          insertTree (BinomialTree.link lt rt) (merge (Heap lts) (Heap rts))
+
+    let removeMinTree =
+      /// Returns the tree with the minimum element among (t :: ts) and the rest trees.
+      /// Takes O(log n) time.
+      let rec loop t ts =
+        match ts with
+        | [] ->
+          (t, [])
+        | t' :: ts' ->
+          let (t', ts') = loop t' ts'
+          if BinomialTree.element t < BinomialTree.element t' then
+            (t, ts)
+          else
+            (t', t :: ts')
+      function
+      | Heap [] ->
+        None
+      | Heap (t :: ts) ->
+        Some (loop t ts)
+
+    /// O(log n) time.
+    let findMin h =
+      h |> removeMinTree |> Option.map (fst >> BinomialTree.element)
+
+    /// O(log n) time.
+    let deleteMin h =
+      h |> removeMinTree
+      |> Option.map
+        (fun (t, ts) ->
+          let subheap =
+            merge
+              (t |> BinomialTree.children |> List.rev |> Heap)
+              (Heap ts)
+          (BinomialTree.element t, subheap)
+        )
+
+    let ofSeq xs =
+      xs |> Seq.fold (fun h x -> h |> insert x) empty
+
+    let rec toSeq h =
+      seq {
+        match h |> deleteMin with
+        | None -> ()
+        | Some (x, h') ->
+          yield x
+          yield! h' |> toSeq
+      }
