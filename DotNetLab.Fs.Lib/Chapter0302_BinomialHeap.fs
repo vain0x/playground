@@ -134,3 +134,11 @@ module Chapter0302 =
           yield x
           yield! h' |> toSeq
       }
+
+    // Ex3.5
+    let findMin' =
+      function
+      | Heap [] ->
+        None
+      | Heap ts ->
+        ts |> List.map BinomialTree.element |> Seq.min |> Some

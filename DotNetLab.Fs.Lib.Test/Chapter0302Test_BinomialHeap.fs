@@ -21,6 +21,11 @@ module Chapter0302Test =
         }
       yield
         test {
+          let heap = BinomialHeap.ofSeq [5; 2; 1; 2; 3; 4; 5; 2]
+          do! heap |> BinomialHeap.findMin' |> assertEquals (Some 1)
+        }
+      yield
+        test {
           let heap = BinomialHeap.ofSeq [3; 1; 2]
           do! heap |> toList |> assertEquals [1; 2; 3]
         }
