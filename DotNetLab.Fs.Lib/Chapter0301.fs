@@ -2,7 +2,7 @@
 
 open System.Collections.Generic
 
-module Chapter03 =
+module Chapter0301 =
   type HeapSignature<'x, 'h when 'x: comparison> =
     {
       Empty             : 'h

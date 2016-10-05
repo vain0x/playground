@@ -3,9 +3,9 @@
 open System
 open Persimmon
 open Persimmon.Syntax.UseTestNameByReflection
-open DotNetLab.Fs.Lib.PFDS.Chapter03
+open DotNetLab.Fs.Lib.PFDS.Chapter0301
 
-module Chapter03Test =
+module Chapter0301Test =
   let testHeap (heapSig: HeapSignature<_, _>) =
     let empty = heapSig.Empty
     let ofList xs =

@@ -45,7 +45,7 @@
   <ItemGroup>
     <Compile Include="AssemblyInfo.fs" />
     <Compile Include="Chapter02Test.fs" />
-    <Compile Include="Chapter03Test.fs" />
+    <Compile Include="Chapter0301Test.fs" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\DotNetLab.Fs.Lib\DotNetLab.Fs.Lib.fsproj">
