@@ -34,8 +34,20 @@ module Chapter0301Test =
         }
       yield
         test {
+          let xs = [5; 2; 1; 2; 3; 4; 5; 2]
+          let heap = empty |> insertRange xs
+          do! heap |> heapSig.FindMin |> assertEquals (Some 1)
+        }
+      yield
+        test {
           let heap = empty |> insertRange [3; 1; 2]
           do! heap |> toList |> assertEquals [1; 2; 3]
+        }
+      yield
+        test {
+          let xs = [5; 2; 1; 2; 3; 4; 5; 2]
+          let heap = empty |> insertRange xs
+          do! heap |> toList |> assertEquals (xs |> List.sort)
         }
       yield
         test {

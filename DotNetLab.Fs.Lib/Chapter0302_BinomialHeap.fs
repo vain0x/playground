@@ -1,6 +1,7 @@
 ﻿namespace DotNetLab.Fs.Lib.PFDS
 
 open System.Runtime.CompilerServices
+open DotNetLab.Fs.Lib.PFDS.Chapter0301
 
 module Chapter0302 =
   (*
@@ -56,6 +57,9 @@ module Chapter0302 =
     let unwrap (Heap ts) = ts
 
     let empty = Heap []
+
+    let isEmpty h =
+      h = empty
 
     /// Takes O(log n) time because the heap contains at most O(log n) trees.
     /// Remember the binay representation.
@@ -135,13 +139,29 @@ module Chapter0302 =
           yield! h' |> toSeq
       }
 
-    // Ex3.5
-    let findMin' =
-      function
-      | Heap [] ->
-        None
-      | Heap ts ->
-        ts |> List.map BinomialTree.element |> Seq.min |> Some
+    let signature =
+      {
+        Empty           = empty
+        IsEmpty         = isEmpty
+        Insert          = insert
+        Merge           = merge
+        FindMin         = findMin
+        DeleteMin       = deleteMin
+        OfSeq           = ofSeq
+      }
+
+  // Ex3.5
+  module Exercise05 =
+    module BinomialHeap =
+      let findMin' =
+        function
+        | Heap [] ->
+          None
+        | Heap ts ->
+          ts |> List.map BinomialTree.element |> Seq.min |> Some
+
+      let signature' () =
+        { BinomialHeap.signature with FindMin = findMin' }
 
   module Exercise06 =
     type BinomialTree<'x when 'x: comparison> =
@@ -169,6 +189,9 @@ module Chapter0302 =
       let unwrap (Heap ts) = ts
 
       let empty = Heap []
+
+      let isEmpty h =
+        h = empty
 
       let rank (r, (_: BinomialTree<_>)) = r
       let tree (_, t) = t: BinomialTree<_>
@@ -255,4 +278,15 @@ module Chapter0302 =
           | Some (x, h') ->
             yield x
             yield! h' |> toSeq
+        }
+
+      let signature =
+        {
+          Empty           = empty
+          IsEmpty         = isEmpty
+          Insert          = insert
+          Merge           = merge
+          FindMin         = findMin
+          DeleteMin       = deleteMin
+          OfSeq           = ofSeq
         }
