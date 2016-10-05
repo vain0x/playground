@@ -142,3 +142,117 @@ module Chapter0302 =
         None
       | Heap ts ->
         ts |> List.map BinomialTree.element |> Seq.min |> Some
+
+  module Exercise06 =
+    type BinomialTree<'x when 'x: comparison> =
+      | Node of 'x * list<BinomialTree<'x>>
+
+    type BinomialHeap<'x when 'x: comparison> =
+      | Heap of list<Rank * BinomialTree<'x>>
+
+    [<CompilationRepresentation(CompilationRepresentationFlags.ModuleSuffix)>]
+    module BinomialTree =
+      let element (Node (x, _)) = x
+      let children (Node (_, ch)) = ch
+
+      let singleton x =
+        Node (x, [])
+
+      let link l r =
+        if element l < element r then
+          Node (element l, r :: children l)
+        else
+          Node (element r, l :: children r)
+
+    [<CompilationRepresentation(CompilationRepresentationFlags.ModuleSuffix)>]
+    module BinomialHeap =
+      let unwrap (Heap ts) = ts
+
+      let empty = Heap []
+
+      let rank (r, (_: BinomialTree<_>)) = r
+      let tree (_, t) = t: BinomialTree<_>
+
+      let link l r =
+        assert (rank l = rank r)
+        (rank l + 1, BinomialTree.link (tree l) (tree r))
+
+      /// Takes O(log n) time because the heap contains at most O(log n) trees.
+      /// Remember the binay representation.
+      let rec internal insertTree t (Heap ts) =
+        match ts with
+        | [] ->
+          [t] |> Heap
+        | t' :: ts' ->
+          assert (rank t <= rank t')
+          if rank t < rank t' then
+            t :: ts |> Heap
+          else
+            Heap ts' |> insertTree (link t t')
+
+      /// O(log n) time.
+      let rec insert x h =
+        h |> insertTree (0, BinomialTree.singleton x)
+
+      /// O(log n) time.
+      let rec merge l r =
+        match (l, r) with
+        | (l, Heap []) -> l
+        | (Heap [], r) -> r
+        | (Heap (lt :: lts), Heap (rt :: rts)) ->
+          let comparison = compare (rank lt) (rank rt)
+          if comparison < 0 then
+            lt :: (merge (Heap lts) r |> unwrap) |> Heap
+          else if comparison > 0 then
+            rt :: (merge l (Heap rts) |> unwrap) |> Heap
+          else
+            insertTree (link lt rt) (merge (Heap lts) (Heap rts))
+
+      let removeMinTree =
+        /// Returns the tree with the minimum element among (t :: ts) and the rest trees.
+        /// Takes O(log n) time.
+        let rec loop t ts =
+          match ts with
+          | [] ->
+            (t, [])
+          | t' :: ts' ->
+            let (t', ts') = loop t' ts'
+            let e = tree >> BinomialTree.element
+            if e t < e t' then
+              (t, ts)
+            else
+              (t', t :: ts')
+        function
+        | Heap [] ->
+          None
+        | Heap (t :: ts) ->
+          Some (loop t ts)
+
+      /// O(log n) time.
+      let findMin h =
+        h |> removeMinTree |> Option.map (fst >> tree >> BinomialTree.element)
+
+      /// O(log n) time.
+      let deleteMin h =
+        h |> removeMinTree
+        |> Option.map
+          (fun (t, ts) ->
+            let subheap =
+              merge
+                (t |> tree |> BinomialTree.children |> List.rev
+                  |> List.mapi (fun i t -> (i, t)) |> Heap)
+                (Heap ts)
+            (t |> tree |> BinomialTree.element, subheap)
+          )
+
+      let ofSeq xs =
+        xs |> Seq.fold (fun h x -> h |> insert x) empty
+
+      let rec toSeq h =
+        seq {
+          match h |> deleteMin with
+          | None -> ()
+          | Some (x, h') ->
+            yield x
+            yield! h' |> toSeq
+        }
