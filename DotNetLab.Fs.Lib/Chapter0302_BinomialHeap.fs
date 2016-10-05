@@ -290,3 +290,44 @@ module Chapter0302 =
           DeleteMin       = deleteMin
           OfSeq           = ofSeq
         }
+
+  module Exercise07 =
+    type ExplicitMinHeap<'x, 'h> =
+      option<'x * 'h>
+
+    [<CompilationRepresentation(CompilationRepresentationFlags.ModuleSuffix)>]
+    module ExplicitMinHeap =
+      let signature (heapSig: HeapSignature<'x, 'h>): HeapSignature<'x, ExplicitMinHeap<'x, 'h>> =
+        let ofHeap h =
+          h |> heapSig.FindMin |> Option.map (fun m -> (m, h))
+        {
+          Empty           = Option.None
+          IsEmpty         = Option.isNone
+          Insert          =
+            fun x ->
+              function
+              | None ->
+                (x, heapSig.Empty |> heapSig.Insert x) |> Some
+              | Some (m, h) ->
+                let h'    = h |> heapSig.Insert x
+                (min m x, h') |> Some
+          Merge           =
+            fun l r ->
+              match (l, r) with
+              | (Some _, None) -> l
+              | (None, Some _) -> r
+              | (None, None) -> None
+              | (Some (lm, lh), Some (rm, rh)) ->
+                (min lm rm, heapSig.Merge lh rh) |> Some
+          FindMin         =
+            Option.map fst
+          DeleteMin       =
+            fun this ->
+              this |> Option.bind (fun (m, h) ->
+                heapSig.DeleteMin h |> Option.bind (fun (x, h') ->
+                  Some (x, ofHeap h')
+                ))
+          OfSeq           =
+            fun xs ->
+              xs |> heapSig.OfSeq |> ofHeap
+        }

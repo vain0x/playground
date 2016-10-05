@@ -17,3 +17,10 @@ module Chapter0302Test =
   module Exercise06 =
     let testBinomialHeap'' =
       testHeap Exercise06.BinomialHeap.signature
+
+  module Exercise07 =
+    let testExplicitMinHeap =
+      [
+        yield! testHeap (Exercise07.ExplicitMinHeap.signature Chapter0301.LeftistHeap.AsHeap)
+        yield! testHeap (Exercise07.ExplicitMinHeap.signature BinomialHeap.signature)
+      ]
