@@ -10,8 +10,6 @@ module Chapter0301Test =
     let empty = heapSig.Empty
     let ofList xs =
       heapSig.OfSeq(xs :> seq<_>)
-    let insertRange xs heap =
-      xs |> ofList |> heapSig.Merge heap
     let rec toList heap =
       [
         match heap |> heapSig.DeleteMin with
@@ -29,24 +27,24 @@ module Chapter0301Test =
         }
       yield 
         test {
-          let heap = empty |> insertRange [3; 1; 2]
+          let heap = ofList [3; 1; 2]
           do! heap |> heapSig.FindMin |> assertEquals (Some 1)
         }
       yield
         test {
           let xs = [5; 2; 1; 2; 3; 4; 5; 2]
-          let heap = empty |> insertRange xs
+          let heap = ofList xs
           do! heap |> heapSig.FindMin |> assertEquals (Some 1)
         }
       yield
         test {
-          let heap = empty |> insertRange [3; 1; 2]
+          let heap = ofList [3; 1; 2]
           do! heap |> toList |> assertEquals [1; 2; 3]
         }
       yield
         test {
           let xs = [5; 2; 1; 2; 3; 4; 5; 2]
-          let heap = empty |> insertRange xs
+          let heap = ofList xs
           do! heap |> toList |> assertEquals (xs |> List.sort)
         }
       yield
