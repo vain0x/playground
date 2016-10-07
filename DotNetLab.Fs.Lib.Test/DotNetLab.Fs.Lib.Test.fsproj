@@ -47,6 +47,7 @@
     <Compile Include="Chapter02Test.fs" />
     <Compile Include="Chapter0301Test.fs" />
     <Compile Include="Chapter0302Test_BinomialHeap.fs" />
+    <Compile Include="Chapter0303Test_RedBlackTree.fs" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\DotNetLab.Fs.Lib\DotNetLab.Fs.Lib.fsproj">

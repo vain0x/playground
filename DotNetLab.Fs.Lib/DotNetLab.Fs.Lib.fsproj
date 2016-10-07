@@ -47,6 +47,7 @@
     <Compile Include="Chapter02.fs" />
     <Compile Include="Chapter0301.fs" />
     <Compile Include="Chapter0302_BinomialHeap.fs" />
+    <Compile Include="Chapter0303_RedBlackTree.fs" />
   </ItemGroup>
   <PropertyGroup>
     <MinimumVisualStudioVersion Condition="'$(MinimumVisualStudioVersion)' == ''">11</MinimumVisualStudioVersion>
