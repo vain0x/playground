@@ -56,8 +56,10 @@ namespace FluentSqlBuilder
         }
 
         #region Expression
-        public Table Table(Relation r, string tableName, Option<string> alias) =>
-            new Table(this, r, tableName, alias);
+        public Table Table(Relation r, string tableName, Option<string> alias)
+        {
+            return new Table(this, r, tableName, alias);
+        }
 
         internal string GenerateUniqueName()
         {
@@ -75,26 +77,41 @@ namespace FluentSqlBuilder
         }
         
         #region Typed value expressions
-        public ScalarSqlExpression<bool> Bool(bool value) =>
-            Value(DbType.Boolean, value);
+        public ScalarSqlExpression<bool> Bool(bool value)
+        {
+            return Value(DbType.Boolean, value);
+        }
 
-        public ScalarSqlExpression<int> Int32(int value) =>
-            Value(DbType.Int32, value);
+        public ScalarSqlExpression<int> Int32(int value)
+        {
+            return Value(DbType.Int32, value);
+        }
 
-        public ScalarSqlExpression<long> Int(long value) =>
-            Value(DbType.Int64, value);
+        public ScalarSqlExpression<long> Int(long value)
+        {
+            return Value(DbType.Int64, value);
+        }
 
-        public ScalarSqlExpression<double> Float(double value) =>
-            Value(DbType.Double, value);
+        public ScalarSqlExpression<double> Float(double value)
+        {
+            return Value(DbType.Double, value);
+        }
 
-        public ScalarSqlExpression<string> String(string value) =>
-            Value(DbType.String, value);
+        public ScalarSqlExpression<string> String(string value)
+        {
+            return Value(DbType.String, value);
+        }
 
-        public ScalarSqlExpression<DateTime> DateTime(DateTime value) =>
-            Value(DbType.DateTime, value);
+        public ScalarSqlExpression<DateTime> DateTime(DateTime value)
+        {
+            return Value(DbType.DateTime, value);
+        }
 
-        public ScalarSqlExpression<X> Null<X>() =>
-            new ConcreteScalarSqlExpression<X>(this, SqlPart.FromString("null"));
+        public ScalarSqlExpression<X> Null<X>()
+        {
+            var tokens = new[] { SqlToken.FromString("null") };
+            return new ConcreteScalarSqlExpression<X>(this, tokens);
+        }
 
         public SqlCondition True =>
             SqlConditionConstant.True;
@@ -105,11 +122,15 @@ namespace FluentSqlBuilder
         #endregion
 
         #region Condition
-        public SqlCondition And() =>
-            new ConditionBuilder(this, SqlConditionConstant.And);
+        public SqlCondition And()
+        {
+            return new ConditionBuilder(this, SqlConditionConstant.And);
+        }
 
-        public SqlCondition Or() =>
-            new ConditionBuilder(this, SqlConditionConstant.Or);
+        public SqlCondition Or()
+        {
+            return new ConditionBuilder(this, SqlConditionConstant.Or);
+        }
         #endregion
 
         #region Mainpulation

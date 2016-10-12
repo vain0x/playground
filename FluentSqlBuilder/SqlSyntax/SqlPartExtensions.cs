@@ -9,6 +9,14 @@ namespace FluentSqlBuilder.SqlSyntax
 {
     static class SqlPartExtensions
     {
+        internal static SqlPart Concat(
+            this SqlPart lhs,
+            SqlPart rhs
+        )
+        {
+            return new ConcreteSqlPart(lhs.Tokens.Concat(rhs.Tokens));
+        }
+
         internal static IEnumerable<SqlToken> Enclose(
             this IEnumerable<SqlToken> part,
             string left,
@@ -54,6 +62,11 @@ namespace FluentSqlBuilder.SqlSyntax
                 }
             }
             return tokens.Intercalate(' ');
+        }
+
+        internal static string ToEmbeddedString(this SqlPart part)
+        {
+            return part.Tokens.ToEmbeddedString();
         }
     }
 }

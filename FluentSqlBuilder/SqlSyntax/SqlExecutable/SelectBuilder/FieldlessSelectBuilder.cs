@@ -33,8 +33,10 @@ namespace FluentSqlBuilder.SqlSyntax
                 );
         }
 
-        public JoinBuilder<FieldlessSelectBuilder> Join(RelationSqlExpression relation) =>
-            Join(relation, JoinType.Inner);
+        public JoinBuilder<FieldlessSelectBuilder> Join(RelationSqlExpression relation)
+        {
+            return Join(relation, JoinType.Inner);
+        }
         #endregion
 
         public FieldlessSelectBuilder Where(SqlCondition condition)
@@ -59,11 +61,15 @@ namespace FluentSqlBuilder.SqlSyntax
             return this;
         }
 
-        public FieldlessSelectBuilder OrderBy(ScalarSqlExpression column) =>
-            OrderByImpl(column, OrderDirection.Ascending);
+        public FieldlessSelectBuilder OrderBy(ScalarSqlExpression column)
+        {
+            return OrderByImpl(column, OrderDirection.Ascending);
+        }
 
-        public FieldlessSelectBuilder OrderByDescending(ScalarSqlExpression column) =>
-            OrderByImpl(column, OrderDirection.Descending);
+        public FieldlessSelectBuilder OrderByDescending(ScalarSqlExpression column)
+        {
+            return OrderByImpl(column, OrderDirection.Descending);
+        }
         #endregion
 
         #region Field

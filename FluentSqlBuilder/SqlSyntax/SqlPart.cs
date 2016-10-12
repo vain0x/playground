@@ -10,7 +10,6 @@ namespace FluentSqlBuilder.SqlSyntax
     /// SQL文の断片を表す。
     /// </summary>
     public abstract class SqlPart
-        : IEnumerable<SqlToken>
     {
         internal abstract IEnumerable<SqlToken> Tokens { get; }
 
@@ -19,16 +18,10 @@ namespace FluentSqlBuilder.SqlSyntax
             return string.Join(" ", Tokens.Select(t => t.String));
         }
 
-        #region IEnumerable
-        IEnumerator IEnumerable.GetEnumerator() =>
-            Tokens.GetEnumerator();
-
-        IEnumerator<SqlToken> IEnumerable<SqlToken>.GetEnumerator() =>
-            Tokens.GetEnumerator();
-        #endregion
-
-        public static SqlPart FromString(string token) =>
-            new ConcreteSqlPart(new[] { SqlToken.FromString(token) });
+        public static SqlPart FromString(string token)
+        {
+            return new ConcreteSqlPart(new[] { SqlToken.FromString(token) });
+        }
     }
 
     sealed class ConcreteSqlPart
