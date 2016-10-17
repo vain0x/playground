@@ -41,6 +41,13 @@
     <Reference Include="System.Core" />
     <Reference Include="System.Numerics" />
   </ItemGroup>
+  <ItemGroup>
+    <Compile Include="Utility.fs" />
+    <Compile Include="AddOnlyObservableList.fs" />
+    <Compile Include="User.fs" />
+    <Compile Include="Todo.fs" />
+    <Compile Include="TodoViewModel.fs" />
+  </ItemGroup>
   <PropertyGroup>
     <MinimumVisualStudioVersion Condition="'$(MinimumVisualStudioVersion)' == ''">11</MinimumVisualStudioVersion>
   </PropertyGroup>

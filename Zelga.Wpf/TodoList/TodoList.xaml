@@ -1,0 +1,50 @@
+﻿<UserControl
+    x:Class="Zelga.Wpf.TodoList"
+    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+    xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+    xmlns:zw="clr-namespace:Zelga.Wpf"
+    mc:Ignorable="d" 
+    d:DesignHeight="300"
+    d:DesignWidth="300"
+    >
+    <StackPanel>
+        <TextBox Text="{Binding Title.Value}" />
+        <ItemsControl
+            ItemsSource="{Binding TodoViewModel}"
+            >
+            <ItemsControl.ItemTemplate>
+                <DataTemplate>
+                    <StackPanel>
+                        <TextBlock Text="{Binding Description}" />
+                        <Expander Header="{Binding ExpanderHeader.Value}">
+                            <StackPanel>
+                                <ItemsControl ItemsSource="{Binding Comments}">
+                                    <ItemsControl.ItemTemplate>
+                                        <DataTemplate>
+                                            <TextBlock>
+                                                <Run Text="{Binding User.Name}" />
+                                                「
+                                                <Run Text="{Binding Text}" />
+                                                」
+                                            </TextBlock>
+                                        </DataTemplate>
+                                    </ItemsControl.ItemTemplate>
+                                </ItemsControl>
+                                <Grid>
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition />
+                                        <ColumnDefinition />
+                                    </Grid.ColumnDefinitions>
+                                    <TextBox Text="{Binding NewComment.Text.Value}" />
+                                    <TextBox Text="{Binding NewComment.Text.Value}" />
+                                </Grid>
+                            </StackPanel>
+                        </Expander>
+                    </StackPanel>
+                </DataTemplate>
+            </ItemsControl.ItemTemplate>
+        </ItemsControl>
+    </StackPanel>
+</UserControl>
