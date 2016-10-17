@@ -1,5 +1,7 @@
 NUGET
   remote: https://www.nuget.org/api/v2
+    gong-wpf-dragdrop (1.0)
+      WPFToolkit (>= 3.5.50211.1) - framework: net35
     Microsoft.NETCore.Platforms (1.0.1) - framework: >= netstandard10
     Microsoft.NETCore.Targets (1.0.1) - framework: >= netstandard10
     Microsoft.Xaml.Behaviors.Uwp.Managed (1.1) - framework: net10, net11, net20, net30, net35, net40, net40-full, netstandard10
@@ -355,3 +357,4 @@ NUGET
       System.Threading (>= 4.0.11) - framework: dnxcore50, >= netstandard13
       System.Xml.ReaderWriter (>= 4.0.11) - framework: dnxcore50, netstandard10, >= netstandard13
       System.Xml.XmlDocument (>= 4.0.1) - framework: dnxcore50, >= netstandard13
+    WPFToolkit (3.5.50211.1) - framework: net35
