@@ -18,10 +18,10 @@
         Background="White"
         >
         <StackPanel>
-            <zw:CommentControl DataContext="{Binding FirstComment}" />
+            <zw:CommentControl DataContext="{Binding Todo.FirstComment}" />
             <Expander Header="{Binding ExpanderHeader.Value}">
                 <StackPanel>
-                    <ItemsControl ItemsSource="{Binding Comments}">
+                    <ItemsControl ItemsSource="{Binding Todo.Replies}">
                         <ItemsControl.ItemTemplate>
                             <DataTemplate>
                                 <StackPanel>
@@ -37,7 +37,7 @@
                             <ColumnDefinition Width="auto" />
                         </Grid.ColumnDefinitions>
                         <TextBox
-                            Text="{Binding NewComment.Text.Value}"
+                            Text="{Binding NewReply.Text.Value, UpdateSourceTrigger=PropertyChanged}"
                             TextWrapping="Wrap"
                             AcceptsReturn="True"
                             MinLines="3"
@@ -45,7 +45,7 @@
                             />
                         <Button
                             Grid.Column="1"
-                            Command="{Binding NewComment.AddCommentCommand}"
+                            Command="{Binding NewReply.ReplyCommand}"
                             Content="送信"
                             VerticalAlignment="Bottom"
                             />

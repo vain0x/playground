@@ -14,8 +14,8 @@ module SampleData =
 
   let todo1 =
     let it = Todo.Create("The first todo created by vain.", vain)
-    it.Comments.Add(Comment.Create("Hey this is the first comment!", uedai))
-    it.Comments.Add(Comment.Create("3個目のコメント。", vain))
+    it.Replies.Add(Comment.Create("Hey this is the first comment!", uedai))
+    it.Replies.Add(Comment.Create("3個目のコメント。", vain))
     it
 
   let todo2 =
@@ -34,10 +34,10 @@ module SampleData =
   let todoList =
     TodoList.Create("The todo list", todos)
 
-  let todoListViewModel =
+  let todoListVm =
     TodoListViewModel.Create(todoList)
 
-  let todoListSelectorViewModel =
+  let repository =
     {
       TodoLists =
         [

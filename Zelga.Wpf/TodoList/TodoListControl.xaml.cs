@@ -24,7 +24,7 @@ namespace Zelga.Wpf
         {
             InitializeComponent();
 
-            DataContext = Core.SampleData.todoListViewModel;
+            DataContext = Core.SampleData.todoListVm;
         }
     }
 }

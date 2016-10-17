@@ -11,3 +11,7 @@ with
       Name              = name
       Email             = email
     }
+
+module LoginInfo =
+  let mutable Current =
+    User.Create("debugger", "debugger@example.com")

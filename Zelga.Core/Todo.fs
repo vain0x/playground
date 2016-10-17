@@ -25,30 +25,42 @@ with
       Created                   = DateTime.Now
     }
 
-type Todo =
+and Todo =
   {
     FirstComment                : Comment
-    Comments                    : ObservableCollection<Comment>
+    Replies                     : ObservableCollection<Comment>
+    ReplyCount                  : ReactiveProperty<int>
     Tags                        : ObservableCollection<string>
     Order                       : ReactiveProperty<double>
+    CurrentState                : ReactiveProperty<TodoState>
   }
 with
   static member Create(description, user) =
+    let replies = ObservableCollection.Empty()
     {
       FirstComment              = Comment.Create(description, user)
-      Comments                  = ObservableCollection.Empty
-      Tags                      = ObservableCollection.Empty
+      Replies                   = replies
+      ReplyCount                = replies |> ObservableCollection.ObserveCount
+      Tags                      = ObservableCollection.Empty()
       Order                     = ReactiveProperty.Create 0.0
+      CurrentState              = ReactiveProperty.Create TodoState.Open
     }
 
 type TodoList =
   {
+    Id                          : int
     Name                        : ReactiveProperty<string>
     Todos                       : ObservableCollection<Todo>
   }
 with
   static member Create(name, todos) =
     {
+      Id                        = Id.Generate ()
       Name                      = ReactiveProperty.Create(name)
       Todos                     = todos |> ObservableCollection.OfSeq
     }
+
+type Repository =
+  {
+    TodoLists                   : ObservableCollection<TodoList>
+  }

@@ -15,13 +15,13 @@
             <ColumnDefinition Width="*" />
         </Grid.ColumnDefinitions>
         <StackPanel>
-            <TextBlock Text="{Binding Comment.User.Name}" />
-            <TextBlock Text="{Binding Comment.Created, Converter={StaticResource DateTimeConverter}}" />
+            <TextBlock Text="{Binding User.Name}" />
+            <TextBlock Text="{Binding Created, Converter={StaticResource DateTimeConverter}}" />
         </StackPanel>
         <TextBlock
             Grid.Column="1"
             TextWrapping="Wrap"
-            Text="{Binding Comment.Text}"
+            Text="{Binding Text}"
             />
     </Grid>
 </UserControl>

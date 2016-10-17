@@ -13,7 +13,7 @@
     <ScrollViewer Background="LightBlue">
         <StackPanel>
             <TextBox
-            Text="{Binding Title.Value}"
+            Text="{Binding TodoList.Name.Value}"
             Margin="10"
             Background="LightBlue"
             BorderThickness="0"

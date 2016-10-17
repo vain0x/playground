@@ -55,7 +55,7 @@
       <Generator>MSBuild:Compile</Generator>
       <SubType>Designer</SubType>
     </ApplicationDefinition>
-    <Compile Include="TodoListSelector\TodoListSelectorControl.xaml.cs">
+    <Compile Include="TodoList\TodoListSelectorControl.xaml.cs">
       <DependentUpon>TodoListSelectorControl.xaml</DependentUpon>
     </Compile>
     <Compile Include="Utility\DateTimeConverter.cs" />
@@ -80,7 +80,7 @@
       <DependentUpon>MainWindow.xaml</DependentUpon>
       <SubType>Code</SubType>
     </Compile>
-    <Page Include="TodoListSelector\TodoListSelectorControl.xaml">
+    <Page Include="TodoList\TodoListSelectorControl.xaml">
       <SubType>Designer</SubType>
       <Generator>MSBuild:Compile</Generator>
     </Page>

@@ -9,5 +9,11 @@
     d:DesignHeight="300"
     d:DesignWidth="300"
     >
-    <ListBox ItemsSource="{Binding TodoLists}" />
+    <ListBox ItemsSource="{Binding TodoLists}">
+        <ListBox.ItemTemplate>
+            <DataTemplate>
+                <TextBlock Text="{Binding Name.Value}" />
+            </DataTemplate>
+        </ListBox.ItemTemplate>
+    </ListBox>
 </UserControl>
