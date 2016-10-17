@@ -1,5 +1,9 @@
 NUGET
   remote: https://www.nuget.org/api/v2
+    FSharp.Configuration (0.6.2)
+    FsYaml (2.1)
+      FSharp.Configuration (>= 0.4.10)
+      YamlDotNet (>= 3.8)
     gong-wpf-dragdrop (1.0)
       WPFToolkit (>= 3.5.50211.1) - framework: net35
     Microsoft.NETCore.Platforms (1.0.1) - framework: >= netstandard10
@@ -358,3 +362,4 @@ NUGET
       System.Xml.ReaderWriter (>= 4.0.11) - framework: dnxcore50, netstandard10, >= netstandard13
       System.Xml.XmlDocument (>= 4.0.1) - framework: dnxcore50, >= netstandard13
     WPFToolkit (3.5.50211.1) - framework: net35
+    YamlDotNet (4.0)
