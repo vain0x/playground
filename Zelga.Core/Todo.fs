@@ -40,3 +40,15 @@ with
       Tags                      = ObservableCollection.Empty
       Order                     = ReactiveProperty.Create 0.0
     }
+
+type TodoList =
+  {
+    Name                        : ReactiveProperty<string>
+    Todos                       : ObservableCollection<Todo>
+  }
+with
+  static member Create(name, todos) =
+    {
+      Name                      = ReactiveProperty.Create(name)
+      Todos                     = todos |> ObservableCollection.OfSeq
+    }

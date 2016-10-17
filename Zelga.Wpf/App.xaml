@@ -2,7 +2,10 @@
     x:Class="Zelga.Wpf.App"
     xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:zw="clr-namespace:Zelga.Wpf"
     StartupUri="MainWindow.xaml"
     >
-    <Application.Resources/>
+    <Application.Resources>
+        <zw:DateTimeConverter x:Key="DateTimeConverter" />
+    </Application.Resources>
 </Application>

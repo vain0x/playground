@@ -1,0 +1,57 @@
+﻿<UserControl
+    x:Class="Zelga.Wpf.TodoControl"
+    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006" 
+    xmlns:d="http://schemas.microsoft.com/expression/blend/2008" 
+    xmlns:zw="clr-namespace:Zelga.Wpf"
+    mc:Ignorable="d" 
+    d:DesignWidth="300"
+    d:DesignHeight="300"
+    >
+    <Border
+        BorderThickness="1"
+        BorderBrush="Black"
+        CornerRadius="10"
+        Margin="10"
+        Padding="10"
+        Background="White"
+        >
+        <StackPanel>
+            <zw:CommentControl DataContext="{Binding FirstComment}" />
+            <Expander Header="{Binding ExpanderHeader.Value}">
+                <StackPanel>
+                    <ItemsControl ItemsSource="{Binding Comments}">
+                        <ItemsControl.ItemTemplate>
+                            <DataTemplate>
+                                <StackPanel>
+                                    <zw:CommentControl />
+                                    <Separator Margin="10,0,10,5" />
+                                </StackPanel>
+                            </DataTemplate>
+                        </ItemsControl.ItemTemplate>
+                    </ItemsControl>
+                    <Grid>
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="*" />
+                            <ColumnDefinition Width="auto" />
+                        </Grid.ColumnDefinitions>
+                        <TextBox
+                            Text="{Binding NewComment.Text.Value}"
+                            TextWrapping="Wrap"
+                            AcceptsReturn="True"
+                            MinLines="3"
+                            Margin="5,5,5,0"
+                            />
+                        <Button
+                            Grid.Column="1"
+                            Command="{Binding NewComment.AddCommentCommand}"
+                            Content="送信"
+                            VerticalAlignment="Bottom"
+                            />
+                    </Grid>
+                </StackPanel>
+            </Expander>
+        </StackPanel>
+    </Border>
+</UserControl>

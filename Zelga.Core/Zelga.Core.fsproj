@@ -47,6 +47,8 @@
     <Compile Include="User.fs" />
     <Compile Include="Todo.fs" />
     <Compile Include="TodoViewModel.fs" />
+    <Compile Include="TodoListSelectorViewModel.fs" />
+    <Compile Include="SampleData.fs" />
   </ItemGroup>
   <PropertyGroup>
     <MinimumVisualStudioVersion Condition="'$(MinimumVisualStudioVersion)' == ''">11</MinimumVisualStudioVersion>

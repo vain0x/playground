@@ -55,8 +55,18 @@
       <Generator>MSBuild:Compile</Generator>
       <SubType>Designer</SubType>
     </ApplicationDefinition>
-    <Compile Include="TodoList\TodoList.xaml.cs">
-      <DependentUpon>TodoList.xaml</DependentUpon>
+    <Compile Include="TodoListSelector\TodoListSelectorControl.xaml.cs">
+      <DependentUpon>TodoListSelectorControl.xaml</DependentUpon>
+    </Compile>
+    <Compile Include="Utility\DateTimeConverter.cs" />
+    <Compile Include="TodoList\TodoControl.xaml.cs">
+      <DependentUpon>TodoControl.xaml</DependentUpon>
+    </Compile>
+    <Compile Include="TodoList\CommentControl.xaml.cs">
+      <DependentUpon>CommentControl.xaml</DependentUpon>
+    </Compile>
+    <Compile Include="TodoList\TodoListControl.xaml.cs">
+      <DependentUpon>TodoListControl.xaml</DependentUpon>
     </Compile>
     <Page Include="MainWindow.xaml">
       <Generator>MSBuild:Compile</Generator>
@@ -70,13 +80,24 @@
       <DependentUpon>MainWindow.xaml</DependentUpon>
       <SubType>Code</SubType>
     </Compile>
-    <Page Include="TodoList\TodoList.xaml">
+    <Page Include="TodoListSelector\TodoListSelectorControl.xaml">
+      <SubType>Designer</SubType>
+      <Generator>MSBuild:Compile</Generator>
+    </Page>
+    <Page Include="TodoList\TodoControl.xaml">
+      <SubType>Designer</SubType>
+      <Generator>MSBuild:Compile</Generator>
+    </Page>
+    <Page Include="TodoList\CommentControl.xaml">
+      <SubType>Designer</SubType>
+      <Generator>MSBuild:Compile</Generator>
+    </Page>
+    <Page Include="TodoList\TodoListControl.xaml">
       <SubType>Designer</SubType>
       <Generator>MSBuild:Compile</Generator>
     </Page>
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="MainWindowViewModel.cs" />
     <Compile Include="Properties\AssemblyInfo.cs">
       <SubType>Code</SubType>
     </Compile>

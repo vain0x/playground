@@ -16,11 +16,11 @@ using System.Windows.Shapes;
 namespace Zelga.Wpf
 {
     /// <summary>
-    /// TodoList.xaml の相互作用ロジック
+    /// CommentControl.xaml の相互作用ロジック
     /// </summary>
-    public partial class TodoList : UserControl
+    public partial class CommentControl : UserControl
     {
-        public TodoList()
+        public CommentControl()
         {
             InitializeComponent();
         }
