@@ -55,10 +55,13 @@
       <Generator>MSBuild:Compile</Generator>
       <SubType>Designer</SubType>
     </ApplicationDefinition>
+    <Compile Include="TodoList\RepositoryControl.xaml.cs">
+      <DependentUpon>RepositoryControl.xaml</DependentUpon>
+    </Compile>
     <Compile Include="TodoList\TodoListSelectorControl.xaml.cs">
       <DependentUpon>TodoListSelectorControl.xaml</DependentUpon>
     </Compile>
-    <Compile Include="Utility\DateTimeConverter.cs" />
+    <Compile Include="Utility\DateTimeOffsetToLocalDateTimeConverter.cs" />
     <Compile Include="TodoList\TodoControl.xaml.cs">
       <DependentUpon>TodoControl.xaml</DependentUpon>
     </Compile>
@@ -80,6 +83,10 @@
       <DependentUpon>MainWindow.xaml</DependentUpon>
       <SubType>Code</SubType>
     </Compile>
+    <Page Include="TodoList\RepositoryControl.xaml">
+      <SubType>Designer</SubType>
+      <Generator>MSBuild:Compile</Generator>
+    </Page>
     <Page Include="TodoList\TodoListSelectorControl.xaml">
       <SubType>Designer</SubType>
       <Generator>MSBuild:Compile</Generator>

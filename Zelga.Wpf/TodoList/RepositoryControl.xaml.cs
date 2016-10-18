@@ -16,13 +16,15 @@ using System.Windows.Shapes;
 namespace Zelga.Wpf
 {
     /// <summary>
-    /// TodoListControl.xaml の相互作用ロジック
+    /// RepositoryControl.xaml の相互作用ロジック
     /// </summary>
-    public partial class TodoListControl : UserControl
+    public partial class RepositoryControl : UserControl
     {
-        public TodoListControl()
+        public RepositoryControl()
         {
             InitializeComponent();
+
+            DataContext = Zelga.Core.SampleData.repositoryVm;
         }
     }
 }

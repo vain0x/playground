@@ -16,7 +16,7 @@
         </Grid.ColumnDefinitions>
         <StackPanel>
             <TextBlock Text="{Binding User.Name}" />
-            <TextBlock Text="{Binding Created, Converter={StaticResource DateTimeConverter}}" />
+            <TextBlock Text="{Binding Created, Converter={StaticResource DateTimeOffsetToLocalDateTimeConverter}}" />
         </StackPanel>
         <TextBlock
             Grid.Column="1"

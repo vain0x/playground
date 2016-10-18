@@ -44,7 +44,7 @@
   <ItemGroup>
     <Compile Include="Utility.fs" />
     <Compile Include="Git.fs" />
-    <Compile Include="AddOnlyObservableList.fs" />
+    <Compile Include="Timeline.fs" />
     <Compile Include="Todo.fs" />
     <Compile Include="TodoViewModel.fs" />
     <Compile Include="SampleData.fs" />

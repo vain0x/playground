@@ -8,13 +8,16 @@ using System.Windows.Data;
 
 namespace Zelga.Wpf
 {
-    public class DateTimeConverter
+    /// <summary>
+    /// Class to convert a value of <see cref="DateTimeOffset"/> as a localtime.
+    /// </summary>
+    public class DateTimeOffsetToLocalDateTimeConverter
         : IValueConverter
     {
         public object Convert(object value, Type targetType, object parameter, CultureInfo culture)
         {
-            var dateTime = (DateTime)value;
-            return dateTime.ToString("G");
+            var dateTime = (DateTimeOffset)value;
+            return dateTime.ToLocalTime().ToString("G");
         }
 
         public object ConvertBack(object value, Type targetType, object parameter, CultureInfo culture)

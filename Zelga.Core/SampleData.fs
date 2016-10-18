@@ -4,67 +4,39 @@ open Zelga.Core.Utility
 
 module SampleData =
   let admin = User.Create("admin", "admin@example.com")
-  let vain = User.Create("vain", "vain@example.com")
-  let uedai = User.Create("uedai", "uedai@example.com")
+  let miku = User.Create("Miku", "miku@kr.com")
+  let yukari = User.Create("Yukari", "yukari@makets.com")
 
   let repository = Repository.Empty(admin)
 
-  repository.AdminTimeLine.Updates.Add(CreateUser(vain))
-  repository.AdminTimeLine.Updates.Add(CreateUser(uedai))
+  let createTodo (todoList: TodoList) name updater =
+    let todo = Todo.Create(name, updater)
+    repository.Update(updater, CreateTodo (todoList.Id, todo))
+    todo
 
-  let users =
-    [
-      vain
-      uedai
-    ]
+  let createReply (todo: Todo) state message updater =
+    repository.Update(updater, CreateReply (todo.Id, Comment.Create(message, state, updater)))
+
+  repository.AddUser(miku)
+  repository.AddUser(yukari)
+
+  let mikuTodoList = TodoList.Empty("miku's")
+
+  repository.Update(miku, CreateTodoList mikuTodoList)
 
   let todo1 =
-    let it = Todo.Create("The first todo created by vain.", vain)
-    it.Replies.Add(Comment.Create("Hey this is the first comment!", Open, uedai))
-    it.Replies.Add(Comment.Create("3個目のコメント。", Open, vain))
-    it
+    miku |> createTodo mikuTodoList "The first todo created by miku."
+
+  miku |> createReply todo1 Open "The first comment."
+  yukari |> createReply todo1 Open "The second comment."
 
   let todo2 =
-    Todo.Create("This is the second todo, which has no comments.", uedai)
+    yukari |> createTodo mikuTodoList "The second todo created by yukari."
 
   let todo3 =
-    Todo.Create("This is a closed todo", vain)
-    |> tap
-      (fun todo ->
-        todo.Replies.Add(Comment.Create("It is done.", Closed, vain))
-      )
+    yukari |> createTodo mikuTodoList "A closed todo."
 
-  let todos =
-    [
-      todo1
-      todo2
-      todo3
-    ]
+  miku |> createReply todo3 Closed "Closes it."
 
-  let todoList =
-    TodoList.Create("The todo list", todos)
-
-  let todoListVm =
-    TodoListViewModel.Create(todoList, admin)
-
-  let repository =
-    {
-      TodoLists =
-        [
-          todoList
-        ] |> ObservableCollection.OfSeq
-    }
-
-  let adminUpdates =
-    [
-      Update.CreateUser(vain)
-      Update.CreateUser(uedai)
-    ]
-
-  let adminUpdateCollection =
-    new UpdateCollection(admin)
-
-  let vainTimeline =
-    [
-      Update ()
-    ]
+  let repositoryVm =
+    RepositoryViewModel.Create(repository)

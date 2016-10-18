@@ -8,8 +8,9 @@
     mc:Ignorable="d" 
     d:DesignHeight="300"
     d:DesignWidth="300"
+    MinWidth="100"
     >
-    <ListBox ItemsSource="{Binding TodoLists}">
+    <ListBox ItemsSource="{Binding Repository.TodoLists}">
         <ListBox.ItemTemplate>
             <DataTemplate>
                 <TextBlock Text="{Binding Name.Value}" />

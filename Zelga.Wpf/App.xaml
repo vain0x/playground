@@ -6,6 +6,6 @@
     StartupUri="MainWindow.xaml"
     >
     <Application.Resources>
-        <zw:DateTimeConverter x:Key="DateTimeConverter" />
+        <zw:DateTimeOffsetToLocalDateTimeConverter x:Key="DateTimeOffsetToLocalDateTimeConverter" />
     </Application.Resources>
 </Application>

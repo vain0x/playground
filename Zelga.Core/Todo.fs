@@ -18,7 +18,7 @@ type Comment =
     Text                        : string
     State                       : TodoState
     User                        : User
-    Created                     : DateTime
+    Created                     : DateTimeOffset
   }
 with
   static member Create(text, state, user) =
@@ -27,11 +27,12 @@ with
       Text                      = text
       State                     = state
       User                      = user
-      Created                   = DateTime.Now
+      Created                   = DateTimeOffset.Now
     }
 
 type Todo =
   {
+    Id                          : Guid
     FirstComment                : Comment
     Replies                     : ObservableCollection<Comment>
     ReplyCount                  : ReactiveProperty<int>
@@ -43,6 +44,7 @@ with
   static member Create(description, user) =
     let replies = ObservableCollection.Empty()
     {
+      Id                        = Guid.NewGuid()
       FirstComment              = Comment.Create(description, Open, user)
       Replies                   = replies
       ReplyCount                = replies |> ObservableCollection.ObserveCount
@@ -58,24 +60,22 @@ type TodoList =
     Todos                       : ObservableCollection<Todo>
   }
 with
-  static member Create(name, todos) =
+  static member Empty(name) =
     {
       Id                        = Guid.NewGuid()
       Name                      = ReactiveProperty.Create(name)
-      Todos                     = todos |> ObservableCollection.OfSeq
+      Todos                     = ObservableCollection.Empty()
     }
 
 type Update =
-  | CreateUser
-    of User
   | CreateTodoList
     of TodoList
   | CreateTodo
-    of Todo
+    of todoListId: Guid * Todo
   | CreateReply
     of todoId: Guid * Comment
 
-type Timeline =
+type Activity =
   {
     User                        : User
     Updates                     : ObservableCollection<Update>
@@ -90,31 +90,36 @@ with
 type Repository =
   {
     Admin                       : User
-    UserTimelines               : ObservableCollection<Timeline>
+    UserActivities              : ObservableCollection<Activity>
     TodoLists                   : ObservableCollection<TodoList>
   }
 with
   member this.Update(updater, update) =
     match update with
-    | CreateUser user ->
-      this.AddUser(updater, user)
     | CreateTodoList todoList ->
-      ()
-    | CreateTodo todo ->
-      ()
+      this.TodoLists.Add(todoList)
+    | CreateTodo (todoListId, todo) ->
+      this.TodoLists
+      |> Seq.tryFind (fun tl -> tl.Id = todoListId)
+      |> Option.iter (fun todoList -> todoList.Todos.Add(todo))
     | CreateReply (todoId, comment) ->
-      ()
+      this.TodoLists
+      |> Seq.collect (fun tl -> tl.Todos)
+      |> Seq.tryFind (fun todo -> todo.Id = todoId)
+      |> Option.iter (fun todo -> todo.Replies.Add(comment))
 
-  member this.AddUser(updater, user) =
-    let timeline = Timeline.Empty(user)
-    let updated = timeline.Updates |> ObservableCollection.ObserveAdded
-    updated |> Observable.subscribe (fun update -> this.Update(user, update)) |> ignore
-    this.UserTimelines.Add(timeline)
+  member this.AddUser(user) =
+    let timeline = Activity.Empty(user)
+    let subscription =
+      timeline.Updates
+      |> ObservableCollection.ObserveAdded
+      |> Observable.subscribe (fun update -> this.Update(user, update))
+    this.UserActivities.Add(timeline)
     
   static member Empty(admin) =
     {
       Admin                     = admin
-      UserTimelines             = ObservableCollection.Empty()
+      UserActivities            = ObservableCollection.Empty()
       TodoLists                 = ObservableCollection.Empty()
     }
-    |> tap (fun this -> this.AddUser(admin, admin))
+    |> tap (fun this -> this.AddUser(admin))

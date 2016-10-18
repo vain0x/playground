@@ -23,8 +23,6 @@ namespace Zelga.Wpf
         public TodoListSelectorControl()
         {
             InitializeComponent();
-
-            DataContext = Core.SampleData.repository;
         }
     }
 }

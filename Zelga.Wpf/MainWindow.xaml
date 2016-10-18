@@ -7,14 +7,5 @@
     Width="525"
     Height="350"
     >
-    <Grid>
-        <Grid.ColumnDefinitions>
-            <ColumnDefinition Width="auto" />
-            <ColumnDefinition Width="*" />
-        </Grid.ColumnDefinitions>
-        <Expander ExpandDirection="Left">
-            <zw:TodoListSelectorControl />
-        </Expander>
-        <zw:TodoListControl Grid.Column="1" />
-    </Grid>
+    <zw:RepositoryControl />
 </Window>

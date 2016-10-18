@@ -64,3 +64,35 @@ with
         |> Seq.map (fun todo -> TodoViewModel.Create(todo, loginUser))
         |> ObservableCollection.OfSeq
     }
+
+type UpdateViewModel =
+  {
+    User                        : User
+    Update                      : Update
+  }
+with
+  static member Create(user, update) =
+    {
+      User                      = user
+      Update                    = update
+    }
+
+type RepositoryViewModel =
+  {
+    Repository                  : Repository
+    TodoLists                   : ObservableCollection<TodoListViewModel>
+    TotalActivity               : ObservableCollection<UpdateViewModel>
+  }
+with
+  static member Create(repository: Repository) =
+    {
+      Repository                = repository
+      TodoLists                 = ObservableCollection.Empty()
+      TotalActivity             = ObservableCollection.Empty()
+    }
+    |> tap
+      (fun repositoryVm ->
+        let loginUser = repository.Admin
+        if repository.TodoLists.Count > 0 then
+          repositoryVm.TodoLists.Add(TodoListViewModel.Create(repository.TodoLists.[0], loginUser))
+      )
