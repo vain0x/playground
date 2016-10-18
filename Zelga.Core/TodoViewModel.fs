@@ -13,14 +13,10 @@ type NewReplyViewModel =
     ReplyCommand                : ReactiveCommand
   }
 with
-  member this.ToComment(todo: Todo) =
-    {
-      Text                      = this.Text.Value
-      State                     = this.State.Value |> Option.getOr todo.CurrentState.Value
-      User                      = LoginInfo.Current
-      Created                   = DateTime.Now
-    }
-  static member Create(todo: Todo) =
+  member this.ToComment(todo: Todo, user: User) =
+    let state = this.State.Value |> Option.getOr todo.CurrentState.Value
+    Comment.Create(this.Text.Value, state, user)
+  static member Create(todo: Todo, loginUser) =
     let text =
       ReactiveProperty.Create ""
     let command =
@@ -34,8 +30,8 @@ with
     let subscription =
       command
       |> Observable.subscribe
-        (fun _ ->
-          todo.Replies.Add(newCommentVm.ToComment(todo))
+        (fun user ->
+          todo.Replies.Add(newCommentVm.ToComment(todo, loginUser))
           text.Value <- ""
         )
     newCommentVm
@@ -47,10 +43,10 @@ type TodoViewModel =
     ExpanderHeader              : ReactiveProperty<string>
   }
 with
-  static member Create(todo: Todo) =
+  static member Create(todo: Todo, loginUser) =
     {
       Todo                      = todo
-      NewReply                  = NewReplyViewModel.Create(todo)
+      NewReply                  = NewReplyViewModel.Create(todo, loginUser)
       ExpanderHeader            = todo.ReplyCount.Select(sprintf "コメント (%d)").ToReactiveProperty()
     }
 
@@ -60,9 +56,11 @@ type TodoListViewModel =
     Todos                       : ObservableCollection<TodoViewModel>
   }
 with
-  static member Create(todoList: TodoList) =
+  static member Create(todoList: TodoList, loginUser: User) =
     {
       TodoList                  = todoList
       Todos                     =
-        todoList.Todos |> Seq.map TodoViewModel.Create |> ObservableCollection.OfSeq
+        todoList.Todos
+        |> Seq.map (fun todo -> TodoViewModel.Create(todo, loginUser))
+        |> ObservableCollection.OfSeq
     }

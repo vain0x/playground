@@ -5,27 +5,32 @@ open Reactive.Bindings
 open System.Collections.ObjectModel
 open Zelga.Core.Utility
 
+type User =
+  Git.User
+
 type TodoState =
   | Open
   | Closed
 
 type Comment =
   {
+    Id                          : Guid
     Text                        : string
     State                       : TodoState
     User                        : User
     Created                     : DateTime
   }
 with
-  static member Create(text, user) =
+  static member Create(text, state, user) =
     {
+      Id                        = Guid.NewGuid()
       Text                      = text
-      State                     = Open
+      State                     = state
       User                      = user
       Created                   = DateTime.Now
     }
 
-and Todo =
+type Todo =
   {
     FirstComment                : Comment
     Replies                     : ObservableCollection<Comment>
@@ -38,7 +43,7 @@ with
   static member Create(description, user) =
     let replies = ObservableCollection.Empty()
     {
-      FirstComment              = Comment.Create(description, user)
+      FirstComment              = Comment.Create(description, Open, user)
       Replies                   = replies
       ReplyCount                = replies |> ObservableCollection.ObserveCount
       Tags                      = ObservableCollection.Empty()
@@ -48,14 +53,14 @@ with
 
 type TodoList =
   {
-    Id                          : int
+    Id                          : Guid
     Name                        : ReactiveProperty<string>
     Todos                       : ObservableCollection<Todo>
   }
 with
   static member Create(name, todos) =
     {
-      Id                        = Id.Generate ()
+      Id                        = Guid.NewGuid()
       Name                      = ReactiveProperty.Create(name)
       Todos                     = todos |> ObservableCollection.OfSeq
     }
@@ -64,3 +69,19 @@ type Repository =
   {
     TodoLists                   : ObservableCollection<TodoList>
   }
+
+type Update =
+  | CreateUser
+    of User
+  | CreateTodoList
+    of TodoList
+  | CreateTodo
+    of Todo
+  | CreateReply
+    of todoId: Guid * Comment
+
+[<AbstractClass>]
+type UpdateCollection(user: User) =
+  abstract member Add: Update -> unit
+  abstract member Save: unit -> unit
+  abstract member Load: unit -> Repository

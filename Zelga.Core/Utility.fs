@@ -10,11 +10,45 @@ module Option =
     | Some x -> x
     | None -> x
 
+  let retry count fail f =
+    let rec loop i =
+      if i >= count then
+        fail ()
+      else
+        try
+          match f () with
+          | Some x -> x
+          | None -> loop (i + 1)
+        with
+        | _ -> loop (i + 1)
+    loop 0
+
+module String =
+  open System
+
+  let isNullOrEmpty s =
+    String.IsNullOrEmpty(s)
+
+  let trim (s: string) =
+    s.Trim()
+
+module Async =
+  let constant x =
+    async {
+      return x
+    }
+
+  let map f a =
+    async {
+      let! x = a
+      return f x
+    }
+
 module Diagnostics =
   open System.Diagnostics
   open System.Text
 
-  let execCmdline timeout verb arg =
+  let start (verb, arg) =
     let psi =
       ProcessStartInfo
         ( FileName = verb
@@ -24,7 +58,31 @@ module Diagnostics =
         , RedirectStandardOutput = true
         , StandardOutputEncoding = Encoding.UTF8
         )
-    use p = Process.Start(psi)
+    Process.Start(psi)
+
+  let tryExecuteParallel timeout commands =
+    async {
+      let stopwatch = Stopwatch()
+      let processes = commands |> Seq.map start
+      stopwatch.Start()
+      let! result =
+        processes
+        |> Seq.map
+          (fun p ->
+            if p.WaitForExit(timeout - (int stopwatch.ElapsedMilliseconds)) then
+              p.StandardOutput.ReadToEndAsync()
+              |> Async.AwaitTask
+              |> Async.map Some
+            else Async.constant None
+          )
+        |> Async.Parallel
+      for p in processes do
+        p.Dispose()
+      return result
+    }
+
+  let tryExecute timeout command =
+    use p = start command
     if p.WaitForExit(timeout)
     then Some (p.StandardOutput.ReadToEnd())
     else None
@@ -32,7 +90,12 @@ module Diagnostics =
 module Observable =
   open System
 
-  let subscribeAll (onNext: _ -> unit) (onError: exn -> unit) (onCompleted: unit -> unit) (this: IObservable<_>) =
+  let subscribeAll
+    (onNext: 'x -> unit)
+    (onError: exn -> unit)
+    (onCompleted: unit -> unit)
+    (this: IObservable<'x>)
+    =
     this.Subscribe(onNext, onError, onCompleted)
 
   let subscribeCompleted onCompleted this =
