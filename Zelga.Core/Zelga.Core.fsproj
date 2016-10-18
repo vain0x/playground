@@ -45,7 +45,6 @@
     <Compile Include="Utility.fs" />
     <Compile Include="Git.fs" />
     <Compile Include="AddOnlyObservableList.fs" />
-    <Compile Include="User.fs" />
     <Compile Include="Todo.fs" />
     <Compile Include="TodoViewModel.fs" />
     <Compile Include="SampleData.fs" />
