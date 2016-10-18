@@ -1,5 +1,6 @@
 ﻿<UserControl
     x:Class="Zelga.Wpf.TodoListSelectorControl"
+    x:Name="todoListSelectorControl"
     xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
     xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006" 
@@ -13,7 +14,16 @@
     <ListBox ItemsSource="{Binding Repository.TodoLists}">
         <ListBox.ItemTemplate>
             <DataTemplate>
-                <TextBlock Text="{Binding Name.Value}" />
+                <StackPanel>
+                    <StackPanel.InputBindings>
+                        <MouseBinding
+                            MouseAction="LeftDoubleClick"
+                            Command="{Binding DataContext.SelectCommand, ElementName=todoListSelectorControl}"
+                            CommandParameter="{Binding Id}"
+                            />
+                    </StackPanel.InputBindings>
+                    <TextBlock Text="{Binding Name.Value}" />
+                </StackPanel>
             </DataTemplate>
         </ListBox.ItemTemplate>
     </ListBox>

@@ -61,6 +61,9 @@
     <Compile Include="Control\TodoListSelectorControl.xaml.cs">
       <DependentUpon>TodoListSelectorControl.xaml</DependentUpon>
     </Compile>
+    <Compile Include="Control\TotalActivityControl.xaml.cs">
+      <DependentUpon>TotalActivityControl.xaml</DependentUpon>
+    </Compile>
     <Compile Include="Utility\DateTimeOffsetToLocalDateTimeConverter.cs" />
     <Compile Include="Control\TodoControl.xaml.cs">
       <DependentUpon>TodoControl.xaml</DependentUpon>
@@ -100,6 +103,10 @@
       <Generator>MSBuild:Compile</Generator>
     </Page>
     <Page Include="Control\TodoListControl.xaml">
+      <SubType>Designer</SubType>
+      <Generator>MSBuild:Compile</Generator>
+    </Page>
+    <Page Include="Control\TotalActivityControl.xaml">
       <SubType>Designer</SubType>
       <Generator>MSBuild:Compile</Generator>
     </Page>

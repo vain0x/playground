@@ -1,0 +1,51 @@
+﻿<UserControl
+    x:Class="Zelga.Wpf.TotalActivityControl"
+    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006" 
+    xmlns:d="http://schemas.microsoft.com/expression/blend/2008" 
+    xmlns:zw="clr-namespace:Zelga.Wpf"
+    mc:Ignorable="d" 
+    d:DesignWidth="300"
+    d:DesignHeight="300"
+    >
+    <Grid
+        Background="LightBlue"
+        >
+        <Grid.RowDefinitions>
+            <RowDefinition Height="auto" />
+            <RowDefinition Height="*" />
+        </Grid.RowDefinitions>
+        <TextBlock
+            Text="最近の活動"
+            FontSize="18"
+            Margin="10"
+            VerticalAlignment="Center"
+            />
+        <ScrollViewer Grid.Row="1">
+            <ItemsControl ItemsSource="{Binding}">
+                <ItemsControl.ItemTemplate>
+                    <DataTemplate>
+                        <Border Style="{StaticResource TodoBorderStyle}">
+                            <Grid>
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="auto" />
+                                    <ColumnDefinition Width="*" />
+                                </Grid.ColumnDefinitions>
+                                <StackPanel>
+                                    <TextBlock Text="{Binding User.Name}" />
+                                    <TextBlock Text="{Binding Update.DateTime, Converter={StaticResource DateTimeOffsetToLocalDateTimeConverter}}" />
+                                </StackPanel>
+                                <TextBlock
+                                    Grid.Column="1"
+                                    TextWrapping="Wrap"
+                                    Text="{Binding Description.Value}"
+                                    />
+                            </Grid>
+                        </Border>
+                    </DataTemplate>
+                </ItemsControl.ItemTemplate>
+            </ItemsControl>
+        </ScrollViewer>
+    </Grid>
+</UserControl>

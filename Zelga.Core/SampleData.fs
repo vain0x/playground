@@ -9,34 +9,39 @@ module SampleData =
 
   let repository = Repository.Empty(admin)
 
-  let createTodo (todoList: TodoList) name updater =
-    let todo = Todo.Create(name, updater)
-    repository.Update(updater, CreateTodo (todoList.Id, todo))
-    todo
+  let repositoryVm =
+    RepositoryViewModel.Create(repository)
 
-  let createReply (todo: Todo) state message updater =
-    repository.Update(updater, CreateReply (todo.Id, Comment.Create(message, state, updater)))
+  let createTodo (todoList: TodoList) name (activity: Activity) =
+    Todo.Create(name, activity.User)
+    |> tap
+      (fun todo ->
+        activity.Add(CreateTodo (todoList.Id, todo))
+      )
 
-  repository.AddUser(miku)
-  repository.AddUser(yukari)
+  let createReply (todo: Todo) state message (activity: Activity) =
+    activity.Add(CreateReply (todo.Id, Comment.Create(message, state, activity.User)))
+
+  let mikuActivity =
+    repository.AddUser(miku)
+
+  let yukariActivity =
+    repository.AddUser(yukari)
 
   let mikuTodoList = TodoList.Empty("miku's")
 
-  repository.Update(miku, CreateTodoList mikuTodoList)
+  mikuActivity.Add(CreateTodoList mikuTodoList)
 
   let todo1 =
-    miku |> createTodo mikuTodoList "The first todo created by miku."
+    mikuActivity |> createTodo mikuTodoList "The first todo created by miku."
 
-  miku |> createReply todo1 Open "The first comment."
-  yukari |> createReply todo1 Open "The second comment."
+  mikuActivity |> createReply todo1 Open "The first comment."
+  yukariActivity |> createReply todo1 Open "The second comment."
 
   let todo2 =
-    yukari |> createTodo mikuTodoList "The second todo created by yukari."
+    yukariActivity |> createTodo mikuTodoList "The second todo created by yukari."
 
   let todo3 =
-    yukari |> createTodo mikuTodoList "A closed todo."
+    yukariActivity |> createTodo mikuTodoList "A closed todo."
 
-  miku |> createReply todo3 Closed "Closes it."
-
-  let repositoryVm =
-    RepositoryViewModel.Create(repository)
+  mikuActivity |> createReply todo3 Closed "Closes it."

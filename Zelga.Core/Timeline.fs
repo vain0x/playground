@@ -4,6 +4,7 @@ open System
 open System.Collections
 open System.Collections.Generic
 open System.Collections.Specialized
+open System.Linq
 open System.Reactive.Subjects
 
 type Timeline<'TValue>(toTime: 'TValue -> DateTimeOffset) =
@@ -24,9 +25,6 @@ type Timeline<'TValue>(toTime: 'TValue -> DateTimeOffset) =
           loop m ub
     loop -1 list.Count
 
-  let onAdded =
-    new Subject<'TValue>()
-
   let collectionChangedEvent =
     Event<NotifyCollectionChangedEventHandler, NotifyCollectionChangedEventArgs>()
 
@@ -39,22 +37,20 @@ type Timeline<'TValue>(toTime: 'TValue -> DateTimeOffset) =
   member this.Add(value: 'TValue) =
     let index = lowerBound value
     list.Insert(index, value)
-    this |> trigger (fun a -> NotifyCollectionChangedEventArgs(a, value :> obj, index))
-    onAdded.OnNext(value)
+    this |> trigger (fun a -> NotifyCollectionChangedEventArgs(a, value :> obj, list.Count - index))
 
-  interface IObservable<'TValue> with
-    override this.Subscribe(observer) =
-      onAdded.Subscribe(observer)
+  member this.GetEnumerator() =
+    Enumerable.Reverse(list).GetEnumerator()
 
   interface IReadOnlyList<'TValue> with
     override this.Count = list.Count
 
     override this.Item
-      with get i = list.[i]
+      with get i = list.[list.Count - 1 - i]
 
-    override this.GetEnumerator() = list.GetEnumerator() :> IEnumerator<'TValue>
+    override this.GetEnumerator() = this.GetEnumerator()
 
-    override this.GetEnumerator(): IEnumerator = list.GetEnumerator() :> IEnumerator
+    override this.GetEnumerator() = this.GetEnumerator() :> IEnumerator
 
   interface INotifyCollectionChanged with
     [<CLIEvent>]

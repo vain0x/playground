@@ -19,6 +19,8 @@ module Git =
         Name                    = name
         Email                   = email
       }
+    member this.FullName =
+      sprintf "%s <%s>" this.Name this.Email
 
   let tryGetCurrentUser () =
     tryExecute "config --get user.name" |> Option.bind

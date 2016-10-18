@@ -27,8 +27,10 @@ with
       Text                      = text
       State                     = state
       User                      = user
-      Created                   = DateTimeOffset.Now
+      Created                   = DateTimeOffset.UtcNow
     }
+  member this.ShortText =
+    this.Text |> String.shorten
 
 type Todo =
   {
@@ -67,13 +69,25 @@ with
       Todos                     = ObservableCollection.Empty()
     }
 
-type Update =
+type UpdateAction =
   | CreateTodoList
     of TodoList
   | CreateTodo
     of todoListId: Guid * Todo
   | CreateReply
     of todoId: Guid * Comment
+
+type Update =
+  {
+    Action                      : UpdateAction
+    DateTime                    : DateTimeOffset
+  }
+with
+  static member Create(action) =
+    {
+      Action                    = action
+      DateTime                  = DateTimeOffset.UtcNow
+    }
 
 type Activity =
   {
@@ -86,6 +100,8 @@ with
       User                      = user
       Updates                   = ObservableCollection.Empty()
     }
+  member this.Add(updateAction) =
+    this.Updates.Add(Update.Create(updateAction))
 
 type Repository =
   {
@@ -94,27 +110,36 @@ type Repository =
     TodoLists                   : ObservableCollection<TodoList>
   }
 with
-  member this.Update(updater, update) =
-    match update with
+  member this.FindTodoListById(todoListId) =
+    this.TodoLists |> Seq.find (fun tl -> tl.Id = todoListId)
+
+  member this.AllTodo =
+    this.TodoLists |> Seq.collect (fun tl -> tl.Todos)
+
+  member this.FindTodoById(todoId) =
+    this.AllTodo |> Seq.find (fun todo -> todo.Id = todoId)
+
+  member this.Update(updater, update: Update) =
+    match update.Action with
     | CreateTodoList todoList ->
       this.TodoLists.Add(todoList)
     | CreateTodo (todoListId, todo) ->
-      this.TodoLists
-      |> Seq.tryFind (fun tl -> tl.Id = todoListId)
-      |> Option.iter (fun todoList -> todoList.Todos.Add(todo))
+      let todoList = this.FindTodoListById(todoListId)
+      todoList.Todos.Add(todo)
     | CreateReply (todoId, comment) ->
-      this.TodoLists
-      |> Seq.collect (fun tl -> tl.Todos)
-      |> Seq.tryFind (fun todo -> todo.Id = todoId)
-      |> Option.iter (fun todo -> todo.Replies.Add(comment))
+      let todo = this.FindTodoById(todoId)
+      todo.Replies.Add(comment)
 
   member this.AddUser(user) =
-    let timeline = Activity.Empty(user)
-    let subscription =
-      timeline.Updates
-      |> ObservableCollection.ObserveAdded
-      |> Observable.subscribe (fun update -> this.Update(user, update))
-    this.UserActivities.Add(timeline)
+    Activity.Empty(user)
+    |> tap
+      (fun activity ->
+        let subscription =
+          activity.Updates
+          |> ObservableCollection.ObserveAdded
+          |> Observable.subscribe (fun update -> this.Update(user, update))
+        this.UserActivities.Add(activity)
+      )
     
   static member Empty(admin) =
     {
@@ -122,4 +147,6 @@ with
       UserActivities            = ObservableCollection.Empty()
       TodoLists                 = ObservableCollection.Empty()
     }
-    |> tap (fun this -> this.AddUser(admin))
+    |> tap (fun this ->
+      this.TodoLists.Add(TodoList.Empty("Default"))
+    )

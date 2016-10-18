@@ -9,14 +9,7 @@
     d:DesignWidth="300"
     d:DesignHeight="300"
     >
-    <Border
-        BorderThickness="1"
-        BorderBrush="Black"
-        CornerRadius="10"
-        Margin="10"
-        Padding="10"
-        Background="White"
-        >
+    <Border Style="{StaticResource TodoBorderStyle}">
         <StackPanel>
             <zw:CommentControl DataContext="{Binding Todo.FirstComment}" />
             <Expander Header="{Binding ExpanderHeader.Value}">

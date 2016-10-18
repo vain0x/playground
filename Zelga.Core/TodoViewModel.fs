@@ -69,30 +69,63 @@ type UpdateViewModel =
   {
     User                        : User
     Update                      : Update
+    Description                 : ReactiveProperty<string>
   }
 with
-  static member Create(user, update) =
+  static member Create(user: User, update: Update, repository: Repository) =
+    let description =
+      match update.Action with
+      | CreateTodoList todoList ->
+        todoList.Name.Select(sprintf "TODOリスト「%s」を作成しました。").ToReactiveProperty()
+      | CreateTodo (todoListId, todo) ->
+        sprintf "TODO「%s」を作成しました。" todo.FirstComment.ShortText
+        |> ReactiveProperty.Create
+      | CreateReply (todoId, comment) ->
+        let todo = repository.FindTodoById(todoId)
+        sprintf "TODO「%s」にコメントを付けました: %s"
+          todo.FirstComment.ShortText
+          comment.ShortText
+        |> ReactiveProperty.Create
     {
       User                      = user
       Update                    = update
+      Description               = description
     }
 
 type RepositoryViewModel =
   {
     Repository                  : Repository
-    TodoLists                   : ObservableCollection<TodoListViewModel>
-    TotalActivity               : ObservableCollection<UpdateViewModel>
+    TodoList                    : ReactiveProperty<TodoListViewModel>
+    TotalActivity               : Timeline<UpdateViewModel>
+    SelectCommand               : ReactiveCommand<Guid>
   }
 with
   static member Create(repository: Repository) =
+    let loginUser = repository.Admin
+    let selectCommand = new ReactiveCommand<Guid>()
     {
       Repository                = repository
-      TodoLists                 = ObservableCollection.Empty()
-      TotalActivity             = ObservableCollection.Empty()
+      TodoList                  = ReactiveProperty.Create(TodoListViewModel.Create(repository.TodoLists.[0], loginUser))
+      TotalActivity             = Timeline<UpdateViewModel>(fun updateVm -> updateVm.Update.DateTime)
+      SelectCommand             = selectCommand
     }
     |> tap
-      (fun repositoryVm ->
-        let loginUser = repository.Admin
-        if repository.TodoLists.Count > 0 then
-          repositoryVm.TodoLists.Add(TodoListViewModel.Create(repository.TodoLists.[0], loginUser))
+      (fun this ->
+        selectCommand
+        |> Observable.subscribe
+          (fun todoListId ->
+            let todoList = repository.FindTodoListById(todoListId)
+            this.TodoList.Value <- TodoListViewModel.Create(todoList, loginUser)
+          ) |> ignore
+
+        // Merge all activities.
+        let mergedActivity =
+          (repository.UserActivities |> ObservableCollection.ObserveAdded).SelectMany(fun activity ->
+            (activity.Updates |> ObservableCollection.ObserveAdded).Select(fun update ->
+              (activity.User, update)
+            )
+          )
+        mergedActivity |> Observable.subscribe (fun (user, update) ->
+          this.TotalActivity.Add(UpdateViewModel.Create(user, update, repository))
+          ) |> ignore
       )

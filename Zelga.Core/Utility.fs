@@ -32,6 +32,12 @@ module String =
   let trim (s: string) =
     s.Trim()
 
+  let shorten (s: string) =
+    if s.Length > 40 then
+      s.Substring(0, 30) + "..."
+    else
+      s
+
 module Async =
   let constant x =
     async {
