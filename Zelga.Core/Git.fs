@@ -13,6 +13,12 @@ module Git =
       Name                      : string
       Email                     : string
     }
+  with
+    static member Create(name, email) =
+      {
+        Name                    = name
+        Email                   = email
+      }
 
   let tryGetCurrentUser () =
     tryExecute "config --get user.name" |> Option.bind
@@ -22,7 +28,7 @@ module Git =
             let name = name |> String.trim
             let email = email |> String.trim
             if (name |> String.isNullOrEmpty) || (email |> String.isNullOrEmpty) then
-              failwithf "Your user name or email address for current Git repository is unset. (Git リポジトリーにユーザー名またはメールアドレスが正しく設定されていません。)" name email
+              failwith "Your user name or email address for current Git repository is unset. (Git リポジトリーにユーザー名またはメールアドレスが正しく設定されていません。)"
             else
               {
                 Name                  = name

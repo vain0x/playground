@@ -65,11 +65,6 @@ with
       Todos                     = todos |> ObservableCollection.OfSeq
     }
 
-type Repository =
-  {
-    TodoLists                   : ObservableCollection<TodoList>
-  }
-
 type Update =
   | CreateUser
     of User
@@ -80,8 +75,46 @@ type Update =
   | CreateReply
     of todoId: Guid * Comment
 
-[<AbstractClass>]
-type UpdateCollection(user: User) =
-  abstract member Add: Update -> unit
-  abstract member Save: unit -> unit
-  abstract member Load: unit -> Repository
+type Timeline =
+  {
+    User                        : User
+    Updates                     : ObservableCollection<Update>
+  }
+with
+  static member Empty(user: User) =
+    {
+      User                      = user
+      Updates                   = ObservableCollection.Empty()
+    }
+
+type Repository =
+  {
+    Admin                       : User
+    UserTimelines               : ObservableCollection<Timeline>
+    TodoLists                   : ObservableCollection<TodoList>
+  }
+with
+  member this.Update(updater, update) =
+    match update with
+    | CreateUser user ->
+      this.AddUser(updater, user)
+    | CreateTodoList todoList ->
+      ()
+    | CreateTodo todo ->
+      ()
+    | CreateReply (todoId, comment) ->
+      ()
+
+  member this.AddUser(updater, user) =
+    let timeline = Timeline.Empty(user)
+    let updated = timeline.Updates |> ObservableCollection.ObserveAdded
+    updated |> Observable.subscribe (fun update -> this.Update(user, update)) |> ignore
+    this.UserTimelines.Add(timeline)
+    
+  static member Empty(admin) =
+    {
+      Admin                     = admin
+      UserTimelines             = ObservableCollection.Empty()
+      TodoLists                 = ObservableCollection.Empty()
+    }
+    |> tap (fun this -> this.AddUser(admin, admin))

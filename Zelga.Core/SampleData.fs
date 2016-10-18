@@ -3,9 +3,14 @@
 open Zelga.Core.Utility
 
 module SampleData =
-  let admin = User.Admin
+  let admin = User.Create("admin", "admin@example.com")
   let vain = User.Create("vain", "vain@example.com")
   let uedai = User.Create("uedai", "uedai@example.com")
+
+  let repository = Repository.Empty(admin)
+
+  repository.AdminTimeLine.Updates.Add(CreateUser(vain))
+  repository.AdminTimeLine.Updates.Add(CreateUser(uedai))
 
   let users =
     [
@@ -49,3 +54,17 @@ module SampleData =
           todoList
         ] |> ObservableCollection.OfSeq
     }
+
+  let adminUpdates =
+    [
+      Update.CreateUser(vain)
+      Update.CreateUser(uedai)
+    ]
+
+  let adminUpdateCollection =
+    new UpdateCollection(admin)
+
+  let vainTimeline =
+    [
+      Update ()
+    ]
