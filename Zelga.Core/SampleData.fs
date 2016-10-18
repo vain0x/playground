@@ -45,3 +45,5 @@ module SampleData =
     yukariActivity |> createTodo mikuTodoList "A closed todo."
 
   mikuActivity |> createReply todo3 Closed "Closes it."
+
+  repositoryVm.SelectCommand.Execute(mikuTodoList.Id)

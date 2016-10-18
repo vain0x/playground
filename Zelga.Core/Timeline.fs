@@ -5,7 +5,6 @@ open System.Collections
 open System.Collections.Generic
 open System.Collections.Specialized
 open System.Linq
-open System.Reactive.Subjects
 
 type Timeline<'TValue>(toTime: 'TValue -> DateTimeOffset) =
   /// Items sorted by time in ascending order.

@@ -16,6 +16,7 @@ with
   member this.ToComment(todo: Todo, user: User) =
     let state = this.State.Value |> Option.getOr todo.CurrentState.Value
     Comment.Create(this.Text.Value, state, user)
+
   static member Create(todo: Todo, loginUser) =
     let text =
       ReactiveProperty.Create ""
