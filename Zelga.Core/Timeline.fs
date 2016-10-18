@@ -7,7 +7,7 @@ open System.Collections.Specialized
 open System.Reactive.Subjects
 
 type Timeline<'TValue>(toTime: 'TValue -> DateTimeOffset) =
-  /// Items in ascending order by time.
+  /// Items sorted by time in ascending order.
   let list =
     List<'TValue>()
 
