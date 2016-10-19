@@ -42,7 +42,7 @@
   <ItemGroup>
     <Compile Include="Accessor\Table\Relation.cs" />
     <Compile Include="Accessor\Table\RelationExtensions.cs" />
-    <Compile Include="DbProvider\DbTypeMap.cs" />
+    <Compile Include="Data\DbTypeMap.cs" />
     <Compile Include="Accessor\Record\AssignmentRecord.cs" />
     <Compile Include="Accessor\Record\DbParameterRecord.cs" />
     <Compile Include="SqlSyntax\SqlCondition\CompoundSqlCondition.cs" />
@@ -73,11 +73,11 @@
     <Compile Include="Utility\KeyValuePair.cs" />
     <Compile Include="Utility\EnumerableExtension.cs" />
     <Compile Include="Utility\Lazy.cs" />
-    <Compile Include="DbProvider\DbProvider.cs" />
-    <Compile Include="DbProvider\Fake\FakeDbProvider.cs" />
-    <Compile Include="DbProvider\Fake\FakeDbProviderFactory.cs" />
-    <Compile Include="DbProvider\Fake\FakeSqlLanguage.cs" />
-    <Compile Include="DbProvider\SqlLanguage.cs" />
+    <Compile Include="Data\DbProvider.cs" />
+    <Compile Include="Data\Fake\FakeDbProvider.cs" />
+    <Compile Include="Data\Fake\FakeDbProviderFactory.cs" />
+    <Compile Include="Data\Fake\FakeSqlLanguage.cs" />
+    <Compile Include="Data\SqlLanguage.cs" />
     <Compile Include="SqlSyntax\SqlExecutable\Select\FromlessSelectBuilder.cs" />
     <Compile Include="SqlSyntax\SqlExecutable\Select\SelectStatement.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />

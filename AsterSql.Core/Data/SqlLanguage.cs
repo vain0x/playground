@@ -2,7 +2,7 @@
 using System.Collections.Generic;
 using AsterSql.Core.SqlSyntax;
 
-namespace AsterSql.Core.Provider
+namespace AsterSql.Data
 {
     public abstract class SqlLanguage
     {

@@ -5,7 +5,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace AsterSql.Core.Provider
+namespace AsterSql.Data
 {
     /// <summary>
     /// Represents a one-to-one mapping between Type and DbType.

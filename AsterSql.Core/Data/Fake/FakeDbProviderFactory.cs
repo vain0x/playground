@@ -7,7 +7,7 @@ using System.Diagnostics;
 using System.Threading;
 using System.Threading.Tasks;
 
-namespace AsterSql.Core.Provider.Fake
+namespace AsterSql.Data.Fake
 {
     [DebuggerDisplay("{\"{ParameterName}\" = {Value}: {DbType}")]
     public class FakeDbParameter

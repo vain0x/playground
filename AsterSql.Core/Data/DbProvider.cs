@@ -4,7 +4,7 @@ using System.Data;
 using System.Data.Common;
 using System.Linq;
 
-namespace AsterSql.Core.Provider
+namespace AsterSql.Data
 {
     public class DbProvider
     {

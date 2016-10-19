@@ -6,7 +6,7 @@ using System.Linq;
 using Optional;
 using AsterSql.Core.Accessor;
 using AsterSql.Core.SqlSyntax;
-using AsterSql.Core.Provider;
+using AsterSql.Data;
 
 namespace AsterSql.Core
 {

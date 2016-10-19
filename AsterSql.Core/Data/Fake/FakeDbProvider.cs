@@ -1,4 +1,4 @@
-﻿namespace AsterSql.Core.Provider.Fake
+﻿namespace AsterSql.Data.Fake
 {
     public class FakeDbProvider
         : DbProvider

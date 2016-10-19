@@ -1,7 +1,7 @@
 ﻿using System;
 using System.Text.RegularExpressions;
 
-namespace AsterSql.Core.Provider.Fake
+namespace AsterSql.Data.Fake
 {
     public class FakeSqlLanguage
         : SqlLanguage
