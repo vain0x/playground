@@ -5,7 +5,7 @@ using AsterSql.SqlSyntax;
 
 namespace AsterSql.Test
 {
-    public class SqlExpressionExtensionsTest
+    public class SqlExpressionExtensionTest
     {
         static SqlBuilder Sql => FakeDb.Sql;
 
@@ -13,7 +13,7 @@ namespace AsterSql.Test
         [Fact]
         public void TestInvoke_no_arguments()
         {
-            SqlExpressionExtensions
+            SqlExpressionExtension
                 .Invoke("f", Enumerable.Empty<ScalarSqlExpression>())
                 .ToEmbeddedString()
                 .ShouldEqual("f ( )");
@@ -22,7 +22,7 @@ namespace AsterSql.Test
         [Fact]
         public void TestInvoke_two_arguments()
         {
-            SqlExpressionExtensions
+            SqlExpressionExtension
                 .Invoke("max", new[] { Sql.Int(1), Sql.Int(2) })
                 .ToEmbeddedString()
                 .ShouldEqual("max ( 1 , 2 )");

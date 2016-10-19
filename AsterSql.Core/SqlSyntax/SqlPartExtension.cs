@@ -7,7 +7,7 @@ using System.Text;
 
 namespace AsterSql.SqlSyntax
 {
-    static class SqlPartExtensions
+    static class SqlPartExtension
     {
         internal static SqlPart Concat(
             this SqlPart lhs,

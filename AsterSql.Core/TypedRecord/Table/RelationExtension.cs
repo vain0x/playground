@@ -10,7 +10,7 @@ namespace AsterSql.TypedRecord
     /// <summary>
     /// Provides static methods and extension methods related to Relation.
     /// </summary>
-    public static class RelationExtensions
+    public static class RelationExtension
     {
         #region Field
         /// <summary>

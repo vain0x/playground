@@ -41,7 +41,7 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="TypedRecord\Table\Relation.cs" />
-    <Compile Include="TypedRecord\Table\RelationExtensions.cs" />
+    <Compile Include="TypedRecord\Table\RelationExtension.cs" />
     <Compile Include="Data\DbTypeMap.cs" />
     <Compile Include="TypedRecord\Record\AssignmentRecord.cs" />
     <Compile Include="TypedRecord\Record\DbParameterRecord.cs" />
@@ -67,7 +67,7 @@
     <Compile Include="SqlSyntax\SqlExecutable\Select\FieldlessSelectBuilder.cs" />
     <Compile Include="SqlSyntax\SqlExecutable\Select\OrderKey.cs" />
     <Compile Include="SqlSyntax\SqlExecutable\Select\SelectBuilder.cs" />
-    <Compile Include="SqlSyntax\SqlExpression\SqlExpressionExtensions.cs" />
+    <Compile Include="SqlSyntax\SqlExpression\SqlExpressionExtension.cs" />
     <Compile Include="TypedRecord\Record\Record.cs" />
     <Compile Include="SqlSyntax\SqlToken.cs" />
     <Compile Include="Utility\KeyValuePair.cs" />
@@ -85,7 +85,7 @@
     <Compile Include="SqlBuilder.cs" />
     <Compile Include="TypedRecord\Table\Column.cs" />
     <Compile Include="TypedRecord\Table\Table.cs" />
-    <Compile Include="SqlSyntax\SqlPartExtensions.cs" />
+    <Compile Include="SqlSyntax\SqlPartExtension.cs" />
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <!-- To modify your build process, add your task inside one of the targets below and uncomment it.

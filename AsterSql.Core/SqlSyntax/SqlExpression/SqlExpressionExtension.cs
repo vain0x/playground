@@ -4,7 +4,7 @@ using System.Linq;
 
 namespace AsterSql.SqlSyntax
 {
-    public static class SqlExpressionExtensions
+    public static class SqlExpressionExtension
     {
         #region Internal
         internal static IEnumerable<SqlToken> Invoke(
