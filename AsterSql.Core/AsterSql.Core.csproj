@@ -71,7 +71,7 @@
     <Compile Include="Accessor\Record\Record.cs" />
     <Compile Include="SqlSyntax\SqlToken.cs" />
     <Compile Include="Utility\KeyValuePair.cs" />
-    <Compile Include="Utility\LinqExtensions.cs" />
+    <Compile Include="Utility\EnumerableExtension.cs" />
     <Compile Include="Utility\Lazy.cs" />
     <Compile Include="DbProvider\DbProvider.cs" />
     <Compile Include="DbProvider\Fake\FakeDbProvider.cs" />

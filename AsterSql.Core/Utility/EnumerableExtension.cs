@@ -6,7 +6,7 @@ using Optional.Unsafe;
 
 namespace AsterSql.Core
 {
-    static class LinqExtensions
+    static class EnumerableExtension
     {
         static IEnumerable<X> Enumerate<X>(IEnumerator<X> enumerator)
         {
