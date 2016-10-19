@@ -1,7 +1,7 @@
 ﻿using System;
 using Optional;
 using AsterSql.Core;
-using AsterSql.Core.Accessor;
+using AsterSql.TypedRecord;
 
 namespace AsterSql.Test
 {

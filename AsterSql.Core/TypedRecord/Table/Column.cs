@@ -1,8 +1,9 @@
 using System.Collections.Generic;
 using System.Data;
+using AsterSql.Core;
 using AsterSql.Core.SqlSyntax;
 
-namespace AsterSql.Core.Accessor
+namespace AsterSql.TypedRecord
 {
     public interface IColumn
     {

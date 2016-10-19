@@ -4,7 +4,7 @@ using System.Data;
 using System.Data.Common;
 using System.Linq;
 using Optional;
-using AsterSql.Core.Accessor;
+using AsterSql.TypedRecord;
 using AsterSql.Core.SqlSyntax;
 using AsterSql.Data;
 

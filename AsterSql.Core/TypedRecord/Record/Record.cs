@@ -5,7 +5,7 @@ using System.Text;
 using System.Threading.Tasks;
 using AsterSql.Core.SqlSyntax;
 
-namespace AsterSql.Core.Accessor
+namespace AsterSql.TypedRecord
 {
     public interface IValueRecord
     {

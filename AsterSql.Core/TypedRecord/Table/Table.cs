@@ -5,9 +5,10 @@ using System.Data.Common;
 using System.Linq;
 using System.Reflection;
 using Optional;
+using AsterSql.Core;
 using AsterSql.Core.SqlSyntax;
 
-namespace AsterSql.Core.Accessor
+namespace AsterSql.TypedRecord
 {
     public sealed class Table
         : RelationSqlExpression
@@ -22,7 +23,7 @@ namespace AsterSql.Core.Accessor
         public string Alias => OptionalAlias.ValueOr(RawName);
 
         public Column<X> Column<X>(string columnName) =>
-            Accessor.Column.Create<X>(this, columnName);
+            TypedRecord.Column.Create<X>(this, columnName);
 
         internal override IEnumerable<SqlToken> Tokens
         {

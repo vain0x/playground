@@ -3,9 +3,10 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using AsterSql.Core;
 using AsterSql.Core.SqlSyntax;
 
-namespace AsterSql.Core.Accessor
+namespace AsterSql.TypedRecord
 {
     /// <summary>
     /// Provides static methods and extension methods related to Relation.

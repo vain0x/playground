@@ -6,7 +6,7 @@ using System.Text;
 using System.Threading.Tasks;
 using Optional;
 
-namespace AsterSql.Core.Accessor
+namespace AsterSql.TypedRecord
 {
     sealed class DbParameterRecord
         : Dictionary<string, DbParameter>

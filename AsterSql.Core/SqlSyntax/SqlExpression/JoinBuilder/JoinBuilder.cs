@@ -1,5 +1,5 @@
 using System;
-using AsterSql.Core.Accessor;
+using AsterSql.TypedRecord;
 
 namespace AsterSql.Core.SqlSyntax
 {
