@@ -1,7 +1,7 @@
 using System;
 using Optional;
 
-namespace FluentSqlBuilder.SqlSyntax
+namespace AsterSql.Core.SqlSyntax
 {
     public sealed class FromlessSelectBuilder
     {

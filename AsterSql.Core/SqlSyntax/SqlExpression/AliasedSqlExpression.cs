@@ -5,7 +5,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace FluentSqlBuilder.SqlSyntax
+namespace AsterSql.Core.SqlSyntax
 {
     public interface IAliasedSqlExpression
     {

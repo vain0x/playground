@@ -1,6 +1,7 @@
-﻿using FluentSqlBuilder.Provider.Fake;
+﻿using AsterSql.Core;
+using AsterSql.Core.Provider.Fake;
 
-namespace FluentSqlBuilder.Test
+namespace AsterSql.Test
 {
     public static class FakeDb
     {

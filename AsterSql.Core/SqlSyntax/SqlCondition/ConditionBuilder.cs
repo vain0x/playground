@@ -2,7 +2,7 @@
 using System.Data.Common;
 using System.Linq;
 
-namespace FluentSqlBuilder.SqlSyntax
+namespace AsterSql.Core.SqlSyntax
 {
     sealed class ConditionBuilder
         : SqlCondition

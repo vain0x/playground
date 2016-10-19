@@ -7,7 +7,7 @@ using System.Diagnostics;
 using System.Threading;
 using System.Threading.Tasks;
 
-namespace FluentSqlBuilder.Provider.Fake
+namespace AsterSql.Core.Provider.Fake
 {
     [DebuggerDisplay("{\"{ParameterName}\" = {Value}: {DbType}")]
     public class FakeDbParameter

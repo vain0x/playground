@@ -1,7 +1,7 @@
 using System;
-using FluentSqlBuilder.Accessor;
+using AsterSql.Core.Accessor;
 
-namespace FluentSqlBuilder.SqlSyntax
+namespace AsterSql.Core.SqlSyntax
 {
     public sealed class JoinBuilder<TResult>
     {

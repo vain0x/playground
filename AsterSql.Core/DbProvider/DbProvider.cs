@@ -4,7 +4,7 @@ using System.Data;
 using System.Data.Common;
 using System.Linq;
 
-namespace FluentSqlBuilder.Provider
+namespace AsterSql.Core.Provider
 {
     public class DbProvider
     {

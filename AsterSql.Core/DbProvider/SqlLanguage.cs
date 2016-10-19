@@ -1,8 +1,8 @@
 ﻿using System;
 using System.Collections.Generic;
-using FluentSqlBuilder.SqlSyntax;
+using AsterSql.Core.SqlSyntax;
 
-namespace FluentSqlBuilder.Provider
+namespace AsterSql.Core.Provider
 {
     public abstract class SqlLanguage
     {

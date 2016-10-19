@@ -4,11 +4,11 @@ using System.Data;
 using System.Data.Common;
 using System.Linq;
 using Optional;
-using FluentSqlBuilder.Accessor;
-using FluentSqlBuilder.SqlSyntax;
-using FluentSqlBuilder.Provider;
+using AsterSql.Core.Accessor;
+using AsterSql.Core.SqlSyntax;
+using AsterSql.Core.Provider;
 
-namespace FluentSqlBuilder
+namespace AsterSql.Core
 {
     public class SqlBuilder
     {

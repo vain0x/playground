@@ -4,10 +4,11 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using Xunit;
-using FluentSqlBuilder.Accessor;
-using FluentSqlBuilder.SqlSyntax;
+using AsterSql.Core;
+using AsterSql.Core.Accessor;
+using AsterSql.Core.SqlSyntax;
 
-namespace FluentSqlBuilder.Test
+namespace AsterSql.Test
 {
     public class RelationTest
     {

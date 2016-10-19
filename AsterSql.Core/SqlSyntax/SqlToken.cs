@@ -5,7 +5,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace FluentSqlBuilder.SqlSyntax
+namespace AsterSql.Core.SqlSyntax
 {
     /// <summary>
     /// Represents a token of some SQL statement.

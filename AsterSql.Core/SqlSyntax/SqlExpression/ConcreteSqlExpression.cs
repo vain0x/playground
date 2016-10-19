@@ -5,7 +5,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace FluentSqlBuilder.SqlSyntax
+namespace AsterSql.Core.SqlSyntax
 {
     sealed class ConcreteScalarSqlExpression<TValue>
         : ScalarSqlExpression<TValue>

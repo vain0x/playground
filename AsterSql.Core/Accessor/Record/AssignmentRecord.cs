@@ -3,9 +3,9 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
-using FluentSqlBuilder.SqlSyntax;
+using AsterSql.Core.SqlSyntax;
 
-namespace FluentSqlBuilder.Accessor
+namespace AsterSql.Core.Accessor
 {
     sealed class AssignmentRecord
         : Dictionary<string, ScalarSqlExpression>

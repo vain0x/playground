@@ -4,9 +4,9 @@ using System.Data.Common;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
-using FluentSqlBuilder.Accessor;
+using AsterSql.Core.Accessor;
 
-namespace FluentSqlBuilder.SqlSyntax
+namespace AsterSql.Core.SqlSyntax
 {
     public sealed class UpdateStatement
         : SqlPart

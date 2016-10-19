@@ -1,4 +1,4 @@
-﻿namespace FluentSqlBuilder.Provider.Fake
+﻿namespace AsterSql.Core.Provider.Fake
 {
     public class FakeDbProvider
         : DbProvider

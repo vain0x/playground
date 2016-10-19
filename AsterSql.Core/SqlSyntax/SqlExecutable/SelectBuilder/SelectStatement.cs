@@ -4,7 +4,7 @@ using System.Diagnostics;
 using System.Linq;
 using Optional;
 
-namespace FluentSqlBuilder.SqlSyntax
+namespace AsterSql.Core.SqlSyntax
 {
     sealed class SelectStatement
         : SqlPart

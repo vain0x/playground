@@ -1,9 +1,10 @@
 using System;
 using System.Linq;
-using FluentSqlBuilder.SqlSyntax;
 using Xunit;
+using AsterSql.Core.SqlSyntax;
+using AsterSql.Core;
 
-namespace FluentSqlBuilder.Test
+namespace AsterSql.Test
 {
     public class SqlExpressionExtensionsTest
     {

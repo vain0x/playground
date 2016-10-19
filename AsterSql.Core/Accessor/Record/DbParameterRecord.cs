@@ -6,7 +6,7 @@ using System.Text;
 using System.Threading.Tasks;
 using Optional;
 
-namespace FluentSqlBuilder.Accessor
+namespace AsterSql.Core.Accessor
 {
     sealed class DbParameterRecord
         : Dictionary<string, DbParameter>

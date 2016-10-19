@@ -5,9 +5,9 @@ using System.Data.Common;
 using System.Linq;
 using System.Reflection;
 using Optional;
-using FluentSqlBuilder.SqlSyntax;
+using AsterSql.Core.SqlSyntax;
 
-namespace FluentSqlBuilder.Accessor
+namespace AsterSql.Core.Accessor
 {
     public sealed class Table
         : RelationSqlExpression

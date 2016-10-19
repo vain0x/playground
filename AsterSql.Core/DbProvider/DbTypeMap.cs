@@ -5,7 +5,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace FluentSqlBuilder.Provider
+namespace AsterSql.Core.Provider
 {
     /// <summary>
     /// Represents a one-to-one mapping between Type and DbType.

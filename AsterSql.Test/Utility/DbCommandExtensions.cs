@@ -5,7 +5,7 @@ using System.Linq;
 using System.Text.RegularExpressions;
 using static System.Threading.Interlocked;
 
-namespace FluentSqlBuilder.Test
+namespace AsterSql.Test
 {
     public static class DbCommandExtensions
     {

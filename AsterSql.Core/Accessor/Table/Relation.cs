@@ -4,9 +4,9 @@ using System.Linq;
 using System.Reflection;
 using System.Text;
 using System.Threading.Tasks;
-using FluentSqlBuilder.SqlSyntax;
+using AsterSql.Core.SqlSyntax;
 
-namespace FluentSqlBuilder.Accessor
+namespace AsterSql.Core.Accessor
 {
     /// <summary>
     /// A base class of all relation classes.

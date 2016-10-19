@@ -1,9 +1,9 @@
 ﻿using System;
 using System.Data.Common;
 using System.Linq;
-using FluentSqlBuilder.Accessor;
+using AsterSql.Core.Accessor;
 
-namespace FluentSqlBuilder.SqlSyntax
+namespace AsterSql.Core.SqlSyntax
 {
     public sealed class FieldlessSelectBuilder
     {

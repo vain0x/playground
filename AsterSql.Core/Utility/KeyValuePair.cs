@@ -1,6 +1,6 @@
 ﻿using System.Collections.Generic;
 
-namespace FluentSqlBuilder
+namespace AsterSql.Core
 {
     static class KeyValuePair
     {

@@ -4,7 +4,7 @@ using System.Linq;
 using Optional;
 using Optional.Unsafe;
 
-namespace FluentSqlBuilder
+namespace AsterSql.Core
 {
     static class LinqExtensions
     {

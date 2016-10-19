@@ -1,6 +1,6 @@
 ﻿using Xunit;
 
-namespace FluentSqlBuilder.Test
+namespace AsterSql.Test
 {
     static class AssertExtensions
     {

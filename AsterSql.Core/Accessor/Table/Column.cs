@@ -1,8 +1,8 @@
 using System.Collections.Generic;
 using System.Data;
-using FluentSqlBuilder.SqlSyntax;
+using AsterSql.Core.SqlSyntax;
 
-namespace FluentSqlBuilder.Accessor
+namespace AsterSql.Core.Accessor
 {
     public interface IColumn
     {

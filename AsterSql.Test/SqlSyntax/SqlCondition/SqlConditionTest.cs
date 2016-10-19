@@ -1,7 +1,8 @@
 ﻿using Xunit;
-using FluentSqlBuilder.SqlSyntax;
+using AsterSql.Core;
+using AsterSql.Core.SqlSyntax;
 
-namespace FluentSqlBuilder.Test
+namespace AsterSql.Test
 {
     public class SqlConditionTest
     {

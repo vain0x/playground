@@ -1,4 +1,4 @@
-﻿namespace FluentSqlBuilder.SqlSyntax
+﻿namespace AsterSql.Core.SqlSyntax
 {
     enum JoinType
     {

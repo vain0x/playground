@@ -3,7 +3,7 @@ using System.Collections.Generic;
 using System.Data.Common;
 using Optional;
 
-namespace FluentSqlBuilder.SqlSyntax
+namespace AsterSql.Core.SqlSyntax
 {
     public sealed class SelectBuilder
     {
