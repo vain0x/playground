@@ -51,7 +51,7 @@
     <Compile Include="SqlSyntax\SqlCondition\SqlCondition.cs" />
     <Compile Include="SqlSyntax\SqlCondition\SqlConditionConstant.cs" />
     <Compile Include="SqlSyntax\SqlExecutable\Insert\InsertBuilder.cs" />
-    <Compile Include="SqlSyntax\SqlExecutable\SelectBuilder\CombinedSelectStatement.cs" />
+    <Compile Include="SqlSyntax\SqlExecutable\Select\CombinedSelectStatement.cs" />
     <Compile Include="SqlSyntax\SqlExecutable\Update\AssignmentlessUpdateBuilder.cs" />
     <Compile Include="SqlSyntax\SqlExecutable\Update\UpdateBuilder.cs" />
     <Compile Include="SqlSyntax\SqlExecutable\Update\UpdateStatement.cs" />
@@ -63,10 +63,10 @@
     <Compile Include="SqlSyntax\SqlExpression\JoinBuilder\JoinBuilder.cs" />
     <Compile Include="SqlSyntax\SqlExpression\JoinBuilder\JoinedRelation.cs" />
     <Compile Include="SqlSyntax\SqlExecutable\SqlExecutable.cs" />
-    <Compile Include="SqlSyntax\SqlExecutable\SelectBuilder\OrderDirection.cs" />
-    <Compile Include="SqlSyntax\SqlExecutable\SelectBuilder\FieldlessSelectBuilder.cs" />
-    <Compile Include="SqlSyntax\SqlExecutable\SelectBuilder\OrderKey.cs" />
-    <Compile Include="SqlSyntax\SqlExecutable\SelectBuilder\SelectBuilder.cs" />
+    <Compile Include="SqlSyntax\SqlExecutable\Select\OrderDirection.cs" />
+    <Compile Include="SqlSyntax\SqlExecutable\Select\FieldlessSelectBuilder.cs" />
+    <Compile Include="SqlSyntax\SqlExecutable\Select\OrderKey.cs" />
+    <Compile Include="SqlSyntax\SqlExecutable\Select\SelectBuilder.cs" />
     <Compile Include="SqlSyntax\SqlExpression\SqlExpressionExtensions.cs" />
     <Compile Include="Accessor\Record\Record.cs" />
     <Compile Include="SqlSyntax\SqlToken.cs" />
@@ -78,8 +78,8 @@
     <Compile Include="DbProvider\Fake\FakeDbProviderFactory.cs" />
     <Compile Include="DbProvider\Fake\FakeSqlLanguage.cs" />
     <Compile Include="DbProvider\SqlLanguage.cs" />
-    <Compile Include="SqlSyntax\SqlExecutable\SelectBuilder\FromlessSelectBuilder.cs" />
-    <Compile Include="SqlSyntax\SqlExecutable\SelectBuilder\SelectStatement.cs" />
+    <Compile Include="SqlSyntax\SqlExecutable\Select\FromlessSelectBuilder.cs" />
+    <Compile Include="SqlSyntax\SqlExecutable\Select\SelectStatement.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="SqlSyntax\SqlPart.cs" />
     <Compile Include="SqlBuilder.cs" />
