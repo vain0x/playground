@@ -8,7 +8,7 @@ using AsterSql.TypedRecord;
 using AsterSql.Core.SqlSyntax;
 using AsterSql.Data;
 
-namespace AsterSql.Core
+namespace AsterSql
 {
     public class SqlBuilder
     {
