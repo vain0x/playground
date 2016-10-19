@@ -2,7 +2,7 @@
 
 namespace AsterSql.Test
 {
-    static class AssertExtensions
+    static class AssertExtension
     {
         public static void ShouldEqual<X>(this X actual, X expected)
         {

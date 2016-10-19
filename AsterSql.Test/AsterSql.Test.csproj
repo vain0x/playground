@@ -48,10 +48,10 @@
     <Compile Include="SqlSyntax\SqlExecutable\SelectBuilderTest.cs" />
     <Compile Include="Accessor\Table\TableTest.cs" />
     <Compile Include="SqlSyntax\SqlExecutable\UpdateBuilderTest.cs" />
-    <Compile Include="Utility\DbCommandExtensions.cs" />
+    <Compile Include="Utility\DbCommandExtension.cs" />
     <Compile Include="FakeDatabase\Employee.cs" />
     <Compile Include="SqlSyntax\SqlExpression\SqlExpressionTest.cs" />
-    <Compile Include="Utility\AssertExtensions.cs" />
+    <Compile Include="Utility\AssertExtension.cs" />
     <Compile Include="SqlSyntax\SqlExpression\SqlExpressionExtensionsTest.cs" />
     <Compile Include="SqlSyntax\SqlCondition\SqlConditionTest.cs" />
     <Compile Include="FakeDatabase\Department.cs" />

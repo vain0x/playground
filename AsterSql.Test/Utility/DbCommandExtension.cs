@@ -7,7 +7,7 @@ using static System.Threading.Interlocked;
 
 namespace AsterSql.Test
 {
-    public static class DbCommandExtensions
+    public static class DbCommandExtension
     {
         static Regex ParameterPattern { get; } =
             new Regex(@"@\w+");
