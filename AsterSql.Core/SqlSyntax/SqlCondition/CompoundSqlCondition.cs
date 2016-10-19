@@ -4,7 +4,7 @@ using System.Linq;
 
 namespace AsterSql.Core.SqlSyntax
 {
-    sealed class ConditionBuilder
+    sealed class CompoundSqlCondition
         : SqlCondition
     {
         ConditionCombinator Combinator { get; }
@@ -12,13 +12,13 @@ namespace AsterSql.Core.SqlSyntax
         List<SqlCondition> Conditions { get; } =
             new List<SqlCondition>();
 
-        public ConditionBuilder(SqlBuilder sqlBuilder, ConditionCombinator combinator)
+        public CompoundSqlCondition(SqlBuilder sqlBuilder, ConditionCombinator combinator)
             : base(sqlBuilder)
         {
             Combinator = combinator;
         }
 
-        public ConditionBuilder(SqlBuilder sqlBuilder)
+        public CompoundSqlCondition(SqlBuilder sqlBuilder)
             : this(sqlBuilder, sqlBuilder.SqlConditionConstant.And)
         {
         }
@@ -43,7 +43,7 @@ namespace AsterSql.Core.SqlSyntax
         public bool IsTrivial =>
             Conditions.IsEmpty();
 
-        internal ConditionBuilder Add(SqlCondition condition)
+        internal CompoundSqlCondition Add(SqlCondition condition)
         {
             if (condition != Combinator.Neutral)
             {
@@ -53,7 +53,7 @@ namespace AsterSql.Core.SqlSyntax
             return this;
         }
 
-        internal ConditionBuilder Add(ConditionBuilder condition)
+        internal CompoundSqlCondition Add(CompoundSqlCondition condition)
         {
             if (ReferenceEquals(Combinator, condition.Combinator))
             {

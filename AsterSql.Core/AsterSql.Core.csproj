@@ -45,7 +45,7 @@
     <Compile Include="DbProvider\DbTypeMap.cs" />
     <Compile Include="Accessor\Record\AssignmentRecord.cs" />
     <Compile Include="Accessor\Record\DbParameterRecord.cs" />
-    <Compile Include="SqlSyntax\SqlCondition\ConditionBuilder.cs" />
+    <Compile Include="SqlSyntax\SqlCondition\CompoundSqlCondition.cs" />
     <Compile Include="SqlSyntax\SqlCondition\ConditionCombinator.cs" />
     <Compile Include="SqlSyntax\SqlCondition\AtomicSqlCondition.cs" />
     <Compile Include="SqlSyntax\SqlCondition\SqlCondition.cs" />

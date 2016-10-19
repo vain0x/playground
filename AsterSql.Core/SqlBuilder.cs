@@ -124,12 +124,12 @@ namespace AsterSql.Core
         #region Condition
         public SqlCondition And()
         {
-            return new ConditionBuilder(this, SqlConditionConstant.And);
+            return new CompoundSqlCondition(this, SqlConditionConstant.And);
         }
 
         public SqlCondition Or()
         {
-            return new ConditionBuilder(this, SqlConditionConstant.Or);
+            return new CompoundSqlCondition(this, SqlConditionConstant.Or);
         }
         #endregion
 

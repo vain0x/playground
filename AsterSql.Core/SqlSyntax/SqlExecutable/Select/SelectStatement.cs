@@ -16,9 +16,9 @@ namespace AsterSql.Core.SqlSyntax
 
         public RelationSqlExpression Source { get; private set; }
 
-        public ConditionBuilder WhereCondition { get; }
+        public CompoundSqlCondition WhereCondition { get; }
 
-        public ConditionBuilder HavingCondition { get; }
+        public CompoundSqlCondition HavingCondition { get; }
 
         public List<ScalarSqlExpression> GroupKeys { get; } =
             new List<ScalarSqlExpression>();
@@ -38,8 +38,8 @@ namespace AsterSql.Core.SqlSyntax
             SqlBuilder = sqlBuilder;
             Combined = combined;
             Source = relation;
-            WhereCondition = new ConditionBuilder(SqlBuilder);
-            HavingCondition = new ConditionBuilder(SqlBuilder);
+            WhereCondition = new CompoundSqlCondition(SqlBuilder);
+            HavingCondition = new CompoundSqlCondition(SqlBuilder);
         }
 
         #region Tokens

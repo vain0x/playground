@@ -4,7 +4,7 @@ using AsterSql.Core.SqlSyntax;
 
 namespace AsterSql.Test
 {
-    public class ConditionBuilderTest
+    public class CompoundSqlConditionTest
     {
         static SqlBuilder Sql => FakeDb.Sql;
 

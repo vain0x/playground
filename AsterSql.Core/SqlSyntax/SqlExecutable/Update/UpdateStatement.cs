@@ -15,7 +15,7 @@ namespace AsterSql.Core.SqlSyntax
         public SqlBuilder SqlBuilder { get; }
         public Table Table { get; }
         internal AssignmentRecord Assignment { get; }
-        internal ConditionBuilder WhereCondition { get; }
+        internal CompoundSqlCondition WhereCondition { get; }
 
         internal IEnumerable<KeyValuePair<IColumn, ScalarSqlExpression>> AssignmentList()
         {
@@ -69,7 +69,7 @@ namespace AsterSql.Core.SqlSyntax
             SqlBuilder = sqlBuilder;
             Table = table;
             Assignment = new AssignmentRecord();
-            WhereCondition = new ConditionBuilder(sqlBuilder);
+            WhereCondition = new CompoundSqlCondition(sqlBuilder);
         }
     }
 }
