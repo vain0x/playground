@@ -1,7 +1,6 @@
 ﻿using System;
 using Optional;
 using Xunit;
-using AsterSql.Core;
 using AsterSql.SqlSyntax;
 
 namespace AsterSql.Test

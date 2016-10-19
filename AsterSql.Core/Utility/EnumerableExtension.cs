@@ -4,7 +4,7 @@ using System.Linq;
 using Optional;
 using Optional.Unsafe;
 
-namespace AsterSql.Core
+namespace AsterSql
 {
     static class EnumerableExtension
     {

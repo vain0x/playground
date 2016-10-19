@@ -4,7 +4,6 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using Xunit;
-using AsterSql.Core;
 using AsterSql.SqlSyntax;
 
 namespace AsterSql.Test

@@ -1,5 +1,4 @@
-﻿using AsterSql.Core;
-using AsterSql.Data.Fake;
+﻿using AsterSql.Data.Fake;
 
 namespace AsterSql.Test
 {

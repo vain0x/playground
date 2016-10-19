@@ -5,7 +5,6 @@ using System.Data.Common;
 using System.Linq;
 using System.Reflection;
 using Optional;
-using AsterSql.Core;
 using AsterSql.SqlSyntax;
 
 namespace AsterSql.TypedRecord

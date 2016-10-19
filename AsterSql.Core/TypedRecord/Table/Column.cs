@@ -1,6 +1,5 @@
 using System.Collections.Generic;
 using System.Data;
-using AsterSql.Core;
 using AsterSql.SqlSyntax;
 
 namespace AsterSql.TypedRecord

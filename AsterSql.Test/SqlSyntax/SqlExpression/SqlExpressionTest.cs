@@ -2,7 +2,6 @@
 using System.Data;
 using System.Linq;
 using Xunit;
-using AsterSql.Core;
 using AsterSql.SqlSyntax;
 
 namespace AsterSql.Test
