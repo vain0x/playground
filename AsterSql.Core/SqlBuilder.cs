@@ -5,7 +5,7 @@ using System.Data.Common;
 using System.Linq;
 using Optional;
 using AsterSql.TypedRecord;
-using AsterSql.Core.SqlSyntax;
+using AsterSql.SqlSyntax;
 using AsterSql.Data;
 
 namespace AsterSql

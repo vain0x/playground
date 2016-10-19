@@ -1,7 +1,7 @@
 ﻿using System.Collections.Generic;
 using System.Data.Common;
 
-namespace AsterSql.Core.SqlSyntax
+namespace AsterSql.SqlSyntax
 {
     /// <summary>
     /// コマンドとして実行可能なSQL文であることを表す。

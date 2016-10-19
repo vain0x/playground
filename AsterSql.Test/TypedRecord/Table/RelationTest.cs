@@ -6,7 +6,7 @@ using System.Threading.Tasks;
 using Xunit;
 using AsterSql.Core;
 using AsterSql.TypedRecord;
-using AsterSql.Core.SqlSyntax;
+using AsterSql.SqlSyntax;
 
 namespace AsterSql.Test
 {

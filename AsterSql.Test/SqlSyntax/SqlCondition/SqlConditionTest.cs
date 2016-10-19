@@ -1,6 +1,6 @@
 ﻿using Xunit;
 using AsterSql.Core;
-using AsterSql.Core.SqlSyntax;
+using AsterSql.SqlSyntax;
 
 namespace AsterSql.Test
 {

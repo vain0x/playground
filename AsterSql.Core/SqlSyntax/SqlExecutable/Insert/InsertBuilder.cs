@@ -7,7 +7,7 @@ using System.Text;
 using System.Threading.Tasks;
 using AsterSql.TypedRecord;
 
-namespace AsterSql.Core.SqlSyntax
+namespace AsterSql.SqlSyntax
 {
     static class InsertBuilder
     {

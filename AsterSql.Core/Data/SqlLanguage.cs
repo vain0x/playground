@@ -1,6 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
-using AsterSql.Core.SqlSyntax;
+using AsterSql.SqlSyntax;
 
 namespace AsterSql.Data
 {

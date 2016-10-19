@@ -3,7 +3,7 @@ using System.Collections.Generic;
 using System.Data.Common;
 using System.Linq;
 
-namespace AsterSql.Core.SqlSyntax
+namespace AsterSql.SqlSyntax
 {
     /// <summary>
     /// SQLの式を表す。

@@ -1,4 +1,4 @@
-﻿namespace AsterSql.Core.SqlSyntax
+﻿namespace AsterSql.SqlSyntax
 {
     enum OrderDirection
     {

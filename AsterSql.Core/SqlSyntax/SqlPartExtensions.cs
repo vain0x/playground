@@ -5,7 +5,7 @@ using System.Data.Common;
 using System.Linq;
 using System.Text;
 
-namespace AsterSql.Core.SqlSyntax
+namespace AsterSql.SqlSyntax
 {
     static class SqlPartExtensions
     {
