@@ -2,9 +2,9 @@ Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio 14
 VisualStudioVersion = 14.0.25420.1
 MinimumVisualStudioVersion = 10.0.40219.1
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "FluentSqlBuilder", "FluentSqlBuilder\FluentSqlBuilder.csproj", "{C500A67F-E8BF-4F9D-A87D-CA20FA56E1C2}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "AsterSql.Core", "AsterSql.Core\AsterSql.Core.csproj", "{C500A67F-E8BF-4F9D-A87D-CA20FA56E1C2}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "FluentSqlBuilder.Test", "FluentSqlBuilder.Test\FluentSqlBuilder.Test.csproj", "{85A19276-C15B-4160-B58A-63C0491C9042}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "AsterSql.Test", "AsterSql.Test\AsterSql.Test.csproj", "{85A19276-C15B-4160-B58A-63C0491C9042}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution

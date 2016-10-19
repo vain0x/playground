@@ -7,8 +7,8 @@
     <ProjectGuid>{85A19276-C15B-4160-B58A-63C0491C9042}</ProjectGuid>
     <OutputType>Library</OutputType>
     <AppDesignerFolder>Properties</AppDesignerFolder>
-    <RootNamespace>FluentSqlBuilder.Test</RootNamespace>
-    <AssemblyName>FluentSqlBuilder.Test</AssemblyName>
+    <RootNamespace>AsterSql.Test</RootNamespace>
+    <AssemblyName>AsterSql.Test</AssemblyName>
     <TargetFrameworkVersion>v4.5.2</TargetFrameworkVersion>
     <FileAlignment>512</FileAlignment>
   </PropertyGroup>
@@ -58,9 +58,9 @@
     <Compile Include="SqlSyntax\SqlCondition\ConditionBuilderTest.cs" />
   </ItemGroup>
   <ItemGroup>
-    <ProjectReference Include="..\FluentSqlBuilder\FluentSqlBuilder.csproj">
+    <ProjectReference Include="..\AsterSql.Core\AsterSql.Core.csproj">
       <Project>{C500A67F-E8BF-4F9D-A87D-CA20FA56E1C2}</Project>
-      <Name>FluentSqlBuilder</Name>
+      <Name>AsterSql.Core</Name>
     </ProjectReference>
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
@@ -82,7 +82,7 @@
     </When>
   </Choose>
   <Import Project="..\packages\xunit.core\build\$(__paket__xunit_core_props).props" Condition="Exists('..\packages\xunit.core\build\$(__paket__xunit_core_props).props')" Label="Paket" />
-  <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 
+  <!-- To modify your build process, add your task inside one of the targets below and uncomment it.
        Other similar extension points exist, see Microsoft.Common.targets.
   <Target Name="BeforeBuild">
   </Target>

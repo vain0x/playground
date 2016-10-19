@@ -1,1 +1,1 @@
-packages\xunit.runner.console\tools\xunit.console.exe FluentSqlBuilder.Test\bin\Debug\FluentSqlBuilder.Test.dll
+packages\xunit.runner.console\tools\xunit.console.exe AsterSql.Test\bin\Debug\AsterSql.Test.dll

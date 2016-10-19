@@ -7,8 +7,8 @@
     <ProjectGuid>{C500A67F-E8BF-4F9D-A87D-CA20FA56E1C2}</ProjectGuid>
     <OutputType>Library</OutputType>
     <AppDesignerFolder>Properties</AppDesignerFolder>
-    <RootNamespace>FluentSqlBuilder</RootNamespace>
-    <AssemblyName>FluentSqlBuilder</AssemblyName>
+    <RootNamespace>AsterSql</RootNamespace>
+    <AssemblyName>AsterSql.Core</AssemblyName>
     <TargetFrameworkVersion>v4.5.2</TargetFrameworkVersion>
     <FileAlignment>512</FileAlignment>
   </PropertyGroup>
