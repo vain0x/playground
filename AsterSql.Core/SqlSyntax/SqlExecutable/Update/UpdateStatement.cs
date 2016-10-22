@@ -4,6 +4,7 @@ using System.Data.Common;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using DotNetKit.ErrorHandling;
 using AsterSql.TypedRecord;
 
 namespace AsterSql.SqlSyntax
@@ -25,7 +26,7 @@ namespace AsterSql.SqlSyntax
                 {
                     return
                         Assignment.GetValueOrNone(column.UniqueName)
-                        .Map(x => KeyValuePair.Create(column, x));
+                        .Select(x => KeyValuePair.Create(column, x));
                 });
         }
 

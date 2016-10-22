@@ -24,7 +24,7 @@ namespace AsterSql.TypedRecord
             Relation relation
         )
         {
-            foreach (var uncons in relation.Columns.UnconsOrNone())
+            foreach (var uncons in relation.Columns.UnconsOrNone().ToEnumerable())
             {
                 var firstColumn = uncons.Item1;
                 var restColumns = uncons.Item2;

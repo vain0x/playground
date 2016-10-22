@@ -1,8 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
-using Optional;
-using Optional.Unsafe;
+using DotNetKit.ErrorHandling;
 
 namespace AsterSql
 {
@@ -32,10 +31,10 @@ namespace AsterSql
             {
                 if (!enumerator.MoveNext())
                 {
-                    return Option.None<Tuple<X, IEnumerable<X>>>();
+                    return Option.None;
                 }
 
-                return Tuple.Create(enumerator.Current, Enumerate(enumerator)).Some();
+                return Option.Some(Tuple.Create(enumerator.Current, Enumerate(enumerator)));
             }
         }
 
@@ -89,21 +88,6 @@ namespace AsterSql
         public static bool IsSingle<X>(this IEnumerable<X> xs, X x)
         {
             return xs.Any() && !xs.Skip(1).Any() && Equals(xs.First(), x);
-        }
-
-        public static IEnumerable<Y> Choose<X, Y>(this IEnumerable<X> xs, Func<X, Option<Y>> f)
-        {
-            foreach (var x in xs)
-            {
-                var y = f(x);
-                if (y.HasValue) yield return y.ValueOrFailure();
-            }
-        }
-
-        public static Option<V> GetValueOrNone<K, V>(this IReadOnlyDictionary<K, V> dictionary, K key)
-        {
-            V value;
-            return dictionary.TryGetValue(key, out value) ? value.Some() : value.None();
         }
     }
 }
