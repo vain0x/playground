@@ -1,5 +1,5 @@
 ﻿using System;
-using Optional;
+using DotNetKit.ErrorHandling;
 using AsterSql.TypedRecord;
 
 namespace AsterSql.Test
@@ -21,13 +21,13 @@ namespace AsterSql.Test
         }
 
         public Employee(SqlBuilder sqlBuilder)
-            : this(sqlBuilder, Option.None<string>())
+            : this(sqlBuilder, Option.None)
         {
         }
 
         public Employee As(string alias)
         {
-            return new Employee(Table.SqlBuilder, alias.Some());
+            return new Employee(Table.SqlBuilder, Option.Some(alias));
         }
     }
 }

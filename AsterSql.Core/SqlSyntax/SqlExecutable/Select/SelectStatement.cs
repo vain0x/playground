@@ -2,7 +2,7 @@ using System.Collections.Generic;
 using System.Data.Common;
 using System.Diagnostics;
 using System.Linq;
-using Optional;
+using DotNetKit.ErrorHandling;
 
 namespace AsterSql.SqlSyntax
 {
@@ -99,7 +99,7 @@ namespace AsterSql.SqlSyntax
         {
             get
             {
-                foreach (var combined in Combined)
+                foreach (var combined in Combined.ToEnumerable())
                 {
                     foreach (var token in combined.Statement.Tokens) yield return token;
                     yield return SqlToken.FromString(combined.Combinator);

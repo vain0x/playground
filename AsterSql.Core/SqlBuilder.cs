@@ -3,7 +3,7 @@ using System.Collections.Generic;
 using System.Data;
 using System.Data.Common;
 using System.Linq;
-using Optional;
+using DotNetKit.ErrorHandling;
 using AsterSql.TypedRecord;
 using AsterSql.SqlSyntax;
 using AsterSql.Data;
@@ -136,7 +136,7 @@ namespace AsterSql
         #region Mainpulation
         public FromlessSelectBuilder Select()
         {
-            return new FromlessSelectBuilder(this, Option.None<CombinedSelectStatement>());
+            return new FromlessSelectBuilder(this, Option.None);
         }
 
         public DbCommand InsertValues(Table table, Action<IValueRecord> setter)
