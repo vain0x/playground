@@ -8,10 +8,5 @@
     d:DesignWidth="300"
     d:DesignHeight="300"
     >
-    <Grid x:Name="grid">
-        <Grid.ColumnDefinitions>
-            <ColumnDefinition Width="Auto" />
-            <ColumnDefinition Width="*" />
-        </Grid.ColumnDefinitions>
-    </Grid>
+    <Grid x:Name="grid" />
 </UserControl>

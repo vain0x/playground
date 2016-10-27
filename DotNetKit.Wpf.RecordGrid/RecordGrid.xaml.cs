@@ -26,16 +26,65 @@ namespace DotNetKit.Wpf
     public partial class RecordGrid : UserControl
     {
         public ObservableCollection<RecordItemTemplate> Items { get; private set; }
+        public Orientation Orientation { get; set; }
+
+        DependencyProperty GridRowProperty
+        {
+            get { return Orientation == Orientation.Vertical ? Grid.RowProperty : Grid.ColumnProperty; }
+        }
+
+        DependencyProperty GridColumnProperty
+        {
+            get { return Orientation == Orientation.Vertical ? Grid.ColumnProperty : Grid.RowProperty; }
+        }
+
+        void AddGridRow()
+        {
+            if (Orientation == Orientation.Vertical)
+            {
+                grid.RowDefinitions.Add(new RowDefinition() { Height = GridLength.Auto });
+            }
+            else
+            {
+                grid.ColumnDefinitions.Add(new ColumnDefinition() { Width = GridLength.Auto });
+            }
+        }
+
+        void AddGridColumn(GridLength length)
+        {
+            if (Orientation == Orientation.Vertical)
+            {
+                grid.ColumnDefinitions.Add(new ColumnDefinition() { Width = length });
+            }
+            else
+            {
+                grid.RowDefinitions.Add(new RowDefinition() { Height = length });
+            }
+        }
+
+        bool isColumnDefinitionsCreated;
+
+        void CreateColumnDefinitions()
+        {
+            if (isColumnDefinitionsCreated) return;
+            isColumnDefinitionsCreated = true;
+
+            AddGridColumn(GridLength.Auto);
+            AddGridColumn(new GridLength(1.0, GridUnitType.Star));
+        }
 
         void AddUIElement(int index, RecordItemTemplate template)
         {
-            grid.RowDefinitions.Add(new RowDefinition() { Height = GridLength.Auto });
+            CreateColumnDefinitions();
+
+            AddGridRow();
 
             var labelTemplate = template.LabelTemplate;
             if (labelTemplate != null)
             {
                 var label = (UIElement)labelTemplate.LoadContent();
-                label.SetValue(Grid.RowProperty, index);
+                label.SetValue(GridColumnProperty, 0);
+                label.SetValue(GridRowProperty, index);
                 grid.Children.Add(label);
             }
             
@@ -43,8 +92,8 @@ namespace DotNetKit.Wpf
             if (valueTemplate != null)
             {
                 var value = (UIElement)valueTemplate.LoadContent();
-                value.SetValue(Grid.RowProperty, index);
-                value.SetValue(Grid.ColumnProperty, 1);
+                value.SetValue(GridColumnProperty, 1);
+                value.SetValue(GridRowProperty, index);
                 grid.Children.Add(value);
             }
         }
@@ -66,6 +115,8 @@ namespace DotNetKit.Wpf
 
         public RecordGrid()
         {
+            Orientation = Orientation.Vertical;
+
             Items = new ObservableCollection<RecordItemTemplate>();
             Items.CollectionChanged += OnCollectionChanged;
 

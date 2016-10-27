@@ -16,9 +16,9 @@ using System.Windows.Shapes;
 namespace DotNetKit.Wpf.Sample
 {
     /// <summary>
-    /// MinimumSampleControl.xaml の相互作用ロジック
+    /// HorizontalSampleControl.xaml の相互作用ロジック
     /// </summary>
-    public partial class MinimumSampleControl : UserControl
+    public partial class HorizontalSampleControl : UserControl
     {
         public sealed class Person
         {
@@ -26,11 +26,11 @@ namespace DotNetKit.Wpf.Sample
             public int Age { get; set; }
         }
 
-        public MinimumSampleControl()
+        public HorizontalSampleControl()
         {
             InitializeComponent();
 
-            DataContext = new Person() { Name = "Miku", Age = 16 };
+            DataContext = new Person() { Name = "Yukari", Age = 18 };
         }
     }
 }
