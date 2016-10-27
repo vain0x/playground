@@ -6,7 +6,7 @@ using System.Linq;
 using System.Threading.Tasks;
 using System.Windows;
 
-namespace DotNetKit.Wpf.RecordGrid.Sample
+namespace DotNetKit.Wpf.Sample
 {
     /// <summary>
     /// App.xaml の相互作用ロジック
