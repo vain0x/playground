@@ -15,14 +15,22 @@ using System.Windows.Shapes;
 
 namespace DotNetKit.Wpf.Sample
 {
-    /// <summary>
-    /// MainWindow.xaml の相互作用ロジック
-    /// </summary>
-    public partial class MainWindow : Window
+    public sealed class Person
     {
-        public MainWindow()
+        public string Name { get; set; }
+        public int Age { get; set; }
+    }
+
+    /// <summary>
+    /// MinimumSampleControl.xaml の相互作用ロジック
+    /// </summary>
+    public partial class MinimumSampleControl : UserControl
+    {
+        public MinimumSampleControl()
         {
             InitializeComponent();
+
+            DataContext = new Person() { Name = "Miku", Age = 16 };
         }
     }
 }
