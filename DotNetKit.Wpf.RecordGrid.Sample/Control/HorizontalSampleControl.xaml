@@ -4,34 +4,34 @@
     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
     xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006" 
     xmlns:d="http://schemas.microsoft.com/expression/blend/2008" 
-    xmlns:kit="clr-namespace:DotNetKit.Wpf;assembly=DotNetKit.Wpf.RecordGrid"
+    xmlns:recordGrid="clr-namespace:DotNetKit.Wpf;assembly=DotNetKit.Wpf.RecordGrid"
     mc:Ignorable="d" 
     d:DesignWidth="300"
     d:DesignHeight="300"
     >
-    <kit:RecordGrid Orientation="Horizontal">
+    <recordGrid:RecordGrid Orientation="Horizontal">
         <!-- Name -->
-        <kit:RecordItemTemplate>
-            <kit:RecordItemTemplate.LabelTemplate>
+        <recordGrid:RecordItemTemplate>
+            <recordGrid:RecordItemTemplate.LabelTemplate>
                 <DataTemplate>
                     <TextBlock Text="Name" />
                 </DataTemplate>
-            </kit:RecordItemTemplate.LabelTemplate>
+            </recordGrid:RecordItemTemplate.LabelTemplate>
             <DataTemplate>
                 <TextBlock Text="{Binding Name}" />
             </DataTemplate>
-        </kit:RecordItemTemplate>
+        </recordGrid:RecordItemTemplate>
 
         <!-- Age -->
-        <kit:RecordItemTemplate>
-            <kit:RecordItemTemplate.LabelTemplate>
+        <recordGrid:RecordItemTemplate>
+            <recordGrid:RecordItemTemplate.LabelTemplate>
                 <DataTemplate>
                     <TextBlock Text="Age" />
                 </DataTemplate>
-            </kit:RecordItemTemplate.LabelTemplate>
+            </recordGrid:RecordItemTemplate.LabelTemplate>
             <DataTemplate>
                 <TextBlock Text="{Binding Age}" />
             </DataTemplate>
-        </kit:RecordItemTemplate>
-    </kit:RecordGrid>
+        </recordGrid:RecordItemTemplate>
+    </recordGrid:RecordGrid>
 </UserControl>
