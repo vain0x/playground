@@ -1,0 +1,109 @@
+﻿<UserControl
+    x:Class="DotNetKit.Wpf.Sample.DecorationSampleControl"
+    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006" 
+    xmlns:d="http://schemas.microsoft.com/expression/blend/2008" 
+    xmlns:kit="clr-namespace:DotNetKit.Wpf;assembly=DotNetKit.Wpf.RecordGrid"
+    mc:Ignorable="d" 
+    d:DesignWidth="300"
+    d:DesignHeight="300"
+    >
+    <kit:RecordGrid
+        BorderBrush="DimGray"
+        BorderThickness="0,0,1,1"
+        Background="LightGray"
+        HorizontalAlignment="Center"
+        VerticalAlignment="Center"
+        >
+        <kit:RecordGrid.Resources>
+            <Style x:Key="BaseLabelStyle" TargetType="{x:Type Label}">
+                <Setter Property="BorderBrush" Value="DimGray" />
+                <Setter Property="BorderThickness" Value="1,1,0,0" />
+                <Setter Property="Padding" Value="10,5,10,5" />
+                <Style.Triggers>
+                    <Trigger Property="kit:RecordItemTemplate.IsOdd" Value="True">
+                        <Setter Property="Background" Value="WhiteSmoke" />
+                    </Trigger>
+                </Style.Triggers>
+            </Style>
+            <!-- Styles for Label elements of record label -->
+            <Style TargetType="{x:Type Label}" BasedOn="{StaticResource BaseLabelStyle}">
+                <Setter Property="TextElement.FontWeight" Value="Bold" />
+                <Setter Property="HorizontalContentAlignment" Value="Center" />
+                <Setter Property="VerticalContentAlignment" Value="Center" />
+            </Style>
+            <Style x:Key="ValueLabelStyle" TargetType="{x:Type Label}" BasedOn="{StaticResource BaseLabelStyle}" />
+        </kit:RecordGrid.Resources>
+        
+        <!-- Name -->
+        <kit:RecordItemTemplate>
+            <kit:RecordItemTemplate.LabelTemplate>
+                <DataTemplate>
+                    <Label Content="Name" kit:RecordItemTemplate.IsOdd="True" />
+                </DataTemplate>
+            </kit:RecordItemTemplate.LabelTemplate>
+            <DataTemplate>
+                <Label Style="{StaticResource ValueLabelStyle}">
+                    <TextBlock Text="{Binding Name}" />
+                </Label>
+            </DataTemplate>
+        </kit:RecordItemTemplate>
+
+        <!-- Age -->
+        <kit:RecordItemTemplate>
+            <kit:RecordItemTemplate.LabelTemplate>
+                <DataTemplate>
+                    <Label Content="Age" />
+                </DataTemplate>
+            </kit:RecordItemTemplate.LabelTemplate>
+            <DataTemplate>
+                <Label Style="{StaticResource ValueLabelStyle}">
+                    <TextBlock Text="{Binding Age}" />
+                </Label>
+            </DataTemplate>
+        </kit:RecordItemTemplate>
+            
+        <!-- Gender -->
+        <kit:RecordItemTemplate>
+            <kit:RecordItemTemplate.LabelTemplate>
+                <DataTemplate>
+                    <Label Content="Gender" />
+                </DataTemplate>
+            </kit:RecordItemTemplate.LabelTemplate>
+            <DataTemplate>
+                <Label Style="{StaticResource ValueLabelStyle}">
+                    <TextBlock Text="{Binding Gender}" />
+                </Label>
+            </DataTemplate>
+        </kit:RecordItemTemplate>
+
+        <!-- Birthday -->
+        <kit:RecordItemTemplate>
+            <kit:RecordItemTemplate.LabelTemplate>
+                <DataTemplate>
+                    <Label Content="Birthday" />
+                </DataTemplate>
+            </kit:RecordItemTemplate.LabelTemplate>
+            <DataTemplate>
+                <Label Style="{StaticResource ValueLabelStyle}">
+                    <TextBlock Text="{Binding Birthday}" />
+                </Label>
+            </DataTemplate>
+        </kit:RecordItemTemplate>
+
+        <!-- Masterpiece -->
+        <kit:RecordItemTemplate>
+            <kit:RecordItemTemplate.LabelTemplate>
+                <DataTemplate>
+                    <Label Content="Masterpiece" />
+                </DataTemplate>
+            </kit:RecordItemTemplate.LabelTemplate>
+            <DataTemplate>
+                <Label Style="{StaticResource ValueLabelStyle}">
+                    <TextBlock Text="{Binding Masterpiece}" />
+                </Label>
+            </DataTemplate>
+        </kit:RecordItemTemplate>
+    </kit:RecordGrid>
+</UserControl>

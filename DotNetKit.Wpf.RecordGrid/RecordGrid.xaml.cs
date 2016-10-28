@@ -75,6 +75,8 @@ namespace DotNetKit.Wpf
 
         void AddUIElement(int index, RecordItemTemplate template)
         {
+            var isOdd = index % 2 != 0;
+
             CreateColumnDefinitions();
 
             AddGridRow();
@@ -85,6 +87,7 @@ namespace DotNetKit.Wpf
                 var label = (UIElement)labelTemplate.LoadContent();
                 label.SetValue(GridColumnProperty, 0);
                 label.SetValue(GridRowProperty, index);
+                RecordItemTemplate.SetIsOdd(label, isOdd);
                 grid.Children.Add(label);
             }
             
@@ -94,6 +97,7 @@ namespace DotNetKit.Wpf
                 var value = (UIElement)valueTemplate.LoadContent();
                 value.SetValue(GridColumnProperty, 1);
                 value.SetValue(GridRowProperty, index);
+                RecordItemTemplate.SetIsOdd(value, isOdd);
                 grid.Children.Add(value);
             }
         }

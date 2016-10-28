@@ -86,5 +86,30 @@ namespace DotNetKit.Wpf
             set { SetValue(ValueTemplateProperty, value); }
         }
         #endregion
+
+        #region IsOdd
+        static readonly DependencyProperty isOddProperty =
+            DependencyProperty.RegisterAttached(
+                "IsOdd",
+                typeof(bool),
+                typeof(RecordItemTemplate),
+                new PropertyMetadata(false)
+            );
+
+        public static DependencyProperty IsOddProperty
+        {
+            get { return isOddProperty; }
+        }
+
+        public static bool GetIsOdd(DependencyObject obj)
+        {
+            return (bool)obj.GetValue(IsOddProperty);
+        }
+
+        public static void SetIsOdd(DependencyObject obj, bool value)
+        {
+            obj.SetValue(IsOddProperty, value);
+        }
+        #endregion
     }
 }

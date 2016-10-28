@@ -10,5 +10,8 @@
         <TabItem Header="Horizontal">
             <app:HorizontalSampleControl />
         </TabItem>
+        <TabItem Header="Decoration">
+            <app:DecorationSampleControl />
+        </TabItem>
     </TabControl>
 </Window>
