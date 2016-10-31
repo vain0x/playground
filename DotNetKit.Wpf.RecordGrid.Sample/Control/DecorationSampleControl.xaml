@@ -24,93 +24,38 @@
         VerticalAlignment="Center"
         >
         <recordGrid:RecordGrid.Resources>
-            <Style x:Key="BaseLabelStyle" TargetType="{x:Type Label}">
+            <Style TargetType="{x:Type Label}">
                 <Setter Property="BorderBrush" Value="DimGray" />
                 <Setter Property="BorderThickness" Value="1,1,0,0" />
                 <Setter Property="Padding" Value="10,5,10,5" />
                 <Style.Triggers>
-                    <Trigger Property="recordGrid:RecordItemTemplate.IsOdd" Value="True">
+                    <!-- Set styles for record labels. -->
+                    <Trigger Property="recordGrid:RecordGrid.IsLabel" Value="True">
+                        <Setter Property="TextElement.FontWeight" Value="Bold" />
+                        <Setter Property="HorizontalContentAlignment" Value="Center" />
+                        <Setter Property="VerticalContentAlignment" Value="Center" />
+                    </Trigger>
+                    <!-- Set styles for odd-th elements. -->
+                    <Trigger Property="recordGrid:RecordGrid.IsOdd" Value="True">
                         <Setter Property="Background" Value="WhiteSmoke" />
                     </Trigger>
                 </Style.Triggers>
             </Style>
-            <!-- Styles for Label elements of record label -->
-            <Style TargetType="{x:Type Label}" BasedOn="{StaticResource BaseLabelStyle}">
-                <Setter Property="TextElement.FontWeight" Value="Bold" />
-                <Setter Property="HorizontalContentAlignment" Value="Center" />
-                <Setter Property="VerticalContentAlignment" Value="Center" />
-            </Style>
-            <Style x:Key="ValueLabelStyle" TargetType="{x:Type Label}" BasedOn="{StaticResource BaseLabelStyle}" />
         </recordGrid:RecordGrid.Resources>
-        
-        <!-- Name -->
-        <recordGrid:RecordItemTemplate>
-            <recordGrid:RecordItemTemplate.LabelTemplate>
-                <DataTemplate>
-                    <Label Content="Name" recordGrid:RecordItemTemplate.IsOdd="True" />
-                </DataTemplate>
-            </recordGrid:RecordItemTemplate.LabelTemplate>
-            <DataTemplate>
-                <Label Style="{StaticResource ValueLabelStyle}">
-                    <TextBlock Text="{Binding Name}" />
-                </Label>
-            </DataTemplate>
-        </recordGrid:RecordItemTemplate>
 
-        <!-- Age -->
-        <recordGrid:RecordItemTemplate>
-            <recordGrid:RecordItemTemplate.LabelTemplate>
-                <DataTemplate>
-                    <Label Content="Age" />
-                </DataTemplate>
-            </recordGrid:RecordItemTemplate.LabelTemplate>
-            <DataTemplate>
-                <Label Style="{StaticResource ValueLabelStyle}">
-                    <TextBlock Text="{Binding Age}" />
-                </Label>
-            </DataTemplate>
-        </recordGrid:RecordItemTemplate>
-            
-        <!-- Gender -->
-        <recordGrid:RecordItemTemplate>
-            <recordGrid:RecordItemTemplate.LabelTemplate>
-                <DataTemplate>
-                    <Label Content="Gender" />
-                </DataTemplate>
-            </recordGrid:RecordItemTemplate.LabelTemplate>
-            <DataTemplate>
-                <Label Style="{StaticResource ValueLabelStyle}">
-                    <TextBlock Text="{Binding Gender}" />
-                </Label>
-            </DataTemplate>
-        </recordGrid:RecordItemTemplate>
+        <Label Content="Name" />
+        <Label Content="{Binding Name}" />
 
-        <!-- Birthday -->
-        <recordGrid:RecordItemTemplate>
-            <recordGrid:RecordItemTemplate.LabelTemplate>
-                <DataTemplate>
-                    <Label Content="Birthday" />
-                </DataTemplate>
-            </recordGrid:RecordItemTemplate.LabelTemplate>
-            <DataTemplate>
-                <Label Style="{StaticResource ValueLabelStyle}">
-                    <TextBlock Text="{Binding Birthday}" />
-                </Label>
-            </DataTemplate>
-        </recordGrid:RecordItemTemplate>
+        <Label Content="Age" />
+        <Label Content="{Binding Age}" />
 
-        <!-- Masterpiece -->
-        <recordGrid:RecordItemTemplate>
-            <recordGrid:RecordItemTemplate.LabelTemplate>
-                <DataTemplate>
-                    <Label Content="Masterpiece" />
-                </DataTemplate>
-            </recordGrid:RecordItemTemplate.LabelTemplate>
-            <DataTemplate>
-                <Label Style="{StaticResource ValueLabelStyle}">
-                    <TextBlock Text="{Binding Masterpiece}" />
-                </Label>
-            </DataTemplate>
-        </recordGrid:RecordItemTemplate>
+        <Label Content="Gender" />
+        <Label Content="{Binding Gender}" />
+
+        <Label Content="Birthday" />
+        <Label Content="{Binding Birthday}" />
+
+        <Label Content="Masterpiece" />
+        <Label Content="{Binding Masterpiece}" />
     </recordGrid:RecordGrid>
 </UserControl>

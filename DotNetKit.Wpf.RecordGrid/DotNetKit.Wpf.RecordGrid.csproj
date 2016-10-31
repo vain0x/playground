@@ -47,7 +47,6 @@
     <Compile Include="RecordGrid.xaml.cs">
       <DependentUpon>RecordGrid.xaml</DependentUpon>
     </Compile>
-    <Compile Include="RecordItemTemplate.cs" />
   </ItemGroup>
   <ItemGroup>
     <Page Include="RecordGrid.xaml">

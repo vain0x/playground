@@ -7,6 +7,8 @@
     mc:Ignorable="d" 
     d:DesignWidth="300"
     d:DesignHeight="300"
+    HorizontalAlignment="Left"
+    VerticalAlignment="Top"
     >
     <Grid x:Name="grid" />
 </UserControl>

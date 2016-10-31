@@ -10,28 +10,10 @@
     d:DesignHeight="300"
     >
     <recordGrid:RecordGrid>
-        <!-- Name -->
-        <recordGrid:RecordItemTemplate>
-            <recordGrid:RecordItemTemplate.LabelTemplate>
-                <DataTemplate>
-                    <TextBlock Text="Name" />
-                </DataTemplate>
-            </recordGrid:RecordItemTemplate.LabelTemplate>
-            <DataTemplate>
-                <TextBlock Text="{Binding Name}" />
-            </DataTemplate>
-        </recordGrid:RecordItemTemplate>
-        
-        <!-- Age -->
-        <recordGrid:RecordItemTemplate>
-            <recordGrid:RecordItemTemplate.LabelTemplate>
-                <DataTemplate>
-                    <TextBlock Text="Age" />
-                </DataTemplate>
-            </recordGrid:RecordItemTemplate.LabelTemplate>
-            <DataTemplate>
-                <TextBlock Text="{Binding Age}" />
-            </DataTemplate>
-        </recordGrid:RecordItemTemplate>
+        <TextBlock Text="Name" />
+        <TextBlock Text="{Binding Name}" />
+
+        <TextBlock Text="Age" />
+        <TextBlock Text="{Binding Age}" />
     </recordGrid:RecordGrid>
 </UserControl>
