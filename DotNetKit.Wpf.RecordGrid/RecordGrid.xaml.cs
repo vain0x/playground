@@ -5,6 +5,7 @@ using System.Collections.Specialized;
 using System.ComponentModel;
 using System.Linq;
 using System.Text;
+using System.Threading;
 using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Controls;
@@ -22,11 +23,60 @@ namespace DotNetKit.Wpf
     /// <summary>
     /// RecordGrid.xaml の相互作用ロジック
     /// </summary>
-    [ContentProperty("Items")]
-    public partial class RecordGrid : UserControl
+    [ContentProperty("Children")]
+    public partial class RecordGrid
+        : UserControl
     {
-        public ObservableCollection<RecordItemTemplate> Items { get; private set; }
         public Orientation Orientation { get; set; }
+        public ObservableCollection<UIElement> Children { get; private set; }
+
+        #region IsLabel
+        static readonly DependencyProperty isLabelProperty =
+            DependencyProperty.RegisterAttached(
+                "IsLabel",
+                typeof(bool),
+                typeof(RecordGrid)
+            );
+
+        public static DependencyProperty IsLabelProperty
+        {
+            get { return isLabelProperty; }
+        }
+
+        public static bool GetIsLabel(DependencyObject obj)
+        {
+            return (bool)obj.GetValue(IsLabelProperty);
+        }
+
+        public static void SetIsLabel(DependencyObject obj, bool value)
+        {
+            obj.SetValue(IsLabelProperty, value);
+        }
+        #endregion
+
+        #region IsOdd
+        static readonly DependencyProperty isOddProperty =
+            DependencyProperty.RegisterAttached(
+                "IsOdd",
+                typeof(bool),
+                typeof(RecordGrid)
+            );
+
+        public static DependencyProperty IsOddProperty
+        {
+            get { return isOddProperty; }
+        }
+
+        public static bool GetIsOdd(DependencyObject obj)
+        {
+            return (bool)obj.GetValue(IsOddProperty);
+        }
+
+        public static void SetIsOdd(DependencyObject obj, bool value)
+        {
+            obj.SetValue(IsOddProperty, value);
+        }
+        #endregion
 
         DependencyProperty GridRowProperty
         {
@@ -73,33 +123,22 @@ namespace DotNetKit.Wpf
             AddGridColumn(new GridLength(1.0, GridUnitType.Star));
         }
 
-        void AddUIElement(int index, RecordItemTemplate template)
+        void AddUIElement(int index, bool isLabel, UIElement element)
         {
             var isOdd = index % 2 != 0;
 
             CreateColumnDefinitions();
 
-            AddGridRow();
+            if (isLabel)
+            {
+                AddGridRow();
+            }
 
-            var labelTemplate = template.LabelTemplate;
-            if (labelTemplate != null)
-            {
-                var label = (UIElement)labelTemplate.LoadContent();
-                label.SetValue(GridColumnProperty, 0);
-                label.SetValue(GridRowProperty, index);
-                RecordItemTemplate.SetIsOdd(label, isOdd);
-                grid.Children.Add(label);
-            }
-            
-            var valueTemplate = template.ValueTemplate;
-            if (valueTemplate != null)
-            {
-                var value = (UIElement)valueTemplate.LoadContent();
-                value.SetValue(GridColumnProperty, 1);
-                value.SetValue(GridRowProperty, index);
-                RecordItemTemplate.SetIsOdd(value, isOdd);
-                grid.Children.Add(value);
-            }
+            element.SetValue(GridRowProperty, index);
+            element.SetValue(GridColumnProperty, isLabel ? 0 : 1);
+            SetIsLabel(element, isLabel);
+            SetIsOdd(element, isOdd);
+            grid.Children.Add(element);
         }
 
         void OnCollectionChanged(object sender, NotifyCollectionChangedEventArgs e)
@@ -108,9 +147,9 @@ namespace DotNetKit.Wpf
             {
                 case NotifyCollectionChangedAction.Add:
                     var index = e.NewStartingIndex;
-                    foreach (var template in e.NewItems.Cast<RecordItemTemplate>())
+                    foreach (var element in e.NewItems.Cast<UIElement>())
                     {
-                        AddUIElement(index, template);
+                        AddUIElement(index / 2, index % 2 == 0, element);
                         index++;
                     }
                     break;
@@ -120,9 +159,8 @@ namespace DotNetKit.Wpf
         public RecordGrid()
         {
             Orientation = Orientation.Vertical;
-
-            Items = new ObservableCollection<RecordItemTemplate>();
-            Items.CollectionChanged += OnCollectionChanged;
+            Children = new ObservableCollection<UIElement>();
+            Children.CollectionChanged += OnCollectionChanged;
 
             InitializeComponent();
         }
