@@ -28,6 +28,7 @@ namespace DotNetKit.Wpf
         : UserControl
     {
         public Orientation Orientation { get; set; }
+        public int ItemCount { get; set; }
         public ObservableCollection<UIElement> Children { get; private set; }
 
         #region IsLabel
@@ -119,24 +120,27 @@ namespace DotNetKit.Wpf
             if (isColumnDefinitionsCreated) return;
             isColumnDefinitionsCreated = true;
 
-            AddGridColumn(GridLength.Auto);
+            foreach (var i in Enumerable.Range(0, ItemCount))
+            {
+                AddGridColumn(GridLength.Auto);
+            }
             AddGridColumn(new GridLength(1.0, GridUnitType.Star));
         }
 
-        void AddUIElement(int index, bool isLabel, UIElement element)
+        void AddUIElement(int rowIndex, int columnIndex, UIElement element)
         {
-            var isOdd = index % 2 != 0;
+            var isOdd = rowIndex % 2 != 0;
 
             CreateColumnDefinitions();
 
-            if (isLabel)
+            if (columnIndex == 0)
             {
                 AddGridRow();
             }
 
-            element.SetValue(GridRowProperty, index);
-            element.SetValue(GridColumnProperty, isLabel ? 0 : 1);
-            SetIsLabel(element, isLabel);
+            element.SetValue(GridRowProperty, rowIndex);
+            element.SetValue(GridColumnProperty, columnIndex);
+            SetIsLabel(element, columnIndex == 0);
             SetIsOdd(element, isOdd);
             grid.Children.Add(element);
         }
@@ -146,10 +150,16 @@ namespace DotNetKit.Wpf
             switch (e.Action)
             {
                 case NotifyCollectionChangedAction.Add:
+                    if (ItemCount < 0)
+                    {
+                        throw new InvalidOperationException("RecordGrid.ItemCount must not be negative.");
+                    }
+                    var count = ItemCount + 1;
+
                     var index = e.NewStartingIndex;
                     foreach (var element in e.NewItems.Cast<UIElement>())
                     {
-                        AddUIElement(index / 2, index % 2 == 0, element);
+                        AddUIElement(index / count, index % count, element);
                         index++;
                     }
                     break;
@@ -159,6 +169,8 @@ namespace DotNetKit.Wpf
         public RecordGrid()
         {
             Orientation = Orientation.Vertical;
+            ItemCount = 1;
+
             Children = new ObservableCollection<UIElement>();
             Children.CollectionChanged += OnCollectionChanged;
 
