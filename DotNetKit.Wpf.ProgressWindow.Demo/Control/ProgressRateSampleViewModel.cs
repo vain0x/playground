@@ -92,7 +92,10 @@ namespace DotNetKit.Wpf.Demo
 
             // Invoke an event.
             var h = TaskStarted;
-            h.Invoke(this, Tuple.Create(task, cancellationTokenSource, progress));
+            if (h != null)
+            {
+                h.Invoke(this, Tuple.Create(task, cancellationTokenSource, progress));
+            }
         }
 
         public ProgressRateSampleControlViewModel()

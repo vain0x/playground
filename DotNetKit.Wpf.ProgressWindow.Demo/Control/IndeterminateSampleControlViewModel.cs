@@ -75,7 +75,10 @@ namespace DotNetKit.Wpf.Demo
 
             // Invoke an event.
             var h = TaskStarted;
-            h.Invoke(this, Tuple.Create(task, cancellationTokenSource));
+            if (h != null)
+            {
+                h.Invoke(this, Tuple.Create(task, cancellationTokenSource));
+            }
         }
 
         public IndeterminateSampleControlViewModel()
