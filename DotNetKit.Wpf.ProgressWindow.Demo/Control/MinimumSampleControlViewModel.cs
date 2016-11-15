@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.ComponentModel;
 using System.Linq;
+using System.Runtime.CompilerServices;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
@@ -15,6 +16,12 @@ namespace DotNetKit.Wpf.Demo
     {
         public event PropertyChangedEventHandler PropertyChanged;
 
+        void OnPropertyChanged([CallerMemberName] string propertyName = null)
+        {
+            var h = PropertyChanged;
+            if (h != null) h.Invoke(this, new PropertyChangedEventArgs(propertyName));
+        }
+
         string message;
         public string Message
         {
@@ -22,9 +29,7 @@ namespace DotNetKit.Wpf.Demo
             set
             {
                 message = value;
-
-                var h = PropertyChanged;
-                if (h != null) h.Invoke(this, new PropertyChangedEventArgs("Message"));
+                OnPropertyChanged();
             }
         }
 
@@ -64,8 +69,7 @@ namespace DotNetKit.Wpf.Demo
                         Message = "Canceled.";
                         break;
                     default:
-                        Message = "Unknown TaskStatus.";
-                        break;
+                        throw new Exception("Unexpected TaskStatus.");
                 }
             });
 

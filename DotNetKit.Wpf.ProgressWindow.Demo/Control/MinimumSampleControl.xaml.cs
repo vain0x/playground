@@ -39,7 +39,7 @@ namespace DotNetKit.Wpf.Demo
                         CancellationTokenSource = cancellationTokenSource,
                         Owner = owner,
                         Title = "Minimum Sample",
-                        Body = "Wait 5 seconds...",
+                        Content = "Wait 5 seconds...",
                     };
                 progressWindow.Show();
             };

@@ -1,6 +1,8 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.ComponentModel;
 using System.Linq;
+using System.Runtime.CompilerServices;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
@@ -9,10 +11,39 @@ using System.Windows;
 namespace DotNetKit.Wpf
 {
     public sealed class ProgressWindowContext
+        : INotifyPropertyChanged
     {
+        public event PropertyChangedEventHandler PropertyChanged;
+
+        void OnPropertyChanged([CallerMemberName] string propertyName = null)
+        {
+            var h = PropertyChanged;
+            if (h != null) h.Invoke(this, new PropertyChangedEventArgs(propertyName));
+        }
+
         public Window Owner { get; set; }
-        public string Title { get; set; }
-        public object Body { get; set; }
+
+        string title;
+        public string Title
+        {
+            get { return title; }
+            set
+            {
+                title = value;
+                OnPropertyChanged();
+            }
+        }
+
+        object content;
+        public object Content
+        {
+            get { return content; }
+            set
+            {
+                content = value;
+                OnPropertyChanged();
+            }
+        }
 
         public Task Task { get; set; }
         public CancellationTokenSource CancellationTokenSource { get; set; }
@@ -54,7 +85,6 @@ namespace DotNetKit.Wpf
                 new ProgressWindow(this)
                 {
                     Owner = Owner,
-                    Title = Title,
                 };
 
             var cts = CancellationTokenSource;

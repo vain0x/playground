@@ -24,7 +24,7 @@
                 Grid.Row="0"
                 HorizontalAlignment="Left"
                 VerticalAlignment="Center"
-                Content="{Binding Body}"
+                Content="{Binding Content}"
                 />
             <ProgressBar
                 Grid.Row="1"
