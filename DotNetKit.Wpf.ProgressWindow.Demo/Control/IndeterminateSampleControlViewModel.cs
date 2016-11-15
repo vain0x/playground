@@ -11,7 +11,7 @@ using DotNetKit.Functional;
 
 namespace DotNetKit.Wpf.Demo
 {
-    public class MinimumSampleControlViewModel
+    public class IndeterminateSampleControlViewModel
         : INotifyPropertyChanged
     {
         public event PropertyChangedEventHandler PropertyChanged;
@@ -78,7 +78,7 @@ namespace DotNetKit.Wpf.Demo
             h.Invoke(this, Tuple.Create(task, cancellationTokenSource));
         }
 
-        public MinimumSampleControlViewModel()
+        public IndeterminateSampleControlViewModel()
         {
             runCommand = Command.Create(Run, () => true);
         }

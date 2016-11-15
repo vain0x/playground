@@ -16,15 +16,15 @@ using System.Windows.Shapes;
 namespace DotNetKit.Wpf.Demo
 {
     /// <summary>
-    /// MinimumSampleControl.xaml の相互作用ロジック
+    /// IndeterminateSampleControl.xaml の相互作用ロジック
     /// </summary>
-    public partial class MinimumSampleControl : UserControl
+    public partial class IndeterminateSampleControl : UserControl
     {
-        public MinimumSampleControl()
+        public IndeterminateSampleControl()
         {
             InitializeComponent();
 
-            var dataContext = new MinimumSampleControlViewModel();
+            var dataContext = new IndeterminateSampleControlViewModel();
 
             // Open a progress window whenever a task is executed.
             dataContext.TaskStarted += (sender, e) =>
@@ -38,7 +38,7 @@ namespace DotNetKit.Wpf.Demo
                         Task = task,
                         CancellationTokenSource = cancellationTokenSource,
                         Owner = owner,
-                        Title = "Minimum Sample",
+                        Title = "Indeterminate Sample",
                         Content = "Wait 5 seconds...",
                     };
                 progressWindow.Show();

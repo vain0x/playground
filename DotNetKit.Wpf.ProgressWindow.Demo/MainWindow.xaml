@@ -4,8 +4,8 @@
         xmlns:local="clr-namespace:DotNetKit.Wpf.Demo"
         Title="MainWindow" Height="350" Width="525">
     <TabControl>
-        <TabItem Header="Minimum">
-            <local:MinimumSampleControl />
+        <TabItem Header="Indeterminate">
+            <local:IndeterminateSampleControl />
         </TabItem>
         <TabItem Header="Progress Rate">
             <local:ProgressRateSampleControl />

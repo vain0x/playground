@@ -69,7 +69,7 @@
       <DependentUpon>App.xaml</DependentUpon>
       <SubType>Code</SubType>
     </Compile>
-    <Compile Include="Control\MinimumSampleControlViewModel.cs" />
+    <Compile Include="Control\IndeterminateSampleControlViewModel.cs" />
     <Compile Include="Control\ProgressRateSampleControl.xaml.cs">
       <DependentUpon>ProgressRateSampleControl.xaml</DependentUpon>
     </Compile>
@@ -78,14 +78,14 @@
       <DependentUpon>MainWindow.xaml</DependentUpon>
       <SubType>Code</SubType>
     </Compile>
-    <Page Include="Control\MinimumSampleControl.xaml">
+    <Page Include="Control\IndeterminateSampleControl.xaml">
       <SubType>Designer</SubType>
       <Generator>MSBuild:Compile</Generator>
     </Page>
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="Control\MinimumSampleControl.xaml.cs">
-      <DependentUpon>MinimumSampleControl.xaml</DependentUpon>
+    <Compile Include="Control\IndeterminateSampleControl.xaml.cs">
+      <DependentUpon>IndeterminateSampleControl.xaml</DependentUpon>
     </Compile>
     <Compile Include="Properties\AssemblyInfo.cs">
       <SubType>Code</SubType>
