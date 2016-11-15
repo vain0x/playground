@@ -1,0 +1,5 @@
+type project
+authors vain0
+projectUrl https://github.com/DotNetKit/DotNetKit.Wpf.ProgressWindow
+licenseUrl http://opensource.org/licenses/MIT
+copyright (C) 2016 DotNetKit authors
