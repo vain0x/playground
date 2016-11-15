@@ -224,7 +224,7 @@ namespace DotNetKit.Wpf
         /// </para>
         /// </summary>
         /// <returns></returns>
-        public bool? Show()
+        public bool? ShowDialog()
         {
             var task = Task;
             if (task == null)

@@ -47,7 +47,7 @@ namespace DotNetKit.Wpf.Demo
                 {
                     progressWindow.ProgressRate = rate;
                 };
-                progressWindow.Show();
+                progressWindow.ShowDialog();
             };
 
             DataContext = dataContext;

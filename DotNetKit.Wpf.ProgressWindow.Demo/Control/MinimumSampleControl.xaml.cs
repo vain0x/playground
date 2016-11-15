@@ -36,7 +36,7 @@ namespace DotNetKit.Wpf.Demo
                     Owner = Window.GetWindow(this),
                     Task = task,
                 };
-            progressWindow.Show();
+            progressWindow.ShowDialog();
         }
 
         public MinimumSampleControl()

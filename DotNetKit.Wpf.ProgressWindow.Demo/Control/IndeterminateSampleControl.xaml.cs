@@ -41,7 +41,7 @@ namespace DotNetKit.Wpf.Demo
                         Title = "Indeterminate Sample",
                         Content = "Wait 5 seconds...",
                     };
-                progressWindow.Show();
+                progressWindow.ShowDialog();
             };
 
             DataContext = dataContext;
