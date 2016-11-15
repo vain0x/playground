@@ -30,7 +30,8 @@
                 Grid.Row="1"
                 Margin="10,5,10,5"
                 Height="10"
-                IsIndeterminate="True"
+                Value="{Binding ProgressRateValue}"
+                IsIndeterminate="{Binding IsIndeterminate}"
                 />
         </Grid>
         <StackPanel Grid.Row="1">

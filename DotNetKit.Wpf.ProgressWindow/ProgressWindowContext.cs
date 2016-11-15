@@ -56,6 +56,45 @@ namespace DotNetKit.Wpf
             }
         }
 
+        double progressRateValue;
+        public double ProgressRateValue
+        {
+            get { return progressRateValue; }
+            private set
+            {
+                progressRateValue = value;
+                OnPropertyChanged();
+            }
+        }
+
+        bool isIndeterminate = true;
+        public bool IsIndeterminate
+        {
+            get { return isIndeterminate; }
+            private set
+            {
+                isIndeterminate = value;
+                OnPropertyChanged();
+            }
+        }
+
+        public double? ProgressRate
+        {
+            get { return IsIndeterminate ? default(double?) : ProgressRateValue; }
+            set
+            {
+                if (value.HasValue)
+                {
+                    ProgressRateValue = value.Value;
+                    IsIndeterminate = false;
+                }
+                else
+                {
+                    IsIndeterminate = true;
+                }
+            }
+        }
+
         public Task Task { get; set; }
         public CancellationTokenSource CancellationTokenSource { get; set; }
 
