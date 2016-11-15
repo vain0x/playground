@@ -100,18 +100,17 @@ namespace DotNetKit.Wpf
 
         /// <summary>
         /// Gets the current progress rate as a percentage
-        /// or throws an exception if <see cref="IsIndeterminate"/> is true.
+        /// or 0 if <see cref="IsIndeterminate"/> is true.
         /// <para lang="ja">
         /// 現在の進捗の割合を百分率で取得する。
-        /// ただし、<see cref="IsIndeterminate"/> が true の場合は例外を送出する。
+        /// ただし、<see cref="IsIndeterminate"/> が true の場合は 0 を返す。
         /// </para>
         /// </summary>
         public double ProgressRateValue
         {
             get
             {
-                if (IsIndeterminate) throw new InvalidOperationException();
-                return progressRateValue;
+                return IsIndeterminate ? 0.0 : progressRateValue;
             }
             private set
             {
