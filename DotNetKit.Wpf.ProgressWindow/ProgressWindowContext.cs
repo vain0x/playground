@@ -45,6 +45,17 @@ namespace DotNetKit.Wpf
             }
         }
 
+        object cancelButtonContent = "Cancel";
+        public object CancelButtonContent
+        {
+            get { return cancelButtonContent; }
+            set
+            {
+                cancelButtonContent = value;
+                OnPropertyChanged();
+            }
+        }
+
         public Task Task { get; set; }
         public CancellationTokenSource CancellationTokenSource { get; set; }
 

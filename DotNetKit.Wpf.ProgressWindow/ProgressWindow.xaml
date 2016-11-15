@@ -36,7 +36,7 @@
         <StackPanel Grid.Row="1">
             <Button
                 x:Name="cancelButton"
-                Content="Cancel"
+                Content="{Binding CancelButtonContent}"
                 HorizontalAlignment="Right"
                 Margin="10,5,10,5"
                 Padding="20,0,20,0"
