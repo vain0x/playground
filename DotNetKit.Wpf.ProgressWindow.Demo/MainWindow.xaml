@@ -1,0 +1,17 @@
+﻿<Window x:Class="DotNetKit.Wpf.Demo.MainWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:local="clr-namespace:DotNetKit.Wpf.Demo"
+        Title="MainWindow" Height="350" Width="525">
+    <TabControl>
+        <TabItem Header="Minimum">
+            <local:MinimumSampleControl />
+        </TabItem>
+        <TabItem Header="Indeterminate">
+            <local:IndeterminateSampleControl />
+        </TabItem>
+        <TabItem Header="Progress Rate">
+            <local:ProgressRateSampleControl />
+        </TabItem>
+    </TabControl>
+</Window>
