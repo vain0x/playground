@@ -116,6 +116,18 @@ namespace DotNetKit.Wpf
             }
         }
 
+        ProgressWindow progressWindow;
+
+        void Close()
+        {
+            var window = progressWindow;
+            if (window != null)
+            {
+                progressWindow = null;
+                window.Dispatcher.Invoke(window.Close);
+            }
+        }
+
         public bool? Show()
         {
             var task = Task;
@@ -127,11 +139,12 @@ namespace DotNetKit.Wpf
             task.ContinueWith(_ =>
             {
                 Cancel();
+                Close();
             });
 
             if (task.IsCompleted || IsCancellationRequested) return false;
 
-            var window =
+            progressWindow = 
                 new ProgressWindow(this)
                 {
                     Owner = Owner,
@@ -140,9 +153,10 @@ namespace DotNetKit.Wpf
             var cts = CancellationTokenSource;
             if (cts != null)
             {
-                cts.Token.Register(() => window.Dispatcher.Invoke(window.Close));
+                cts.Token.Register(Close);
             }
-            return window.ShowDialog();
+
+            return progressWindow.ShowDialog();
         }
     }
 }

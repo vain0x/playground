@@ -57,6 +57,10 @@
       <Generator>MSBuild:Compile</Generator>
       <SubType>Designer</SubType>
     </ApplicationDefinition>
+    <Page Include="Control\MinimumSampleControl.xaml">
+      <SubType>Designer</SubType>
+      <Generator>MSBuild:Compile</Generator>
+    </Page>
     <Page Include="Control\ProgressRateSampleControl.xaml">
       <SubType>Designer</SubType>
       <Generator>MSBuild:Compile</Generator>
@@ -70,6 +74,9 @@
       <SubType>Code</SubType>
     </Compile>
     <Compile Include="Control\IndeterminateSampleControlViewModel.cs" />
+    <Compile Include="Control\MinimumSampleControl.xaml.cs">
+      <DependentUpon>MinimumSampleControl.xaml</DependentUpon>
+    </Compile>
     <Compile Include="Control\ProgressRateSampleControl.xaml.cs">
       <DependentUpon>ProgressRateSampleControl.xaml</DependentUpon>
     </Compile>

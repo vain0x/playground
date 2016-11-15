@@ -4,6 +4,9 @@
         xmlns:local="clr-namespace:DotNetKit.Wpf.Demo"
         Title="MainWindow" Height="350" Width="525">
     <TabControl>
+        <TabItem Header="Minimum">
+            <local:MinimumSampleControl />
+        </TabItem>
         <TabItem Header="Indeterminate">
             <local:IndeterminateSampleControl />
         </TabItem>
