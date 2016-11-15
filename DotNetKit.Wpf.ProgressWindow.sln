@@ -5,6 +5,8 @@ VisualStudioVersion = 12.0.40629.0
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "DotNetKit.Wpf.ProgressWindow", "DotNetKit.Wpf.ProgressWindow\DotNetKit.Wpf.ProgressWindow.csproj", "{8532D487-6AD6-4CF0-914F-C4B791D30A1D}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "DotNetKit.Wpf.ProgressWindow.Demo", "DotNetKit.Wpf.ProgressWindow.Demo\DotNetKit.Wpf.ProgressWindow.Demo.csproj", "{BD2C8765-4D96-447E-8DC2-3289FD0BCDE0}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -15,6 +17,10 @@ Global
 		{8532D487-6AD6-4CF0-914F-C4B791D30A1D}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{8532D487-6AD6-4CF0-914F-C4B791D30A1D}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{8532D487-6AD6-4CF0-914F-C4B791D30A1D}.Release|Any CPU.Build.0 = Release|Any CPU
+		{BD2C8765-4D96-447E-8DC2-3289FD0BCDE0}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{BD2C8765-4D96-447E-8DC2-3289FD0BCDE0}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{BD2C8765-4D96-447E-8DC2-3289FD0BCDE0}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{BD2C8765-4D96-447E-8DC2-3289FD0BCDE0}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
