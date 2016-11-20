@@ -44,6 +44,7 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="AssemblyInfo.fs" />
+    <Compile Include="Demo.fs" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\AsterSql.Core\AsterSql.Core.fsproj">
