@@ -1,5 +1,7 @@
 ﻿namespace AsterSql.Core
 
+open System
+
 type DbType =
   | TInt
   | TString
@@ -10,7 +12,7 @@ type DbValue =
   | VString 
     of string
 
-type Field =
+type MemoryField =
   {
     Name
       : string
@@ -18,32 +20,74 @@ type Field =
       : DbType
   }
 
-type Record =
+type MemoryRecord =
   array<DbValue>
 
-type Relation =
+type MemoryRelation =
   {
     Fields
-      : array<Field>
+      : array<MemoryField>
     Records
-      : array<Record>
+      : array<MemoryRecord>
   }
+with
+  static member Empty(fields) =
+    {
+      Fields =
+        fields
+      Records =
+        [||]
+    }
 
-type Column<'typ>() =
-  do ()
+type IExpression =
+  interface end
 
-type Table<'typ>() =
-  member this.Name = "name"
+type IExpressionRecord =
+  abstract member Item: string -> IExpression with get, set
 
-  member this.Add(t: 'typ) =
-    ()
+type Column<'typ>(table: Table, name: string) =
+  let uniqueName = sprintf "__%s__%s" table.Name name
+
+  member this.Item
+    with get (r: IExpressionRecord) =
+      r.[uniqueName]
+    and set (r: IExpressionRecord) value =
+      r.[uniqueName] <- value
+
+and Table(schemaName: string, name: string) =
+  member this.SchemaName = schemaName
+
+  member this.Name = name
 
 [<AbstractClass>]
-type Database<'entity>() =
+type Transaction() =
+  abstract member Commit: unit -> unit
+
+  abstract member Dispose: unit -> unit
+
+  interface IDisposable with
+    override this.Dispose() =
+      this.Dispose()
+
+[<AbstractClass>]
+type Database() =
+  abstract member BeginTransaction: unit -> Transaction
+
+[<AbstractClass>]
+type Entity() =
+  do ()
+
+[<AbstractClass>]
+type Database<'entity when 'entity :> Entity>() =
+  inherit Database()
+
   abstract member Connect: unit -> 'entity
 
-type MemoryDatabase<'entity>() =
+type MemoryDatabase<'entity when 'entity :> Entity>() =
   inherit Database<'entity>()
 
+  override this.BeginTransaction() =
+    NotImplementedException() |> raise
+
   override this.Connect(): 'entity =
-    failwith ""
+    NotImplementedException() |> raise

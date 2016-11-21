@@ -22,21 +22,22 @@ module Demo =
     let database = MemoryDatabase<AppEntity>()
     use entity = database.Connect()
     let () =
-      use transaction = entity.Transaction.Begin()
       let p = entity.Persons
-      p.Insert
+      p.Add
         (fun r ->
           p.Name.[r] <- "Miku"
           p.Age.[r] <- 16L
           p.Birthday.[r] <- DateTimeOffset.Parse("2007/08/31")
         ) |> ignore
-      p.Insert
+      p.Add
         (fun r ->
           p.Name.[r] <- "Yukari"
           p.Age.[r] <- 18L
           p.Birthday.[r] <- DateTimeOffset.Parse("2011/12/22")
         ) |> ignore
-    let records =
-      entity.SelectTable<Person>()
-    for r in records do
-      printfn "%s (%d)" person.Name.[r] person.Age.[r]
+    let () =
+      let records =
+        entity.SelectTable<Person>()
+      for r in records do
+        printfn "%s (%d)" person.Name.[r] person.Age.[r]
+    ()
