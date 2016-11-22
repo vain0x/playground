@@ -17,10 +17,10 @@ type Column<'x>(columnPath: ColumnPath) =
     DatabaseType.ofType typeof<'x>
 
   member this.Item
-    with get (r: IExpressionRecord) =
-      r.[uniqueName].Cast<'x>()
-    and set (r: IExpressionRecord) (value: Expression<'x>) =
-      r.[uniqueName] <- value :> IExpression
+    with get (r: ExpressionRecord) =
+      r.[uniqueName]
+    and set (r: ExpressionRecord) value =
+      r.[uniqueName] <- value
 
   member this.Item
     with get (r: IReadOnlyRecord) =

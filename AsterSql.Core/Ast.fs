@@ -2,23 +2,16 @@
 
 [<AutoOpen>]
 module Ast =
-  type IExpression =
-    abstract Cast: unit -> Expression<'x>
-
-  and Expression<'x> =
+  type Expression =
     | Null
     | Int
-      of 'x
+      of Long
     | String
-      of 'x
+      of string
     | Add
-      of Expression<'x> * Expression<'x>
+      of Expression * Expression
     | Max
-      of Expression<'x>
-  with
-    interface IExpression with
-      override this.Cast<'y>() =
-        this |> box |> unbox<Expression<'y>>
+      of Expression
 
   type Condition =
     | Null
@@ -31,13 +24,13 @@ module Ast =
     | IsNull
       of Condition
     | Equal
-      of IExpression * IExpression
+      of Expression * Expression
 
   type SelectField =
     | Asterisk
       of string
     | Expression
-      of IExpression * option<string>
+      of Expression * option<string>
 
   type Order =
     | Ascending
@@ -46,7 +39,7 @@ module Ast =
   type OrderKey =
     {
       Expression:
-        IExpression
+        Expression
       Order:
         Order
     }
@@ -58,7 +51,7 @@ module Ast =
       Where:
         Condition
       GroupBy:
-        list<IExpression>
+        list<Expression>
     }
 
   type ValueInsertStatement =
@@ -66,5 +59,5 @@ module Ast =
       TablePath:
         TablePath
       Record:
-        Map<string, IExpression>
+        Map<string, Expression>
     }

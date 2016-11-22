@@ -10,8 +10,8 @@ type DatabaseType =
 type IReadOnlyRecord =
   abstract Item: string -> obj with get, set
 
-type IExpressionRecord =
-  abstract Item: string -> IExpression with get, set
+type ExpressionRecord =
+  abstract Item: string -> Expression with get, set
 
 [<AbstractClass>]
 type Column() =
