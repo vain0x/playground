@@ -15,6 +15,10 @@ module Ast =
       of Expression<'x> * Expression<'x>
     | Max
       of Expression<'x>
+  with
+    interface IExpression with
+      override this.Cast<'y>() =
+        this |> box |> unbox<Expression<'y>>
 
   type Condition =
     | Null
@@ -59,8 +63,8 @@ module Ast =
 
   type ValueInsertStatement =
     {
-      TableName:
-        string
+      TablePath:
+        TablePath
       Record:
         Map<string, IExpression>
     }

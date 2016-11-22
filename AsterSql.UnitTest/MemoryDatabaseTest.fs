@@ -31,4 +31,5 @@ module MemoryDatabaseTest =
   let ``test Table.Insert`` =
     let schema = database.GetSchema<TestEntity>("public")
     use entity = schema.Connect()
+    let p = entity.Persons
     ()

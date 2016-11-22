@@ -7,6 +7,9 @@ type DatabaseType =
   | TInt
   | TString
 
+type IReadOnlyRecord =
+  abstract Item: string -> obj with get, set
+
 type IExpressionRecord =
   abstract Item: string -> IExpression with get, set
 
@@ -40,16 +43,7 @@ type Relation() as this =
 type Table() =
   inherit Relation()
 
-  abstract Path: TablePath
-
-  member this.DatabaseName =
-    this.Path.DatabaseName
-
-  member this.SchemaName =
-    this.Path.SchemaName
-
-  member this.Name =
-    this.Path.TableName
+  abstract TablePath: TablePath
 
 [<AbstractClass>]
 type DatabaseSchema() =
