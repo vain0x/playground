@@ -1,8 +1,9 @@
 ﻿namespace AsterSql.Core
 
+[<AutoOpen>]
 module Ast =
   type IExpression =
-    abstract member Cast: unit -> Expression<'x>
+    abstract Cast: unit -> Expression<'x>
 
   and Expression<'x> =
     | Null
@@ -40,20 +41,26 @@ module Ast =
 
   type OrderKey =
     {
-      Expression
-        : IExpression
-      Order
-        : Order
+      Expression:
+        IExpression
+      Order:
+        Order
     }
 
   type SelectStatement =
     {
-      Fields
-        : SelectField * list<SelectField>
-      Where
-        : Condition
-      GroupBy
-        : list<IExpression>
-      OrderBy
-        : list<OrderKey>
+      Fields:
+        SelectField * list<SelectField>
+      Where:
+        Condition
+      GroupBy:
+        list<IExpression>
+    }
+
+  type ValueInsertStatement =
+    {
+      TableName:
+        string
+      Record:
+        Map<string, IExpression>
     }

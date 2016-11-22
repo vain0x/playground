@@ -3,15 +3,16 @@
 open System
 open AsterSql.Core
 
+(*
 module Demo =
   type PersonTable =
     {
-      Name
-        : Column<string>
-      Age
-        : Column<int>
-      Birthday
-        : Column<DateTime>
+      Name:
+        Column<string>
+      Age:
+        Column<int>
+      Birthday:
+        Column<DateTime>
     }
 
   type AppEntity() =
@@ -41,3 +42,4 @@ module Demo =
       for r in records do
         printfn "%s (%d)" person.Name.[r] person.Age.[r]
     ()
+//*)

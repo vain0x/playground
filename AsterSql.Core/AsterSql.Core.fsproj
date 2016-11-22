@@ -44,8 +44,13 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="AssemblyInfo.fs" />
+    <Compile Include="Utility.fs" />
     <Compile Include="Ast.fs" />
     <Compile Include="Types.fs" />
+    <Compile Include="Column.fs" />
+    <Compile Include="Entity.fs" />
+    <Compile Include="Database.fs" />
+    <Compile Include="MemoryDatabase.fs" />
   </ItemGroup>
   <PropertyGroup>
     <MinimumVisualStudioVersion Condition="'$(MinimumVisualStudioVersion)' == ''">11</MinimumVisualStudioVersion>
