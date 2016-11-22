@@ -1,11 +1,11 @@
 ﻿namespace AsterSql.Core
 
-type Column<'typ>(table: Table, name: string) =
-  let uniqueName = sprintf "__%s__%s" table.Name name
+type Column<'x>(table: Table, columnName: string) =
+  let uniqueName = sprintf "__%s__%s" table.Name columnName
 
-  member this.Name = name
+  member this.Name = columnName
 
-  member this.Type = typeof<'typ>
+  member this.Type = DatabaseType.ofType typeof<'x>
 
   member this.Item
     with get (r: IExpressionRecord) =

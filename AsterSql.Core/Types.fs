@@ -2,7 +2,7 @@
 
 open System
 
-type DbType =
+type DatabaseType =
   | TInt
   | TString
 
@@ -11,10 +11,12 @@ type IExpressionRecord =
 
 type IColumn =
   abstract Name: string
-  abstract Type: Type
+  abstract Type: DatabaseType
 
 [<AbstractClass>]
 type Table() =
+  abstract DatabaseName: string
+  abstract SchemaName: string
   abstract Name: string
 
   abstract Columns: ROList<IColumn>
@@ -32,5 +34,3 @@ type Transaction() =
 [<AbstractClass>]
 type DatabaseSchema() =
   abstract Name: string
-
-  abstract GetTable: string -> Table

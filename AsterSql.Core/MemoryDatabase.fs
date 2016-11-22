@@ -13,8 +13,21 @@ type MemoryField =
     Name:
       string
     Type:
-      DbType
+      DatabaseType
   }
+with
+  static member Create(name, typ): MemoryField =
+    {
+      Name =
+        name
+      Type =
+        typ
+    }
+
+[<CompilationRepresentation(CompilationRepresentationFlags.ModuleSuffix)>]
+module MemoryField =
+  let ofColumn (column: IColumn) =
+    MemoryField.Create(column.Name, column.Type)
 
 type MemoryRecord =
   array<DbValue>
@@ -35,23 +48,35 @@ with
         [||]
     }
 
-type MemoryTable(schemaName: string, tableName) =
+type MemoryColumn<'x>(table: Table, columnName: string) =
+  inherit Column<'x>(table, columnName)
+
+type MemoryTable(tableName) =
   inherit Table()
+
+  let columns = ResizeArray<IColumn>()
+
+  let relation =
+    lazy (
+      let fields = columns |> Seq.map MemoryField.ofColumn |> Seq.toArray
+      MemoryRelation.Empty(fields)
+    )
 
   override this.Name = tableName
 
-  override this.Columns = [||] :> ROList<_>
+  override this.Columns = columns :> ROList<_>
 
-type MemoryDatabaseSchema<'entity when 'entity :> Entity>(schemaName) =
+type MemoryDatabaseSchema<'entity when 'entity :> Entity>(databaseName, schemaName) =
   inherit DatabaseSchema<'entity>()
+
+  let entity: 'entity =
+    let arguments = [| databaseName :> obj; schemaName :> obj |]
+    Activator.CreateInstance(typeof<'entity>, arguments) :?> 'entity
 
   override this.Name = schemaName
 
-  override this.GetTable(tableName) =
-    MemoryTable(this.Name, tableName) :> Table
-
   override this.Connect(): 'entity =
-    NotImplementedException() |> raise
+    entity
 
 type MemoryDatabase(databaseName: string) =
   inherit Database()
@@ -60,4 +85,4 @@ type MemoryDatabase(databaseName: string) =
 
   /// Always creates new schema.
   override this.GetSchema<'entity when 'entity :> Entity>(schemaName) =
-    MemoryDatabaseSchema<'entity>(schemaName) :> DatabaseSchema<'entity>
+    MemoryDatabaseSchema<'entity>(databaseName, schemaName) :> DatabaseSchema<'entity>
