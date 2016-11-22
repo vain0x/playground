@@ -10,7 +10,10 @@ type DatabaseSchema<'entity when 'entity :> Entity>() =
   
 [<AbstractClass>]
 type Database() =
-  abstract Name: string
+  abstract Path: DatabasePath
 
   abstract GetSchema<'entity when 'entity :> Entity> :
     string -> DatabaseSchema<'entity>
+
+  member this.Name =
+    this.Path.DatabaseName

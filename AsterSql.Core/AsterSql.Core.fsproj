@@ -46,6 +46,7 @@
     <Compile Include="AssemblyInfo.fs" />
     <Compile Include="Utility.fs" />
     <Compile Include="Ast.fs" />
+    <Compile Include="DatabasePath.fs" />
     <Compile Include="Types.fs" />
     <Compile Include="DatabaseType.fs" />
     <Compile Include="Column.fs" />

@@ -1,6 +1,7 @@
 ﻿namespace AsterSql.Core
 
 open System
+open System.Reflection
 
 type DbValue =
   | VInt
@@ -8,72 +9,36 @@ type DbValue =
   | VString 
     of string
 
-type MemoryField =
-  {
-    Name:
-      string
-    Type:
-      DatabaseType
-  }
-with
-  static member Create(name, typ): MemoryField =
-    {
-      Name =
-        name
-      Type =
-        typ
-    }
-
-[<CompilationRepresentation(CompilationRepresentationFlags.ModuleSuffix)>]
-module MemoryField =
-  let ofColumn (column: IColumn) =
-    MemoryField.Create(column.Name, column.Type)
-
 type MemoryRecord =
   array<DbValue>
 
-type MemoryRelation =
-  {
-    Fields:
-      array<MemoryField>
-    Records:
-      array<MemoryRecord>
-  }
-with
-  static member Empty(fields) =
-    {
-      Fields =
-        fields
-      Records =
-        [||]
-    }
+type MemoryRelation(relation: Relation, records: seq<MemoryRecord>) =
+  member this.Relation = relation
 
-type MemoryColumn<'x>(table: Table, columnName: string) =
-  inherit Column<'x>(table, columnName)
+  member this.Records = records
 
-type MemoryTable(tableName) =
+type MemoryColumn<'x>(columnPath) =
+  inherit Column<'x>(columnPath)
+
+[<AbstractClass>]
+type MemoryTable(tablePath) as this =
   inherit Table()
-
-  let columns = ResizeArray<IColumn>()
 
   let relation =
     lazy (
-      let fields = columns |> Seq.map MemoryField.ofColumn |> Seq.toArray
-      MemoryRelation.Empty(fields)
+      MemoryRelation(this, [||])
     )
 
-  override this.Name = tableName
+  override this.Path = tablePath
 
-  override this.Columns = columns :> ROList<_>
-
-type MemoryDatabaseSchema<'entity when 'entity :> Entity>(databaseName, schemaName) =
+type MemoryDatabaseSchema<'entity when 'entity :> Entity>(schemaPath) =
   inherit DatabaseSchema<'entity>()
 
   let entity: 'entity =
-    let arguments = [| databaseName :> obj; schemaName :> obj |]
+    let arguments = [| schemaPath :> obj |]
     Activator.CreateInstance(typeof<'entity>, arguments) :?> 'entity
 
-  override this.Name = schemaName
+  override this.Path = schemaPath
 
   override this.Connect(): 'entity =
     entity
@@ -81,8 +46,8 @@ type MemoryDatabaseSchema<'entity when 'entity :> Entity>(databaseName, schemaNa
 type MemoryDatabase(databaseName: string) =
   inherit Database()
 
-  override this.Name = databaseName
+  override val Path = DatabasePathRoot.Instance / databaseName
 
   /// Always creates new schema.
   override this.GetSchema<'entity when 'entity :> Entity>(schemaName) =
-    MemoryDatabaseSchema<'entity>(databaseName, schemaName) :> DatabaseSchema<'entity>
+    MemoryDatabaseSchema<'entity>(this.Path / schemaName) :> DatabaseSchema<'entity>

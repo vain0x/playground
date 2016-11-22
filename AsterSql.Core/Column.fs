@@ -1,21 +1,19 @@
 ﻿namespace AsterSql.Core
 
-type Column<'x>(table: Table, columnName: string) =
-  let uniqueName = sprintf "__%s__%s" table.Name columnName
+type Column<'x>(columnPath: ColumnPath) =
+  inherit Column()
 
-  member this.Name = columnName
+  let uniqueName =
+    sprintf "__%s__%s" columnPath.TableName columnPath.ColumnName
 
-  member this.Type = DatabaseType.ofType typeof<'x>
+  override this.Path =
+    columnPath
+
+  override val Type =
+    DatabaseType.ofType typeof<'x>
 
   member this.Item
     with get (r: IExpressionRecord) =
       r.[uniqueName]
     and set (r: IExpressionRecord) value =
       r.[uniqueName] <- value
-
-  interface IColumn with
-    override this.Name =
-      this.Name
-
-    override this.Type =
-      this.Type

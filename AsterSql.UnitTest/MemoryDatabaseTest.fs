@@ -5,18 +5,23 @@ open Persimmon.Syntax.UseTestNameByReflection
 open AsterSql.Core
 
 module MemoryDatabaseTest =
-  type PersonTable() as this =
-    inherit MemoryTable("persons")
+  [<Sealed>]
+  type PersonTable private (tablePath) =
+    inherit MemoryTable(tablePath)
 
-    member val Name = MemoryColumn<string>(this, "name")
+    new(schemaPath) =
+      PersonTable((schemaPath: DatabaseSchemaPath) / "persons")
 
-    member val Age = MemoryColumn<Long>(this, "age")
+    member val Name = MemoryColumn<string>(tablePath / "name")
 
-  type TestEntity(databaseName, schemaName) as this =
+    member val Age = MemoryColumn<Long>(tablePath / "age")
+
+  [<Sealed>]
+  type TestEntity(schemaPath) =
     inherit Entity()
 
     member val Persons =
-      PersonTable(databaseName, schemaName, "persons")
+      PersonTable(schemaPath)
 
     override this.Dispose() =
       ()
