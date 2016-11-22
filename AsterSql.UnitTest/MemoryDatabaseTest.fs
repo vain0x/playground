@@ -32,4 +32,9 @@ module MemoryDatabaseTest =
     let schema = database.GetSchema<TestEntity>("public")
     use entity = schema.Connect()
     let p = entity.Persons
+    database.InsertValues
+      (p
+      , fun r ->
+          p.Name.[r] <- 
+      )
     ()

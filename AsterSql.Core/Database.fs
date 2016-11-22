@@ -1,26 +1,19 @@
 ﻿namespace AsterSql.Core
 
 open System
+open System.Runtime.CompilerServices
 open System.Threading.Tasks
 
-[<AbstractClass>]
-type DatabaseSchema<'entity when 'entity :> Entity>() =
-  inherit DatabaseSchema()
-
-  abstract Connect: unit -> 'entity
-  
-[<AbstractClass>]
-type Database() =
-  abstract Path: DatabasePath
-
-  abstract GetSchema<'entity when 'entity :> Entity> :
-    string -> DatabaseSchema<'entity>
-
-  abstract ExecuteSelect<'entity when 'entity :> Entity> :
-    'entity * SelectStatement -> seq<IReadOnlyRecord>
-
-  abstract ExecuteValueInsert<'entity when 'entity :> Entity> :
-    'entity * ValueInsertStatement -> Long
-
-  member this.Name =
-    this.Path.DatabaseName
+[<CompilationRepresentation(CompilationRepresentationFlags.ModuleSuffix)>]
+module Extension =
+  [<Extension>]
+  let Insert (this: Entity, table: Table, assign: Action<IExpressionRecord>) =
+    let record = DictionaryExpressionRecord()
+    assign.Invoke(record)
+    let statement =
+      {
+        TableName =
+          table.TablePath.TableName
+        Record =
+          record
+      }

@@ -17,9 +17,9 @@ type Column<'x>(columnPath: ColumnPath) =
     DatabaseType.ofType typeof<'x>
 
   member this.Item
-    with get (r: ExpressionRecord) =
+    with get (r: IExpressionRecord) =
       r.[uniqueName]
-    and set (r: ExpressionRecord) value =
+    and set (r: IExpressionRecord) value =
       r.[uniqueName] <- value
 
   member this.Item

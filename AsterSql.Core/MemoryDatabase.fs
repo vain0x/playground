@@ -4,6 +4,7 @@ open System
 open System.Reflection
 
 type DbValue =
+  | VNull
   | VInt
     of int64
   | VString 
@@ -24,10 +25,16 @@ type MemoryColumn<'x>(columnPath) =
 type MemoryTable(tablePath) as this =
   inherit Table()
 
+  let records = ResizeArray()
+
   let relation =
     lazy (
-      MemoryRelation(this, [||])
+      MemoryRelation(this, records)
     )
+
+  member this.Insert(record) =
+    records.Add(record)
+    0L // TODO: Return generated ID.
 
   override this.TablePath = tablePath
 
@@ -47,6 +54,38 @@ type MemoryDatabase(databaseName: string) =
   inherit Database()
 
   let schemas = dict []
+
+  let rec evaluateExpression (expression: Expression) =
+    let eval = evaluateExpression
+    match expression with
+    | Expression.Null ->
+      VNull
+    | Int value ->
+      match value |> box with
+      | null ->
+        VNull
+      | :? Long as value ->
+        value |> VInt
+      | _ ->
+        NotImplementedException() |> raise
+    | String value ->
+      match value with
+      | null -> VNull
+      | _ ->
+        value |> string |> VString
+    | Add (l, r) ->
+      match (l |> eval, r |> eval) with
+      | (VNull, _)
+      | (_, VNull) ->
+        VNull
+      | (VInt l, VInt r) ->
+        (l + r) |> VInt
+      | (VString l, VString r) ->
+        (l + r) |> VString
+      | _ ->
+        NotImplementedException() |> raise
+    | Max value ->
+      NotImplementedException() |> raise
 
   member this.GetOrCreateSchema<'entity when 'entity :> Entity>(schemaName) =
     match schemas.TryGetValue(schemaName) with
@@ -72,4 +111,19 @@ type MemoryDatabase(databaseName: string) =
     ( entity: 'entity
     , valueInsertStatement
     ) =
-    NotImplementedException() |> raise
+    let table =
+      entity.TryGetTable(valueInsertStatement.TableName)
+      |> Option.get // TODO: throw better exception
+      :?> MemoryTable
+    let record =
+      table.Columns.Value
+      |> Seq.map
+        (fun column ->
+          match valueInsertStatement.Record |> Map.tryFind column.Name with
+          | Some expression ->
+            expression |> evaluateExpression
+          | None ->
+            NotImplementedException() |> raise // TODO: use default value or throw
+        )
+      |> Seq.toArray
+    table.Insert(record)
