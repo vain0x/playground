@@ -3,13 +3,6 @@
 type Column<'x>(columnPath: ColumnPath) =
   inherit Column()
 
-  let uniqueName =
-    sprintf "_%s__%s__%s__%s"
-      columnPath.DatabaseName
-      columnPath.SchemaName
-      columnPath.TableName
-      columnPath.ColumnName
-
   override this.Path =
     columnPath
 
@@ -18,10 +11,10 @@ type Column<'x>(columnPath: ColumnPath) =
 
   member this.Item
     with get (r: IExpressionRecord) =
-      r.[uniqueName]
-    and set (r: IExpressionRecord) value =
-      r.[uniqueName] <- value
+      r.[this] :?> SqlExpressionBuilder<'x>
+    and set (r: IExpressionRecord) (value: SqlExpressionBuilder<'x>) =
+      r.[this] <- value :> IExpressionBuilder
 
   member this.Item
     with get (r: IReadOnlyRecord) =
-      r.[uniqueName] :?> 'x
+      r.[this] :?> 'x

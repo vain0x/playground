@@ -90,9 +90,10 @@ type MemoryEntity(database: Database) =
       tryFindTable valueInsertStatement.TablePath
       |> Option.get // TODO: throw better exception
     let record =
-      table.Table.Columns.Value
-      |> Seq.map(fun column ->
-          match valueInsertStatement.Record |> Map.tryFind column.Name with
+      table.Table.Columns
+      |> Seq.map
+        (fun column ->
+          match valueInsertStatement.Record |> Map.tryFind column.UniqueName with
           | Some expression ->
             expression |> evaluateExpression
           | None ->

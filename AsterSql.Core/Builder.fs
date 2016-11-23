@@ -18,10 +18,10 @@ type SqlExpressionBuilder<'x>(toAst: unit -> Expression) =
   interface IExpressionBuilder with
     override this.ToAst() =
       this.ToAst()
-  
+
 [<CompilationRepresentation(CompilationRepresentationFlags.ModuleSuffix)>]
-module SqlExpression =
-  let private create toAst = SqlExpressionBuilder<'y>(toAst)
+module Sql =
+  let create toAst = SqlExpressionBuilder<'y>(toAst)
 
   let Null () =
     (fun () -> Expression.Null) |> create

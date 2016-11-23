@@ -8,42 +8,6 @@ type DatabaseType =
   | TInt
   | TString
 
-type IReadOnlyRecord =
-  abstract Item: string -> obj with get, set
-
-type IExpressionRecord =
-  abstract Item: string -> Expression with get, set
-
-type DictionaryExpressionRecord() =
-  let dictionary = dict []
-
-  member this.ToMap() =
-    dictionary
-    |> Seq.map (fun (KeyValue (key, value)) -> (key, value))
-    |> Map.ofSeq
-
-  interface IExpressionRecord with
-    override this.Item
-      with get columnName =
-        dictionary.[columnName]
-      and set columnName value =
-        dictionary.Add(columnName, value)
-
-type Sql() =
-  do ()
-
-[<AbstractClass>]
-type Entity() =
-  abstract ExecuteSelect: SelectStatement -> seq<IReadOnlyRecord>
-
-  abstract ExecuteValueInsert: ValueInsertStatement -> Long
-
-  abstract Dispose: unit -> unit
-
-  interface IDisposable with
-    override this.Dispose() =
-      this.Dispose()
-
 [<AbstractClass>]
 type Column() =
   abstract Path: ColumnPath
@@ -51,6 +15,13 @@ type Column() =
 
   member this.Name =
     this.Path.ColumnName
+
+  member this.UniqueName =
+    sprintf "_%s__%s__%s__%s"
+      this.Path.DatabaseName
+      this.Path.SchemaName
+      this.Path.TableName
+      this.Path.ColumnName
 
 [<AbstractClass>]
 type Relation() as this =
@@ -68,7 +39,8 @@ type Relation() as this =
       :> ROList<_>
     )
 
-  member this.Columns = columns
+  member this.Columns =
+    columns.Value
 
 [<AbstractClass>]
 type Table(tablePath) =
@@ -106,6 +78,27 @@ type DatabaseSchema(schemaPath) as this =
 
   member this.Tables =
     tables.Value
+    
+type IReadOnlyRecord =
+  abstract Item: Column -> obj with get, set
+
+type IExpressionRecord =
+  abstract Item: Column -> IExpressionBuilder with get, set
+
+type DictionaryExpressionRecord() =
+  let dictionary = Dictionary()
+
+  member this.ToMap() =
+    dictionary
+    |> Seq.map (fun (KeyValue (key, value)) -> (key, value))
+    |> Map.ofSeq
+
+  interface IExpressionRecord with
+    override this.Item
+      with get column =
+        dictionary.[column.UniqueName]
+      and set column value =
+        dictionary.Add(column.UniqueName, value)
 
 [<AbstractClass>]
 type Database(databasePath) as this =
@@ -135,6 +128,32 @@ type Database(databasePath) as this =
   member this.Schemas =
     schemas.Value
 
+and
+  [<AbstractClass>]
+  Entity() =
+  abstract ExecuteSelect: SelectStatement -> seq<IReadOnlyRecord>
+
+  abstract ExecuteValueInsert: ValueInsertStatement -> Long
+
+  abstract Dispose: unit -> unit
+
+  member this.Insert(table: Table, assign: Action<IExpressionRecord>) =
+    let record = DictionaryExpressionRecord()
+    assign.Invoke(record)
+    let statement =
+      {
+        TablePath =
+          table.TablePath
+        Record =
+          record.ToMap()
+          |> Map.map (fun key value -> value.ToAst())
+      }
+    this.ExecuteValueInsert(statement)
+
+  interface IDisposable with
+    override this.Dispose() =
+      this.Dispose()
+
 [<AbstractClass>]
 type Transaction() =
   abstract Commit: unit -> unit
@@ -144,20 +163,3 @@ type Transaction() =
   interface IDisposable with
     override this.Dispose() =
       this.Dispose()
-
-[<CompilationRepresentation(CompilationRepresentationFlags.ModuleSuffix)>]
-module Extension =
-  open System.Runtime.CompilerServices
-
-  [<Extension>]
-  let Insert (this: Entity, table: Table, assign: Action<IExpressionRecord>) =
-    let record = DictionaryExpressionRecord()
-    assign.Invoke(record)
-    let statement =
-      {
-        TablePath =
-          table.TablePath
-        Record =
-          record.ToMap()
-      }
-    this.ExecuteValueInsert(statement)

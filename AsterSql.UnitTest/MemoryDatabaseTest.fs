@@ -27,11 +27,26 @@ module MemoryDatabaseTest =
     member val Public = PublicDatabaseSchema(this.Path)
 
   let database = TestDatabase()
+  let p = database.Public.Persons
+
+  let ``test Table.Columns`` =
+    test {
+      do!
+        p.Columns
+        |> Seq.map (fun c -> c.Name)
+        |> Seq.sort
+        |> Seq.toList
+        |> assertEquals ["age"; "name"]
+    }
 
   let ``test Table.Insert`` =
-    use entity = database.Connect()
-    let p = database.Public.Persons
     test {
-      do! p.TablePath.TableName |> assertEquals "persons"
+      use entity = database.Connect()
+      entity.Insert
+        ( p
+        , fun r ->
+            p.Name.[r] <- Sql.String("Miku")
+            p.Age.[r] <- Sql.Int(16L)
+        ) |> ignore<Long>
       return ()
     }
