@@ -8,6 +8,8 @@ module Ast =
       of Long
     | String
       of string
+    | Column
+      of ColumnPath
     | Add
       of Expression * Expression
     | Max
@@ -30,7 +32,7 @@ module Ast =
     | Asterisk
       of string
     | Expression
-      of Expression * option<string>
+      of Expression
 
   type Order =
     | Ascending
@@ -47,12 +49,22 @@ module Ast =
   type SelectStatement =
     {
       Fields:
-        SelectField * list<SelectField>
-      Where:
-        Condition
-      GroupBy:
-        list<Expression>
+        list<SelectField>
+      From:
+        TablePath
     }
+  with
+    static member Create(tablePath) =
+      {
+        Fields =
+          []
+        From =
+          tablePath
+      }
+    member this.AddField(expression) =
+      { this with
+          Fields = Expression expression :: this.Fields
+      }
 
   type ValueInsertStatement =
     {

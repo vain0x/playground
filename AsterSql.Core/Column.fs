@@ -16,5 +16,5 @@ type Column<'x>(columnPath: ColumnPath) =
       r.[this] <- value :> IExpressionBuilder
 
   member this.Item
-    with get (r: IReadOnlyRecord) =
+    with get (r: IReadOnlyValueRecord) =
       r.[this] :?> 'x

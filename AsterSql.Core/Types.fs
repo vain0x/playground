@@ -78,8 +78,13 @@ type DatabaseSchema(schemaPath) as this =
 
   member this.Tables =
     tables.Value
-    
-type IReadOnlyRecord =
+
+type IReadOnlyValueRecord =
+  abstract Item: Column -> obj with get
+
+type IValueRecord =
+  inherit IReadOnlyValueRecord
+
   abstract Item: Column -> obj with get, set
 
 type IExpressionRecord =
@@ -89,9 +94,7 @@ type DictionaryExpressionRecord() =
   let dictionary = Dictionary()
 
   member this.ToMap() =
-    dictionary
-    |> Seq.map (fun (KeyValue (key, value)) -> (key, value))
-    |> Map.ofSeq
+    dictionary |> Dictionary.toMap
 
   interface IExpressionRecord with
     override this.Item
@@ -99,6 +102,17 @@ type DictionaryExpressionRecord() =
         dictionary.[column.UniqueName]
       and set column value =
         dictionary.Add(column.UniqueName, value)
+
+type DictionaryValueRecord() =
+  let dictionary = Dictionary()
+
+  member this.ToMap() =
+    dictionary |> Dictionary.toMap
+
+  interface IReadOnlyValueRecord with
+    override this.Item
+      with get column =
+        dictionary.[column.UniqueName]
 
 [<AbstractClass>]
 type Database(databasePath) as this =
@@ -131,7 +145,7 @@ type Database(databasePath) as this =
 and
   [<AbstractClass>]
   Entity() =
-  abstract ExecuteSelect: SelectStatement -> seq<IReadOnlyRecord>
+  abstract ExecuteSelect: SelectStatement -> seq<IReadOnlyValueRecord>
 
   abstract ExecuteValueInsert: ValueInsertStatement -> Long
 

@@ -39,7 +39,7 @@ module MemoryDatabaseTest =
         |> assertEquals ["age"; "name"]
     }
 
-  let ``test Table.Insert`` =
+  let ``test Entity.Insert`` =
     test {
       use entity = database.Connect()
       entity.Insert
