@@ -51,8 +51,6 @@
     <Compile Include="Types.fs" />
     <Compile Include="DatabaseType.fs" />
     <Compile Include="Column.fs" />
-    <Compile Include="Entity.fs" />
-    <Compile Include="Database.fs" />
     <Compile Include="MemoryDatabase.fs" />
   </ItemGroup>
   <PropertyGroup>

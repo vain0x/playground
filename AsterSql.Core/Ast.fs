@@ -56,8 +56,8 @@ module Ast =
 
   type ValueInsertStatement =
     {
-      TableName:
-        string
+      TablePath:
+        TablePath
       Record:
         Map<string, Expression>
     }

@@ -1,6 +1,7 @@
 ﻿namespace AsterSql.Core
 
 open System
+open System.Collections.Generic
 open System.Reflection
 
 type DbValue =
@@ -18,43 +19,37 @@ type MemoryRelation(relation: Relation, records: seq<MemoryRecord>) =
 
   member this.Records = records
 
-type MemoryColumn<'x>(columnPath) =
-  inherit Column<'x>(columnPath)
+type MemoryTable private (table: Table, records: ResizeArray<_>) =
+  inherit MemoryRelation(table, records)
 
-[<AbstractClass>]
-type MemoryTable(tablePath) as this =
-  inherit Table()
+  new(table) =
+    MemoryTable(table, ResizeArray())
 
-  let records = ResizeArray()
+  member this.Table = table
 
-  let relation =
-    lazy (
-      MemoryRelation(this, records)
-    )
+  member this.Records = records
 
   member this.Insert(record) =
     records.Add(record)
     0L // TODO: Return generated ID.
 
-  override this.TablePath = tablePath
+type MemoryEntity(database: Database) =
+  inherit Entity()
 
-type MemoryDatabaseSchema<'entity when 'entity :> Entity>(schemaPath) =
-  inherit DatabaseSchema<'entity>()
+  let schemas =
+    database.Schemas |> Map.map
+      (fun schemaName schema ->
+        schema.Tables |> Map.map
+          (fun tableName table ->
+            MemoryTable(table)
+          )
+      )
 
-  let entity: 'entity =
-    let arguments = [| schemaPath :> obj |]
-    Activator.CreateInstance(typeof<'entity>, arguments) :?> 'entity
-
-  override this.Path = schemaPath
-
-  override this.Connect(): 'entity =
-    entity
-
-type MemoryDatabase(databaseName: string) =
-  inherit Database()
-
-  let schemas = dict []
-
+  let tryFindTable (tablePath: TablePath) =
+    schemas
+    |> Map.tryFind tablePath.SchemaName
+    |> Option.bind (Map.tryFind tablePath.TableName)
+  
   let rec evaluateExpression (expression: Expression) =
     let eval = evaluateExpression
     match expression with
@@ -86,39 +81,17 @@ type MemoryDatabase(databaseName: string) =
         NotImplementedException() |> raise
     | Max value ->
       NotImplementedException() |> raise
-
-  member this.GetOrCreateSchema<'entity when 'entity :> Entity>(schemaName) =
-    match schemas.TryGetValue(schemaName) with
-    | (true, schema) ->
-      schema
-    | (false, _) ->
-      let schema = MemoryDatabaseSchema<'entity>(this.Path / schemaName) :> DatabaseSchema
-      schemas.Add(schemaName, schema)
-      schema
-
-  override val Path = DatabasePathRoot.Instance / databaseName
-
-  override this.GetSchema<'entity when 'entity :> Entity>(schemaName) =
-     this.GetOrCreateSchema(schemaName) :?> DatabaseSchema<'entity>
-
-  override this.ExecuteSelect<'entity when 'entity :> Entity>
-    ( entity: 'entity
-    , selectStatement
-    ) =
+  
+  override this.ExecuteSelect(selectStatement) =
     NotImplementedException() |> raise
 
-  override this.ExecuteValueInsert<'entity when 'entity :> Entity>
-    ( entity: 'entity
-    , valueInsertStatement
-    ) =
+  override this.ExecuteValueInsert(valueInsertStatement) =
     let table =
-      entity.TryGetTable(valueInsertStatement.TableName)
+      tryFindTable valueInsertStatement.TablePath
       |> Option.get // TODO: throw better exception
-      :?> MemoryTable
     let record =
-      table.Columns.Value
-      |> Seq.map
-        (fun column ->
+      table.Table.Columns.Value
+      |> Seq.map(fun column ->
           match valueInsertStatement.Record |> Map.tryFind column.Name with
           | Some expression ->
             expression |> evaluateExpression
@@ -127,3 +100,17 @@ type MemoryDatabase(databaseName: string) =
         )
       |> Seq.toArray
     table.Insert(record)
+
+  override this.Dispose() =
+    ()
+
+type MemoryDatabase(databaseName: string) as this =
+  inherit Database(DatabasePathRoot.Instance / databaseName)
+
+  let entity =
+    lazy (
+      new MemoryEntity(this)
+    )
+
+  override this.Connect(): Entity =
+    entity.Value :> Entity

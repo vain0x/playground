@@ -17,6 +17,11 @@ type IExpressionRecord =
 type DictionaryExpressionRecord() =
   let dictionary = dict []
 
+  member this.ToMap() =
+    dictionary
+    |> Seq.map (fun (KeyValue (key, value)) -> (key, value))
+    |> Map.ofSeq
+
   interface IExpressionRecord with
     override this.Item
       with get columnName =
@@ -26,6 +31,18 @@ type DictionaryExpressionRecord() =
 
 type Sql() =
   do ()
+
+[<AbstractClass>]
+type Entity() =
+  abstract ExecuteSelect: SelectStatement -> seq<IReadOnlyRecord>
+
+  abstract ExecuteValueInsert: ValueInsertStatement -> Long
+
+  abstract Dispose: unit -> unit
+
+  interface IDisposable with
+    override this.Dispose() =
+      this.Dispose()
 
 [<AbstractClass>]
 type Column() =
@@ -54,23 +71,14 @@ type Relation() as this =
   member this.Columns = columns
 
 [<AbstractClass>]
-type Table() =
+type Table(tablePath) =
   inherit Relation()
 
-  abstract TablePath: TablePath
+  member this.TablePath =
+    (tablePath: TablePath)
 
 [<AbstractClass>]
-type DatabaseSchema() =
-  abstract Path: DatabaseSchemaPath
-
-  member this.DatabaseName =
-    this.Path.DatabaseName
-
-  member this.Name =
-    this.Path.SchemaName
-
-[<AbstractClass>]
-type Entity() as this =
+type DatabaseSchema(schemaPath) as this =
   let tables =
     lazy (
       this.GetType().GetProperties()
@@ -87,38 +95,45 @@ type Entity() as this =
       |> Map.ofSeq
     )
 
-  member this.TryGetTable(tableName) =
-    tables.Value |> Map.tryFind tableName
+  member this.Path: DatabaseSchemaPath =
+    schemaPath
 
-  member val Sql = Sql()
+  member this.DatabaseName =
+    this.Path.DatabaseName
 
-  abstract Dispose: unit -> unit
+  member this.Name =
+    this.Path.SchemaName
 
-  interface IDisposable with
-    override this.Dispose() =
-      this.Dispose()
+  member this.Tables =
+    tables.Value
 
 [<AbstractClass>]
-type DatabaseSchema<'entity when 'entity :> Entity>() =
-  inherit DatabaseSchema()
+type Database(databasePath) as this =
+  let schemas =
+    lazy (
+      this.GetType().GetProperties()
+      |> Array.choose
+        (fun pi ->
+          if typeof<DatabaseSchema>.IsAssignableFrom(pi.PropertyType)
+            && pi.GetMethod |> isNull |> not
+          then
+            let schema = pi.GetValue(this) :?> DatabaseSchema
+            (schema.Name, schema) |> Some
+          else
+            None
+        )
+      |> Map.ofSeq
+    )
 
-  abstract Connect: unit -> 'entity
+  abstract Connect: unit -> Entity
   
-[<AbstractClass>]
-type Database() =
-  abstract Path: DatabasePath
-
-  abstract GetSchema<'entity when 'entity :> Entity> :
-    string -> DatabaseSchema<'entity>
-
-  abstract ExecuteSelect<'entity when 'entity :> Entity> :
-    'entity * SelectStatement -> seq<IReadOnlyRecord>
-
-  abstract ExecuteValueInsert<'entity when 'entity :> Entity> :
-    'entity * ValueInsertStatement -> Long
+  member this.Path = databasePath
 
   member this.Name =
     this.Path.DatabaseName
+
+  member this.Schemas =
+    schemas.Value
 
 [<AbstractClass>]
 type Transaction() =
@@ -129,3 +144,20 @@ type Transaction() =
   interface IDisposable with
     override this.Dispose() =
       this.Dispose()
+
+[<CompilationRepresentation(CompilationRepresentationFlags.ModuleSuffix)>]
+module Extension =
+  open System.Runtime.CompilerServices
+
+  [<Extension>]
+  let Insert (this: Entity, table: Table, assign: Action<IExpressionRecord>) =
+    let record = DictionaryExpressionRecord()
+    assign.Invoke(record)
+    let statement =
+      {
+        TablePath =
+          table.TablePath
+        Record =
+          record.ToMap()
+      }
+    this.ExecuteValueInsert(statement)

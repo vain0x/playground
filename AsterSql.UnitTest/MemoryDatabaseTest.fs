@@ -6,35 +6,32 @@ open AsterSql.Core
 
 module MemoryDatabaseTest =
   [<Sealed>]
-  type PersonTable private (tablePath) =
-    inherit MemoryTable(tablePath)
+  type PersonTable(schemaPath) as this =
+    inherit Table((schemaPath: DatabaseSchemaPath) / "persons")
 
-    new(schemaPath) =
-      PersonTable((schemaPath: DatabaseSchemaPath) / "persons")
+    member val Name = Column<string>(this.TablePath / "name")
 
-    member val Name = MemoryColumn<string>(tablePath / "name")
-
-    member val Age = MemoryColumn<Long>(tablePath / "age")
+    member val Age = Column<Long>(this.TablePath / "age")
 
   [<Sealed>]
-  type TestEntity(schemaPath) =
-    inherit Entity()
+  type PublicDatabaseSchema(databasePath) as this =
+    inherit DatabaseSchema((databasePath: DatabasePath) / "public")
 
     member val Persons =
-      PersonTable(schemaPath)
+      PersonTable(this.Path)
 
-    override this.Dispose() =
-      ()
+  [<Sealed>]
+  type TestDatabase() as this =
+    inherit MemoryDatabase("TestDatabase")
 
-  let database = MemoryDatabase("database")
+    member val Public = PublicDatabaseSchema(this.Path)
+
+  let database = TestDatabase()
 
   let ``test Table.Insert`` =
-    let schema = database.GetSchema<TestEntity>("public")
-    use entity = schema.Connect()
-    let p = entity.Persons
-    database.InsertValues
-      (p
-      , fun r ->
-          p.Name.[r] <- 
-      )
-    ()
+    use entity = database.Connect()
+    let p = database.Public.Persons
+    test {
+      do! p.TablePath.TableName |> assertEquals "persons"
+      return ()
+    }
