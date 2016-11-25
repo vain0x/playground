@@ -17,6 +17,43 @@ type IMemoryRecord =
 type MemoryRecord =
   array<DbValue>
 
+[<CompilationRepresentation(CompilationRepresentationFlags.ModuleSuffix)>]
+module MemoryRecord =
+  let empty =
+    { new IMemoryRecord with
+        override this.Item
+          with get _ =
+            InvalidOperationException() |> raise
+          and set _ _ =
+            InvalidOperationException() |> raise
+    }
+
+type MemorySource<'y, 'x> =
+  seq<'y * seq<'x>>
+
+type MemorySource =
+  MemorySource<list<Column>, IMemoryRecord>
+
+type MemoryTarget =
+  seq<DbValue>
+
+[<CompilationRepresentation(CompilationRepresentationFlags.ModuleSuffix)>]
+module MemorySource =
+  let single: MemorySource =
+    ([], MemoryRecord.empty |> Seq.singleton) |> Seq.singleton
+
+  let ofGroup columns xs: MemorySource =
+    (columns, xs) |> Seq.singleton
+
+  let rec convert f _: MemoryTarget =
+    todo ()
+
+  let zip _ _: MemorySource<_ * _, _> =
+    todo ()
+
+  let aggregate _ _: MemoryTarget =
+    todo ()
+
 type MemoryRelation(relation: Relation, records: seq<MemoryRecord>) =
   member this.Relation = relation
 
@@ -42,6 +79,9 @@ type MemoryRelation(relation: Relation, records: seq<MemoryRecord>) =
                     NotImplementedException() |> raise
           }
     }
+
+  member this.MemorySource: MemorySource =
+    ([], this.MemoryRecords) |> Seq.singleton
 
 type MemoryTable private (table: Table, records: ResizeArray<_>) =
   inherit MemoryRelation(table, records)
@@ -74,11 +114,11 @@ type MemoryEntity(database: Database) =
     |> Map.tryFind tablePath.SchemaName
     |> Option.bind (Map.tryFind tablePath.TableName)
   
-  let rec evaluateExpression (source: seq<IMemoryRecord>) (expression: Expression) =
+  let rec evaluateExpression (source: MemorySource) (expression: Expression): MemoryTarget =
     let eval = evaluateExpression source
     match expression with
     | Expression.Null ->
-      VNull |> Seq.replicate (source |> Seq.length)
+      source |> MemorySource.convert (fun _ -> VNull)
     | Int value ->
       let value =
         match value |> box with
@@ -87,24 +127,28 @@ type MemoryEntity(database: Database) =
         | :? Long as value ->
           value |> VInt
         | _ ->
-          NotImplementedException() |> raise
-      value |> Seq.replicate (source |> Seq.length)
+          todo ()
+      source |> MemorySource.convert (fun _ -> value)
     | String value ->
       let value =
         match value with
         | null -> VNull
         | _ ->
           value |> string |> VString
-      value |> Seq.replicate (source |> Seq.length)
+      source |> MemorySource.convert (fun _ -> value)
     | Column columnPath ->
-      seq {
-        for record in source ->
-          record.[columnPath]
-      }
+      source |> MemorySource.convert (fun record -> record.[columnPath])
+    | ConstantAggregation expression ->
+      source |> MemorySource.aggregate
+        (fun _ xs ->
+          expression |> evaluateExpression MemorySource.single
+          |> Seq.head
+        )
     | Add (l, r) ->
-      seq {
-        for (l, r) in Seq.zip (l |> eval) (r |> eval) ->
-          match (l, r) with
+      (l |> eval, r |> eval)
+      ||> MemorySource.zip
+      |> MemorySource.convert
+        (function
           | (VNull, _)
           | (_, VNull) ->
             VNull
@@ -113,16 +157,34 @@ type MemoryEntity(database: Database) =
           | (VString l, VString r) ->
             (l + r) |> VString
           | _ ->
-            NotImplementedException() |> raise
-      }
-    | Max value ->
-      NotImplementedException() |> raise
-  
+            todo ()
+        )
+    | Max expression ->
+      source |> MemorySource.aggregate
+        (fun columns xs ->
+          expression |> evaluateExpression (MemorySource.ofGroup columns xs)
+          |> Seq.max // or VNull
+        )
+
   override this.ExecuteSelect(selectStatement) =
     let relation =
       tryFindTable selectStatement.From
       |> Option.get
-    evaluateExpression relation.MemoryRecords selectStatement.Fields
+    let columns =
+      selectStatement.Fields
+      |> Seq.collect
+        (function
+          | Asterisk _ -> todo ()
+          | Expression (name, expression) ->
+            Seq.singleton (name, expression)
+          )
+    let record =
+      columns |> Seq.map
+        (fun (name, expression) ->
+          (name, expression |> evaluateExpression relation.MemorySource)
+        )
+      |> DictionaryValueRecord.ofSeq
+    record
 
   override this.ExecuteValueInsert(valueInsertStatement) =
     let table =

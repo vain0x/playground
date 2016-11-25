@@ -1,58 +1,15 @@
 ﻿namespace AsterSql.Core
 
-type ColumnPath =
-  {
-    DatabaseName:
-      string
-    SchemaName:
-      string
-    TableName:
-      string
-    ColumnName:
-      string
-  }
+type DatabasePathRoot private () =
+  static member val Instance = DatabasePathRoot()
 
-type TablePath =
-  {
-    DatabaseName:
-      string
-    SchemaName:
-      string
-    TableName:
-      string
-  }
-with
-  static member (/) (this: TablePath, columnName): ColumnPath =
+  static member (/) (this: DatabasePathRoot, databaseName): DatabasePath =
     {
       DatabaseName =
-        this.DatabaseName
-      SchemaName =
-        this.SchemaName
-      TableName =
-        this.TableName
-      ColumnName =
-        columnName
+        databaseName
     }
 
-type DatabaseSchemaPath =
-  {
-    DatabaseName:
-      string
-    SchemaName:
-      string
-  }
-with
-  static member (/) (this: DatabaseSchemaPath, tableName): TablePath =
-    {
-      DatabaseName =
-        this.DatabaseName
-      SchemaName =
-        this.SchemaName
-      TableName =
-        tableName
-    }
-
-type DatabasePath =
+and DatabasePath =
   {
     DatabaseName:
       string
@@ -66,11 +23,42 @@ with
         schemaName
     }
 
-type DatabasePathRoot private () =
-  static member val Instance = DatabasePathRoot()
-
-  static member (/) (this: DatabasePathRoot, databaseName) =
+and DatabaseSchemaPath =
+  {
+    DatabaseName:
+      string
+    SchemaName:
+      string
+  }
+with
+  static member (/) (this: DatabaseSchemaPath, tableName): TablePath =
     {
-      DatabaseName =
-        databaseName
+      ParentPath =
+        this |> Some
+      TableName =
+        tableName
     }
+
+and TablePath =
+  {
+    ParentPath:
+      option<DatabaseSchemaPath>
+    TableName:
+      string
+  }
+with
+  static member (/) (this: TablePath, columnName): ColumnPath =
+    {
+      TablePath =
+        this
+      ColumnName =
+        columnName
+    }
+
+and ColumnPath =
+  {
+    TablePath:
+      TablePath
+    ColumnName:
+      string
+  }

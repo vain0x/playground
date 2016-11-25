@@ -4,25 +4,6 @@ open System
 open System.Collections.Generic
 open System.Reflection
 
-type DatabaseType =
-  | TInt
-  | TString
-
-[<AbstractClass>]
-type Column() =
-  abstract Path: ColumnPath
-  abstract Type: DatabaseType
-
-  member this.Name =
-    this.Path.ColumnName
-
-  member this.UniqueName =
-    sprintf "_%s__%s__%s__%s"
-      this.Path.DatabaseName
-      this.Path.SchemaName
-      this.Path.TableName
-      this.Path.ColumnName
-
 [<AbstractClass>]
 type Relation() as this =
   let columns =
