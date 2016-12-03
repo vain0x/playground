@@ -20,3 +20,6 @@ module Operators =
       Some y
     | _ ->
       None
+
+  let fold (xs: #seq<'x>) (f: 'x -> 's -> 's) (s: 's): 's =
+    xs |> Seq.fold (flip f) s 
