@@ -26,3 +26,10 @@ module Option =
     with
     | e ->
       Some e
+
+  let ofTry =
+    function
+    | (true, x) ->
+      Some x
+    | (false, _) ->
+      None
