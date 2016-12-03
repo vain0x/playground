@@ -49,6 +49,7 @@
     <Compile Include="Dictionary.fs" />
     <Compile Include="Seq.fs" />
     <Compile Include="List.fs" />
+    <Compile Include="Map.fs" />
   </ItemGroup>
   <PropertyGroup>
     <MinimumVisualStudioVersion Condition="'$(MinimumVisualStudioVersion)' == ''">12</MinimumVisualStudioVersion>
