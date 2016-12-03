@@ -46,7 +46,9 @@
     <Compile Include="AssemblyInfo.fs" />
     <Compile Include="Operators.fs" />
     <Compile Include="Option.fs" />
+    <Compile Include="Dictionary.fs" />
     <Compile Include="Seq.fs" />
+    <Compile Include="List.fs" />
   </ItemGroup>
   <PropertyGroup>
     <MinimumVisualStudioVersion Condition="'$(MinimumVisualStudioVersion)' == ''">12</MinimumVisualStudioVersion>
