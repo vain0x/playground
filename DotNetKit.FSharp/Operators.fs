@@ -13,3 +13,10 @@ module Operators =
 
   let todo message =
     NotImplementedException(message) |> raise
+
+  let tryCast<'x, 'y> (x: 'x) =
+    match x |> box with
+    | :? 'y as y ->
+      Some y
+    | _ ->
+      None
