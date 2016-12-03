@@ -1,5 +1,7 @@
 ﻿namespace DotNetKit.FSharp
 
+open System
+
 [<AutoOpen>]
 module Operators =
   let tap f x =
@@ -8,3 +10,6 @@ module Operators =
 
   let flip f x y =
     f y x
+
+  let todo message =
+    NotImplementedException(message) |> raise
