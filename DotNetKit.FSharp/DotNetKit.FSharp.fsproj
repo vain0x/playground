@@ -44,6 +44,7 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="AssemblyInfo.fs" />
+    <Compile Include="Operators.fs" />
     <Compile Include="Option.fs" />
   </ItemGroup>
   <PropertyGroup>
