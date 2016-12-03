@@ -18,3 +18,11 @@ module Option =
     with
     | _ ->
       None
+
+  let tryCatch f x =
+    try
+      f x
+      None
+    with
+    | e ->
+      Some e
