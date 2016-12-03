@@ -42,6 +42,7 @@
   <ItemGroup>
     <Compile Include="AssemblyInfo.fs" />
     <Compile Include="Option.fs" />
+    <Compile Include="Result.fs" />
     <Content Include="packages.config" />
   </ItemGroup>
   <ItemGroup>
@@ -54,6 +55,13 @@
       <AssemblyName>FSharp.Core.dll</AssemblyName>
       <HintPath>$(MSBuildExtensionsPath32)\..\Reference Assemblies\Microsoft\FSharp\.NETCore\$(TargetFSharpCoreVersion)\FSharp.Core.dll</HintPath>
     </Reference>
+  </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\DotNetKit.FSharp\DotNetKit.FSharp.fsproj">
+      <Name>DotNetKit.FSharp</Name>
+      <Project>{be0f0bf5-e27a-4731-9ccd-92dae3b891ab}</Project>
+      <Private>True</Private>
+    </ProjectReference>
   </ItemGroup>
   <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 
        Other similar extension points exist, see Microsoft.Common.targets.
