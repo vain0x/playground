@@ -52,6 +52,7 @@
   <ItemGroup>
     <Compile Include="AssemblyInfo.fs" />
     <Compile Include="ComputationExpressionTest.fs" />
+    <Compile Include="OptionTest.fs" />
     <Content Include="packages.config" />
   </ItemGroup>
   <ItemGroup>
