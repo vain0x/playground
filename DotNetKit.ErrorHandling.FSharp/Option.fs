@@ -2,6 +2,7 @@
 
 open DotNetKit.ErrorHandling
 
+[<RequireQualifiedAccess>]
 module Option =
   let ofFSharpOption<'x> =
     function
