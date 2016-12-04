@@ -7,6 +7,8 @@ Project("{F2A71F9B-5D33-465A-A702-920D77279786}") = "DotNetKit.ErrorHandling.FSh
 EndProject
 Project("{F2A71F9B-5D33-465A-A702-920D77279786}") = "DotNetKit.FSharp", "DotNetKit.FSharp\DotNetKit.FSharp.fsproj", "{BE0F0BF5-E27A-4731-9CCD-92DAE3B891AB}"
 EndProject
+Project("{F2A71F9B-5D33-465A-A702-920D77279786}") = "DotNetKit.FSharp.UnitTest", "DotNetKit.FSharp.UnitTest\DotNetKit.FSharp.UnitTest.fsproj", "{7FFD3E86-27A5-4972-B53E-B86B177C0642}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -21,6 +23,10 @@ Global
 		{BE0F0BF5-E27A-4731-9CCD-92DAE3B891AB}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{BE0F0BF5-E27A-4731-9CCD-92DAE3B891AB}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{BE0F0BF5-E27A-4731-9CCD-92DAE3B891AB}.Release|Any CPU.Build.0 = Release|Any CPU
+		{7FFD3E86-27A5-4972-B53E-B86B177C0642}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{7FFD3E86-27A5-4972-B53E-B86B177C0642}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{7FFD3E86-27A5-4972-B53E-B86B177C0642}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{7FFD3E86-27A5-4972-B53E-B86B177C0642}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
