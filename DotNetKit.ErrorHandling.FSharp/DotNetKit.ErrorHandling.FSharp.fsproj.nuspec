@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="utf-8"?>
+<package xmlns="http://schemas.microsoft.com/packaging/2010/07/nuspec.xsd">
+  <metadata>
+    <id>DotNetKit.ErrorHandling.FSharp</id>
+    <version>1.0.0</version>
+    <authors>vain0</authors>
+    <language>en-US</language>
+    <projectUrl>https://github.com/DotNetKit/DotNetKit.FSharp</projectUrl>
+    <licenseUrl>http://opensource.org/licenses/MIT</licenseUrl>
+    <description>
+      Provides interoperability between C# and F# for DotNetKit.ErrorHandling.
+    </description>
+  </metadata>
+  <files>
+    <file src="bin\Release\*.dll" target="lib" />
+  </files>
+</package>
