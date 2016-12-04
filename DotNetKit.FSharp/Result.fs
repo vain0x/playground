@@ -117,3 +117,43 @@ module Result =
 
   let forallError (p: 'e -> bool) (result: Result<_, 'e>): bool =
     result |> tryGetError |> Option.forall p
+
+namespace DotNetKit.FSharp.ComputationExpression
+  open DotNetKit.FSharp.ErrorHandling
+  
+  [<Sealed>]
+  type ResultBuilder internal () =
+    member this.Return(x) =
+      Success x
+
+    member this.ReturnFrom(result: Result<_, _>) =
+      result
+
+    member this.Bind(m, f) =
+      m |> Result.bind f
+
+    member this.Using(x, f) =
+      using x f
+
+  [<Sealed>]
+  type ResultErrorBuilder internal () =
+    member this.Return(x) =
+      Failure x
+
+    member this.ReturnFrom(result: Result<_, _>) =
+      result
+
+    member this.Bind(m, f) =
+      m |> Result.bindError f
+
+    member this.Using(x, f) =
+      using x f
+
+namespace DotNetKit.FSharp.ErrorHandling
+  open DotNetKit.FSharp.ComputationExpression
+
+  [<AutoOpen>]
+  module ResultSyntax =
+    let result = ResultBuilder()
+
+    let resultError = ResultErrorBuilder()
