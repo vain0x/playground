@@ -2,5 +2,5 @@
 
 [<RequireQualifiedAccess>]
 module List =
-  let cons x xs =
+  let cons (x: 'x) (xs: list<'x>): list<'x> =
     x :: xs

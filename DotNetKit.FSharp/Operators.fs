@@ -4,17 +4,17 @@ open System
 
 [<AutoOpen>]
 module Operators =
-  let tap f x =
+  let tap (f: 'x -> unit) (x: 'x): 'x =
     f x
     x
 
-  let flip f x y =
+  let flip (f: 'y -> 'x -> 'z) (x: 'x) (y: 'y): 'z =
     f y x
 
-  let todo message =
+  let todo (message: string): _ =
     NotImplementedException(message) |> raise
 
-  let tryCast<'x, 'y> (x: 'x) =
+  let tryCast<'x, 'y> (x: 'x): option<'y> =
     match x |> box with
     | :? 'y as y ->
       Some y
