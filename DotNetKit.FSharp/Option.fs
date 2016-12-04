@@ -33,3 +33,28 @@ module Option =
       Some x
     | (false, _) ->
       None
+
+namespace DotNetKit.FSharp.ComputationExpression
+  [<Sealed>]
+  type OptionBuilder internal () =
+    member this.Zero() =
+      None
+
+    member this.Return(x) =
+      Some x
+
+    member this.ReturnFrom(option: option<_>) =
+      option
+
+    member this.Bind(m, f) =
+      m |> Option.bind f
+
+    member this.Using(x, f) =
+      using x f
+
+namespace DotNetKit.FSharp
+  open DotNetKit.FSharp.ComputationExpression
+
+  [<AutoOpen>]
+  module OptionSyntax =
+    let option = OptionBuilder()

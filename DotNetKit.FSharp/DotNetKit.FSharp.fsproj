@@ -46,6 +46,8 @@
     <Compile Include="AssemblyInfo.fs" />
     <Compile Include="Types.fs" />
     <Compile Include="Operators.fs" />
+    <Compile Include="ComputationExpression.fs" />
+    <Compile Include="Imperative.fs" />
     <Compile Include="Option.fs" />
     <Compile Include="Result.fs" />
     <Compile Include="Dictionary.fs" />
@@ -53,6 +55,7 @@
     <Compile Include="List.fs" />
     <Compile Include="Set.fs" />
     <Compile Include="Map.fs" />
+    <Compile Include="String.fs" />
   </ItemGroup>
   <PropertyGroup>
     <MinimumVisualStudioVersion Condition="'$(MinimumVisualStudioVersion)' == ''">12</MinimumVisualStudioVersion>
