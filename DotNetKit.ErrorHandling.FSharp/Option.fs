@@ -4,12 +4,12 @@ open DotNetKit.ErrorHandling
 
 [<RequireQualifiedAccess>]
 module Option =
-  let ofFSharpOption<'x> =
+  let toCSharpOption<'x> =
     function
     | Some x ->
       Option.Some(x)
     | None ->
       Option<'x>.None
 
-  let toFSharpOption (this: Option<'x>) =
+  let ofCSharpOption (this: Option<'x>) =
     this.Match(Some, fun () -> None)
