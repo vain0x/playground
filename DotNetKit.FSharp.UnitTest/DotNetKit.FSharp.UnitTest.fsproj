@@ -53,6 +53,7 @@
     <Compile Include="AssemblyInfo.fs" />
     <Compile Include="ComputationExpressionTest.fs" />
     <Compile Include="OptionTest.fs" />
+    <Compile Include="StringTest.fs" />
     <Content Include="packages.config" />
   </ItemGroup>
   <ItemGroup>

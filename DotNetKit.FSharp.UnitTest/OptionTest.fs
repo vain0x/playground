@@ -1,4 +1,4 @@
-﻿namespace DotNetKit.UnitTest
+﻿namespace DotNetKit.FSharp.UnitTest
 
 open Persimmon
 open Persimmon.Syntax.UseTestNameByReflection
