@@ -10,8 +10,8 @@ module Result =
     function
     | Ok x ->
       Result.Success<'x, 'e>(x)
-    | Failure e ->
+    | Error e ->
       Result.Failure<'x, 'e>(e)
 
   let ofCSharpResult<'x, 'e> (result: ErrorHandling.Result<'x, 'e>): Result<'x, 'e> =
-    result.Match(Ok, Failure)
+    result.Match(Ok, Error)

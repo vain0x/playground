@@ -6,99 +6,99 @@ module Result =
     match result with
     | Ok _ ->
       true
-    | Failure _ ->
+    | Error _ ->
       false
 
-  let isFailure (result: Result<_, _>): bool =
+  let isError (result: Result<_, _>): bool =
     result |> isOk |> not
 
   let tryGet (result: Result<'x, _>): option<'x> =
     match result with
     | Ok x ->
       Some x
-    | Failure _ ->
+    | Error _ ->
       None
 
   let tryGetError (result: Result<_, 'e>): option<'e> =
     match result with
     | Ok _ ->
       None
-    | Failure e ->
+    | Error e ->
       Some e
       
   let getOr (value: 'x) (result: Result<'x, _>): 'x =
     match result with
     | Ok x ->
       x
-    | Failure _ ->
+    | Error _ ->
       value
 
   let getErrorOr (error: 'e) (result: Result<_, 'e>): 'e =
     match result with
     | Ok _ ->
       error
-    | Failure e ->
+    | Error e ->
       e
 
   let getOrElse (getValue: unit -> 'x) (result: Result<'x, _>): 'x =
     match result with
     | Ok x ->
       x
-    | Failure _ ->
+    | Error _ ->
       getValue ()
 
   let getErrorOrElse (getError: unit -> 'e) (result: Result<_, 'e>): 'e =
     match result with
     | Ok _ ->
       getError ()
-    | Failure e ->
+    | Error e ->
       e
 
   let getOrThrow (result: Result<'x, _>): 'x =
     match result with
     | Ok x ->
       x
-    | Failure _ ->
+    | Error _ ->
       invalidOp "Result doesn't have a value."
 
   let getErrorOrThrow (result: Result<_, 'e>): 'e =
     match result with
     | Ok _ ->
       invalidOp "Result doesn't have an error."
-    | Failure e ->
+    | Error e ->
       e
 
   let flatten (result: Result<Result<'x, 'e>, 'e>): Result<'x, 'e> =
     match result with
     | Ok (Ok x) ->
       Ok x
-    | Ok (Failure e) ->
-      Failure e
-    | Failure e ->
-      Failure e
+    | Ok (Error e) ->
+      Error e
+    | Error e ->
+      Error e
 
   let flattenError (result: Result<'x, Result<'x, 'e>>): Result<'x, 'e> =
     match result with
     | Ok x ->
       Ok x
-    | Failure (Ok x) ->
+    | Error (Ok x) ->
       Ok x
-    | Failure (Failure e) ->
-      Failure e
+    | Error (Error e) ->
+      Error e
 
   let map (f: 'x -> 'y) (result: Result<'x, 'e>): Result<'y, 'e> =
     match result with
     | Ok x ->
       Ok (f x)
-    | Failure e ->
-      Failure e
+    | Error e ->
+      Error e
 
   let mapError (f: 'e -> 'f) (result: Result<'x, 'e>): Result<'x, 'f> =
     match result with
     | Ok x ->
       Ok x
-    | Failure e ->
-      Failure (f e)
+    | Error e ->
+      Error (f e)
       
   let bind (f: 'x -> Result<'y, 'e>) (result: Result<'x, 'e>): Result<'y, 'e> =
     result |> map f |> flatten
@@ -138,7 +138,7 @@ namespace DotNetKit.FSharp.ComputationExpression
   [<Sealed>]
   type ResultErrorBuilder internal () =
     member this.Return(x) =
-      Failure x
+      Error x
 
     member this.ReturnFrom(result: Result<_, _>) =
       result

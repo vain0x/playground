@@ -4,7 +4,7 @@
 
   /// Represents an intermediate result of imperative operations.
   /// Ok () means that it continues to calculate;
-  /// Failure x means that the total computation resulted in x.
+  /// Error x means that the total computation resulted in x.
   type private ImperativeResult<'x> =
     Result<unit, 'x>
 
@@ -18,21 +18,21 @@
       | Ok () ->
         // Never come because of the conversion rule.
         InvalidOperationException() |> raise
-      | Failure x ->
+      | Error x ->
         x
 
     member this.Run(f: unit -> ImperativeResult<unit>) =
       f () |> ignore
 
     member this.Return(x) =
-      Failure x
+      Error x
 
     member this.Combine(r: ImperativeResult<'x>, f: unit -> ImperativeResult<'x>) =
       match r with
       | Ok () ->
         f ()
-      | Failure x ->
-        Failure x
+      | Error x ->
+        Error x
 
     member this.Using(x: 'x, f: 'x -> ImperativeResult<'y>) =
       using x f
