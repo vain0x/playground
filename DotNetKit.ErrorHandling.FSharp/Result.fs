@@ -8,10 +8,10 @@ open DotNetKit.FSharp.ErrorHandling
 module Result =
   let toCSharpResult<'x, 'e> : Result<'x, 'e> -> ErrorHandling.Result<'x, 'e> =
     function
-    | Success x ->
+    | Ok x ->
       Result.Success<'x, 'e>(x)
-    | Failure e ->
+    | Error e ->
       Result.Failure<'x, 'e>(e)
 
   let ofCSharpResult<'x, 'e> (result: ErrorHandling.Result<'x, 'e>): Result<'x, 'e> =
-    result.Match(Success, Failure)
+    result.Match(Ok, Error)
