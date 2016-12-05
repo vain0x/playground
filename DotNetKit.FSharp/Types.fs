@@ -2,5 +2,5 @@
 
 namespace DotNetKit.FSharp.ErrorHandling
   type Result<'x, 'e> =
-    | Success of 'x
+    | Ok of 'x
     | Failure of 'e

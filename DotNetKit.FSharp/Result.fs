@@ -2,101 +2,101 @@
 
 [<RequireQualifiedAccess>]
 module Result =
-  let isSuccess (result: Result<_, _>): bool =
+  let isOk (result: Result<_, _>): bool =
     match result with
-    | Success _ ->
+    | Ok _ ->
       true
     | Failure _ ->
       false
 
   let isFailure (result: Result<_, _>): bool =
-    result |> isSuccess |> not
+    result |> isOk |> not
 
   let tryGet (result: Result<'x, _>): option<'x> =
     match result with
-    | Success x ->
+    | Ok x ->
       Some x
     | Failure _ ->
       None
 
   let tryGetError (result: Result<_, 'e>): option<'e> =
     match result with
-    | Success _ ->
+    | Ok _ ->
       None
     | Failure e ->
       Some e
       
   let getOr (value: 'x) (result: Result<'x, _>): 'x =
     match result with
-    | Success x ->
+    | Ok x ->
       x
     | Failure _ ->
       value
 
   let getErrorOr (error: 'e) (result: Result<_, 'e>): 'e =
     match result with
-    | Success _ ->
+    | Ok _ ->
       error
     | Failure e ->
       e
 
   let getOrElse (getValue: unit -> 'x) (result: Result<'x, _>): 'x =
     match result with
-    | Success x ->
+    | Ok x ->
       x
     | Failure _ ->
       getValue ()
 
   let getErrorOrElse (getError: unit -> 'e) (result: Result<_, 'e>): 'e =
     match result with
-    | Success _ ->
+    | Ok _ ->
       getError ()
     | Failure e ->
       e
 
   let getOrThrow (result: Result<'x, _>): 'x =
     match result with
-    | Success x ->
+    | Ok x ->
       x
     | Failure _ ->
       invalidOp "Result doesn't have a value."
 
   let getErrorOrThrow (result: Result<_, 'e>): 'e =
     match result with
-    | Success _ ->
+    | Ok _ ->
       invalidOp "Result doesn't have an error."
     | Failure e ->
       e
 
   let flatten (result: Result<Result<'x, 'e>, 'e>): Result<'x, 'e> =
     match result with
-    | Success (Success x) ->
-      Success x
-    | Success (Failure e) ->
+    | Ok (Ok x) ->
+      Ok x
+    | Ok (Failure e) ->
       Failure e
     | Failure e ->
       Failure e
 
   let flattenError (result: Result<'x, Result<'x, 'e>>): Result<'x, 'e> =
     match result with
-    | Success x ->
-      Success x
-    | Failure (Success x) ->
-      Success x
+    | Ok x ->
+      Ok x
+    | Failure (Ok x) ->
+      Ok x
     | Failure (Failure e) ->
       Failure e
 
   let map (f: 'x -> 'y) (result: Result<'x, 'e>): Result<'y, 'e> =
     match result with
-    | Success x ->
-      Success (f x)
+    | Ok x ->
+      Ok (f x)
     | Failure e ->
       Failure e
 
   let mapError (f: 'e -> 'f) (result: Result<'x, 'e>): Result<'x, 'f> =
     match result with
-    | Success x ->
-      Success x
+    | Ok x ->
+      Ok x
     | Failure e ->
       Failure (f e)
       
@@ -124,7 +124,7 @@ namespace DotNetKit.FSharp.ComputationExpression
   [<Sealed>]
   type ResultBuilder internal () =
     member this.Return(x) =
-      Success x
+      Ok x
 
     member this.ReturnFrom(result: Result<_, _>) =
       result
