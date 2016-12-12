@@ -1,6 +1,6 @@
 # DotNetKit.StructEnumerator
 ## Usage
-See [Sample project](DotNetKit.StructEnumerable.Sample)
+See [Sample project](DotNetKit.StructEnumerator.Sample)
 
 ## License
-[MIT License](DotNetKit.StructEnumerable/StructEnumerator.cs)
+[MIT License](DotNetKit.StructEnumerator/StructEnumerator.cs)
