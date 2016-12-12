@@ -8,7 +8,7 @@
     <OutputType>Library</OutputType>
     <AppDesignerFolder>Properties</AppDesignerFolder>
     <RootNamespace>DotNetKit.UnitTest</RootNamespace>
-    <AssemblyName>DotNetKit.StructEnumerable.UnitTest</AssemblyName>
+    <AssemblyName>DotNetKit.StructEnumerator.UnitTest</AssemblyName>
     <TargetFrameworkVersion>v4.5.2</TargetFrameworkVersion>
     <FileAlignment>512</FileAlignment>
   </PropertyGroup>
@@ -44,9 +44,9 @@
     <Compile Include="Properties\AssemblyInfo.cs" />
   </ItemGroup>
   <ItemGroup>
-    <ProjectReference Include="..\DotNetKit.StructEnumerable\DotNetKit.StructEnumerable.csproj">
+    <ProjectReference Include="..\DotNetKit.StructEnumerator\DotNetKit.StructEnumerator.csproj">
       <Project>{5d7a2d39-c8af-42a0-9749-332d7af3bde0}</Project>
-      <Name>DotNetKit.StructEnumerable</Name>
+      <Name>DotNetKit.StructEnumerator</Name>
     </ProjectReference>
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
@@ -68,7 +68,7 @@
     </When>
   </Choose>
   <Import Project="..\packages\unittest\xunit.core\build\$(__paket__xunit_core_props).props" Condition="Exists('..\packages\unittest\xunit.core\build\$(__paket__xunit_core_props).props')" Label="Paket" />
-  <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 
+  <!-- To modify your build process, add your task inside one of the targets below and uncomment it.
        Other similar extension points exist, see Microsoft.Common.targets.
   <Target Name="BeforeBuild">
   </Target>
