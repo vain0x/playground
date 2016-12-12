@@ -11,7 +11,7 @@ namespace DotNetKit.Collections
     /// A struct enumerator which wraps an enumerator.
     /// </summary>
     /// <typeparam name="TValue"></typeparam>
-    public struct StructEnumerator<TValue>
+    internal struct StructEnumerator<TValue>
         : IEnumerator<TValue>
     {
         readonly IEnumerator<TValue> enumerator;
@@ -74,7 +74,7 @@ namespace DotNetKit.Collections
     /// Represents an enumerator which enumerates a readonly list.
     /// </summary>
     /// <typeparam name="TValue"></typeparam>
-    public struct ReadOnlyListEnumerator<TValue>
+    internal struct ReadOnlyListEnumerator<TValue>
         : IEnumerator<TValue>
     {
         readonly IReadOnlyList<TValue> list;
