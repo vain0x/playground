@@ -42,7 +42,6 @@
     <None Include="project.json" />
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="Collections\ReadOnlyListEnumerator.cs" />
     <Compile Include="Collections\StructEnumerator.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
   </ItemGroup>
