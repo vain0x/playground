@@ -38,7 +38,7 @@ namespace DotNetKit.FSharp.ComputationExpression
   [<Sealed>]
   type OptionBuilder internal () =
     member this.Zero() =
-      None
+      Some ()
 
     member this.Return(x) =
       Some x

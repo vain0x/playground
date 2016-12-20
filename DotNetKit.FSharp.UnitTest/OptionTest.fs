@@ -17,7 +17,7 @@ module OptionTest =
           option {
             ()
           }
-          |> assertEquals None
+          |> assertEquals (Some ())
       }
 
     let ``test return!`` =
