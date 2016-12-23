@@ -16,8 +16,6 @@ namespace VainZero.WpfReportPrinting.Demo.Previewing
 
         public ICommand PrintCommand => printCommand;
 
-        public event EventHandler Printed;
-
         public ScaleSelector ScaleSelector { get; } =
             new ScaleSelector();
 
@@ -28,9 +26,6 @@ namespace VainZero.WpfReportPrinting.Demo.Previewing
         {
             var printer = new ConcreteXamlPrinter();
             printer.Print(Report.Value.DataContextList);
-
-            // 印刷したことを通知する。
-            Printed?.Invoke(this, EventArgs.Empty);
         }
 
         public Previewer(IReadOnlyReactiveProperty<IReport> report)
