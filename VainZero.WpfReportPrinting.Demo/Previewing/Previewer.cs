@@ -11,8 +11,6 @@ namespace VainZero.WpfReportPrinting.Demo.Previewing
     {
         public IReadOnlyReactiveProperty<IReport> Report { get; }
 
-        public IReadOnlyReactiveProperty<object> SelectedDataContext { get; }
-
         readonly ReactiveCommand printCommand =
             new ReactiveCommand();
 
@@ -38,11 +36,6 @@ namespace VainZero.WpfReportPrinting.Demo.Previewing
         public Previewer(IReadOnlyReactiveProperty<IReport> report)
         {
             Report = report;
-
-            // TODO: ページセレクターを実装する。
-            SelectedDataContext =
-                Report.Select(r => r.DataContextList[0])
-                .ToReadOnlyReactiveProperty();
 
             // 印刷ボタンが押されたら印刷する。
             printCommand.Subscribe(_ => Print());
