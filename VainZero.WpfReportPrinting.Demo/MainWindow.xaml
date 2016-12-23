@@ -9,7 +9,8 @@
     xmlns:reports="clr-namespace:VainZero.WpfReportPrinting.Demo.SampleReports"
     mc:Ignorable="d"
     Title="MainWindow"
-    SizeToContent="WidthAndHeight"
+    Width="800"
+    Height="800"
     >
     <Window.Resources>
         <DataTemplate DataType="{x:Type local:SampleReportPreviewer}">

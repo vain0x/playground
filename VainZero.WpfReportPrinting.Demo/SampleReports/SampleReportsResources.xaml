@@ -18,7 +18,7 @@
     <DataTemplate DataType="{x:Type local:HelloWorldPageViewModel}">
         <Grid Margin="20">
             <StackPanel>
-                <TextBlock FontSize="30" Text="ハローワールド" />
+                <TextBlock HorizontalAlignment="Center" FontSize="30" Text="ハローワールド" />
                 <TextBlock HorizontalAlignment="Right" Text="2016/08/31" />
                 <TextBlock Text="Hello world!" />
             </StackPanel>

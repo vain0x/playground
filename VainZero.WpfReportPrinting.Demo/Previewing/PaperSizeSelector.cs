@@ -26,8 +26,8 @@ namespace VainZero.WpfReportPrinting.Demo.Previewing
         public static IReadOnlyList<PaperSize> Sizes { get; } =
             new[]
             {
-                new PaperSize("A5", new Size(559, 794)),
                 new PaperSize("A4", new Size(794, 1123)),
+                new PaperSize("A5", new Size(559, 794)),
                 new PaperSize("B5", new Size(688, 971)),
             };
 
