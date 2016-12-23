@@ -87,7 +87,6 @@
       <SubType>Designer</SubType>
     </ApplicationDefinition>
     <Compile Include="SampleReportPreviewer.cs" />
-    <Compile Include="SampleReports\EmptyReport.cs" />
     <Compile Include="SampleReports\HelloWorldReport.cs" />
     <Compile Include="SampleReports\IReport.cs" />
     <Compile Include="SampleReports\ReportSelector.cs" />

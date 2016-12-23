@@ -34,7 +34,7 @@
     </DataTemplate>
 
     <DataTemplate DataType="{x:Type local:Previewer}">
-        <DockPanel Background="Silver">
+        <DockPanel x:Name="previewer" Background="Silver">
             <DockPanel DockPanel.Dock="Top" LastChildFill="False">
                 <ContentPresenter
                     DockPanel.Dock="Left"
@@ -55,21 +55,41 @@
             </DockPanel>
 
             <ScrollViewer>
-                <Grid
-                    Width="{Binding PaperSizeSelector.SelectedSize.Value.Width}"
-                    Height="{Binding PaperSizeSelector.SelectedSize.Value.Height}"
-                    Background="White"
+                <ItemsControl
+                    IsTabStop="False"
+                    ItemsSource="{Binding Report.Value.DataContextList}"
                     >
-                    <Grid.LayoutTransform>
-                        <ScaleTransform
-                            ScaleX="{Binding ScaleSelector.SelectedScale.Value}"
-                            ScaleY="{Binding ScaleSelector.SelectedScale.Value}"
-                            />
-                    </Grid.LayoutTransform>
-                    <ContentPresenter
-                        Content="{Binding SelectedDataContext.Value}"
-                        />
-                </Grid>
+                    <ItemsControl.ItemTemplate>
+                        <DataTemplate>
+                            <Border Padding="10">
+                                <Border.Effect>
+                                    <DropShadowEffect Opacity="0.5" />
+                                </Border.Effect>
+                                <Grid
+                                    Width="{Binding
+                                        Path=DataContext.PaperSizeSelector.SelectedSize.Value.Width,
+                                        ElementName=previewer}"
+                                    Height="{Binding
+                                        Path=DataContext.PaperSizeSelector.SelectedSize.Value.Height,
+                                        ElementName=previewer}"
+                                    Background="White"
+                                    >
+                                    <Grid.LayoutTransform>
+                                        <ScaleTransform
+                                            ScaleX="{Binding
+                                                Path=DataContext.ScaleSelector.SelectedScale.Value,
+                                                ElementName=previewer}"
+                                            ScaleY="{Binding
+                                                Path=DataContext.ScaleSelector.SelectedScale.Value,
+                                                ElementName=previewer}"
+                                            />
+                                    </Grid.LayoutTransform>
+                                    <ContentPresenter Content="{Binding}" />
+                                </Grid>
+                            </Border>
+                        </DataTemplate>
+                    </ItemsControl.ItemTemplate>
+                </ItemsControl>
             </ScrollViewer>
         </DockPanel>
     </DataTemplate>
