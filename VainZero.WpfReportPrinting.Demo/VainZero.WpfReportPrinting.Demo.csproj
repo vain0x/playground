@@ -89,6 +89,7 @@
     <Compile Include="SampleReportPreviewer.cs" />
     <Compile Include="SampleReports\HelloWorldReport.cs" />
     <Compile Include="SampleReports\IReport.cs" />
+    <Compile Include="SampleReports\OrderForm.cs" />
     <Compile Include="SampleReports\ReportSelector.cs" />
     <Page Include="MainWindow.xaml">
       <Generator>MSBuild:Compile</Generator>

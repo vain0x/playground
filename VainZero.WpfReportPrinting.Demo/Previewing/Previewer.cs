@@ -24,8 +24,8 @@ namespace VainZero.WpfReportPrinting.Demo.Previewing
 
         public void Print()
         {
-            var printer = new ConcreteXamlPrinter();
-            printer.Print(Report.Value.DataContextList);
+            var printer = new XamlPrinter();
+            printer.PrintPages(Report.Value.DataContextList);
         }
 
         public Previewer(IReadOnlyReactiveProperty<IReport> report)
