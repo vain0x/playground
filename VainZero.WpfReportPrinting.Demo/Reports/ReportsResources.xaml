@@ -1,0 +1,169 @@
+﻿<ResourceDictionary
+    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:local="clr-namespace:VainZero.WpfReportPrinting.Demo.Reports"
+    >
+    <DataTemplate DataType="{x:Type local:ReportSelector}">
+        <ListBox ItemsSource="{Binding Reports}" SelectedItem="{Binding SelectedReport.Value}">
+            <ListBox.ItemTemplate>
+                <DataTemplate>
+                    <ContentPresenter Content="{Binding ReportName}" />
+                </DataTemplate>
+            </ListBox.ItemTemplate>
+        </ListBox>
+    </DataTemplate>
+    
+    <!-- サンプルとなるレポートの一覧 -->
+    
+    <!-- ハローワールド -->
+    
+    <DataTemplate DataType="{x:Type local:HelloWorldPageViewModel}">
+        <Grid Margin="30">
+            <StackPanel>
+                <TextBlock HorizontalAlignment="Center" FontSize="30" Text="ハローワールド" />
+                <TextBlock HorizontalAlignment="Right" Text="2007/08/31" />
+                <TextBlock Text="Hello, world!" />
+            </StackPanel>
+        </Grid>
+    </DataTemplate>
+
+    <!-- 注文書 -->
+    
+    <DataTemplate DataType="{x:Type local:OrderItemList}">
+        <DataTemplate.Resources>
+            <Style x:Key="DataGridColumnHeaderStyle" TargetType="DataGridColumnHeader">
+                <Setter Property="BorderBrush" Value="Black" />
+                <Setter Property="BorderThickness" Value="0,1,1,1" />
+                <Setter Property="Background" Value="White" />
+                <Setter Property="Padding" Value="10,5,10,5" />
+                <Setter Property="HorizontalContentAlignment" Value="Center" />
+                <Setter Property="VerticalContentAlignment" Value="Center" />
+            </Style>
+            <Style
+                x:Key="LeftMostDataGridColumnHeaderStyle"
+                TargetType="DataGridColumnHeader"
+                BasedOn="{StaticResource DataGridColumnHeaderStyle}"
+                >
+                <Setter Property="BorderThickness" Value="1" />
+            </Style>
+            <Style TargetType="DataGrid">
+                <Setter Property="AutoGenerateColumns" Value="False" />
+                <Setter Property="RowHeaderWidth" Value="0" />
+                <Setter Property="HorizontalScrollBarVisibility" Value="Hidden" />
+                <Setter Property="VerticalScrollBarVisibility" Value="Hidden" />
+                <Setter Property="Background" Value="Transparent" />
+                <Setter Property="BorderThickness" Value="0" />
+                <Setter Property="HorizontalGridLinesBrush" Value="Black" />
+                <Setter Property="VerticalGridLinesBrush" Value="Black" />
+                <Setter
+                    Property="ColumnHeaderStyle"
+                    Value="{StaticResource DataGridColumnHeaderStyle}"
+                    />
+            </Style>
+            <Style x:Key="DataGridCellStyle" TargetType="DataGridCell">
+                <Setter Property="Padding" Value="10,5,10,5" />
+                <Setter Property="VerticalContentAlignment" Value="Center" />
+                <Setter Property="Foreground" Value="Black" />
+                <Setter Property="Background" Value="White" />
+                <Setter Property="BorderBrush" Value="Black" />
+                <Setter Property="BorderThickness" Value="0" />
+            </Style>
+            <Style
+                x:Key="LeftMostDataGridCellStyle"
+                TargetType="DataGridCell"
+                BasedOn="{StaticResource DataGridCellStyle}"
+                >
+                <Setter Property="BorderThickness" Value="1,0,0,0" />
+                
+            </Style>
+            <Style
+                x:Key="NumberDataGridCellStyle"
+                TargetType="DataGridCell"
+                BasedOn="{StaticResource DataGridCellStyle}"
+                >
+                <Setter Property="HorizontalAlignment" Value="Right" />
+            </Style>
+        </DataTemplate.Resources>
+        <DataGrid
+            HorizontalAlignment="Center"
+            ItemsSource="{Binding Items}"
+            >
+            <DataGrid.Columns>
+                <DataGridTextColumn
+                    HeaderStyle="{StaticResource LeftMostDataGridColumnHeaderStyle}"
+                    CellStyle="{StaticResource LeftMostDataGridCellStyle}"
+                    IsReadOnly="True"
+                    Header="商品名"
+                    Width="1*"
+                    Binding="{Binding Name}"
+                    />
+                <DataGridTextColumn
+                    CellStyle="{StaticResource NumberDataGridCellStyle}"
+                    IsReadOnly="True"
+                    Width="50"
+                    Header="数量"
+                    Binding="{Binding Count}"
+                    />
+                <DataGridTextColumn
+                    CellStyle="{StaticResource NumberDataGridCellStyle}"
+                    IsReadOnly="True"
+                    Width="80"
+                    Header="単価"
+                    Binding="{Binding UnitPrice}"
+                    />
+                <DataGridTextColumn
+                    CellStyle="{StaticResource NumberDataGridCellStyle}"
+                    IsReadOnly="True"
+                    Width="100"
+                    Header="金額"
+                    Binding="{Binding TotalPrice}"
+                    />
+                <DataGridTextColumn
+                    CellStyle="{StaticResource DataGridCellStyle}"
+                    IsReadOnly="True"
+                    Width="2*"
+                    Header="備考"
+                    Binding="{Binding Note}"
+                    />
+            </DataGrid.Columns>
+        </DataGrid>
+    </DataTemplate>
+
+    <DataTemplate DataType="{x:Type local:OrderFormPage}">
+        <Grid Margin="30">
+            <Grid.RowDefinitions>
+                <RowDefinition Height="Auto" />
+                <RowDefinition Height="*" />
+            </Grid.RowDefinitions>
+
+            <!-- ヘッダー -->
+            <StackPanel>
+                <TextBlock
+                    HorizontalAlignment="Center"
+                    FontSize="30"
+                    Text="注 文 書"
+                    />
+                <TextBlock
+                    HorizontalAlignment="Right"
+                    Text="{Binding Header.OrderDate, StringFormat=yyyy年MM月dd日}"
+                    />
+                <TextBlock>
+                    <Run Text="{Binding Header.TargetName, Mode=OneTime}"/>御中
+                </TextBlock>
+                <TextBlock TextDecorations="Underline">
+                    税抜 合計金額 ￥<Run Text="{Binding Header.TotalPrice, Mode=OneTime}" />―
+                </TextBlock>
+                <TextBlock HorizontalAlignment="Right">
+                    ページ <Run Text="{Binding PageIndex, Mode=OneTime}"/>/<Run Text="{Binding PageCount, Mode=OneTime}" />
+                </TextBlock>
+            </StackPanel>
+
+            <!-- 明細 -->
+            <ContentPresenter
+                Grid.Row="1"
+                Margin="0,20,0,20"
+                Content="{Binding ItemList}"
+                />
+        </Grid>
+    </DataTemplate>
+</ResourceDictionary>
