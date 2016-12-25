@@ -3,11 +3,11 @@
     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
     xmlns:local="clr-namespace:VainZero.WpfReportPrinting.Demo.Previewing"
     >
-    <DataTemplate DataType="{x:Type local:PaperSizeSelector}">
+    <DataTemplate DataType="{x:Type local:MediaSizeSelector}">
         <ComboBox
             Margin="10"
-            ItemsSource="{x:Static local:PaperSizeSelector.Sizes}"
-            SelectedItem="{Binding SelectedPaperSize.Value}"
+            ItemsSource="{x:Static local:MediaSizeSelector.Items}"
+            SelectedItem="{Binding SelectedItem.Value}"
             >
             <ComboBox.ItemTemplate>
                 <DataTemplate>
@@ -38,7 +38,7 @@
             <DockPanel DockPanel.Dock="Top" LastChildFill="False">
                 <ContentPresenter
                     DockPanel.Dock="Left"
-                    Content="{Binding PaperSizeSelector}"
+                    Content="{Binding MediaSizeSelector}"
                     />
 
                 <ContentPresenter
@@ -67,10 +67,10 @@
                                 </Border.Effect>
                                 <Grid
                                     Width="{Binding
-                                        Path=DataContext.PaperSizeSelector.SelectedSize.Value.Width,
+                                        Path=DataContext.MediaSizeSelector.SelectedSize.Value.Width,
                                         ElementName=previewer}"
                                     Height="{Binding
-                                        Path=DataContext.PaperSizeSelector.SelectedSize.Value.Height,
+                                        Path=DataContext.MediaSizeSelector.SelectedSize.Value.Height,
                                         ElementName=previewer}"
                                     Background="White"
                                     >

@@ -32,6 +32,7 @@
   <ItemGroup>
     <Reference Include="PresentationCore" />
     <Reference Include="PresentationFramework" />
+    <Reference Include="ReachFramework" />
     <Reference Include="ReactiveProperty, Version=3.4.0.0, Culture=neutral, processorArchitecture=MSIL">
       <HintPath>..\packages\ReactiveProperty.3.4.0\lib\net45\ReactiveProperty.dll</HintPath>
       <Private>True</Private>

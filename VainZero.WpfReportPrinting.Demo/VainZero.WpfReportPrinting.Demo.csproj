@@ -35,6 +35,7 @@
     <WarningLevel>4</WarningLevel>
   </PropertyGroup>
   <ItemGroup>
+    <Reference Include="ReachFramework" />
     <Reference Include="ReactiveProperty, Version=3.4.0.0, Culture=neutral, processorArchitecture=MSIL">
       <HintPath>..\packages\ReactiveProperty.3.4.0\lib\net45\ReactiveProperty.dll</HintPath>
       <Private>True</Private>
@@ -46,6 +47,7 @@
     <Reference Include="System" />
     <Reference Include="System.ComponentModel.DataAnnotations" />
     <Reference Include="System.Data" />
+    <Reference Include="System.Printing" />
     <Reference Include="System.Reactive.Core, Version=3.0.1000.0, Culture=neutral, PublicKeyToken=94bc3704cddfc263, processorArchitecture=MSIL">
       <HintPath>..\packages\System.Reactive.Core.3.1.1\lib\net45\System.Reactive.Core.dll</HintPath>
       <Private>True</Private>
@@ -113,7 +115,7 @@
     </Page>
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="Previewing\PaperSizeSelector.cs" />
+    <Compile Include="Previewing\MediaSizeSelector.cs" />
     <Compile Include="Previewing\Previewer.cs" />
     <Compile Include="Previewing\ScaleSelector.cs" />
     <Compile Include="Properties\AssemblyInfo.cs">

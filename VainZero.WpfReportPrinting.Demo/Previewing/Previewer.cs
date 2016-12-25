@@ -19,13 +19,16 @@ namespace VainZero.WpfReportPrinting.Demo.Previewing
         public ScaleSelector ScaleSelector { get; } =
             new ScaleSelector();
 
-        public PaperSizeSelector PaperSizeSelector { get; } =
-            new PaperSizeSelector();
+        public MediaSizeSelector MediaSizeSelector { get; } =
+            new MediaSizeSelector();
 
         public void Print()
         {
             var printer = new XamlPrinter();
-            printer.PrintPages(Report.Value.DataContextList);
+            printer.PrintPages(
+                Report.Value.DataContextList,
+                MediaSizeSelector.SelectedItem.Value.PageMediaSize
+            );
         }
 
         public Previewer(IReadOnlyReactiveProperty<IReport> report)
