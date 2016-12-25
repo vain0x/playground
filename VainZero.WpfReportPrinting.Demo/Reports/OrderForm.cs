@@ -59,20 +59,10 @@ namespace VainZero.WpfReportPrinting.Demo.Reports
         }
     }
 
-    public sealed class OrderItemList
-    {
-        public ObservableCollection<OrderItem> Items { get; }
-
-        public OrderItemList(IEnumerable<OrderItem> items)
-        {
-            Items = new ObservableCollection<OrderItem>(items);
-        }
-    }
-
     public sealed class OrderFormPage
     {
         public OrderFormHeader Header { get; }
-        public OrderItemList ItemList { get; }
+        public IReadOnlyList<OrderItem> Items { get; }
 
         public int PageIndex { get; set; } = -1;
         public int PageCount { get; set; } = -1;
@@ -80,11 +70,11 @@ namespace VainZero.WpfReportPrinting.Demo.Reports
         public
             OrderFormPage(
                 OrderFormHeader header,
-                IEnumerable<OrderItem> items
+                IReadOnlyList<OrderItem> items
             )
         {
             Header = header;
-            ItemList = new OrderItemList(items);
+            Items = items;
         }
     }
 
@@ -95,18 +85,17 @@ namespace VainZero.WpfReportPrinting.Demo.Reports
 
         public OrderFormHeader Header { get; }
 
-        public OrderItemList ItemList { get; } =
-            new OrderItemList(
-                Enumerable.Range(1, 50)
-                .Select(i => new OrderItem($"Item {i}", i * 100))
-            );
+        public IReadOnlyList<OrderItem> Items { get; } =
+            Enumerable.Range(1, 50)
+            .Select(i => new OrderItem($"Item {i}", i * 100))
+            .ToArray();
 
         public IReadOnlyList<object> Paginate(Size size)
         {
             var pages = new List<OrderFormPage>();
 
             {
-                var preview = new OrderFormPage(Header, ItemList.Items);
+                var preview = new OrderFormPage(Header, Items);
 
                 // ページネーションを行うために、実際に DataGrid を生成する。
                 var presenter =
@@ -127,7 +116,7 @@ namespace VainZero.WpfReportPrinting.Demo.Reports
                 var scrollViewer =
                     dataGrid.VisualDescendantsBFS().OfType<ScrollViewer>().First();
 
-                var items = preview.ItemList.Items;
+                var items = preview.Items;
                 var index = 0;
                 while (index < items.Count)
                 {
@@ -172,7 +161,7 @@ namespace VainZero.WpfReportPrinting.Demo.Reports
                 new OrderFormHeader(
                     "株式会社ほげほげ",
                     new DateTime(2017, 01, 15),
-                    ItemList.Items.Sum(item => item.TotalPrice)
+                    Items.Sum(item => item.TotalPrice)
                 );
         }
     }
