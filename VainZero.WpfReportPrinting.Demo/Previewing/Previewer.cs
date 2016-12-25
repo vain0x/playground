@@ -29,10 +29,10 @@ namespace VainZero.WpfReportPrinting.Demo.Previewing
         public void Print()
         {
             var report = Report.Value;
-            var pageMediaSize = MediaSizeSelector.SelectedItem.Value.PageMediaSize;
+            var pageSize = MediaSizeSelector.SelectedItem.Value.Size;
 
             var printer = new Printer();
-            printer.Print(report, pageMediaSize);
+            printer.Print(report, pageSize);
         }
 
         public Previewer(IReadOnlyReactiveProperty<IReport> report)

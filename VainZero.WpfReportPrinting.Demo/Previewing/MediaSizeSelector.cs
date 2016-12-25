@@ -18,13 +18,11 @@ namespace VainZero.WpfReportPrinting.Demo.Previewing
     {
         public string Name { get; }
         public Size Size { get; }
-        public PageMediaSize PageMediaSize { get; }
 
         public MediaSizeItem(string name, Size size)
         {
             Name = name;
             Size = size;
-            PageMediaSize = new PageMediaSize(size.Width, size.Height);
         }
     }
 
