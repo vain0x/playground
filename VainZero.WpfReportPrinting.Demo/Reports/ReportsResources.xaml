@@ -28,21 +28,33 @@
     </DataTemplate>
 
     <!-- 注文書 -->
+    
     <DataTemplate DataType="{x:Type local:OrderItemList}">
         <DataTemplate.Resources>
             <Style x:Key="DataGridColumnHeaderStyle" TargetType="DataGridColumnHeader">
-                <Setter Property="Background" Value="White" />
-                <Setter Property="BorderThickness" Value="0,0,1,1" />
                 <Setter Property="BorderBrush" Value="Black" />
+                <Setter Property="BorderThickness" Value="0,1,1,1" />
+                <Setter Property="Background" Value="White" />
+                <Setter Property="Padding" Value="10,5,10,5" />
                 <Setter Property="HorizontalContentAlignment" Value="Center" />
                 <Setter Property="VerticalContentAlignment" Value="Center" />
-                <Setter Property="Padding" Value="10,5,10,5" />
+            </Style>
+            <Style
+                x:Key="LeftMostDataGridColumnHeaderStyle"
+                TargetType="DataGridColumnHeader"
+                BasedOn="{StaticResource DataGridColumnHeaderStyle}"
+                >
+                <Setter Property="BorderThickness" Value="1" />
             </Style>
             <Style TargetType="DataGrid">
                 <Setter Property="AutoGenerateColumns" Value="False" />
                 <Setter Property="RowHeaderWidth" Value="0" />
-                <Setter Property="BorderBrush" Value="Black" />
-                <Setter Property="BorderThickness" Value="1,1,0,0" />
+                <Setter Property="HorizontalScrollBarVisibility" Value="Hidden" />
+                <Setter Property="VerticalScrollBarVisibility" Value="Hidden" />
+                <Setter Property="Background" Value="Transparent" />
+                <Setter Property="BorderThickness" Value="0" />
+                <Setter Property="HorizontalGridLinesBrush" Value="Black" />
+                <Setter Property="VerticalGridLinesBrush" Value="Black" />
                 <Setter
                     Property="ColumnHeaderStyle"
                     Value="{StaticResource DataGridColumnHeaderStyle}"
@@ -53,7 +65,16 @@
                 <Setter Property="VerticalContentAlignment" Value="Center" />
                 <Setter Property="Foreground" Value="Black" />
                 <Setter Property="Background" Value="White" />
-                <Setter Property="BorderThickness" Value="0,0,1,1" />
+                <Setter Property="BorderBrush" Value="Black" />
+                <Setter Property="BorderThickness" Value="0" />
+            </Style>
+            <Style
+                x:Key="LeftMostDataGridCellStyle"
+                TargetType="DataGridCell"
+                BasedOn="{StaticResource DataGridCellStyle}"
+                >
+                <Setter Property="BorderThickness" Value="1,0,0,0" />
+                
             </Style>
             <Style
                 x:Key="NumberDataGridCellStyle"
@@ -64,17 +85,16 @@
             </Style>
         </DataTemplate.Resources>
         <DataGrid
-            AutoGenerateColumns="False"
             HorizontalAlignment="Center"
             ItemsSource="{Binding Items}"
-            VerticalScrollBarVisibility="Hidden"
             >
             <DataGrid.Columns>
                 <DataGridTextColumn
-                    CellStyle="{StaticResource DataGridCellStyle}"
+                    HeaderStyle="{StaticResource LeftMostDataGridColumnHeaderStyle}"
+                    CellStyle="{StaticResource LeftMostDataGridCellStyle}"
                     IsReadOnly="True"
                     Header="商品名"
-                    Width="*"
+                    Width="1*"
                     Binding="{Binding Name}"
                     />
                 <DataGridTextColumn
@@ -97,6 +117,13 @@
                     Width="100"
                     Header="金額"
                     Binding="{Binding TotalPrice}"
+                    />
+                <DataGridTextColumn
+                    CellStyle="{StaticResource DataGridCellStyle}"
+                    IsReadOnly="True"
+                    Width="2*"
+                    Header="備考"
+                    Binding="{Binding Note}"
                     />
             </DataGrid.Columns>
         </DataGrid>
@@ -123,11 +150,11 @@
                 <TextBlock>
                     <Run Text="{Binding Header.TargetName, Mode=OneTime}"/>御中
                 </TextBlock>
-                <TextBlock HorizontalAlignment="Right">
-                    ページ <Run Text="{Binding PageIndex, Mode=OneTime}"/>/<Run Text="{Binding PageCount, Mode=OneTime}" />
-                </TextBlock>
                 <TextBlock TextDecorations="Underline">
                     税抜 合計金額 ￥<Run Text="{Binding Header.TotalPrice, Mode=OneTime}" />―
+                </TextBlock>
+                <TextBlock HorizontalAlignment="Right">
+                    ページ <Run Text="{Binding PageIndex, Mode=OneTime}"/>/<Run Text="{Binding PageCount, Mode=OneTime}" />
                 </TextBlock>
             </StackPanel>
 
