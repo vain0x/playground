@@ -107,10 +107,10 @@ namespace VainZero.WpfReportPrinting.Demo.Reports
             presenter.UpdateLayout();
 
             var dataGrid =
-                presenter.VisualDescendantsBFS().OfType<DataGrid>().First();
+                presenter.VisualDescendantsBreadthFirstOrder().OfType<DataGrid>().First();
 
             var scrollViewer =
-                dataGrid.VisualDescendantsBFS().OfType<ScrollViewer>().First();
+                presenter.VisualDescendantsBreadthFirstOrder().OfType<ScrollViewer>().First();
 
             var items = preview.Items;
             var index = 0;
