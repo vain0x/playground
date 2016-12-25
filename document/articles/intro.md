@@ -21,7 +21,7 @@ WPF とは、XAML と .NET 言語 (C# など) を用いて、Windows PC 用の�
 ## 簡単な帳票
 まずは簡単な帳票を例に挙げて、印刷する方法まで一通り解説します。簡単な帳票とは、タイトルがどーんとあって、日付が右寄せで、あとは本文という感じです。まずはプレビュー画面のスクリーンショットをご覧ください。
 
-![簡単な帳票のプレビュー画面](HelloWorldReportScreenshot.png)
+![簡単な帳票のプレビュー画面](../images/intro/HelloWorldReportScreenshot.png)
 
 ビューモデルと XAML は次のようになっています。UI要素はプレビュー用と印刷用の2つ (以上) をインスタンス化する必要があるので、 DataTemplate の形で定義しています。
 
@@ -209,7 +209,7 @@ using System.Printing;
 
 まずはプレビュー画面のスクリーンショットをごらんください。
 
-![ページネーションを含む帳票のスクリーンショット](OrderFormScreenshot.png)
+![ページネーションを含む帳票のスクリーンショット](../images/intro/OrderFormScreenshot.png)
 
 XAML は結構な分量なので省略します。明細の部分には、スタイルをガチガチに決めた DataGrid を使用しています。
 
