@@ -6,7 +6,7 @@
     xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
     xmlns:local="clr-namespace:VainZero.WpfReportPrinting.Demo"
     xmlns:previewer="clr-namespace:VainZero.WpfReportPrinting.Demo.Previewing"
-    xmlns:reports="clr-namespace:VainZero.WpfReportPrinting.Demo.SampleReports"
+    xmlns:reports="clr-namespace:VainZero.WpfReportPrinting.Demo.Reports"
     mc:Ignorable="d"
     Title="MainWindow"
     Width="800"

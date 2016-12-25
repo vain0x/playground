@@ -7,7 +7,7 @@
         <ResourceDictionary>
             <ResourceDictionary.MergedDictionaries>
                 <ResourceDictionary Source="pack://application:,,,/VainZero.WpfReportPrinting.Demo;component/Previewing/PreviewingResources.xaml" />
-                <ResourceDictionary Source="pack://application:,,,/VainZero.WpfReportPrinting.Demo;component/SampleReports/SampleReportsResources.xaml" />
+                <ResourceDictionary Source="pack://application:,,,/VainZero.WpfReportPrinting.Demo;component/Reports/ReportsResources.xaml" />
             </ResourceDictionary.MergedDictionaries>
         </ResourceDictionary>
     </Application.Resources>

@@ -7,6 +7,9 @@ using Reactive.Bindings;
 
 namespace VainZero.WpfReportPrinting.Demo.Previewing
 {
+    /// <summary>
+    /// プレビュー表示の縮尺を1つ選択するものを表す。
+    /// </summary>
     public sealed class ScaleSelector
     {
         public static IReadOnlyList<double> Scales { get; } =

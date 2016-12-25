@@ -11,22 +11,29 @@ using System.Printing;
 
 namespace VainZero.WpfReportPrinting.Demo.Previewing
 {
+    /// <summary>
+    /// MediaSizeSelector の各要素を表す。
+    /// </summary>
     public sealed class MediaSizeItem
     {
         public string Name { get; }
-        public PageMediaSize PageMediaSize { get; }
         public Size Size { get; }
+        public PageMediaSize PageMediaSize { get; }
 
         public MediaSizeItem(string name, Size size)
         {
             Name = name;
-            PageMediaSize = new PageMediaSize(PageMediaSizeName.JISB5, size.Width, size.Height);
             Size = size;
+            PageMediaSize = new PageMediaSize(size.Width, size.Height);
         }
     }
 
+    /// <summary>
+    /// 印刷媒体の大きさを1つ選択するものを表す。
+    /// </summary>
     public sealed class MediaSizeSelector
     {
+        #region Items
         sealed class MediaSizeListBuilder
         {
             List<MediaSizeItem> List { get; } =
@@ -70,6 +77,7 @@ namespace VainZero.WpfReportPrinting.Demo.Previewing
             .Add("B5 (JIS)", 182, 257)
             .Add("B6 (JIS)", 128, 182)
             .ToArray();
+        #endregion
 
         public ReactiveProperty<MediaSizeItem> SelectedItem { get; } =
             new ReactiveProperty<MediaSizeItem>(Items[5]); // A5

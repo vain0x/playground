@@ -1,5 +1,5 @@
 ﻿using VainZero.WpfReportPrinting.Demo.Previewing;
-using VainZero.WpfReportPrinting.Demo.SampleReports;
+using VainZero.WpfReportPrinting.Demo.Reports;
 
 namespace VainZero.WpfReportPrinting.Demo
 {

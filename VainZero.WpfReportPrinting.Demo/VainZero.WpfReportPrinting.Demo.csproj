@@ -88,11 +88,12 @@
       <Generator>MSBuild:Compile</Generator>
       <SubType>Designer</SubType>
     </ApplicationDefinition>
+    <Compile Include="Printing\Printer.cs" />
+    <Compile Include="Reports\IReport.cs" />
     <Compile Include="SampleReportPreviewer.cs" />
-    <Compile Include="SampleReports\HelloWorldReport.cs" />
-    <Compile Include="SampleReports\IReport.cs" />
-    <Compile Include="SampleReports\OrderForm.cs" />
-    <Compile Include="SampleReports\ReportSelector.cs" />
+    <Compile Include="Reports\HelloWorldReport.cs" />
+    <Compile Include="Reports\OrderForm.cs" />
+    <Compile Include="Reports\ReportSelector.cs" />
     <Page Include="MainWindow.xaml">
       <Generator>MSBuild:Compile</Generator>
       <SubType>Designer</SubType>
@@ -109,7 +110,7 @@
       <SubType>Designer</SubType>
       <Generator>MSBuild:Compile</Generator>
     </Page>
-    <Page Include="SampleReports\SampleReportsResources.xaml">
+    <Page Include="Reports\ReportsResources.xaml">
       <SubType>Designer</SubType>
       <Generator>MSBuild:Compile</Generator>
     </Page>

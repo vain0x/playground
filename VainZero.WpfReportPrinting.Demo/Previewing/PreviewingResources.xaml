@@ -57,7 +57,7 @@
             <ScrollViewer>
                 <ItemsControl
                     IsTabStop="False"
-                    ItemsSource="{Binding Report.Value.DataContextList}"
+                    ItemsSource="{Binding Pages.Value}"
                     >
                     <ItemsControl.ItemTemplate>
                         <DataTemplate>
