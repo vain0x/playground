@@ -1,15 +1,15 @@
 # WPF/XAMLで帳票のデザイン・印刷を行う
 
-※これは [XAML Advent Calendar 2016](http://qiita.com/advent-calendar/2016/xaml) の **25** 日目の記事です。
+※これは [XAML Advent Calendar 2016](http://qiita.com/advent-calendar/2016/xaml) の25日目の記事です。
 
 WPF/XAML を使って帳票のデザインから印刷までやってみたという話です。ソースコードが GitHub にありますので、それと同様にやればできます。
 
 [vain0/VainZero.WpfReportPrinting: WPFで帳票を作成するサンプル](https://github.com/vain0/VainZero.WpfReportPrinting)
 
 ## 要約
-- XAML というマークアップ言語で帳票のデザインを作りたいと思ったよ。
-- WPF アプリケーションで帳票のプレビューや印刷を行うサンプルを作ったよ。
-- ページネーションが大変だったけどなんとかなったよ。
+- XAML というマークアップ言語で帳票のデザインを作りたいと思った。
+- WPF アプリケーションで帳票のプレビューや印刷を行うサンプルを作った。
+- ページネーションが大変だったけどなんとかなった。
 
 ## 前提知識
 XAML、WPF について簡単に説明します。
@@ -33,7 +33,7 @@ public sealed class HelloWorldPageViewModel
 }
 ```
 
-```xaml
+```xml
 <!--
     上記のビューモデルの表示方法を定義するテンプレート。
     Window.Resources プロパティの下に配置する。
@@ -60,14 +60,16 @@ public sealed class HelloWorldPageViewModel
 
 要するに、印刷するデータは 96dpi で作ればよいわけです。
 
-例えば A4 (縦) は、国際規格で 210mm×297mm と決まっており、1 inch = 25.40 mm 、1 inch = 96 pixel で換算すれば 793.70×1122.52 となります。このサイズで作った紙風のパネルに上述の Grid を配置すれば、実際に印刷されるのと同じ見栄えのプレビューを表示できます。
+例えば A4 (縦) は、ISO 規格で 210mm×297mm と決まっており、1 inch = 25.40 mm 、1 inch = 96 pixel で換算すれば 793.70×1122.52 となります。このサイズで作った紙風のパネルにページの中身を配置すれば、実際に印刷されるのと同じ見栄えのプレビューを表示できます。
 
 次は印刷です。
 
 ### プリンターの選択
 どのプリンターで印刷するかは、ユーザーに選択させる方法と、プログラム側で指定する方法の2通りがあります。
 
-ユーザーに選択させる場合は、 ``System.Windows.Controls`` 名前空間の `PrintDialog` クラスを使います。(参考: [PrintDialog クラス (System.Windows.Controls)](https://msdn.microsoft.com/ja-jp/library/system.windows.controls.printdialog%28v=vs.110%29.aspx?f=255&MSPPError=-2147217396)) なお、プレビュー画面で選択された用紙サイズを印刷ダイアログの初期設定値にする方法は ~~時間が足りず調べられていません~~ 読者の演習課題とします。
+ユーザーに選択させる場合は、 ``System.Windows.Controls`` 名前空間の `PrintDialog` クラスを使います。(参考: [PrintDialog クラス (System.Windows.Controls)](https://msdn.microsoft.com/ja-jp/library/system.windows.controls.printdialog%28v=vs.110%29.aspx?f=255&MSPPError=-2147217396))
+
+なお、プレビュー画面で選択された用紙サイズを印刷ダイアログの初期設定値にする方法は ~~時間が足りず調べられていません~~ 読者の演習課題とします。
 
 ```csharp
 using System.Windows.Controls;
@@ -86,7 +88,9 @@ using System.Windows.Controls;
 }
 ```
 
-プログラム側で指定する場合は、プリントサーバーというのを使用するようです。詳しくは読者の演習課題とします。ここでは、コンピューター自身を表すサーバー (localhost みたいなもの) である `LocalPrintServer` から、デフォルトのプリンターを指定する方法をとります。
+プログラム側で指定する場合は、プリントサーバーというのを使用するようです。詳しくは読者の演習課題とします。
+
+ここでは、コンピューター自身を表すサーバー (localhost みたいなもの) である `LocalPrintServer` から、デフォルトのプリンターを指定する方法をとります。
 
 ```csharp
 // System.Printing を参照に追加する必要があります。
@@ -108,7 +112,7 @@ public void Print(Size pageSize)
 ### FixedDocument の生成
 先述の通り、印刷するデータを持つ FixedDocument のインスタンスを用意します。この作業は再利用可能な形式にしてあります。
 
-まず「印刷するデータをページに分割する」機能 (ページネーション) を表現するインターフェイスを定義しておきます。IPaginatable と呼びましょう。
+まず「印刷するデータを複数のページに分割する」機能 (ページネーション) を提供するインターフェイスを定義しておきます。`IPaginatable` と呼びましょう。
 
 ```csharp
 using System.Windows;
@@ -144,7 +148,7 @@ public sealed class HelloWorldReport
 }
 ```
 
-あとは次の拡張メソッドを呼ぶだけです。Paginate メソッドが返したリストにつき、各オブジェクトを固定サイズの ContentPresenter に入れて、それを FixedPage に入れて、それを PageContent に入れて、それを FixedDocument に追加する、という感じです。
+あとは次の拡張メソッドを呼ぶだけです。
 
 ```csharp
 public static class PaginatableExtension
@@ -187,6 +191,8 @@ public static class PaginatableExtension
 }
 ```
 
+このメソッドは、Paginate メソッドが返したリストの各要素につき、それを固定サイズの ContentPresenter に入れて、それを FixedPage に入れて、それを PageContent に入れて、それを FixedDocument に入れる、という感じです。
+
 こうして FixedDocument を手に入れました。
 
 ### XpsDocumentWriter で印刷する
@@ -204,14 +210,14 @@ using System.Printing;
 
 できました。
 
-## ページネーションを含む帳票
+## 複数ページの帳票
 次に複雑な帳票、というかページネーションの方法を解説します。
 
 まずはプレビュー画面のスクリーンショットをごらんください。
 
 ![ページネーションを含む帳票のスクリーンショット](../images/intro/OrderFormScreenshot.png)
 
-XAML は結構な分量なので省略します。明細の部分には、スタイルをガチガチに決めた DataGrid を使用しています。
+XAML は結構な分量なので省略します。表の部分には、スタイルをガチガチに決めた DataGrid を使用しています。
 
 簡単な帳票との差は、Paginate メソッドの実装だけです。
 
@@ -252,6 +258,11 @@ Measure, Arrange, UpdateLayout の3つを起動することで、DataGrid が余
 - 「見えている行の数」の代わりに、「見える行数の最大値」である ``ScrollViewer.ViewportHeight`` が使用できる。(「見えている行の数」を厳密に取得する方法 ~~が分からなかった……~~ は読者の演習課題)
 
 DataGrid のデフォルトの見た目では、中身をスクロールできるように ScrollViewer が配置されていて、「見える行数の最大値」のような情報を取得するには、それのプロパティを見ればいいわけです。問題となるのは、ScrollViewer のインスタンスをどう捕まえるかなのですが、VisualTree を辿るのが1つの方法です。これについては、参考リンクにあるブログ記事を参照してください。(あるいはソースコードを参照。)
+
+## おわりに
+いかがでしたでしょうか。不明点などあればコメントないし [Issue](https://github.com/vain0/VainZero.WpfReportPrinting/issues) をお願いします。
+
+動かなかったらごめんなさい！
 
 ## 参考リンク
 ### 帳票関連
