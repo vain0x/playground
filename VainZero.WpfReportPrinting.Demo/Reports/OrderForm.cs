@@ -90,69 +90,67 @@ namespace VainZero.WpfReportPrinting.Demo.Reports
             .Select(i => new OrderItem($"Item {i}", i * 100))
             .ToArray();
 
+        public IEnumerable<OrderFormPage> PaginateCore(Size size)
+        {
+            // ページネーションを行うために、実際に DataGrid を生成する。
+            var preview = new OrderFormPage(Header, Items);
+            var presenter =
+                new ContentPresenter()
+                {
+                    Content = preview,
+                    Width = size.Width,
+                    Height = size.Height,
+                };
+
+            presenter.Measure(size);
+            presenter.Arrange(new Rect(new Point(0, 0), size));
+            presenter.UpdateLayout();
+
+            var dataGrid =
+                presenter.VisualDescendantsBFS().OfType<DataGrid>().First();
+
+            var scrollViewer =
+                dataGrid.VisualDescendantsBFS().OfType<ScrollViewer>().First();
+
+            var items = preview.Items;
+            var index = 0;
+            while (index < items.Count)
+            {
+                // 表示されている行数を取得する。
+                var count =
+                    Math.Min((int)scrollViewer.ViewportHeight, items.Count - index);
+                var pageItems =
+                    Enumerable.Range(index, count).Select(i => items[i]).ToArray();
+
+                // 1画面に表示できた行からなるページを追加する。
+                yield return new OrderFormPage(Header, pageItems);
+
+                index += count;
+
+                if (index < items.Count)
+                {
+                    // スクロールして、次のページの行を表示する。
+                    scrollViewer.ScrollToVerticalOffset(index);
+                    // scrollViewer.ViewportHeight を更新する。
+                    presenter.UpdateLayout();
+                }
+            }
+        }
+
         public IReadOnlyList<object> Paginate(Size size)
         {
-            var pages = new List<OrderFormPage>();
-
-            {
-                var preview = new OrderFormPage(Header, Items);
-
-                // ページネーションを行うために、実際に DataGrid を生成する。
-                var presenter =
-                    new ContentPresenter()
-                    {
-                        Content = preview,
-                        Width = size.Width,
-                        Height = size.Height,
-                    };
-
-                presenter.Measure(size);
-                presenter.Arrange(new Rect(new Point(0, 0), size));
-                presenter.UpdateLayout();
-
-                var dataGrid =
-                    presenter.VisualDescendantsBFS().OfType<DataGrid>().First();
-
-                var scrollViewer =
-                    dataGrid.VisualDescendantsBFS().OfType<ScrollViewer>().First();
-
-                var items = preview.Items;
-                var index = 0;
-                while (index < items.Count)
-                {
-                    // 表示されている行数を取得する。
-                    var count =
-                        Math.Min((int)scrollViewer.ViewportHeight, items.Count - index);
-                    var pageItems =
-                        Enumerable.Range(index, count).Select(i => items[i]).ToArray();
-
-                    // 1画面に表示できた行からなるページを追加する。
-                    pages.Add(new OrderFormPage(Header, pageItems));
-
-                    index += count;
-
-                    if (index < items.Count)
-                    {
-                        // スクロールして、次のページの行を表示する。
-                        scrollViewer.ScrollToVerticalOffset(index);
-                        // scrollViewer.ViewportHeight を更新する。
-                        presenter.UpdateLayout();
-                    }
-                }
-            }
-
+            var pages = PaginateCore(size).ToArray();
+            
             // 各ページのページ番号・ページ数を設定する。
+            var pageIndex = 1;
+            foreach (var page in pages)
             {
-                var pageIndex = 1;
-                foreach (var page in pages)
-                {
-                    page.PageIndex = pageIndex;
-                    page.PageCount = pages.Count;
-                    pageIndex++;
-                }
+                page.PageIndex = pageIndex;
+                page.PageCount = pages.Length;
+                pageIndex++;
             }
 
-            return pages.ToArray();
+            return pages;
         }
 
         public OrderForm()
