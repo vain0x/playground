@@ -21,7 +21,7 @@ namespace VainZero.Windows.Media
         }
 
         public static IEnumerable<DependencyObject>
-            VisualDescendantsBFS(this DependencyObject obj)
+            VisualDescendantsBreadthFirstOrder(this DependencyObject obj)
         {
             var queue = new Queue<DependencyObject>();
             queue.Enqueue(obj);

@@ -28,8 +28,8 @@
     </DataTemplate>
 
     <!-- 注文書 -->
-    
-    <DataTemplate DataType="{x:Type local:OrderItemList}">
+
+    <DataTemplate DataType="{x:Type local:OrderFormPage}">
         <DataTemplate.Resources>
             <Style x:Key="DataGridColumnHeaderStyle" TargetType="DataGridColumnHeader">
                 <Setter Property="BorderBrush" Value="Black" />
@@ -84,52 +84,7 @@
                 <Setter Property="HorizontalAlignment" Value="Right" />
             </Style>
         </DataTemplate.Resources>
-        <DataGrid
-            HorizontalAlignment="Center"
-            ItemsSource="{Binding Items}"
-            >
-            <DataGrid.Columns>
-                <DataGridTextColumn
-                    HeaderStyle="{StaticResource LeftMostDataGridColumnHeaderStyle}"
-                    CellStyle="{StaticResource LeftMostDataGridCellStyle}"
-                    IsReadOnly="True"
-                    Header="商品名"
-                    Width="1*"
-                    Binding="{Binding Name}"
-                    />
-                <DataGridTextColumn
-                    CellStyle="{StaticResource NumberDataGridCellStyle}"
-                    IsReadOnly="True"
-                    Width="50"
-                    Header="数量"
-                    Binding="{Binding Count}"
-                    />
-                <DataGridTextColumn
-                    CellStyle="{StaticResource NumberDataGridCellStyle}"
-                    IsReadOnly="True"
-                    Width="80"
-                    Header="単価"
-                    Binding="{Binding UnitPrice}"
-                    />
-                <DataGridTextColumn
-                    CellStyle="{StaticResource NumberDataGridCellStyle}"
-                    IsReadOnly="True"
-                    Width="100"
-                    Header="金額"
-                    Binding="{Binding TotalPrice}"
-                    />
-                <DataGridTextColumn
-                    CellStyle="{StaticResource DataGridCellStyle}"
-                    IsReadOnly="True"
-                    Width="2*"
-                    Header="備考"
-                    Binding="{Binding Note}"
-                    />
-            </DataGrid.Columns>
-        </DataGrid>
-    </DataTemplate>
-
-    <DataTemplate DataType="{x:Type local:OrderFormPage}">
+        
         <Grid Margin="30">
             <Grid.RowDefinitions>
                 <RowDefinition Height="Auto" />
@@ -159,11 +114,51 @@
             </StackPanel>
 
             <!-- 明細 -->
-            <ContentPresenter
+            <DataGrid
                 Grid.Row="1"
                 Margin="0,20,0,20"
-                Content="{Binding ItemList}"
-                />
+                HorizontalAlignment="Center"
+                ItemsSource="{Binding Items}"
+                >
+                <DataGrid.Columns>
+                    <DataGridTextColumn
+                        HeaderStyle="{StaticResource LeftMostDataGridColumnHeaderStyle}"
+                        CellStyle="{StaticResource LeftMostDataGridCellStyle}"
+                        IsReadOnly="True"
+                        Header="商品名"
+                        Width="1*"
+                        Binding="{Binding Name}"
+                        />
+                    <DataGridTextColumn
+                        CellStyle="{StaticResource NumberDataGridCellStyle}"
+                        IsReadOnly="True"
+                        Width="50"
+                        Header="数量"
+                        Binding="{Binding Count}"
+                        />
+                    <DataGridTextColumn
+                        CellStyle="{StaticResource NumberDataGridCellStyle}"
+                        IsReadOnly="True"
+                        Width="80"
+                        Header="単価"
+                        Binding="{Binding UnitPrice}"
+                        />
+                    <DataGridTextColumn
+                        CellStyle="{StaticResource NumberDataGridCellStyle}"
+                        IsReadOnly="True"
+                        Width="100"
+                        Header="金額"
+                        Binding="{Binding TotalPrice}"
+                        />
+                    <DataGridTextColumn
+                        CellStyle="{StaticResource DataGridCellStyle}"
+                        IsReadOnly="True"
+                        Width="2*"
+                        Header="備考"
+                        Binding="{Binding Note}"
+                        />
+                </DataGrid.Columns>
+            </DataGrid>
         </Grid>
     </DataTemplate>
 </ResourceDictionary>

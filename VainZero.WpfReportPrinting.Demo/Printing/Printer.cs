@@ -10,14 +10,14 @@ namespace VainZero.WpfReportPrinting.Demo.Printing
 {
     public sealed class Printer
     {
-        public void Print(IPaginatable paginatable, PageMediaSize pageMediaSize)
+        public void Print(IPaginatable paginatable, Size pageSize)
         {
-            var pageSize = new Size(pageMediaSize.Width.Value, pageMediaSize.Height.Value);
             var document = paginatable.ToFixedDocument(pageSize);
 
             var printServer = new LocalPrintServer();
             var queue = printServer.DefaultPrintQueue;
-            queue.DefaultPrintTicket.PageMediaSize = pageMediaSize;
+            queue.DefaultPrintTicket.PageMediaSize =
+                new PageMediaSize(pageSize.Width, pageSize.Height);
 
             var writer = PrintQueue.CreateXpsDocumentWriter(queue);
             writer.Write(document);
