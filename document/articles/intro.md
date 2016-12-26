@@ -7,16 +7,32 @@ WPF/XAML を使って帳票のデザインから印刷までやってみたと�
 [vain0/VainZero.WpfReportPrinting: WPFで帳票を作成するサンプル](https://github.com/vain0/VainZero.WpfReportPrinting)
 
 ## 要約
-- XAML というマークアップ言語で帳票のデザインを作りたいと思った。
+- XAML というマークアップ言語で帳票のデザインから印刷までできれば、たくさんの利点がある。
 - WPF アプリケーションで帳票のプレビューや印刷を行うサンプルを作った。
 - ページネーションが大変だったけどなんとかなった。
 
 ## 前提知識
 XAML、WPF について簡単に説明します。
 
-XAML とは、GUIアプリケーションの外観を記述するマークアップ言語です。WEB 系の人には「HTML+CSS みたいなもの」といえばイメージしやすいのではないでしょうか。HTML と CSS の疎結合性を捨てた代わりに、テーブルレイアウトとかが標準でサポートされていて作りやすいなどの利点があります。
+XAML とは、GUIアプリケーションの外観を記述するマークアップ言語です。WEB 系の人には「HTML+CSS みたいなもの」といえばイメージしやすいのではないでしょうか。
 
-WPF とは、XAML と .NET 言語 (C# など) を用いて、Windows PC 用のネイティヴ アプリケーションを作るためのフレームワークです。XAML は WPF 以外でも使いますが、筆者は WPF にしか詳しくないので、ひとまず本稿のターゲットは WPF のみとします。
+WPF とは、XAML と .NET 言語 (C# など) を用いて、Windows PC 用のネイティヴ アプリケーションを作るためのフレームワークです。XAML は WPF 以外でも使いますが、筆者は WPF しかやったことがないので、ひとまず本稿のターゲットは WPF のみとします。
+
+## 利点
+WPF/XAML で帳票を作ることにはいくつかの利点があります。
+
+- **無料**
+    - WPFは Visual Studio (無料) をインストールすれば無料で使えます。商用利用する場合は、Visual Studio の有償ライセンスを購入することで、やはりWPFを無料で使えます。
+- **学習コストの削減**
+    - 本稿と先述のソースコードをご覧いただければ、みなさんはWPFの知識だけで帳票のデザインから印刷まで行えるようになります。すなわち、帳票フレームワークに習熟するコストを省略できるわけです。
+    - 特に、帳票フレームワーク固有のデザイナーではなく、Visual Studio の高機能なXAMLデザイナーを利用して、プレビューを見ながらデザインを行える、というのも大きな利点です。これについては、参考リンクのブログ記事が詳しいです。
+- **プレビューの容易さ**
+    - 詳しくは後述しますが、帳票をXAMLで作ることで、プレビューはほぼ完璧にできます。プレビュー機能もWPFで簡単に実装でき、メインのアプリケーションとシームレスに繋がります。
+- **ビューモデルの流用**
+    - 帳票として印刷するデータ (GUIオブジェクト) の背景となるデータ構造として、WPFアプリケーションにあるものをそのまま使えることがあります。例えば、ユーザーが画面上の入力フォームにデータを記入し、それと等価な帳票を印刷する、といった場合です。
+- **XAML本来の利点**――拡張性、可変レイアウト、など
+    - XAMLの売りとして、あらゆる要素の外観を完全にカスタマイズできる、というのがあります。これは帳票の用途にも役立つでしょう。実際、今回のサンプルでもスタイル機能をふんだんに活用しています。
+    - ウィンドウサイズを意識することなくウィンドウをデザインできるのと同様に、用紙サイズを意識することなく帳票を作れます。
 
 ## 簡単な帳票
 まずは簡単な帳票を例に挙げて、印刷する方法まで一通り解説します。簡単な帳票とは、タイトルがどーんとあって、日付が右寄せで、あとは本文という感じです。まずはプレビュー画面のスクリーンショットをご覧ください。
@@ -60,7 +76,7 @@ public sealed class HelloWorldPageViewModel
 
 要するに、印刷するデータは 96dpi で作ればよいわけです。
 
-例えば A4 (縦) は、ISO 規格で 210mm×297mm と決まっており、1 inch = 25.40 mm 、1 inch = 96 pixel で換算すれば 793.70×1122.52 となります。このサイズで作った紙風のパネルにページの中身を配置すれば、実際に印刷されるのと同じ見栄えのプレビューを表示できます。
+例えば A4 (縦) は、ISO 規格で 210mm×297mm と決まっており、1 inch = 25.40 mm 、1 inch = 96 pixel で換算すれば 793.70×1122.52 となります。このサイズで作った紙っぽいパネルにページの中身を配置すれば、実際に印刷されるのと同じ見栄えのプレビューを表示できます。
 
 次は印刷です。
 
@@ -129,7 +145,7 @@ public interface IPaginatable
 
 いま例にとっているハローワールド帳票では、常に1つのページになりますので、Paginate メソッドは1つのオブジェクトを返せばよいわけです。次のようになります。 [^ireport]
 
-[^ireport]: GitHub においてあるソースコードでは、HelloWorldReport は IPaginatable だけでなく、IPaginatable を拡張する IReport というインターフェイスを実装していますが、それはサンプルのためです。あまり気にしなくてかまいません。
+[^ireport]: GitHub においてあるソースコードでは、HelloWorldReport は IPaginatable だけでなく、IPaginatable を拡張する IReport というインターフェイスを実装していますが、それはサンプルの都合です。あまり気にしなくてかまいません。
 
 ```csharp
 public sealed class HelloWorldReport
@@ -195,7 +211,7 @@ public static class PaginatableExtension
 
 こうして FixedDocument を手に入れました。
 
-### XpsDocumentWriter で印刷する
+### プリンターへの送信
 最後に、この FixedDocument を、選択されたプリンターに送信すれば完了です。
 
 ```csharp
@@ -210,8 +226,8 @@ using System.Printing;
 
 できました。
 
-## 複数ページの帳票
-次に複雑な帳票、というかページネーションの方法を解説します。
+## 複雑なの帳票
+次に複数ページの帳票、すなわちページネーションの方法を解説します。
 
 まずはプレビュー画面のスクリーンショットをごらんください。
 
@@ -230,7 +246,7 @@ XAML は結構な分量なので省略します。表の部分には、スタイ
 0. 「スクロールなしで見えている行の数」を数えて、その範囲の行からなるページを生成する。
 0. 1ページ分スクロールして、また「見えている行の数」を数える。繰り返し。
 
-実際のソースコードはやや長いので、最初に張ったリンクから見てもらえればと思います。
+実際のソースコードはやや長いので、最初に張ったリンクから見てもらえればと思います。(OrderForm.cs の中にあります。)
 
 注意点は2つあります。
 
@@ -259,10 +275,81 @@ Measure, Arrange, UpdateLayout の3つを起動することで、DataGrid が余
 
 DataGrid のデフォルトの見た目では、中身をスクロールできるように ScrollViewer が配置されていて、「見える行数の最大値」のような情報を取得するには、それのプロパティを見ればいいわけです。問題となるのは、ScrollViewer のインスタンスをどう捕まえるかなのですが、VisualTree を辿るのが1つの方法です。これについては、参考リンクにあるブログ記事を参照してください。(あるいはソースコードを参照。)
 
-## おわりに
-いかがでしたでしょうか。不明点などあればコメントないし [Issue](https://github.com/vain0/VainZero.WpfReportPrinting/issues) をお願いします。
+## サンプルプログラムの概略
+必殺「ソースコードをごらんください」を思ったより使ってしまったので、サンプルプログラムの概略について説明します。
 
-動かなかったらごめんなさい！
+念のためリンクを再掲します:
+[vain0/VainZero.WpfReportPrinting: WPFで帳票を作成するサンプル](https://github.com/vain0/VainZero.WpfReportPrinting)
+
+### ソリューション構成
+ソリューションは `VainZero.WpfReportPrinting.Core` と `VainZero.WpfReportPrinting.Demo` の2つのプロジェクトからなります。
+
+前者 (`.Core`) は再利用可能な部品で、そのまま流用できるようになっています。中身は、先述の `IPaginatable` とその拡張メソッド、および VisualTree がらみの小さな拡張メソッドです。
+
+後者 (`.Demo`) は、帳票のプレビューと印刷の機能を持つアプリケーションです。印刷時のオプションは多数ありますので、これをベースにして、必要によりカスタマイズしながら作るのがよいと思います。
+
+### 使い方
+まず使い方から説明します。
+
+`.Demo` アプリを実行すると、ウィンドウが1つ表示されます。まずは左側のペインにあるリストボックスで、プレビューする帳票の種類を選びます。種類というのは、本稿で挙げた「簡単な帳票」(ハローワールド)と「複雑な帳票」(注文書)の2つです。
+
+右側ペインの上部には、2つのコンボボックスと印刷ボタンがあります。左端のコンボボックスでは、紙のサイズを指定します。紙のサイズが変わるたびにページネーションが再計算されるのがミソです。
+
+2つ目のコンボボックスはプレビューの拡大縮小ですが、これはいらなかったかもしれません (後で削るかもしれません)。
+
+右側ペインの残りの部分はプレビューです。
+
+印刷ボタンを押すと、デフォルトのプリンターで印刷されます。(印刷ダイアログは表示されません。)
+
+### 実装
+メインウィンドウ (MainWindow.xaml) の中身は、1つの `SampleReportPreviewer` クラス (を DataTemplate で表示したもの) であり、これは先述の通り「左側ペイン」(帳票セレクター/``Reports.ReportSelector``)と「右側ペイン」(プレビューアー/``Previewing.Previewer``)からなります。
+
+`ReportSelector` は本当にただの `ListBox` ですが、2つ注意するところがあります。
+
+1点は、[ReactiveProperty](https://github.com/runceel/ReactiveProperty) というクラスです。これは平たくいえば次のようなクラスです (※実際の定義ではありません)。
+
+```csharp
+public class ReactiveProperty<T>
+    : INotifyPropertyChanged
+{
+    public event PropertyChangedEventHandler PropertyChanged;
+
+    private T _value;
+    public T Value
+    {
+        get { return _value; }
+        set
+        {
+            _value = value;
+            PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(nameof(Value)));
+        }
+    }
+}
+```
+
+値をこれでラップしておくことで、 `INotifyPropertyChanged` の実装をいちいち手書きする (あるいは継承する) 必要がなくなる、という寸法ですね。
+
+もう1点は、リストボックスの各要素の型である `IReport` です。注釈にも書きましたが、これは `IPaginatable` に1つのプロパティを加えただけの拡張インターフェイスです。そのプロパティ (`ReportName`) というのは、単にリストボックスの各項目に表示するための名前(文字列)です。そのため、`IPaginatable` と同じだと思ってかまわないでしょう。
+
+さて、プレビューアーにあるコンボボックス2つも同様のことに気をつければ問題ないはずです。
+
+`Previewer` のコンストラクターにある [この式](https://github.com/vain0/VainZero.WpfReportPrinting/blob/v1.1.0/VainZero.WpfReportPrinting.Demo/Previewing/Previewer.cs#L42) は、Rx を知らないと読み解けないかもしれません。
+
+```csharp
+            Pages =
+                Report.CombineLatest(
+                    MediaSizeSelector.SelectedSize,
+                    (r, pageSize) => r.Paginate(pageSize)
+                )
+                .ToReadOnlyReactiveProperty();
+```
+
+これは平たくいえば「`Report`, `MediaSizeSelector.SelectedSize` の最新の値を `r`, `pageSize` とするとき、 ``r.Paginate(pageSize)`` の結果を `Pages` の値とする」という意味です。もう少し手続き的にいえば、まず `Report` と ``MediaSizeSelector.SelectedSize` の値をとってきて、 `Paginate` します。加えて、そのどちらかのプロパティが変更されるたび (リストボックスやコンボボックスの選択要素が変わるたび)、ページネーションを再試行します。
+
+最後に印刷ボタンですが、これは押されたとき、``Previewer.PrintCommand``→``Previewer.Print`` を経由して ``Printer.Print`` まで行き、そこからは前半で述べた感じです。FixedDocument を作って、デフォルトのプリンターを取得して、ページサイズを指定して、印刷。
+
+## おわりに
+いかがでしたでしょうか。不明点などあればコメントないし [イシュー](https://github.com/vain0/VainZero.WpfReportPrinting/issues) をお願いします。
 
 ## 参考リンク
 ### 帳票関連
