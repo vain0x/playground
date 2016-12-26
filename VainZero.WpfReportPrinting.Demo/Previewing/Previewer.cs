@@ -20,9 +20,6 @@ namespace VainZero.WpfReportPrinting.Demo.Previewing
 
         public ICommand PrintCommand => printCommand;
 
-        public ScaleSelector ScaleSelector { get; } =
-            new ScaleSelector();
-
         public MediaSizeSelector MediaSizeSelector { get; } =
             new MediaSizeSelector();
 

@@ -118,7 +118,6 @@
   <ItemGroup>
     <Compile Include="Previewing\MediaSizeSelector.cs" />
     <Compile Include="Previewing\Previewer.cs" />
-    <Compile Include="Previewing\ScaleSelector.cs" />
     <Compile Include="Properties\AssemblyInfo.cs">
       <SubType>Code</SubType>
     </Compile>
