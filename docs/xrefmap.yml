@@ -153,11 +153,6 @@ references:
   href: api/VainZero.WpfReportPrinting.Demo.Previewing.Previewer.html#VainZero_WpfReportPrinting_Demo_Previewing_Previewer_Report
   commentId: P:VainZero.WpfReportPrinting.Demo.Previewing.Previewer.Report
   fullName: VainZero.WpfReportPrinting.Demo.Previewing.Previewer.Report
-- uid: VainZero.WpfReportPrinting.Demo.Previewing.Previewer.ScaleSelector
-  name: ScaleSelector
-  href: api/VainZero.WpfReportPrinting.Demo.Previewing.Previewer.html#VainZero_WpfReportPrinting_Demo_Previewing_Previewer_ScaleSelector
-  commentId: P:VainZero.WpfReportPrinting.Demo.Previewing.Previewer.ScaleSelector
-  fullName: VainZero.WpfReportPrinting.Demo.Previewing.Previewer.ScaleSelector
 - uid: VainZero.WpfReportPrinting.Demo.Previewing.ScaleSelector
   name: ScaleSelector
   href: api/VainZero.WpfReportPrinting.Demo.Previewing.ScaleSelector.html#VainZero_WpfReportPrinting_Demo_Previewing_ScaleSelector
