@@ -17,33 +17,12 @@
         </ComboBox>
     </DataTemplate>
 
-    <DataTemplate DataType="{x:Type local:ScaleSelector}">
-        <ComboBox
-            Margin="10"
-            ItemsSource="{x:Static local:ScaleSelector.Scales}"
-            SelectedItem="{Binding SelectedScale.Value}"
-            >
-            <ComboBox.ItemTemplate>
-                <DataTemplate>
-                    <TextBlock>
-                        x<Run Text="{Binding Mode=OneTime}" />
-                    </TextBlock>
-                </DataTemplate>
-            </ComboBox.ItemTemplate>
-        </ComboBox>
-    </DataTemplate>
-
     <DataTemplate DataType="{x:Type local:Previewer}">
         <DockPanel x:Name="previewer" Background="Silver">
             <DockPanel DockPanel.Dock="Top" LastChildFill="False">
                 <ContentPresenter
                     DockPanel.Dock="Left"
                     Content="{Binding MediaSizeSelector}"
-                    />
-
-                <ContentPresenter
-                    DockPanel.Dock="Left"
-                    Content="{Binding ScaleSelector}"
                     />
 
                 <Button
@@ -74,16 +53,6 @@
                                         ElementName=previewer}"
                                     Background="White"
                                     >
-                                    <Grid.LayoutTransform>
-                                        <ScaleTransform
-                                            ScaleX="{Binding
-                                                Path=DataContext.ScaleSelector.SelectedScale.Value,
-                                                ElementName=previewer}"
-                                            ScaleY="{Binding
-                                                Path=DataContext.ScaleSelector.SelectedScale.Value,
-                                                ElementName=previewer}"
-                                            />
-                                    </Grid.LayoutTransform>
                                     <ContentPresenter Content="{Binding}" />
                                 </Grid>
                             </Border>
