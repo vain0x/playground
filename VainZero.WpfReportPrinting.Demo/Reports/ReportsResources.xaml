@@ -32,16 +32,6 @@
 
     <DataTemplate DataType="{x:Type local:OrderFormPage}">
         <DataTemplate.Resources>
-            <Style TargetType="{x:Type headeredGrid:HeaderedGridRowCell}">
-                <Setter Property="Padding" Value="10,5,10,5" />
-                <Setter Property="BorderBrush" Value="Black" />
-                <Setter Property="BorderThickness" Value="0,0,1,1" />
-                <Style.Triggers>
-                    <Trigger Property="Grid.Column" Value="0">
-                        <Setter Property="BorderThickness" Value="1,0,1,1" />
-                    </Trigger>
-                </Style.Triggers>
-            </Style>
             <Style TargetType="{x:Type headeredGrid:HeaderedGridHeaderCell}">
                 <Setter Property="Padding" Value="10,5,10,5" />
                 <Setter Property="BorderBrush" Value="Black" />
@@ -51,6 +41,27 @@
                         <Setter Property="BorderThickness" Value="1" />
                     </Trigger>
                 </Style.Triggers>
+            </Style>
+            <Style x:Key="RowCellStyle" TargetType="{x:Type headeredGrid:HeaderedGridRowCell}">
+                <Setter Property="Padding" Value="10,5,10,5" />
+                <Setter Property="BorderBrush" Value="Black" />
+                <Setter Property="BorderThickness" Value="0,0,1,1" />
+                <Style.Triggers>
+                    <Trigger Property="Grid.Column" Value="0">
+                        <Setter Property="BorderThickness" Value="1,0,1,1" />
+                    </Trigger>
+                </Style.Triggers>
+            </Style>
+            <Style
+                TargetType="{x:Type headeredGrid:HeaderedGridRowCell}"
+                BasedOn="{StaticResource RowCellStyle}"
+                />
+            <Style
+                x:Key="NumberCellStyle"
+                TargetType="{x:Type headeredGrid:HeaderedGridRowCell}"
+                BasedOn="{StaticResource RowCellStyle}"
+                >
+                <Setter Property="HorizontalContentAlignment" Value="Right" />
             </Style>
         </DataTemplate.Resources>
         
@@ -92,26 +103,14 @@
                     <headeredGrid:HeaderedGridColumn
                         Header="商品名"
                         Width="*"
-                        >
-                        <headeredGrid:HeaderedGridColumn.CellTemplate>
-                            <DataTemplate>
-                                <TextBlock Text="{Binding Name}" />
-                            </DataTemplate>
-                        </headeredGrid:HeaderedGridColumn.CellTemplate>
-                    </headeredGrid:HeaderedGridColumn>
+                        CellBinding="{Binding Name}"
+                        />
                     <headeredGrid:HeaderedGridColumn
                         Header="単価"
                         Width="200"
-                        >
-                        <headeredGrid:HeaderedGridColumn.CellTemplate>
-                            <DataTemplate>
-                                <TextBlock
-                                    Text="{Binding UnitPrice}"
-                                    HorizontalAlignment="Right"
-                                    />
-                            </DataTemplate>
-                        </headeredGrid:HeaderedGridColumn.CellTemplate>
-                    </headeredGrid:HeaderedGridColumn>
+                        CellBinding="{Binding UnitPrice}"
+                        CellStyle="{StaticResource NumberCellStyle}"
+                        />
                 </headeredGrid:HeaderedGrid.Columns>
             </headeredGrid:HeaderedGrid>
         </Grid>

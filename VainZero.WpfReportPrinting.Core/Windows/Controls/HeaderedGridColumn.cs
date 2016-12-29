@@ -6,6 +6,7 @@ using System.Text;
 using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Controls;
+using System.Windows.Data;
 
 namespace VainZero.Windows.Controls
 {
@@ -101,5 +102,15 @@ namespace VainZero.Windows.Controls
             set { SetValue(CellTemplateSelectorProperty, value); }
         }
         #endregion
+
+        #region CellBinding
+        internal static BindingBase CellBindingDefault { get; } =
+            new Binding();
+
+        public BindingBase CellBinding { get; set; } =
+            CellBindingDefault;
+        #endregion
+
+        public Style CellStyle { get; set; }
     }
 }

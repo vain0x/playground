@@ -3,6 +3,7 @@ using System.Collections;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.Collections.Specialized;
+using System.ComponentModel;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
@@ -85,10 +86,20 @@ namespace VainZero.Windows.Controls
             var cell =
                 new HeaderedGridRowCell()
                 {
-                    Content = dataContext,
                     ContentTemplate = column.CellTemplate,
                     ContentTemplateSelector = column.CellTemplateSelector,
+                    DataContext = dataContext,
                 };
+
+            var cellBinding = column.CellBinding ?? HeaderedGridColumn.CellBindingDefault;
+            cell.SetBinding(ContentProperty, cellBinding);
+
+            var cellStyle = column.CellStyle;
+            if (cellStyle != null)
+            {
+                cell.Style = cellStyle;
+            }
+
             Grid.SetRow(cell, rowIndex);
             Grid.SetColumn(cell, columnIndex);
             grid.Children.Add(cell);
