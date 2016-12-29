@@ -1,4 +1,5 @@
 ﻿using System.Collections.Generic;
+using System.Linq;
 using System.Reactive.Linq;
 using Reactive.Bindings;
 using VainZero.Windows.Documents;
@@ -19,7 +20,7 @@ namespace VainZero.WpfReportPrinting.Demo.Reports
         public ReportSelector()
         {
             SelectedReport =
-                new ReactiveProperty<IReport>(Reports[0]);
+                new ReactiveProperty<IReport>(Reports.Last());
         }
     }
 }
