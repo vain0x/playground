@@ -8,6 +8,7 @@ using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Documents;
 using System.Windows.Media;
+using VainZero.Windows.Controls;
 using VainZero.Windows.Documents;
 using VainZero.Windows.Media;
 
@@ -106,34 +107,53 @@ namespace VainZero.WpfReportPrinting.Demo.Reports
             presenter.Arrange(new Rect(new Point(0, 0), size));
             presenter.UpdateLayout();
 
-            var dataGrid =
-                presenter.VisualDescendantsBreadthFirstOrder().OfType<DataGrid>().First();
+            var headeredGrid =
+                presenter.VisualDescendantsBreadthFirstOrder().OfType<HeaderedGrid>().First();
 
-            var scrollViewer =
-                presenter.VisualDescendantsBreadthFirstOrder().OfType<ScrollViewer>().First();
+            var scrollViewer = headeredGrid.ScrollViewer;
+            var grid = headeredGrid.Grid;
 
             var items = preview.Items;
             var index = 0;
             while (index < items.Count)
             {
-                // 表示されている行数を取得する。
-                var count =
-                    Math.Min((int)scrollViewer.ViewportHeight, items.Count - index);
+                // 表示されている行数を計算する。
+                var totalRowHeight =
+                    grid.RowDefinitions[0].ActualHeight;
+                var count = 0;
+                while (index + count < items.Count)
+                {
+                    totalRowHeight += grid.RowDefinitions[1 + index + count].ActualHeight;
+                    if (totalRowHeight > scrollViewer.ViewportHeight) break;
+
+                    count++;
+                }
+
+                if (count == 0)
+                {
+                    // ヘッダー行が大きすぎてコンテンツを表示できていない。
+                    throw new Exception();
+                }
+
                 var pageItems =
                     Enumerable.Range(index, count).Select(i => items[i]).ToArray();
 
                 // 1画面に表示できた行からなるページを追加する。
                 yield return new OrderFormPage(Header, pageItems);
 
-                index += count;
-
-                if (index < items.Count)
+                if (index + count < items.Count)
                 {
-                    // スクロールして、次のページの行を表示する。
-                    scrollViewer.ScrollToVerticalOffset(index);
+                    // いまのページに追加された分の行を非表示 (高さ 0) にする。
+                    foreach (var i in Enumerable.Range(index, count))
+                    {
+                        grid.RowDefinitions[1 + i].MaxHeight = 0.0;
+                    }
+
                     // scrollViewer.ViewportHeight を更新する。
                     presenter.UpdateLayout();
                 }
+
+                index += count;
             }
         }
 

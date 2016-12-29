@@ -78,6 +78,17 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="Properties\AssemblyInfo.cs" />
+    <Compile Include="Windows\Controls\HeaderedGrid.xaml.cs">
+      <DependentUpon>HeaderedGrid.xaml</DependentUpon>
+    </Compile>
+    <Compile Include="Windows\Controls\HeaderedGridColumn.cs" />
+    <Compile Include="Windows\Controls\HeaderedGridHeaderCell.xaml.cs">
+      <DependentUpon>HeaderedGridHeaderCell.xaml</DependentUpon>
+    </Compile>
+    <Compile Include="Windows\Controls\HeaderedGridRowCell.xaml.cs">
+      <DependentUpon>HeaderedGridRowCell.xaml</DependentUpon>
+    </Compile>
+    <Compile Include="Windows\Controls\HeaderedGridCell.cs" />
     <Compile Include="Windows\Documents\IPaginatable.cs" />
     <Compile Include="Windows\Documents\PaginatableExtension.cs" />
     <Compile Include="Windows\Media\VisualExtension.cs" />
@@ -86,7 +97,20 @@
     <None Include="app.config" />
     <None Include="packages.config" />
   </ItemGroup>
-  <ItemGroup />
+  <ItemGroup>
+    <Page Include="Windows\Controls\HeaderedGrid.xaml">
+      <SubType>Designer</SubType>
+      <Generator>MSBuild:Compile</Generator>
+    </Page>
+    <Page Include="Windows\Controls\HeaderedGridHeaderCell.xaml">
+      <SubType>Designer</SubType>
+      <Generator>MSBuild:Compile</Generator>
+    </Page>
+    <Page Include="Windows\Controls\HeaderedGridRowCell.xaml">
+      <SubType>Designer</SubType>
+      <Generator>MSBuild:Compile</Generator>
+    </Page>
+  </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 
        Other similar extension points exist, see Microsoft.Common.targets.
