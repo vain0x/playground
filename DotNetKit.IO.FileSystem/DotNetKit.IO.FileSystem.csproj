@@ -43,7 +43,18 @@
     <None Include="project.json" />
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="IO\FileSystem\FileObject.cs" />
+    <Compile Include="IO\FileSystem\FilePath\FilePathExtension.cs" />
+    <Compile Include="IO\FileSystem\FilePath\IFilePath.cs" />
+    <Compile Include="IO\FileSystem\FilePath\RelativeDirectoryPath.cs" />
+    <Compile Include="IO\FileSystem\FilePath\RelativeFileObjectPath.cs" />
+    <Compile Include="IO\FileSystem\FilePath\RelativeFilePath.cs" />
+    <Compile Include="IO\FileSystem\FileSystem.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
+  </ItemGroup>
+  <ItemGroup>
+    <Folder Include="IO\FileSystem\MemoryFileSystem\" />
+    <Folder Include="IO\FileSystem\PhysicalFileSystem\" />
   </ItemGroup>
   <Import Project="$(MSBuildExtensionsPath32)\Microsoft\Portable\$(TargetFrameworkVersion)\Microsoft.Portable.CSharp.targets" />
   <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 
