@@ -5,6 +5,8 @@ VisualStudioVersion = 14.0.25420.1
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "DotNetKit.IO.FileSystem", "DotNetKit.IO.FileSystem\DotNetKit.IO.FileSystem.csproj", "{D1754FD8-7DD1-46A1-82DD-2D649C71F374}"
 EndProject
+Project("{F2A71F9B-5D33-465A-A702-920D77279786}") = "DotNetKit.UnitTest", "DotNetKit.UnitTest\DotNetKit.UnitTest.fsproj", "{39A75B9A-2363-4156-BFCB-5374B8240E25}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -15,6 +17,10 @@ Global
 		{D1754FD8-7DD1-46A1-82DD-2D649C71F374}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{D1754FD8-7DD1-46A1-82DD-2D649C71F374}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{D1754FD8-7DD1-46A1-82DD-2D649C71F374}.Release|Any CPU.Build.0 = Release|Any CPU
+		{39A75B9A-2363-4156-BFCB-5374B8240E25}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{39A75B9A-2363-4156-BFCB-5374B8240E25}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{39A75B9A-2363-4156-BFCB-5374B8240E25}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{39A75B9A-2363-4156-BFCB-5374B8240E25}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
