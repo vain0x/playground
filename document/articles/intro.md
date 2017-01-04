@@ -22,7 +22,7 @@ WPF とは、XAML と .NET 言語 (C# など) を用いて、Windows PC 用の�
 WPF/XAML で帳票を作ることにはいくつかの利点があります。
 
 - **無料**
-    - WPFは Visual Studio (無料) をインストールすれば無料で使えます。商用利用する場合は、Visual Studio の有償ライセンスを購入することで、やはりWPFを無料で使えます。
+    - WPFは Visual Studio (無料) をインストールすれば無料で使えます。商用利用する場合は、Visual Studio の有償ライセンスを購入することで、やはりWPFは無料で使えます。
 - **学習コストの削減**
     - 本稿と先述のソースコードをご覧いただければ、みなさんはWPFの知識だけで帳票のデザインから印刷まで行えるようになります。すなわち、帳票フレームワークに習熟するコストを省略できるわけです。
     - 特に、帳票フレームワーク固有のデザイナーではなく、Visual Studio の高機能なXAMLデザイナーを利用して、プレビューを見ながらデザインを行える、というのも大きな利点です。これについては、参考リンクのブログ記事が詳しいです。
@@ -192,8 +192,6 @@ public static class PaginatableExtension
                 };
             page.Children.Add(presenter);
 
-            // この3つを行わないと DataGrid がページ全体に展開せず、潰れた状態になる。
-            // これらが実際に何をするかは余裕があったら調べたい。
             page.Measure(pageSize);
             page.Arrange(new Rect(new Point(0, 0), pageSize));
             page.UpdateLayout();
@@ -226,14 +224,16 @@ using System.Printing;
 
 できました。
 
-## 複雑なの帳票
+## 複雑な帳票
 次に複数ページの帳票、すなわちページネーションの方法を解説します。
 
 まずはプレビュー画面のスクリーンショットをごらんください。
 
 ![ページネーションを含む帳票のスクリーンショット](../images/intro/OrderFormScreenshot.png)
 
-XAML は結構な分量なので省略します。表の部分には、スタイルをガチガチに決めた DataGrid を使用しています。
+XAML は結構な分量なので省略します。表の部分には、 ~~スタイルをガチガチに決めた DataGrid~~ **HeaderedGrid という DataGrid のようなもの** [^DataGrid_issue]を使用しています。
+
+[^DataGrid_issue]: 一部のプリンターでは、DataGrid や ListView のレイアウトが乱れてしまう、という問題があるようです。これについては調査中です。
 
 簡単な帳票との差は、Paginate メソッドの実装だけです。
 
@@ -242,38 +242,17 @@ XAML は結構な分量なので省略します。表の部分には、スタイ
 
 おおまかな手順は次の通りです。
 
-0. すべての行のデータを持った DataGrid を生成する。
+0. すべての行のデータを持った帳票を生成する。
+0. 帳票の中にある ScrollViewer を見つける。
+    - Visual Tree を辿ればよい。詳しくは参考リンクにあるブログ記事を参照。
 0. 「スクロールなしで見えている行の数」を数えて、その範囲の行からなるページを生成する。
-0. 1ページ分スクロールして、また「見えている行の数」を数える。繰り返し。
+    - ScrollViewer.ViewportHeight が「スクロールなしで見える範囲の実際の高さ (ピクセル単位)」になっているので、各行の高さ (ActualHeight) の和がそれを超えない範囲を調べる。
+0. それらの行からなる帳票を生成する。これを1ページとする。
+0. 前のページに含まれる行を非表示にする。
+    - Grid の行を非表示にするには、単に高さを 0 にすればよいらしい。
+0. 次のページに表示すべき行だけが表示された状態になるので、繰り返し。
 
-実際のソースコードはやや長いので、最初に張ったリンクから見てもらえればと思います。(OrderForm.cs の中にあります。)
-
-注意点は2つあります。
-
-- DataGrid を初期化した後、画面サイズに合わせてレイアウトを再計算させる必要がある。
-
-```csharp
-    // ページネーションを行うために、実際に DataGrid を生成する。
-    var preview = new OrderFormPage(Header, Items);
-    var presenter =
-        new ContentPresenter()
-        {
-            Content = preview,
-            Width = size.Width,
-            Height = size.Height,
-        };
-
-    // DataGrid のレイアウトを計算させる魔法のコード
-    presenter.Measure(size);
-    presenter.Arrange(new Rect(new Point(0, 0), size));
-    presenter.UpdateLayout();
-```
-
-Measure, Arrange, UpdateLayout の3つを起動することで、DataGrid が余白に合わせて適切なサイズに広がります。
-
-- 「見えている行の数」の代わりに、「見える行数の最大値」である ``ScrollViewer.ViewportHeight`` が使用できる。(「見えている行の数」を厳密に取得する方法 ~~が分からなかった……~~ は読者の演習課題)
-
-DataGrid のデフォルトの見た目では、中身をスクロールできるように ScrollViewer が配置されていて、「見える行数の最大値」のような情報を取得するには、それのプロパティを見ればいいわけです。問題となるのは、ScrollViewer のインスタンスをどう捕まえるかなのですが、VisualTree を辿るのが1つの方法です。これについては、参考リンクにあるブログ記事を参照してください。(あるいはソースコードを参照。)
+実際のソースコードはやや長いので、最初に張ったリンクから見てもらえればと思います。帳票の定義は Demo プロジェクトの [Reports/OrderForm.cs](https://github.com/vain0/VainZero.WpfReportPrinting/blob/v1.3.0/VainZero.WpfReportPrinting.Demo/Reports/OrderForm.cs) の中にあります。ページネーションは、 Core プロジェクトの [Windows/Documents/ISingleHeaderedGridPage.cs](https://github.com/vain0/VainZero.WpfReportPrinting/blob/v1.3.0/VainZero.WpfReportPrinting.Core/Windows/Documents/ISingleHeaderedGridPage.cs) にあります。
 
 ## サンプルプログラムの概略
 必殺「ソースコードをごらんください」を思ったより使ってしまったので、サンプルプログラムの概略について説明します。
@@ -327,9 +306,9 @@ public class ReactiveProperty<T>
 
 値をこれでラップしておくことで、 `INotifyPropertyChanged` の実装をいちいち手書きする (あるいは継承する) 必要がなくなる、という寸法ですね。
 
-もう1点は、リストボックスの各要素の型である `IReport` です。注釈にも書きましたが、これは `IPaginatable` に1つのプロパティを加えただけの拡張インターフェイスです。そのプロパティ (`ReportName`) というのは、単にリストボックスの各項目に表示するための名前(文字列)です。そのため、`IPaginatable` と同じだと思ってかまわないでしょう。
+もう1点は、リストボックスの各要素の型である `IReport` です。注釈にも書きましたが、これは `IPaginatable` に1つのプロパティを加えただけのインターフェイスです。そのプロパティ (`ReportName`) というのは、単にリストボックスの各項目に表示するための名前(文字列)です。そのため、`IPaginatable` と同じだと思ってかまいません。
 
-さて、プレビューアーにあるコンボボックス2つも同様のことに気をつければ問題ないはずです。
+さて、プレビューアーにあるコンボボックスも同様のことに気をつければ問題ないはずです。
 
 `Previewer` のコンストラクターにある [この式](https://github.com/vain0/VainZero.WpfReportPrinting/blob/v1.1.0/VainZero.WpfReportPrinting.Demo/Previewing/Previewer.cs#L42) は、Rx を知らないと読み解けないかもしれません。
 
