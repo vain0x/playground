@@ -39,7 +39,7 @@ namespace DotNetKit.Wpf.ToastNotification.Demo
 
         SimpleToastNotificationTheme RandomTheme()
         {
-            return ThemeFromInt(random.Next(0, 3));
+            return ThemeFromInt(random.Next(0, 4));
         }
 
         void Add(SimpleToastNotificationTheme theme)
