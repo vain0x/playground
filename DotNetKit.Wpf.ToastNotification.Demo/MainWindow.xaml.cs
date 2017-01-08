@@ -13,6 +13,8 @@ using System.Windows.Media.Imaging;
 using System.Windows.Navigation;
 using System.Windows.Shapes;
 
+using DotNetKit.Windows.Controls;
+
 namespace DotNetKit.Wpf.ToastNotification.Demo
 {
     /// <summary>
@@ -20,9 +22,26 @@ namespace DotNetKit.Wpf.ToastNotification.Demo
     /// </summary>
     public partial class MainWindow : Window
     {
+        public new MainWindowViewModel DataContext
+        {
+            get { return (MainWindowViewModel)base.DataContext; }
+            set { base.DataContext = value; }
+        }
+
+        public void OnLoad(object sender, EventArgs e)
+        {
+            var toastNotificationWindow =
+                new ToastNotificationWindow(DataContext.ToastNotificationCollection, this);
+            toastNotificationWindow.Show();
+        }
+
         public MainWindow()
         {
             InitializeComponent();
+
+            DataContext = new MainWindowViewModel();
+
+            Loaded += OnLoad;
         }
     }
 }

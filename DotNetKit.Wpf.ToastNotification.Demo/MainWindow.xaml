@@ -9,8 +9,4 @@
     Title="ToastNotification Demo"
     Width="525"
     Height="350"
-    >
-    <Grid>
-        
-    </Grid>
-</Window>
+    />
