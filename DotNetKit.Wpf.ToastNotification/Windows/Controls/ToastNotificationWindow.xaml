@@ -12,6 +12,7 @@
     ShowInTaskbar="False"
     SizeToContent="Width"
     WindowStyle="None"
+    Topmost="True"
     >
     <Window.Content>
         <controls:ToastNotificationCollectionControl />
