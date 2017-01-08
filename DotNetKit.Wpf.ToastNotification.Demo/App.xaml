@@ -1,0 +1,16 @@
+﻿<Application
+    x:Class="DotNetKit.Wpf.ToastNotification.Demo.App"
+    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:demo="clr-namespace:DotNetKit.Wpf.ToastNotification.Demo"
+    StartupUri="MainWindow.xaml"
+    >
+    <Application.Resources>
+        <ResourceDictionary>
+            <ResourceDictionary.MergedDictionaries>
+                <!-- You need to merge the dictionary to use SimpleToastNotification. -->
+                <ResourceDictionary Source="pack://application:,,,/DotNetKit.Wpf.ToastNotification;component/Windows/Controls/SimpleToastNotificationTemplate.xaml" />
+            </ResourceDictionary.MergedDictionaries>
+        </ResourceDictionary>
+    </Application.Resources>
+</Application>
