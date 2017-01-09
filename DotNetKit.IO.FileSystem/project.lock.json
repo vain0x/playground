@@ -12,6 +12,15 @@
           "lib/netstandard10/DotNetKit.Core.dll": {}
         }
       },
+      "DotNetKit.ErrorHandling/1.4.0": {
+        "type": "package",
+        "compile": {
+          "lib/netstandard10/DotNetKit.ErrorHandling.dll": {}
+        },
+        "runtime": {
+          "lib/netstandard10/DotNetKit.ErrorHandling.dll": {}
+        }
+      },
       "Microsoft.NETCore.Jit/1.0.2": {
         "type": "package"
       },
@@ -360,6 +369,16 @@
         "DotNetKit.Core.1.0.1.nupkg.sha512",
         "DotNetKit.Core.nuspec",
         "lib/netstandard10/DotNetKit.Core.dll"
+      ]
+    },
+    "DotNetKit.ErrorHandling/1.4.0": {
+      "sha512": "X9XAVANEyswi4WDOZrsVTcfJAT5Q8+KKDZHw2Vr9YyfOXdk6JuEpU7cn/oZw+NlbrIJaYMay7YSqLbCtl0LWKQ==",
+      "type": "package",
+      "path": "DotNetKit.ErrorHandling/1.4.0",
+      "files": [
+        "DotNetKit.ErrorHandling.1.4.0.nupkg.sha512",
+        "DotNetKit.ErrorHandling.nuspec",
+        "lib/netstandard10/DotNetKit.ErrorHandling.dll"
       ]
     },
     "Microsoft.NETCore.Jit/1.0.2": {
@@ -2047,6 +2066,7 @@
   "projectFileDependencyGroups": {
     "": [
       "DotNetKit.Core >= 1.0.1",
+      "DotNetKit.ErrorHandling >= 1.4.0",
       "Microsoft.NETCore.Portable.Compatibility >= 1.0.1",
       "NETStandard.Library >= 1.6.0"
     ],
