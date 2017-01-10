@@ -28,8 +28,13 @@ namespace DotNetKit.Wpf
         : UserControl
     {
         public Orientation Orientation { get; set; }
-        public int ItemCount { get; set; }
-        public ObservableCollection<UIElement> Children { get; private set; }
+
+        /// <summary>
+        /// Gets or sets the number of key-value pairs in a row.
+        /// </summary>
+        public int ColumnCount { get; set; }
+
+        public Collection<UIElement> Children { get; private set; }
 
         #region IsLabel
         static readonly DependencyProperty isLabelProperty =
@@ -113,25 +118,19 @@ namespace DotNetKit.Wpf
             }
         }
 
-        bool isColumnDefinitionsCreated;
-
-        void CreateColumnDefinitions()
+        void CreateColumnDefinitions(int columnCount)
         {
-            if (isColumnDefinitionsCreated) return;
-            isColumnDefinitionsCreated = true;
-
-            foreach (var i in Enumerable.Range(0, ItemCount))
+            for (var i = 0; i < columnCount; i++)
             {
                 AddGridColumn(GridLength.Auto);
+                AddGridColumn(new GridLength(1.0, GridUnitType.Star));
             }
-            AddGridColumn(new GridLength(1.0, GridUnitType.Star));
         }
 
-        void AddUIElement(int rowIndex, int columnIndex, UIElement element)
+        void AddUIElement(int index, UIElement element, int columnCount)
         {
-            var isOdd = rowIndex % 2 != 0;
-
-            CreateColumnDefinitions();
+            var rowIndex = index / (columnCount * 2);
+            var columnIndex = index % (columnCount * 2);
 
             if (columnIndex == 0)
             {
@@ -140,39 +139,40 @@ namespace DotNetKit.Wpf
 
             element.SetValue(GridRowProperty, rowIndex);
             element.SetValue(GridColumnProperty, columnIndex);
-            SetIsLabel(element, columnIndex == 0);
-            SetIsOdd(element, isOdd);
+            SetIsLabel(element, columnIndex % 2 == 0);
+            SetIsOdd(element, rowIndex % 2 != 0);
             grid.Children.Add(element);
         }
 
-        void OnCollectionChanged(object sender, NotifyCollectionChangedEventArgs e)
+        void Reset()
         {
-            switch (e.Action)
+            var columnCount = ColumnCount;
+            if (columnCount < 1)
             {
-                case NotifyCollectionChangedAction.Add:
-                    if (ItemCount < 0)
-                    {
-                        throw new InvalidOperationException("RecordGrid.ItemCount must not be negative.");
-                    }
-                    var count = ItemCount + 1;
-
-                    var index = e.NewStartingIndex;
-                    foreach (var element in e.NewItems.Cast<UIElement>())
-                    {
-                        AddUIElement(index / count, index % count, element);
-                        index++;
-                    }
-                    break;
+                throw new InvalidOperationException("RecordGrid.ColumnCount must be positive.");
             }
+
+            CreateColumnDefinitions(columnCount);
+
+            var index = 0;
+            foreach (var item in Children)
+            {
+                AddUIElement(index, item, columnCount);
+                index++;
+            }
+        }
+
+        public override void OnApplyTemplate()
+        {
+            base.OnApplyTemplate();
+            Reset();
         }
 
         public RecordGrid()
         {
             Orientation = Orientation.Vertical;
-            ItemCount = 1;
-
-            Children = new ObservableCollection<UIElement>();
-            Children.CollectionChanged += OnCollectionChanged;
+            ColumnCount = 1;
+            Children = new Collection<UIElement>();
 
             InitializeComponent();
         }
