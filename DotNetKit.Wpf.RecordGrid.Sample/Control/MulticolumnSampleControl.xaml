@@ -1,0 +1,52 @@
+﻿<UserControl
+    x:Class="DotNetKit.Wpf.Sample.MulticolumnSampleControl"
+    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006" 
+    xmlns:d="http://schemas.microsoft.com/expression/blend/2008" 
+    xmlns:recordGrid="clr-namespace:DotNetKit.Wpf;assembly=DotNetKit.Wpf.RecordGrid"
+    mc:Ignorable="d" 
+    d:DesignWidth="300"
+    d:DesignHeight="300"
+    >
+    <recordGrid:RecordGrid
+        ColumnCount="2"
+        BorderBrush="DimGray"
+        BorderThickness="0,0,1,1"
+        Background="LightGray"
+        HorizontalAlignment="Center"
+        VerticalAlignment="Center"
+        >
+        <recordGrid:RecordGrid.Resources>
+            <Style TargetType="{x:Type Label}">
+                <Setter Property="BorderBrush" Value="DimGray" />
+                <Setter Property="BorderThickness" Value="1,1,0,0" />
+                <Setter Property="Padding" Value="10,5,10,5" />
+                <Style.Triggers>
+                    <!-- Set styles for record labels. -->
+                    <Trigger Property="recordGrid:RecordGrid.IsLabel" Value="True">
+                        <Setter Property="TextElement.FontWeight" Value="Bold" />
+                        <Setter Property="HorizontalContentAlignment" Value="Center" />
+                        <Setter Property="VerticalContentAlignment" Value="Center" />
+                    </Trigger>
+                    <!-- Set styles for odd-th elements. -->
+                    <Trigger Property="recordGrid:RecordGrid.IsOdd" Value="True">
+                        <Setter Property="Background" Value="WhiteSmoke" />
+                    </Trigger>
+                </Style.Triggers>
+            </Style>
+        </recordGrid:RecordGrid.Resources>
+
+        <Label Content="Name" />
+        <Label Content="{Binding Name}" />
+
+        <Label Content="Age" />
+        <Label Content="{Binding Age}" />
+        
+        <Label Content="Code" />
+        <Label Content="{Binding Code}" />
+
+        <Label Content="Gender" />
+        <Label Content="{Binding Gender}" />
+    </recordGrid:RecordGrid>
+</UserControl>

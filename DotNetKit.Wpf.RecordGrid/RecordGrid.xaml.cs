@@ -29,6 +29,11 @@ namespace DotNetKit.Wpf
     {
         public Orientation Orientation { get; set; }
 
+        /// <summary>
+        /// Gets or sets the number of key-value pairs in a row.
+        /// </summary>
+        public int ColumnCount { get; set; }
+
         public Collection<UIElement> Children { get; private set; }
 
         #region IsLabel
@@ -113,17 +118,19 @@ namespace DotNetKit.Wpf
             }
         }
 
-        void CreateColumnDefinitions()
+        void CreateColumnDefinitions(int columnCount)
         {
-            AddGridColumn(GridLength.Auto);
-            AddGridColumn(new GridLength(1.0, GridUnitType.Star));
+            for (var i = 0; i < columnCount; i++)
+            {
+                AddGridColumn(GridLength.Auto);
+                AddGridColumn(new GridLength(1.0, GridUnitType.Star));
+            }
         }
 
-        void AddUIElement(int index, UIElement element)
+        void AddUIElement(int index, UIElement element, int columnCount)
         {
-            var rowIndex = index / 2;
-            var columnIndex = index % 2;
-            var isOdd = rowIndex % 2 != 0;
+            var rowIndex = index / (columnCount * 2);
+            var columnIndex = index % (columnCount * 2);
 
             if (columnIndex == 0)
             {
@@ -132,19 +139,25 @@ namespace DotNetKit.Wpf
 
             element.SetValue(GridRowProperty, rowIndex);
             element.SetValue(GridColumnProperty, columnIndex);
-            SetIsLabel(element, columnIndex == 0);
-            SetIsOdd(element, isOdd);
+            SetIsLabel(element, columnIndex % 2 == 0);
+            SetIsOdd(element, rowIndex % 2 != 0);
             grid.Children.Add(element);
         }
 
         void Reset()
         {
-            CreateColumnDefinitions();
+            var columnCount = ColumnCount;
+            if (columnCount < 1)
+            {
+                throw new InvalidOperationException("RecordGrid.ColumnCount must be positive.");
+            }
+
+            CreateColumnDefinitions(columnCount);
 
             var index = 0;
             foreach (var item in Children)
             {
-                AddUIElement(index, item);
+                AddUIElement(index, item, columnCount);
                 index++;
             }
         }
@@ -158,6 +171,7 @@ namespace DotNetKit.Wpf
         public RecordGrid()
         {
             Orientation = Orientation.Vertical;
+            ColumnCount = 1;
             Children = new Collection<UIElement>();
 
             InitializeComponent();

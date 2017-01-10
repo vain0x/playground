@@ -13,5 +13,8 @@
         <TabItem Header="Decoration">
             <app:DecorationSampleControl />
         </TabItem>
+        <TabItem Header="Multicolumn">
+            <app:MulticolumnSampleControl />
+        </TabItem>
     </TabControl>
 </Window>
