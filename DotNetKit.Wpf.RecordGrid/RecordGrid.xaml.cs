@@ -29,11 +29,6 @@ namespace DotNetKit.Wpf
     {
         public Orientation Orientation { get; set; }
 
-        /// <summary>
-        /// The number of items for each label.
-        /// </summary>
-        public int ItemCount { get; set; }
-
         public Collection<UIElement> Children { get; private set; }
 
         #region IsLabel
@@ -118,17 +113,16 @@ namespace DotNetKit.Wpf
             }
         }
 
-        void CreateColumnDefinitions(int itemCount)
+        void CreateColumnDefinitions()
         {
             AddGridColumn(GridLength.Auto);
-            foreach (var i in Enumerable.Range(0, itemCount))
-            {
-                AddGridColumn(new GridLength(1.0, GridUnitType.Star));
-            }
+            AddGridColumn(new GridLength(1.0, GridUnitType.Star));
         }
 
-        void AddUIElement(int rowIndex, int columnIndex, UIElement element)
+        void AddUIElement(int index, UIElement element)
         {
+            var rowIndex = index / 2;
+            var columnIndex = index % 2;
             var isOdd = rowIndex % 2 != 0;
 
             if (columnIndex == 0)
@@ -145,20 +139,12 @@ namespace DotNetKit.Wpf
 
         void Reset()
         {
-            var itemCount = ItemCount;
-            if (itemCount < 0)
-            {
-                throw new InvalidOperationException("RecordGrid.ItemCount may not be negative.");
-            }
-
-            var gridColumnCount = itemCount + 1;
-
-            CreateColumnDefinitions(itemCount);
+            CreateColumnDefinitions();
 
             var index = 0;
             foreach (var item in Children)
             {
-                AddUIElement(index / gridColumnCount, index % gridColumnCount, item);
+                AddUIElement(index, item);
                 index++;
             }
         }
@@ -172,7 +158,6 @@ namespace DotNetKit.Wpf
         public RecordGrid()
         {
             Orientation = Orientation.Vertical;
-            ItemCount = 1;
             Children = new Collection<UIElement>();
 
             InitializeComponent();
