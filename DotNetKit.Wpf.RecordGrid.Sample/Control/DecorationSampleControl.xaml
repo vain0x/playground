@@ -24,7 +24,7 @@
         VerticalAlignment="Center"
         >
         <recordGrid:RecordGrid.Resources>
-            <Style TargetType="{x:Type Label}">
+            <Style TargetType="{x:Type recordGrid:RecordGridCell}">
                 <Setter Property="BorderBrush" Value="DimGray" />
                 <Setter Property="BorderThickness" Value="1,1,0,0" />
                 <Setter Property="Padding" Value="10,5,10,5" />
@@ -32,8 +32,6 @@
                     <!-- Set styles for record labels. -->
                     <Trigger Property="recordGrid:RecordGrid.IsLabel" Value="True">
                         <Setter Property="TextElement.FontWeight" Value="Bold" />
-                        <Setter Property="HorizontalContentAlignment" Value="Center" />
-                        <Setter Property="VerticalContentAlignment" Value="Center" />
                     </Trigger>
                     <!-- Set styles for odd-th elements. -->
                     <Trigger Property="recordGrid:RecordGrid.IsOdd" Value="True">
@@ -43,19 +41,19 @@
             </Style>
         </recordGrid:RecordGrid.Resources>
 
-        <Label Content="Name" />
-        <Label Content="{Binding Name}" />
+        <TextBlock Text="Name" />
+        <TextBlock Text="{Binding Name}" />
 
-        <Label Content="Age" />
-        <Label Content="{Binding Age}" />
+        <TextBlock Text="Age" />
+        <TextBlock Text="{Binding Age}" />
 
-        <Label Content="Gender" />
-        <Label Content="{Binding Gender}" />
+        <TextBlock Text="Gender" />
+        <TextBlock Text="{Binding Gender}" />
 
-        <Label Content="Birthday" />
-        <Label Content="{Binding Birthday}" />
+        <TextBlock Text="Birthday" />
+        <TextBlock Text="{Binding Birthday}" />
 
-        <Label Content="Masterpiece" />
-        <Label Content="{Binding Masterpiece}" />
+        <TextBlock Text="Masterpiece" />
+        <TextBlock Text="{Binding Masterpiece}" />
     </recordGrid:RecordGrid>
 </UserControl>

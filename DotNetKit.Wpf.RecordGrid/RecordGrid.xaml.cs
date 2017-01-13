@@ -137,11 +137,12 @@ namespace DotNetKit.Wpf
                 AddGridRow();
             }
 
-            element.SetValue(GridRowProperty, rowIndex);
-            element.SetValue(GridColumnProperty, columnIndex);
-            SetIsLabel(element, columnIndex % 2 == 0);
-            SetIsOdd(element, rowIndex % 2 != 0);
-            grid.Children.Add(element);
+            var cell = new RecordGridCell() { Child = element };
+            cell.SetValue(GridRowProperty, rowIndex);
+            cell.SetValue(GridColumnProperty, columnIndex);
+            SetIsLabel(cell, columnIndex % 2 == 0);
+            SetIsOdd(cell, rowIndex % 2 != 0);
+            grid.Children.Add(cell);
         }
 
         void Reset()
