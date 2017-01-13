@@ -15,7 +15,7 @@
         BorderThickness="0,0,1,1"
         Background="LightGray"
         HorizontalAlignment="Center"
-        VerticalAlignment="Center"
+        CellVerticalLength="*"
         >
         <recordGrid:RecordGrid.CellStyle>
             <Style TargetType="{x:Type recordGrid:RecordGridCell}">
