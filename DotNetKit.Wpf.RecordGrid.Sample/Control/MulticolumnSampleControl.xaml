@@ -17,7 +17,7 @@
         HorizontalAlignment="Center"
         VerticalAlignment="Center"
         >
-        <recordGrid:RecordGrid.Resources>
+        <recordGrid:RecordGrid.CellStyle>
             <Style TargetType="{x:Type recordGrid:RecordGridCell}">
                 <Setter Property="BorderBrush" Value="DimGray" />
                 <Setter Property="BorderThickness" Value="1,1,0,0" />
@@ -33,7 +33,7 @@
                     </Trigger>
                 </Style.Triggers>
             </Style>
-        </recordGrid:RecordGrid.Resources>
+        </recordGrid:RecordGrid.CellStyle>
 
         <TextBlock Text="Name" />
         <TextBlock Text="{Binding Name}" />

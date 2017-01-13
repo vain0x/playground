@@ -36,6 +36,8 @@ namespace DotNetKit.Wpf
 
         public Collection<UIElement> Children { get; private set; }
 
+        public Style CellStyle { get; set; }
+
         DependencyProperty GridRowProperty
         {
             get { return Orientation == Orientation.Vertical ? Grid.RowProperty : Grid.ColumnProperty; }
@@ -79,7 +81,7 @@ namespace DotNetKit.Wpf
             }
         }
 
-        void AddUIElement(int index, UIElement element, int columnCount)
+        void AddUIElement(int index, UIElement element, int columnCount, Style cellStyle)
         {
             var rowIndex = index / (columnCount * 2);
             var columnIndex = index % (columnCount * 2);
@@ -90,6 +92,10 @@ namespace DotNetKit.Wpf
             }
 
             var cell = new RecordGridCell() { Child = element };
+            if (cellStyle != null)
+            {
+                cell.Style = cellStyle;
+            }
             cell.SetValue(GridRowProperty, rowIndex);
             cell.SetValue(GridColumnProperty, columnIndex);
             cell.IsLabel = columnIndex % 2 == 0;
@@ -105,12 +111,14 @@ namespace DotNetKit.Wpf
                 throw new InvalidOperationException("RecordGrid.ColumnCount must be positive.");
             }
 
+            var cellStyle = CellStyle;
+
             CreateColumnDefinitions(columnCount);
 
             var index = 0;
             foreach (var item in Children)
             {
-                AddUIElement(index, item, columnCount);
+                AddUIElement(index, item, columnCount, cellStyle);
                 index++;
             }
         }
