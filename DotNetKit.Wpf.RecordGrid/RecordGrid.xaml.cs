@@ -38,6 +38,32 @@ namespace DotNetKit.Wpf
 
         public Style CellStyle { get; set; }
 
+        public GridLength VerticalLength { get; set; }
+
+        #region CellVerticalLength
+        static readonly DependencyProperty cellVerticalLengthProperty =
+            DependencyProperty.Register(
+                "CellVerticalLength",
+                typeof(GridLength),
+                typeof(RecordGrid)
+            );
+
+        public static DependencyProperty CellVerticalLengthProperty
+        {
+            get { return cellVerticalLengthProperty; }
+        }
+
+        /// <summary>
+        /// Gets or sets the vertical length of cells.
+        /// That is, cell height if <paramref name="Orientation"/> is <see cref="Orientation.Horizontal"/>, cell width if <see cref="Orientation.Vertical"/>.
+        /// </summary>
+        public GridLength CellVerticalLength
+        {
+            get { return (GridLength)GetValue(CellVerticalLengthProperty); }
+            set { SetValue(CellVerticalLengthProperty, value); }
+        }
+        #endregion
+
         DependencyProperty GridRowProperty
         {
             get { return Orientation == Orientation.Vertical ? Grid.RowProperty : Grid.ColumnProperty; }
@@ -52,11 +78,23 @@ namespace DotNetKit.Wpf
         {
             if (Orientation == Orientation.Vertical)
             {
-                grid.RowDefinitions.Add(new RowDefinition() { Height = GridLength.Auto });
+                var rowDefinition = new RowDefinition();
+                rowDefinition.SetBinding(
+                    RowDefinition.HeightProperty,
+                    new Binding(CellVerticalLengthProperty.Name) { Source = this }
+                );
+
+                grid.RowDefinitions.Add(rowDefinition);
             }
             else
             {
-                grid.ColumnDefinitions.Add(new ColumnDefinition() { Width = GridLength.Auto });
+                var columnDefinition = new ColumnDefinition();
+                columnDefinition.SetBinding(
+                    ColumnDefinition.WidthProperty,
+                    new Binding(CellVerticalLengthProperty.Name) { Source = this }
+                );
+
+                grid.ColumnDefinitions.Add(columnDefinition);
             }
         }
 
@@ -64,11 +102,11 @@ namespace DotNetKit.Wpf
         {
             if (Orientation == Orientation.Vertical)
             {
-                grid.ColumnDefinitions.Add(new ColumnDefinition() { Width = length });
+                grid.ColumnDefinitions.Add(new ColumnDefinition() { Width = GridLength.Auto });
             }
             else
             {
-                grid.RowDefinitions.Add(new RowDefinition() { Height = length });
+                grid.RowDefinitions.Add(new RowDefinition() { Height = GridLength.Auto });
             }
         }
 
