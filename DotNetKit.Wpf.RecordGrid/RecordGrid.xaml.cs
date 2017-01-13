@@ -36,53 +36,7 @@ namespace DotNetKit.Wpf
 
         public Collection<UIElement> Children { get; private set; }
 
-        #region IsLabel
-        static readonly DependencyProperty isLabelProperty =
-            DependencyProperty.RegisterAttached(
-                "IsLabel",
-                typeof(bool),
-                typeof(RecordGrid)
-            );
-
-        public static DependencyProperty IsLabelProperty
-        {
-            get { return isLabelProperty; }
-        }
-
-        public static bool GetIsLabel(DependencyObject obj)
-        {
-            return (bool)obj.GetValue(IsLabelProperty);
-        }
-
-        public static void SetIsLabel(DependencyObject obj, bool value)
-        {
-            obj.SetValue(IsLabelProperty, value);
-        }
-        #endregion
-
-        #region IsOdd
-        static readonly DependencyProperty isOddProperty =
-            DependencyProperty.RegisterAttached(
-                "IsOdd",
-                typeof(bool),
-                typeof(RecordGrid)
-            );
-
-        public static DependencyProperty IsOddProperty
-        {
-            get { return isOddProperty; }
-        }
-
-        public static bool GetIsOdd(DependencyObject obj)
-        {
-            return (bool)obj.GetValue(IsOddProperty);
-        }
-
-        public static void SetIsOdd(DependencyObject obj, bool value)
-        {
-            obj.SetValue(IsOddProperty, value);
-        }
-        #endregion
+        public Style CellStyle { get; set; }
 
         DependencyProperty GridRowProperty
         {
@@ -127,7 +81,7 @@ namespace DotNetKit.Wpf
             }
         }
 
-        void AddUIElement(int index, UIElement element, int columnCount)
+        void AddUIElement(int index, UIElement element, int columnCount, Style cellStyle)
         {
             var rowIndex = index / (columnCount * 2);
             var columnIndex = index % (columnCount * 2);
@@ -137,11 +91,16 @@ namespace DotNetKit.Wpf
                 AddGridRow();
             }
 
-            element.SetValue(GridRowProperty, rowIndex);
-            element.SetValue(GridColumnProperty, columnIndex);
-            SetIsLabel(element, columnIndex % 2 == 0);
-            SetIsOdd(element, rowIndex % 2 != 0);
-            grid.Children.Add(element);
+            var cell = new RecordGridCell() { Child = element };
+            if (cellStyle != null)
+            {
+                cell.Style = cellStyle;
+            }
+            cell.SetValue(GridRowProperty, rowIndex);
+            cell.SetValue(GridColumnProperty, columnIndex);
+            cell.IsLabel = columnIndex % 2 == 0;
+            cell.IsOdd = rowIndex % 2 != 0;
+            grid.Children.Add(cell);
         }
 
         void Reset()
@@ -152,12 +111,14 @@ namespace DotNetKit.Wpf
                 throw new InvalidOperationException("RecordGrid.ColumnCount must be positive.");
             }
 
+            var cellStyle = CellStyle;
+
             CreateColumnDefinitions(columnCount);
 
             var index = 0;
             foreach (var item in Children)
             {
-                AddUIElement(index, item, columnCount);
+                AddUIElement(index, item, columnCount, cellStyle);
                 index++;
             }
         }
