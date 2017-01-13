@@ -30,11 +30,11 @@
                 <Setter Property="Padding" Value="10,5,10,5" />
                 <Style.Triggers>
                     <!-- Set styles for record labels. -->
-                    <Trigger Property="recordGrid:RecordGrid.IsLabel" Value="True">
+                    <Trigger Property="IsLabel" Value="True">
                         <Setter Property="TextElement.FontWeight" Value="Bold" />
                     </Trigger>
-                    <!-- Set styles for odd-th elements. -->
-                    <Trigger Property="recordGrid:RecordGrid.IsOdd" Value="True">
+                    <!-- Set styles for odd-th cells. -->
+                    <Trigger Property="IsOdd" Value="True">
                         <Setter Property="Background" Value="WhiteSmoke" />
                     </Trigger>
                 </Style.Triggers>
