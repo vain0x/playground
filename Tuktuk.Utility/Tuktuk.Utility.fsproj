@@ -5,14 +5,14 @@
     <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
     <Platform Condition=" '$(Platform)' == '' ">AnyCPU</Platform>
     <SchemaVersion>2.0</SchemaVersion>
-    <ProjectGuid>a40fe540-9d51-4611-8539-ca1181241cb1</ProjectGuid>
+    <ProjectGuid>7a34e087-f805-4c1d-92e4-5a8110191560</ProjectGuid>
     <OutputType>Library</OutputType>
-    <RootNamespace>Tuktuk.Core</RootNamespace>
-    <AssemblyName>Tuktuk.Core</AssemblyName>
+    <RootNamespace>Tuktuk.Utility</RootNamespace>
+    <AssemblyName>Tuktuk.Utility</AssemblyName>
     <TargetFrameworkVersion>v4.6</TargetFrameworkVersion>
     <TargetFSharpCoreVersion>4.4.0.0</TargetFSharpCoreVersion>
     <AutoGenerateBindingRedirects>true</AutoGenerateBindingRedirects>
-    <Name>Tuktuk.Core</Name>
+    <Name>Tuktuk.Utility</Name>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
     <DebugSymbols>true</DebugSymbols>
@@ -22,7 +22,7 @@
     <OutputPath>bin\Debug\</OutputPath>
     <DefineConstants>DEBUG;TRACE</DefineConstants>
     <WarningLevel>3</WarningLevel>
-    <DocumentationFile>bin\Debug\Tuktuk.Core.XML</DocumentationFile>
+    <DocumentationFile>bin\Debug\Tuktuk.Utility.XML</DocumentationFile>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|AnyCPU' ">
     <DebugType>pdbonly</DebugType>
@@ -31,7 +31,7 @@
     <OutputPath>bin\Release\</OutputPath>
     <DefineConstants>TRACE</DefineConstants>
     <WarningLevel>3</WarningLevel>
-    <DocumentationFile>bin\Release\Tuktuk.Core.XML</DocumentationFile>
+    <DocumentationFile>bin\Release\Tuktuk.Utility.XML</DocumentationFile>
   </PropertyGroup>
   <ItemGroup>
     <Reference Include="mscorlib" />
@@ -44,13 +44,6 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="AssemblyInfo.fs" />
-  </ItemGroup>
-  <ItemGroup>
-    <ProjectReference Include="..\Tuktuk.Utility\Tuktuk.Utility.fsproj">
-      <Name>Tuktuk.Utility</Name>
-      <Project>{7a34e087-f805-4c1d-92e4-5a8110191560}</Project>
-      <Private>True</Private>
-    </ProjectReference>
   </ItemGroup>
   <PropertyGroup>
     <MinimumVisualStudioVersion Condition="'$(MinimumVisualStudioVersion)' == ''">11</MinimumVisualStudioVersion>

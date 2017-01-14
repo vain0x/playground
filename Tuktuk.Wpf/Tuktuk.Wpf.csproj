@@ -101,6 +101,10 @@
       <Project>{a40fe540-9d51-4611-8539-ca1181241cb1}</Project>
       <Name>Tuktuk.Core</Name>
     </ProjectReference>
+    <ProjectReference Include="..\Tuktuk.Utility\Tuktuk.Utility.fsproj">
+      <Project>{7a34e087-f805-4c1d-92e4-5a8110191560}</Project>
+      <Name>Tuktuk.Utility</Name>
+    </ProjectReference>
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 
