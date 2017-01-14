@@ -11,6 +11,10 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "100-Libraries", "100-Librar
 EndProject
 Project("{F2A71F9B-5D33-465A-A702-920D77279786}") = "Tuktuk.Utility", "Tuktuk.Utility\Tuktuk.Utility.fsproj", "{7A34E087-F805-4C1D-92E4-5A8110191560}"
 EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "200-Core", "200-Core", "{AEA5D247-6D14-454F-9030-E304BDA44DA3}"
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "300-Applications", "300-Applications", "{30B496FA-B0CA-4070-8AD4-5FFF28F35DB0}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -34,6 +38,8 @@ Global
 		HideSolutionNode = FALSE
 	EndGlobalSection
 	GlobalSection(NestedProjects) = preSolution
+		{636B476A-9126-4495-8A3B-59D69C09BCC6} = {30B496FA-B0CA-4070-8AD4-5FFF28F35DB0}
+		{A40FE540-9D51-4611-8539-CA1181241CB1} = {AEA5D247-6D14-454F-9030-E304BDA44DA3}
 		{7A34E087-F805-4C1D-92E4-5A8110191560} = {571DCEEA-B6D8-43EF-90AE-63D39759DDFC}
 	EndGlobalSection
 EndGlobal
