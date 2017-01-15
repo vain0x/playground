@@ -7,12 +7,12 @@ using System.Windows;
 // アセンブリに関する一般情報は以下の属性セットをとおして制御されます。
 // アセンブリに関連付けられている情報を変更するには、
 // これらの属性値を変更してください。
-[assembly: AssemblyTitle("Tuktuk.Wpf")]
+[assembly: AssemblyTitle("Tuktuk.Wpf.View")]
 [assembly: AssemblyDescription("")]
 [assembly: AssemblyConfiguration("")]
 [assembly: AssemblyCompany("")]
-[assembly: AssemblyProduct("Tuktuk.Wpf")]
-[assembly: AssemblyCopyright("Copyright ©  2017")]
+[assembly: AssemblyProduct("Tuktuk.Wpf.View")]
+[assembly: AssemblyCopyright("(C) 2017 vain0")]
 [assembly: AssemblyTrademark("")]
 [assembly: AssemblyCulture("")]
 
