@@ -6,9 +6,12 @@ open DotNetKit.FSharp
 open Reactive.Bindings
 open Tuktuk.Reactive.Bindings
 
-type Shelve() =
+type Shelve(fileSystem) =
   let books =
-    [| Book("book0"); Book("book1") |]
+    [|
+      Book("book0")
+      Book("book1")
+    |]
     |> ReactiveCollection.ofSeq
 
   let selectedBook =

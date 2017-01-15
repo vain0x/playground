@@ -12,6 +12,8 @@ using System.Windows.Media;
 using System.Windows.Media.Imaging;
 using System.Windows.Navigation;
 using System.Windows.Shapes;
+using SharpFileSystem;
+using SharpFileSystem.FileSystems;
 
 namespace Tuktuk.Wpf
 {
@@ -27,7 +29,7 @@ namespace Tuktuk.Wpf
             DataContext =
                 new
                 {
-                    Shelve = new Controls.Shelve(),
+                    Shelve = new Controls.Shelve(PhysicalFileSystem.SuperRoot),
                 };
         }
     }

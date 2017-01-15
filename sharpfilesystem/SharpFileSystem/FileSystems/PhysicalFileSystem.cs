@@ -9,7 +9,27 @@ namespace SharpFileSystem.FileSystems
     public class PhysicalFileSystem : IFileSystem
     {
         #region Internals
+        // Can be empty to represent the super root, parent of drives.
         public string PhysicalRoot { get; private set; }
+
+        #region SuperRoot
+        PhysicalFileSystem()
+        {
+            PhysicalRoot = "";
+        }
+
+        static readonly PhysicalFileSystem superRoot = new PhysicalFileSystem();
+
+        public static PhysicalFileSystem SuperRoot
+        {
+            get { return superRoot; }
+        }
+
+        bool IsSuperRoot
+        {
+            get { return PhysicalRoot == ""; }
+        }
+        #endregion
 
         public PhysicalFileSystem(string physicalRoot)
         {
@@ -22,6 +42,8 @@ namespace SharpFileSystem.FileSystems
 
         public string GetPhysicalPath(FileSystemPath path)
         {
+            if (IsSuperRoot && path.IsRoot) throw new InvalidOperationException();
+
             return Path.Combine(PhysicalRoot, path.ToString().Remove(0, 1).Replace(FileSystemPath.DirectorySeparator, Path.DirectorySeparatorChar));
         }
 
@@ -47,6 +69,14 @@ namespace SharpFileSystem.FileSystems
 
         public ICollection<FileSystemPath> GetEntities(FileSystemPath path)
         {
+            if (IsSuperRoot && path.IsRoot)
+            {
+                var drives = DriveInfo.GetDrives();
+                var virtualDrives =
+                    drives.Select(drive => FileSystemPath.Parse("/" + drive.Name));
+                return new EnumerableCollection<FileSystemPath>(virtualDrives, drives.Length);
+            }
+
             string physicalPath = GetPhysicalPath(path);
             string[] directories = System.IO.Directory.GetDirectories(physicalPath);
             string[] files = System.IO.Directory.GetFiles(physicalPath);
@@ -59,6 +89,8 @@ namespace SharpFileSystem.FileSystems
 
         public bool Exists(FileSystemPath path)
         {
+            if (IsSuperRoot && path.IsRoot) return true;
+
             return path.IsFile ? System.IO.File.Exists(GetPhysicalPath(path)) : System.IO.Directory.Exists(GetPhysicalPath(path));
         }
 
