@@ -97,6 +97,10 @@
     <None Include="App.config" />
   </ItemGroup>
   <ItemGroup>
+    <ProjectReference Include="..\sharpfilesystem\SharpFileSystem\SharpFileSystem.csproj">
+      <Project>{3c4d07ba-23b5-4a63-92cf-f3bf892b7329}</Project>
+      <Name>SharpFileSystem</Name>
+    </ProjectReference>
     <ProjectReference Include="..\Tuktuk.Core\Tuktuk.Core.fsproj">
       <Project>{a40fe540-9d51-4611-8539-ca1181241cb1}</Project>
       <Name>Tuktuk.Core</Name>

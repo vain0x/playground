@@ -75,4 +75,11 @@
       <Paket>True</Paket>
     </Reference>
   </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\sharpfilesystem\SharpFileSystem\SharpFileSystem.csproj">
+      <Name>SharpFileSystem</Name>
+      <Project>{3c4d07ba-23b5-4a63-92cf-f3bf892b7329}</Project>
+      <Private>True</Private>
+    </ProjectReference>
+  </ItemGroup>
 </Project>

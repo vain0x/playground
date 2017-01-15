@@ -19,6 +19,8 @@ Project("{F2A71F9B-5D33-465A-A702-920D77279786}") = "Tuktuk.Core.UnitTest", "Tuk
 EndProject
 Project("{F2A71F9B-5D33-465A-A702-920D77279786}") = "Tuktuk.Utility.UnitTest", "Tuktuk.Utility.UnitTest\Tuktuk.Utility.UnitTest.fsproj", "{6930B136-C650-491A-AEAC-BFC4F6BE627B}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "SharpFileSystem", "sharpfilesystem\SharpFileSystem\SharpFileSystem.csproj", "{3C4D07BA-23B5-4A63-92CF-F3BF892B7329}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -45,6 +47,10 @@ Global
 		{6930B136-C650-491A-AEAC-BFC4F6BE627B}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{6930B136-C650-491A-AEAC-BFC4F6BE627B}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{6930B136-C650-491A-AEAC-BFC4F6BE627B}.Release|Any CPU.Build.0 = Release|Any CPU
+		{3C4D07BA-23B5-4A63-92CF-F3BF892B7329}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{3C4D07BA-23B5-4A63-92CF-F3BF892B7329}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{3C4D07BA-23B5-4A63-92CF-F3BF892B7329}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{3C4D07BA-23B5-4A63-92CF-F3BF892B7329}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
@@ -55,5 +61,6 @@ Global
 		{7A34E087-F805-4C1D-92E4-5A8110191560} = {571DCEEA-B6D8-43EF-90AE-63D39759DDFC}
 		{A8E9C02C-A5C7-469A-9CF4-93FCD7DB2E59} = {AEA5D247-6D14-454F-9030-E304BDA44DA3}
 		{6930B136-C650-491A-AEAC-BFC4F6BE627B} = {571DCEEA-B6D8-43EF-90AE-63D39759DDFC}
+		{3C4D07BA-23B5-4A63-92CF-F3BF892B7329} = {571DCEEA-B6D8-43EF-90AE-63D39759DDFC}
 	EndGlobalSection
 EndGlobal
