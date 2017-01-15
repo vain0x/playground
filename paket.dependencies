@@ -10,6 +10,7 @@ group Wpf
     source https://www.nuget.org/api/v2
 
     nuget MaterialDesignThemes
+    nuget gong-wpf-dragdrop
 
 group UnitTest
     source https://www.nuget.org/api/v2
