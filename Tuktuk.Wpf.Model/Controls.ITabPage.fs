@@ -1,5 +1,4 @@
 ﻿namespace Tuktuk.Wpf.Controls
 
-[<AbstractClass>]
-type TabPage() =
+type ITabPage =
   abstract TabHeader: obj

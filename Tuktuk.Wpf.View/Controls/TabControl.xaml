@@ -23,7 +23,7 @@
             <TextBlock
                 Margin="5,0,5,0"
                 MinWidth="80"
-                Text="{Binding (controls:TabPage.TabHeader)}"
+                Text="{Binding (controls:ITabPage.TabHeader)}"
                 />
         </DataTemplate>
     </ListBox.ItemTemplate>

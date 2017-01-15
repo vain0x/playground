@@ -59,12 +59,13 @@
   -->
   <ItemGroup>
     <Compile Include="AssemblyInfo.fs" />
-    <Compile Include="Controls.TabPage.fs" />
+    <Compile Include="Controls.ITabPage.fs" />
     <Compile Include="Controls.AncestorList.fs" />
     <Compile Include="Controls.FileTree.fs" />
     <Compile Include="Controls.FileCollection.fs" />
     <Compile Include="Controls.Page.fs" />
     <Compile Include="Controls.Book.fs" />
+    <Compile Include="Controls.Workspace.fs" />
     <Compile Include="Controls.Shelve.fs" />
   </ItemGroup>
   <ItemGroup>

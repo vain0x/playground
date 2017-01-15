@@ -27,11 +27,11 @@
                         <ColumnDefinition Width="0" />
                     </Grid.ColumnDefinitions>
 
-                    <ContentPresenter Content="{Binding OpenPage0.Value}" />
+                    <ContentPresenter Content="{Binding Workspace0}" />
 
                     <GridSplitter Grid.Column="1" Style="{DynamicResource VerticalGridSplitterStyle}" />
 
-                    <ContentPresenter Grid.Column="2" Content="{Binding OpenPage1.Value}" />
+                    <ContentPresenter Grid.Column="2" Content="{Binding Workspace1}" />
                 </Grid>
             </DockPanel>
         </DockPanel>

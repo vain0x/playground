@@ -36,6 +36,7 @@
     <UseVSHostingProcess>false</UseVSHostingProcess>
   </PropertyGroup>
   <ItemGroup>
+    <Reference Include="FSharp.Core, Version=4.4.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a, processorArchitecture=MSIL" />
     <Reference Include="System" />
     <Reference Include="System.Data" />
     <Reference Include="System.Xml" />
@@ -68,6 +69,10 @@
       <SubType>Designer</SubType>
       <Generator>MSBuild:Compile</Generator>
     </Page>
+    <Page Include="Controls\FileListControl.xaml">
+      <SubType>Designer</SubType>
+      <Generator>MSBuild:Compile</Generator>
+    </Page>
     <Page Include="Controls\FileTreeControl.xaml">
       <SubType>Designer</SubType>
       <Generator>MSBuild:Compile</Generator>
@@ -88,6 +93,10 @@
       <SubType>Designer</SubType>
       <Generator>MSBuild:Compile</Generator>
     </Page>
+    <Page Include="Controls\WorkspaceControl.xaml">
+      <SubType>Designer</SubType>
+      <Generator>MSBuild:Compile</Generator>
+    </Page>
     <Page Include="MainWindow.xaml">
       <Generator>MSBuild:Compile</Generator>
       <SubType>Designer</SubType>
@@ -96,11 +105,17 @@
       <DependentUpon>App.xaml</DependentUpon>
       <SubType>Code</SubType>
     </Compile>
+    <Compile Include="Controls\FileListControl.xaml.cs">
+      <DependentUpon>FileListControl.xaml</DependentUpon>
+    </Compile>
     <Compile Include="Controls\FileTreeControl.xaml.cs">
       <DependentUpon>FileTreeControl.xaml</DependentUpon>
     </Compile>
     <Compile Include="Controls\TabControl.xaml.cs">
       <DependentUpon>TabControl.xaml</DependentUpon>
+    </Compile>
+    <Compile Include="Controls\WorkspaceControl.xaml.cs">
+      <DependentUpon>WorkspaceControl.xaml</DependentUpon>
     </Compile>
     <Compile Include="MainWindow.xaml.cs">
       <DependentUpon>MainWindow.xaml</DependentUpon>
@@ -182,11 +197,6 @@
   <ItemGroup>
     <Reference Include="DotNetKit.FSharp">
       <HintPath>..\packages\DotNetKit.FSharp\lib\DotNetKit.FSharp.dll</HintPath>
-      <Private>True</Private>
-      <Paket>True</Paket>
-    </Reference>
-    <Reference Include="FSharp.Core">
-      <HintPath>..\packages\DotNetKit.FSharp\lib\FSharp.Core.dll</HintPath>
       <Private>True</Private>
       <Paket>True</Paket>
     </Reference>

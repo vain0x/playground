@@ -4,20 +4,22 @@
     xmlns:controls="clr-namespace:Tuktuk.Wpf.Controls;assembly=Tuktuk.Wpf.Model"
     >
     <DataTemplate DataType="{x:Type controls:FileCollection}">
-        <ListView ItemsSource="{Binding Items}">
-            <ListView.View>
-                <GridView>
-                    <GridViewColumn
-                        Header="Name"
-                        />
-                    <GridViewColumn
-                        Header="Last Updated"
-                        />
-                    <GridViewColumn
-                        Header="Size"
-                        />
-                </GridView>
-            </ListView.View>
-        </ListView>
+        <ListBox ItemsSource="{Binding Items}">
+            <ListBox.ItemTemplate>
+                <DataTemplate>
+                    <DockPanel>
+                        <TextBlock
+                            DockPanel.Dock="Right"
+                            Text="{Binding Item.LastUpdateDateTime.Value}"
+                            Opacity="0.5"
+                            />
+
+                        <TextBlock
+                            Text="{Binding Item.Name}"
+                            />
+                    </DockPanel>
+                </DataTemplate>
+            </ListBox.ItemTemplate>
+        </ListBox>
     </DataTemplate>
 </ResourceDictionary>

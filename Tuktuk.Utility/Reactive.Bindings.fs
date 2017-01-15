@@ -5,7 +5,7 @@ open System.Reactive.Linq
 open System.Reactive.Threading.Tasks
 open Reactive.Bindings
 
-[<AutoOpen>]
+[<CompilationRepresentation(CompilationRepresentationFlags.ModuleSuffix)>]
 module ReactiveProperty =
   let create initialValue =
     new ReactiveProperty<_>(initialValue = initialValue)
@@ -28,3 +28,11 @@ module ReactiveProperty =
       .ToObservable()
       .ToReadOnlyReactiveProperty(initialValue = initialValue)
     :> IReadOnlyReactiveProperty<_>
+
+[<CompilationRepresentation(CompilationRepresentationFlags.ModuleSuffix)>]
+module ReactiveCollection =
+  let ofSeq xs =
+    let this = new ReactiveCollection<_>()
+    for x in xs do
+      this.Add(x)
+    this

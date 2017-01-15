@@ -1,17 +1,38 @@
 ﻿namespace Tuktuk.Wpf.Controls
 
+open System
+open System.IO
+open System.Reactive.Disposables
+open System.Reactive.Linq
+open DotNetKit.FSharp
 open Reactive.Bindings
+open SharpFileSystem
+open SharpFileSystem.FileSystems
+open Tuktuk.Reactive.Bindings
 
-type Page() =
-  inherit TabPage()
+type Page
+  ( fileSystem: IFileSystem
+  , directoryPath: FileSystemPath
+  ) =
+  let disposables =
+    new CompositeDisposable()
 
-  let name = "page"
+  let directoryPath =
+    directoryPath |> ReactiveProperty.create
+    |> tap disposables.Add
 
-  let ancestorList = AncestorList("path/to/directory")
+  let name =
+    directoryPath |> ReactiveProperty.map (fun path -> path.EntityName)
+    :> IReadOnlyReactiveProperty<_>
 
-  let fileTree = new FileTree()
+  let ancestorList =
+    new AncestorList("path/to/directory")
 
-  let fileCollection = FileCollection()
+  let fileTree =
+    new FileTree()
+
+  let fileCollection =
+    new FileCollection(fileSystem, directoryPath.Value)
 
   member this.Name =
     name
@@ -25,5 +46,14 @@ type Page() =
   member this.FileCollection =
     fileCollection
 
-  override this.TabHeader =
-    this.Name :> obj
+  member this.Dispose() =
+    disposables.Dispose()
+
+  interface ITabPage with
+    override this.TabHeader =
+      this.Name :> obj
+
+  static member FromDirectory(directory: DirectoryInfo) =
+    let fileSystem = new PhysicalFileSystem(directory.FullName)
+    let directoryPath = FileSystemPath.Root
+    Page(fileSystem, directoryPath)
