@@ -13,22 +13,16 @@ using System.Windows.Media.Imaging;
 using System.Windows.Navigation;
 using System.Windows.Shapes;
 
-namespace Tuktuk.Wpf
+namespace Tuktuk.Wpf.Controls
 {
     /// <summary>
-    /// MainWindow.xaml の相互作用ロジック
+    /// TabControl.xaml の相互作用ロジック
     /// </summary>
-    public partial class MainWindow : Window
+    public partial class TabControl : ListBox
     {
-        public MainWindow()
+        public TabControl()
         {
             InitializeComponent();
-
-            DataContext =
-                new
-                {
-                    Shelve = new Controls.Shelve(),
-                };
         }
     }
 }

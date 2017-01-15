@@ -34,35 +34,6 @@
     <WarningLevel>3</WarningLevel>
     <DocumentationFile>bin\Release\Tuktuk.Wpf.Model.XML</DocumentationFile>
   </PropertyGroup>
-  <ItemGroup>
-    <Reference Include="mscorlib" />
-    <Reference Include="FSharp.Core, Version=$(TargetFSharpCoreVersion), Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a">
-      <Private>True</Private>
-    </Reference>
-    <Reference Include="System" />
-    <Reference Include="System.Core" />
-    <Reference Include="System.Numerics" />
-  </ItemGroup>
-  <ItemGroup>
-    <Compile Include="AssemblyInfo.fs" />
-  </ItemGroup>
-  <ItemGroup>
-    <ProjectReference Include="..\sharpfilesystem\SharpFileSystem\SharpFileSystem.csproj">
-      <Name>SharpFileSystem</Name>
-      <Project>{3c4d07ba-23b5-4a63-92cf-f3bf892b7329}</Project>
-      <Private>True</Private>
-    </ProjectReference>
-    <ProjectReference Include="..\Tuktuk.Core\Tuktuk.Core.fsproj">
-      <Name>Tuktuk.Core</Name>
-      <Project>{a40fe540-9d51-4611-8539-ca1181241cb1}</Project>
-      <Private>True</Private>
-    </ProjectReference>
-    <ProjectReference Include="..\Tuktuk.Utility\Tuktuk.Utility.fsproj">
-      <Name>Tuktuk.Utility</Name>
-      <Project>{7a34e087-f805-4c1d-92e4-5a8110191560}</Project>
-      <Private>True</Private>
-    </ProjectReference>
-  </ItemGroup>
   <PropertyGroup>
     <MinimumVisualStudioVersion Condition="'$(MinimumVisualStudioVersion)' == ''">11</MinimumVisualStudioVersion>
   </PropertyGroup>
@@ -97,13 +68,6 @@
       </ItemGroup>
     </When>
   </Choose>
-  <ItemGroup>
-    <Reference Include="DotNetKit.FSharp">
-      <HintPath>..\packages\DotNetKit.FSharp\lib\DotNetKit.FSharp.dll</HintPath>
-      <Private>True</Private>
-      <Paket>True</Paket>
-    </Reference>
-  </ItemGroup>
   <Choose>
     <When Condition="$(TargetPlatformIdentifier) == 'UAP' And $(TargetPlatformVersion.StartsWith('10.0'))">
       <ItemGroup>
@@ -1287,4 +1251,43 @@
       </ItemGroup>
     </When>
   </Choose>
+  <ItemGroup>
+    <Compile Include="AssemblyInfo.fs" />
+    <Compile Include="Controls.TabPage.fs" />
+    <Compile Include="Controls.AncestorList.fs" />
+    <Compile Include="Controls.FileTree.fs" />
+    <Compile Include="Controls.FileCollection.fs" />
+    <Compile Include="Controls.Page.fs" />
+    <Compile Include="Controls.Book.fs" />
+    <Compile Include="Controls.Shelve.fs" />
+  </ItemGroup>
+  <ItemGroup>
+    <Reference Include="mscorlib" />
+    <Reference Include="FSharp.Core, Version=$(TargetFSharpCoreVersion), Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a">
+      <Private>True</Private>
+    </Reference>
+    <Reference Include="System" />
+    <Reference Include="System.Core" />
+    <Reference Include="System.Numerics" />
+    <ProjectReference Include="..\sharpfilesystem\SharpFileSystem\SharpFileSystem.csproj">
+      <Name>SharpFileSystem</Name>
+      <Project>{3c4d07ba-23b5-4a63-92cf-f3bf892b7329}</Project>
+      <Private>True</Private>
+    </ProjectReference>
+    <ProjectReference Include="..\Tuktuk.Core\Tuktuk.Core.fsproj">
+      <Name>Tuktuk.Core</Name>
+      <Project>{a40fe540-9d51-4611-8539-ca1181241cb1}</Project>
+      <Private>True</Private>
+    </ProjectReference>
+    <ProjectReference Include="..\Tuktuk.Utility\Tuktuk.Utility.fsproj">
+      <Name>Tuktuk.Utility</Name>
+      <Project>{7a34e087-f805-4c1d-92e4-5a8110191560}</Project>
+      <Private>True</Private>
+    </ProjectReference>
+    <Reference Include="DotNetKit.FSharp">
+      <HintPath>..\packages\DotNetKit.FSharp\lib\DotNetKit.FSharp.dll</HintPath>
+      <Private>True</Private>
+      <Paket>True</Paket>
+    </Reference>
+  </ItemGroup>
 </Project>

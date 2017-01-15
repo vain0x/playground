@@ -14,7 +14,8 @@
     TextOptions.TextRenderingMode="Auto"
     Background="{DynamicResource MaterialDesignPaper}"
     FontFamily="{StaticResource MaterialDesignFont}"
-    Title="Tuktuk"
-    Width="525"
-    Height="350"
+    Title="{Binding Shelve.AppTitle.Value}"
+    Width="732"
+    Height="412"
+    Content="{Binding Shelve}"
     />

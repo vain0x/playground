@@ -1,0 +1,39 @@
+﻿<ResourceDictionary
+    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:controls="clr-namespace:Tuktuk.Wpf.Controls;assembly=Tuktuk.Wpf.Model"
+    xmlns:viewControls="clr-namespace:Tuktuk.Wpf.Controls"
+    >
+    <DataTemplate DataType="{x:Type controls:Shelve}">
+        <DockPanel>
+            <DockPanel>
+                <DockPanel DockPanel.Dock="Top">
+                    <viewControls:TabControl
+                        ItemsSource="{Binding Books.Value}"
+                        SelectedItem="{Binding SelectedBook.Value}"
+                        />
+                </DockPanel>
+
+                <viewControls:TabControl
+                    DockPanel.Dock="Top"
+                    ItemsSource="{Binding Pages.Value}"
+                    SelectedItem="{Binding SelectedPage.Value}"
+                    />
+
+                <Grid>
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="*" />
+                        <ColumnDefinition Width="Auto" />
+                        <ColumnDefinition Width="0" />
+                    </Grid.ColumnDefinitions>
+
+                    <ContentPresenter Content="{Binding OpenPage0.Value}" />
+
+                    <GridSplitter Grid.Column="1" />
+
+                    <ContentPresenter Content="{Binding OpenPage1.Value}" />
+                </Grid>
+            </DockPanel>
+        </DockPanel>
+    </DataTemplate>
+</ResourceDictionary>

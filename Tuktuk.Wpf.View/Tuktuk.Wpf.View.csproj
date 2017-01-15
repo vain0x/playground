@@ -60,6 +60,30 @@
       <SubType>Designer</SubType>
       <Generator>MSBuild:Compile</Generator>
     </Page>
+    <Page Include="Controls\AncestorListTemplate.xaml">
+      <SubType>Designer</SubType>
+      <Generator>MSBuild:Compile</Generator>
+    </Page>
+    <Page Include="Controls\FileCollectionTemplate.xaml">
+      <SubType>Designer</SubType>
+      <Generator>MSBuild:Compile</Generator>
+    </Page>
+    <Page Include="Controls\FileTreeTemplate.xaml">
+      <SubType>Designer</SubType>
+      <Generator>MSBuild:Compile</Generator>
+    </Page>
+    <Page Include="Controls\PageTemplate.xaml">
+      <SubType>Designer</SubType>
+      <Generator>MSBuild:Compile</Generator>
+    </Page>
+    <Page Include="Controls\ShelveTemplate.xaml">
+      <SubType>Designer</SubType>
+      <Generator>MSBuild:Compile</Generator>
+    </Page>
+    <Page Include="Controls\TabControl.xaml">
+      <SubType>Designer</SubType>
+      <Generator>MSBuild:Compile</Generator>
+    </Page>
     <Page Include="MainWindow.xaml">
       <Generator>MSBuild:Compile</Generator>
       <SubType>Designer</SubType>
@@ -67,6 +91,9 @@
     <Compile Include="App.xaml.cs">
       <DependentUpon>App.xaml</DependentUpon>
       <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="Controls\TabControl.xaml.cs">
+      <DependentUpon>TabControl.xaml</DependentUpon>
     </Compile>
     <Compile Include="MainWindow.xaml.cs">
       <DependentUpon>MainWindow.xaml</DependentUpon>
@@ -116,6 +143,10 @@
     <ProjectReference Include="..\Tuktuk.Utility\Tuktuk.Utility.fsproj">
       <Project>{7a34e087-f805-4c1d-92e4-5a8110191560}</Project>
       <Name>Tuktuk.Utility</Name>
+    </ProjectReference>
+    <ProjectReference Include="..\Tuktuk.Wpf.Model\Tuktuk.Wpf.Model.fsproj">
+      <Project>{171f2b7d-6528-4f76-a543-95504dbc4b24}</Project>
+      <Name>Tuktuk.Wpf.Model</Name>
     </ProjectReference>
     <ProjectReference Include="..\Tuktuk.Wpf.Utility\Tuktuk.Wpf.Utility.csproj">
       <Project>{370d6e9f-a443-4cd4-8ba6-e3d5c3e85871}</Project>
