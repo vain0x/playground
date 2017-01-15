@@ -12,6 +12,7 @@ using System.Windows.Media;
 using System.Windows.Media.Imaging;
 using System.Windows.Navigation;
 using System.Windows.Shapes;
+using Microsoft.FSharp.Core;
 
 namespace Tuktuk.Wpf.Controls
 {
@@ -23,6 +24,12 @@ namespace Tuktuk.Wpf.Controls
         public WorkspaceControl()
         {
             InitializeComponent();
+
+            GotFocus += (sender, e) =>
+            {
+                var workspace = DataContext as Workspace;
+                if (workspace != null) workspace.GotFocus.OnNext(default(Unit));
+            };
         }
     }
 }

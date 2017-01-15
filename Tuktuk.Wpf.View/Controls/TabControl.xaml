@@ -17,7 +17,7 @@
             <WrapPanel />
         </ItemsPanelTemplate>
     </ListBox.ItemsPanel>
-    
+
     <ListBox.ItemTemplate>
         <DataTemplate>
             <TextBlock

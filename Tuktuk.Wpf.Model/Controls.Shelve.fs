@@ -24,7 +24,11 @@ type Shelve() =
     |]
 
   let activeWorkspace =
-    workspaces.[0] |> ReactiveProperty.create
+    let gotFocus =
+      workspaces |> Seq.map
+        (fun workspace -> workspace.GotFocus.Select(fun _ -> workspace))
+    gotFocus.Merge().ToReadOnlyReactiveProperty(workspaces.[0])
+    :> IReadOnlyReactiveProperty<_>
 
   let selectedPage =
     activeWorkspace |> ReactiveProperty.bind (fun workspace -> workspace.Page)
@@ -46,6 +50,9 @@ type Shelve() =
 
   member this.SelectedPage =
     selectedPage
+
+  member this.ActiveWorkspace =
+    activeWorkspace
 
   member this.Workspace0 =
     workspaces.[0]

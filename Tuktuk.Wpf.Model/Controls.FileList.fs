@@ -32,7 +32,7 @@ type FileList
   ) =
   let items = items |> ReactiveCollection.ofSeq
 
-  static member Fetch(fileSystem, directoryPath) =
+  static member private Fetch(fileSystem, directoryPath) =
     let subpaths =
       try
         (fileSystem: IFileSystem).GetEntities(directoryPath) |> Seq.toArray
