@@ -8,6 +8,9 @@ open Reactive.Bindings
 open Tuktuk.Reactive.Bindings
 
 type Book(name) =
+  let name =
+    name |> ReactiveProperty.create
+
   let pages =
     [|
       Page.FromDirectory(DirectoryInfo(Environment.CurrentDirectory))
@@ -20,4 +23,4 @@ type Book(name) =
 
   interface ITabPage with
     override this.TabHeader =
-      name :> obj
+      name :> IReadOnlyReactiveProperty

@@ -16,28 +16,37 @@ type Shelve() =
 
   let pages =
     selectedBook |> ReactiveProperty.map (fun book -> book.Pages)
-    
+
   let workspaces =
     [|
-      ReactiveProperty.create pages.Value.[0]
-      ReactiveProperty.create pages.Value.[0]
+      Workspace(pages.Value.[0])
+      Workspace(pages.Value.[1])
     |]
 
   let activeWorkspace =
     workspaces.[0] |> ReactiveProperty.create
 
+  let selectedPage =
+    activeWorkspace |> ReactiveProperty.bind (fun workspace -> workspace.Page)
+
   let appTitle =
     activeWorkspace
-    |> ReactiveProperty.bind (fun page -> page.Value.Name)
+    |> ReactiveProperty.bind (fun workspace -> workspace.Page.Value.Name)
     |> ReactiveProperty.map (fun name -> sprintf "%s - Tuktuk" name)
     :> IReadOnlyReactiveProperty<_>
 
   member this.Books =
     books
 
+  member this.SelectedBook =
+    selectedBook
+
   member this.Pages =
     pages
-    
+
+  member this.SelectedPage =
+    selectedPage
+
   member this.Workspace0 =
     workspaces.[0]
 

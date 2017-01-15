@@ -61,11 +61,7 @@
       <SubType>Designer</SubType>
       <Generator>MSBuild:Compile</Generator>
     </Page>
-    <Page Include="Controls\AncestorListTemplate.xaml">
-      <SubType>Designer</SubType>
-      <Generator>MSBuild:Compile</Generator>
-    </Page>
-    <Page Include="Controls\FileCollectionTemplate.xaml">
+    <Page Include="Controls\AncestorListControl.xaml">
       <SubType>Designer</SubType>
       <Generator>MSBuild:Compile</Generator>
     </Page>
@@ -77,15 +73,7 @@
       <SubType>Designer</SubType>
       <Generator>MSBuild:Compile</Generator>
     </Page>
-    <Page Include="Controls\FileTreeTemplate.xaml">
-      <SubType>Designer</SubType>
-      <Generator>MSBuild:Compile</Generator>
-    </Page>
-    <Page Include="Controls\PageTemplate.xaml">
-      <SubType>Designer</SubType>
-      <Generator>MSBuild:Compile</Generator>
-    </Page>
-    <Page Include="Controls\ShelveTemplate.xaml">
+    <Page Include="Controls\ShelveControl.xaml">
       <SubType>Designer</SubType>
       <Generator>MSBuild:Compile</Generator>
     </Page>
@@ -105,11 +93,17 @@
       <DependentUpon>App.xaml</DependentUpon>
       <SubType>Code</SubType>
     </Compile>
+    <Compile Include="Controls\AncestorListControl.xaml.cs">
+      <DependentUpon>AncestorListControl.xaml</DependentUpon>
+    </Compile>
     <Compile Include="Controls\FileListControl.xaml.cs">
       <DependentUpon>FileListControl.xaml</DependentUpon>
     </Compile>
     <Compile Include="Controls\FileTreeControl.xaml.cs">
       <DependentUpon>FileTreeControl.xaml</DependentUpon>
+    </Compile>
+    <Compile Include="Controls\ShelveControl.xaml.cs">
+      <DependentUpon>ShelveControl.xaml</DependentUpon>
     </Compile>
     <Compile Include="Controls\TabControl.xaml.cs">
       <DependentUpon>TabControl.xaml</DependentUpon>

@@ -62,7 +62,7 @@
     <Compile Include="Controls.ITabPage.fs" />
     <Compile Include="Controls.AncestorList.fs" />
     <Compile Include="Controls.FileTree.fs" />
-    <Compile Include="Controls.FileCollection.fs" />
+    <Compile Include="Controls.FileList.fs" />
     <Compile Include="Controls.Page.fs" />
     <Compile Include="Controls.Book.fs" />
     <Compile Include="Controls.Workspace.fs" />

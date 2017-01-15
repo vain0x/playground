@@ -4,11 +4,5 @@
     >
     <ResourceDictionary.MergedDictionaries>
         <ResourceDictionary Source="PrimitiveResource.xaml" />
-
-        <ResourceDictionary Source="Controls/AncestorListTemplate.xaml" />
-        <ResourceDictionary Source="Controls/FileTreeTemplate.xaml" />
-        <ResourceDictionary Source="Controls/FileCollectionTemplate.xaml" />
-        <ResourceDictionary Source="Controls/PageTemplate.xaml" />
-        <ResourceDictionary Source="Controls/ShelveTemplate.xaml" />
     </ResourceDictionary.MergedDictionaries>
 </ResourceDictionary>

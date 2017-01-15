@@ -11,7 +11,7 @@
     d:DesignHeight="300"
     IsTabStop="False"
     >
-    <!-- Item type: TabPage -->
+    <!-- Item type implements ITabPage. -->
     <ListBox.ItemsPanel>
         <ItemsPanelTemplate>
             <WrapPanel />
@@ -23,7 +23,7 @@
             <TextBlock
                 Margin="5,0,5,0"
                 MinWidth="80"
-                Text="{Binding (controls:ITabPage.TabHeader)}"
+                Text="{Binding (controls:ITabPage.TabHeader).Value}"
                 />
         </DataTemplate>
     </ListBox.ItemTemplate>

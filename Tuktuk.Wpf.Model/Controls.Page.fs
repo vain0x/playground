@@ -31,8 +31,8 @@ type Page
   let fileTree =
     new FileTree()
 
-  let fileCollection =
-    new FileCollection(fileSystem, directoryPath.Value)
+  let fileList =
+    new FileList(fileSystem, directoryPath.Value)
 
   member this.Name =
     name
@@ -43,15 +43,15 @@ type Page
   member this.FileTree =
     fileTree
 
-  member this.FileCollection =
-    fileCollection
+  member this.FileList =
+    fileList
 
   member this.Dispose() =
     disposables.Dispose()
 
   interface ITabPage with
     override this.TabHeader =
-      this.Name :> obj
+      this.Name :> IReadOnlyReactiveProperty
 
   static member FromDirectory(directory: DirectoryInfo) =
     let fileSystem = new PhysicalFileSystem(directory.FullName)

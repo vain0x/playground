@@ -11,18 +11,24 @@ open SharpFileSystem.FileSystems
 open Tuktuk.Reactive.Bindings
 
 [<Sealed>]
-type FileCollectionItem
+type FileListItem
   ( fileSystem: IFileSystem
   , path: FileSystemPath
   ) =
+  let lastUpdateDateTime =
+    DateTime.Now |> ReactiveProperty.create
+
   member this.Name =
     path.EntityName
 
+  member this.LastUpdateDateTime =
+    lastUpdateDateTime
+
 [<Sealed>]
-type FileCollection
+type FileList
   ( fileSystem: IFileSystem
   , directoryPath: FileSystemPath
-  , items: IReadOnlyList<FileCollectionItem>
+  , items: IReadOnlyList<FileListItem>
   ) =
   let items = items |> ReactiveCollection.ofSeq
 
@@ -36,12 +42,12 @@ type FileCollection
       subpaths
       |> Array.sortBy (fun path -> path.EntityName)
       |> Array.sortBy (fun path -> if path.IsDirectory then 0 else 1)
-      |> Array.map (fun path -> FileCollectionItem(fileSystem, path))
+      |> Array.map (fun path -> FileListItem(fileSystem, path))
     items :> IReadOnlyList<_>
 
   new(fileSystem, directoryPath) =
-    let items = FileCollection.Fetch(fileSystem, directoryPath)
-    new FileCollection(fileSystem, directoryPath, items)
+    let items = FileList.Fetch(fileSystem, directoryPath)
+    new FileList(fileSystem, directoryPath, items)
 
   member this.Items =
     items

@@ -10,7 +10,5 @@ open Tuktuk.Reactive.Bindings
 type Workspace(page: Page) =
   let page = page |> ReactiveProperty.create
 
-  member this.AncestorList =
-    page.Value.AncestorList
-
-  member this.
+  member this.Page =
+    page :> IReadOnlyReactiveProperty<_>
