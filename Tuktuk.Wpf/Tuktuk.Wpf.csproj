@@ -117,6 +117,10 @@
       <Project>{7a34e087-f805-4c1d-92e4-5a8110191560}</Project>
       <Name>Tuktuk.Utility</Name>
     </ProjectReference>
+    <ProjectReference Include="..\Tuktuk.Wpf.Utility\Tuktuk.Wpf.Utility.csproj">
+      <Project>{370d6e9f-a443-4cd4-8ba6-e3d5c3e85871}</Project>
+      <Name>Tuktuk.Wpf.Utility</Name>
+    </ProjectReference>
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 
