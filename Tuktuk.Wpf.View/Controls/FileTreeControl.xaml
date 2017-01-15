@@ -4,6 +4,7 @@
     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
     xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006" 
     xmlns:d="http://schemas.microsoft.com/expression/blend/2008" 
+    xmlns:materialDesign="http://materialdesigninxaml.net/winfx/xaml/themes"
     xmlns:controls="clr-namespace:Tuktuk.Wpf.Controls;assembly=Tuktuk.Wpf.Model"
     mc:Ignorable="d" 
     d:DesignWidth="300"
@@ -24,11 +25,21 @@
             </Style>
 
             <HierarchicalDataTemplate
-                DataType="{x:Type controls:VoidFileTreeNode}"
+                DataType="{x:Type controls:SpinnerFileTreeNode}"
                 >
-                <TextBlock FontStyle="Italic" Text="(No files.)" />
+                <materialDesign:Card
+                    UniformCornerRadius="14"
+                    Padding="4"
+                    HorizontalAlignment="Right" Margin="5,0,5,0"
+                    >
+                    <ProgressBar
+                        Style="{StaticResource MaterialDesignCircularProgressBar}" 
+                        Value="50"
+                        IsIndeterminate="True"
+                      />
+                </materialDesign:Card>
             </HierarchicalDataTemplate>
-            
+
             <HierarchicalDataTemplate
                 DataType="{x:Type controls:DirectoryFileTreeNode}"
                 ItemsSource="{Binding (controls:IFileTreeNode.Children).Value}"

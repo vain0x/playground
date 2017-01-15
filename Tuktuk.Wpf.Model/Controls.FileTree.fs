@@ -3,6 +3,8 @@
 open System
 open System.Collections.Generic
 open System.IO
+open System.Reactive.Concurrency
+open System.Reactive.Linq
 open Reactive.Bindings
 open SharpFileSystem
 open SharpFileSystem.FileSystems
@@ -15,17 +17,17 @@ type IFileTreeNode =
   abstract IsExpanded: ReactiveProperty<bool>
 
 [<Sealed>]
-type VoidFileTreeNode() =
+type SpinnerFileTreeNode() =
   static let children =
     ReactiveProperty.create ([||] :> IReadOnlyList<_>) :> IReadOnlyReactiveProperty<_>
 
   let isExpanded = ReactiveProperty.create false
 
   static member val Instance =
-    new VoidFileTreeNode()
+    new SpinnerFileTreeNode()
 
   static member val Instances =
-    [| VoidFileTreeNode.Instance :> IFileTreeNode |] :> IReadOnlyList<_>
+    [| SpinnerFileTreeNode.Instance :> IFileTreeNode |] :> IReadOnlyList<_>
 
   interface IFileTreeNode with
     override this.Children =
@@ -39,40 +41,48 @@ type VoidFileTreeNode() =
       ()
 
 [<Sealed>]
-type DirectoryFileTreeNode(fileSystem: IFileSystem, path: FileSystemPath, name) =
+type DirectoryFileTreeNode
+  ( fileSystem: IFileSystem
+  , path: FileSystemPath
+  , name: string
+  , fetches: IReadOnlyReactiveProperty<bool>
+  ) =
   let isExpanded = ReactiveProperty.create false
 
-  let fetchEntities () =
-    try
-      let items = fileSystem.GetEntities(path)
-      (items.Count <> 0, items :> seq<_>)
-    with
-    | _ ->
-      (false, Seq.empty)
+  let fetchChildrenAsync =
+    async {
+      let subpaths =
+        try
+          (fileSystem: IFileSystem).GetEntities((path: FileSystemPath))
+          |> Seq.filter (fun p -> p.IsDirectory)
+          |> Seq.toArray
+        with
+        | _ ->
+          Array.empty
+      let nodes =
+        subpaths |> Array.map
+          (fun subpath ->
+            new DirectoryFileTreeNode
+              ( fileSystem
+              , subpath
+              , subpath.EntityName
+              , isExpanded
+              ) :> IFileTreeNode
+          )
+      return nodes :> IReadOnlyList<_>
+    }
 
-  let fetchChildren isExpanded =
-    match fetchEntities () with
-    | (false, _) ->
-      VoidFileTreeNode.Instances
-    | (true, entities) ->
-      entities
-      |> Seq.choose
-        (fun entry ->
-          if entry.IsDirectory then
-            let path = path.AppendDirectory(entry.EntityName)
-            new DirectoryFileTreeNode(fileSystem, path, path.EntityName) :> IFileTreeNode
-            |> Some
-          else
-            None
-        )
-      |> Seq.toArray
-      :> IReadOnlyList<_>
+  static let emptyChildren =
+    ReactiveProperty.create (Array.empty :> IReadOnlyList<_>)
+    :> IReadOnlyReactiveProperty<_>
 
   let children =
-    isExpanded |> ReactiveProperty.map
+    fetches |> ReactiveProperty.bind
       (function
-        | true -> fetchChildren ()
-        | false -> Array.empty :> IReadOnlyList<_>
+        | true ->
+          fetchChildrenAsync |> ReactiveProperty.ofAsync SpinnerFileTreeNode.Instances
+        | false ->
+          emptyChildren
       )
 
   member this.Name =
@@ -102,18 +112,23 @@ type FileTree(roots) =
 
   new() =
     let roots =
-      match DriveInfo.GetDrives() with
-      | [||] ->
-        VoidFileTreeNode.Instances
-      | drives ->
+      let drives = DriveInfo.GetDrives()
+      let nodes =
         drives |> Array.map
           (fun drive ->
             let directory = drive.RootDirectory
             let fileSystem = new PhysicalFileSystem(directory.FullName)
             let path = FileSystemPath.Root
-            new DirectoryFileTreeNode(fileSystem, path, drive.Name) :> IFileTreeNode
+            let node =
+              new DirectoryFileTreeNode
+                ( fileSystem
+                , path
+                , drive.Name
+                , ReactiveProperty.``true``
+                )
+            node :> IFileTreeNode
           )
-        :> IReadOnlyList<_>
+      nodes :> IReadOnlyList<_>
     new FileTree(roots)
 
   member this.Roots =
@@ -125,7 +140,7 @@ type FileTree(roots) =
   member this.OnSelected(selectedItemOrNull: obj) =
     match selectedItemOrNull with
     | null
-    | :? VoidFileTreeNode ->
+    | :? SpinnerFileTreeNode ->
       selectedItem.Value <- None
     | :? DirectoryFileTreeNode as node ->
       selectedItem.Value <- Some (node :> _)

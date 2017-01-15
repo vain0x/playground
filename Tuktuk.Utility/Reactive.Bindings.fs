@@ -2,6 +2,7 @@
 
 open System
 open System.Reactive.Linq
+open System.Reactive.Threading.Tasks
 open Reactive.Bindings
 
 [<AutoOpen>]
@@ -17,3 +18,13 @@ module ReactiveProperty =
       .Select(fun x -> (f(x): IReadOnlyReactiveProperty<_>) :> IObservable<_>)
       .Switch()
       .ToReactiveProperty()
+
+  let ``true`` = true |> create :> IReadOnlyReactiveProperty<_>
+  let ``false`` = false |> create :> IReadOnlyReactiveProperty<_>
+  let emptyArray<'x> = Array.empty |> create :> IReadOnlyReactiveProperty<array<'x>>
+
+  let ofAsync initialValue computation =
+    (computation |> Async.StartAsTask)
+      .ToObservable()
+      .ToReadOnlyReactiveProperty(initialValue = initialValue)
+    :> IReadOnlyReactiveProperty<_>
