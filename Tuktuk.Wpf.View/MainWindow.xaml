@@ -5,6 +5,7 @@
     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
     xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
     xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+    xmlns:wpf="clr-namespace:Tuktuk.Wpf;assembly=Tuktuk.Wpf.Model"
     xmlns:viewControls="clr-namespace:Tuktuk.Wpf.Controls"
     mc:Ignorable="d"
     TextElement.Foreground="{DynamicResource MaterialDesignBody}"
@@ -18,5 +19,9 @@
     Width="732"
     Height="412"
     >
+    <Window.DataContext>
+        <wpf:Main />
+    </Window.DataContext>
+    
     <viewControls:ShelveControl DataContext="{Binding Shelve}" />
 </Window>

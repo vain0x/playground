@@ -67,6 +67,7 @@
     <Compile Include="Controls.Book.fs" />
     <Compile Include="Controls.Workspace.fs" />
     <Compile Include="Controls.Shelve.fs" />
+    <Compile Include="Main.fs" />
   </ItemGroup>
   <ItemGroup>
     <Reference Include="mscorlib" />
