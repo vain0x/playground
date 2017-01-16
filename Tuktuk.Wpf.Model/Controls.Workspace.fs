@@ -14,7 +14,7 @@ type Workspace(page: Page) =
   let gotFocus = new Subject<unit>()
 
   member this.Page =
-    page :> IReadOnlyReactiveProperty<_>
+    page
 
   member this.GotFocus =
     gotFocus

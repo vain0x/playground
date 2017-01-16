@@ -1,9 +1,11 @@
 ﻿namespace Tuktuk.Wpf.Controls
 
 open System
+open System.Reactive.Disposables
 open System.Reactive.Linq
 open DotNetKit.FSharp
 open Reactive.Bindings
+open Reactive.Bindings.Extensions
 open SharpFileSystem
 open Tuktuk.Reactive.Bindings
 
@@ -12,14 +14,12 @@ type Shelve
   , books: seq<Book>
   , workspaces: array<Workspace>
   ) =
+  let disposables =
+    new CompositeDisposable()
+
   let books =
     books |> ReactiveCollection.ofSeq
-
-  let selectedBook =
-    books.[0] |> ReactiveProperty.create
-
-  let pages =
-    selectedBook |> ReactiveProperty.map (fun book -> book.Pages)
+    |> tap disposables.Add
 
   let activeWorkspace =
     let gotFocus =
@@ -27,15 +27,50 @@ type Shelve
         (fun workspace -> workspace.GotFocus.Select(fun _ -> workspace))
     gotFocus.Merge().ToReadOnlyReactiveProperty(workspaces.[0])
     :> IReadOnlyReactiveProperty<_>
+    |> tap disposables.Add
+
+  let selectedBookAndPage =
+    activeWorkspace |> ReactiveProperty.map
+      (fun workspace ->
+        books |> Seq.tryPick
+          (fun book ->
+            book.Pages |> Seq.tryPick
+              (fun page ->
+                if page = workspace.Page.Value
+                then Some (book, page)
+                else None
+              ))
+        |> Option.get // NOTE: Each page is owned by any of books.
+      )
+    |> tap disposables.Add
+
+  let selectedBook =
+    selectedBookAndPage |> ReactiveProperty.map fst
+    |> tap disposables.Add
+
+  let pages =
+    selectedBook |> ReactiveProperty.map (fun book -> book.Pages)
+    |> tap disposables.Add
 
   let selectedPage =
-    activeWorkspace |> ReactiveProperty.bind (fun workspace -> workspace.Page)
+    selectedBookAndPage |> ReactiveProperty.map snd
+    |> tap disposables.Add
 
   let appTitle =
     activeWorkspace
     |> ReactiveProperty.bind (fun workspace -> workspace.Page.Value.Name :> _)
     |> ReactiveProperty.map (fun name -> sprintf "%s - Tuktuk" name)
     :> IReadOnlyReactiveProperty<_>
+    |> tap disposables.Add
+
+  do
+    selectedBook.Pairwise() |> Observable.subscribe
+      (fun (OldNewPair (oldBook, newBook)) ->
+        let workspace = activeWorkspace.Value
+        oldBook.ActivePage.Value <- workspace.Page.Value
+        workspace.Page.Value <- newBook.ActivePage.Value
+      )
+    |> disposables.Add
 
   new(fileSystem, books, openPages) =
     let workspaces =

@@ -4,6 +4,13 @@ open System
 open System.Reactive.Linq
 open System.Reactive.Threading.Tasks
 open Reactive.Bindings
+open Reactive.Bindings.Extensions
+
+[<AutoOpen>]
+[<CompilationRepresentation(CompilationRepresentationFlags.ModuleSuffix)>]
+module OldNewPairExtension =
+  let (|OldNewPair|) (pair: OldNewPair<_>) =
+    (pair.OldItem, pair.NewItem)
 
 [<CompilationRepresentation(CompilationRepresentationFlags.ModuleSuffix)>]
 module ReactiveProperty =
