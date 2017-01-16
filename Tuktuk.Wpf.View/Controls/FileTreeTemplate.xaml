@@ -1,16 +1,11 @@
 ﻿<ResourceDictionary
     xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:utilityControls="clr-namespace:Tuktuk.Windows.Controls;assembly=Tuktuk.Wpf.Utility"
     xmlns:controls="clr-namespace:Tuktuk.Wpf.Controls;assembly=Tuktuk.Wpf.Model"
+    xmlns:viewControls="clr-namespace:Tuktuk.Wpf.Controls"
     >
-    <HierarchicalDataTemplate
-        DataType="{x:Type controls:FileTreeNode}"
-        >
-        <TextBlock Text="{Binding Name}" />
-    </HierarchicalDataTemplate>
-    
     <DataTemplate DataType="{x:Type controls:FileTree}">
-        <TreeView IsTabStop="False" ItemsSource="{Binding Roots}">
-        </TreeView>
+        <viewControls:FileTreeControl />
     </DataTemplate>
 </ResourceDictionary>

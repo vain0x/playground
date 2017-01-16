@@ -23,7 +23,7 @@
 
                 <ContentPresenter Content="{Binding FileTree}" />
 
-                <GridSplitter Grid.Column="1" />
+                <GridSplitter Grid.Column="1" Style="{DynamicResource VerticalGridSplitterStyle}" />
 
                 <ContentPresenter
                     Grid.Column="2"

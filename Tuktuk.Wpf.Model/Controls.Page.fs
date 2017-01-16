@@ -9,7 +9,7 @@ type Page() =
 
   let ancestorList = AncestorList("path/to/directory")
 
-  let fileTree = FileTree()
+  let fileTree = new FileTree()
 
   let fileCollection = FileCollection()
 

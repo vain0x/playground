@@ -1,0 +1,40 @@
+﻿<UserControl
+    x:Class="Tuktuk.Wpf.Controls.FileTreeControl"
+    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006" 
+    xmlns:d="http://schemas.microsoft.com/expression/blend/2008" 
+    xmlns:controls="clr-namespace:Tuktuk.Wpf.Controls;assembly=Tuktuk.Wpf.Model"
+    mc:Ignorable="d" 
+    d:DesignWidth="300"
+    d:DesignHeight="300"
+    >
+    <TreeView
+        x:Name="treeView"
+        IsTabStop="False"
+        ItemsSource="{Binding Roots}"
+        SelectedItemChanged="treeView_SelectedItemChanged"
+        >
+        <TreeView.Resources>
+            <Style TargetType="TreeViewItem" BasedOn="{StaticResource MaterialDesignTreeViewItem}">
+                <Setter
+                    Property="IsExpanded"
+                    Value="{Binding (controls:IFileTreeNode.IsExpanded).Value, Mode=TwoWay}"
+                    />
+            </Style>
+
+            <HierarchicalDataTemplate
+                DataType="{x:Type controls:VoidFileTreeNode}"
+                >
+                <TextBlock FontStyle="Italic" Text="(No files.)" />
+            </HierarchicalDataTemplate>
+            
+            <HierarchicalDataTemplate
+                DataType="{x:Type controls:DirectoryFileTreeNode}"
+                ItemsSource="{Binding (controls:IFileTreeNode.Children).Value}"
+                >
+                <TextBlock Text="{Binding Name}" />
+            </HierarchicalDataTemplate>
+        </TreeView.Resources>
+    </TreeView>
+</UserControl>

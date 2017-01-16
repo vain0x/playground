@@ -29,9 +29,9 @@
 
                     <ContentPresenter Content="{Binding OpenPage0.Value}" />
 
-                    <GridSplitter Grid.Column="1" />
+                    <GridSplitter Grid.Column="1" Style="{DynamicResource VerticalGridSplitterStyle}" />
 
-                    <ContentPresenter Content="{Binding OpenPage1.Value}" />
+                    <ContentPresenter Grid.Column="2" Content="{Binding OpenPage1.Value}" />
                 </Grid>
             </DockPanel>
         </DockPanel>
