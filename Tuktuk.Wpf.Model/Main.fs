@@ -29,10 +29,8 @@ type Main(shelve) =
         )
       |> Seq.toArray
     let workspaces =
-      [|
-        new Workspace(books.[0].ActivePage.Value)
-        new Workspace(books.[1].ActivePage.Value)
-      |]
+      books.[0..1]
+      |> Array.map (fun book -> new Workspace(fileSystem, book, book.ActivePage.Value))
     new Shelve(fileSystem, books, workspaces)
 
   new() =

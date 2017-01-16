@@ -16,15 +16,15 @@
                 <ListBox
                     Style="{StaticResource TabListStyle}"
                     ItemsSource="{Binding Books}"
-                    SelectedItem="{Binding SelectedBook.Value}"
+                    SelectedItem="{Binding ActiveWorkspace.Value.SelectedBook.Value}"
                     />
             </DockPanel>
 
             <ListBox
                 DockPanel.Dock="Top"
                 Style="{StaticResource TabListStyle}"
-                ItemsSource="{Binding Pages.Value}"
-                SelectedItem="{Binding SelectedPage.Value}"
+                ItemsSource="{Binding ActiveWorkspace.Value.Pages.Value}"
+                SelectedItem="{Binding ActiveWorkspace.Value.SelectedPage.Value}"
                 />
 
             <Grid>

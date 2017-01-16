@@ -27,15 +27,18 @@ type Page
 
   let name =
     name |> ReactiveProperty.create
+    |> tap disposables.Add
 
   let ancestorList =
     new AncestorList("path/to/directory")
 
   let fileTree =
     new FileTree()
+    |> tap disposables.Add
 
   let fileList =
     new FileList(fileSystem, directoryPath.Value)
+    |> tap disposables.Add
 
   new(fileSystem, directoryPath: FileSystemPath) =
     let name = directoryPath.EntityName
