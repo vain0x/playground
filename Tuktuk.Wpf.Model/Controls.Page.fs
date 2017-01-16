@@ -4,15 +4,19 @@ open System
 open System.IO
 open System.Reactive.Disposables
 open System.Reactive.Linq
+open System.Runtime.Serialization
 open DotNetKit.FSharp
 open Reactive.Bindings
 open SharpFileSystem
 open SharpFileSystem.FileSystems
 open Tuktuk.Reactive.Bindings
+open Tuktuk.Runtime.Serialization
 
+[<Sealed>]
 type Page
   ( fileSystem: IFileSystem
   , directoryPath: FileSystemPath
+  , name: string
   ) =
   let disposables =
     new CompositeDisposable()
@@ -22,8 +26,7 @@ type Page
     |> tap disposables.Add
 
   let name =
-    directoryPath |> ReactiveProperty.map (fun path -> path.EntityName)
-    :> IReadOnlyReactiveProperty<_>
+    name |> ReactiveProperty.create
 
   let ancestorList =
     new AncestorList("path/to/directory")
@@ -33,6 +36,13 @@ type Page
 
   let fileList =
     new FileList(fileSystem, directoryPath.Value)
+
+  new(fileSystem, directoryPath: FileSystemPath) =
+    let name = directoryPath.EntityName
+    new Page(fileSystem, directoryPath, name)
+
+  new(fileSystem, directoryPath: string) =
+    new Page(fileSystem, FileSystemPath.Parse(directoryPath))
 
   member this.Name =
     name

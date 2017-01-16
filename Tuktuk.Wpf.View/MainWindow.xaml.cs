@@ -14,6 +14,7 @@ using System.Windows.Navigation;
 using System.Windows.Shapes;
 using SharpFileSystem;
 using SharpFileSystem.FileSystems;
+using Tuktuk.Wpf.Controls;
 
 namespace Tuktuk.Wpf
 {
@@ -22,6 +23,16 @@ namespace Tuktuk.Wpf
     /// </summary>
     public partial class MainWindow : Window
     {
+        Shelve CreateInitialShelve()
+        {
+            var fileSystem = PhysicalFileSystem.SuperRoot;
+            var path = fileSystem.GetVirtualDirectoryPath(Environment.CurrentDirectory);
+            var page = new Controls.Page(fileSystem, path);
+            var book = new Book(fileSystem, "Book 0", new[] { page });
+            var shelve = new Shelve(fileSystem, new[] { book });
+            return shelve;
+        }
+
         public MainWindow()
         {
             InitializeComponent();
@@ -29,7 +40,7 @@ namespace Tuktuk.Wpf
             DataContext =
                 new
                 {
-                    Shelve = new Controls.Shelve(PhysicalFileSystem.SuperRoot),
+                    Shelve = CreateInitialShelve(),
                 };
         }
     }

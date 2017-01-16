@@ -4,27 +4,22 @@ open System
 open System.Reactive.Linq
 open DotNetKit.FSharp
 open Reactive.Bindings
+open SharpFileSystem
 open Tuktuk.Reactive.Bindings
 
-type Shelve(fileSystem) =
+type Shelve
+  ( fileSystem: IFileSystem
+  , books: seq<Book>
+  , workspaces: array<Workspace>
+  ) =
   let books =
-    [|
-      Book("book0")
-      Book("book1")
-    |]
-    |> ReactiveCollection.ofSeq
+    books |> ReactiveCollection.ofSeq
 
   let selectedBook =
     books.[0] |> ReactiveProperty.create
 
   let pages =
     selectedBook |> ReactiveProperty.map (fun book -> book.Pages)
-
-  let workspaces =
-    [|
-      Workspace(pages.Value.[0])
-      Workspace(pages.Value.[1])
-    |]
 
   let activeWorkspace =
     let gotFocus =
@@ -38,9 +33,14 @@ type Shelve(fileSystem) =
 
   let appTitle =
     activeWorkspace
-    |> ReactiveProperty.bind (fun workspace -> workspace.Page.Value.Name)
+    |> ReactiveProperty.bind (fun workspace -> workspace.Page.Value.Name :> _)
     |> ReactiveProperty.map (fun name -> sprintf "%s - Tuktuk" name)
     :> IReadOnlyReactiveProperty<_>
+
+  new(fileSystem, books, openPages) =
+    let workspaces =
+      openPages |> Array.map (fun page -> Workspace(page))
+    new Shelve(fileSystem, books, workspaces)
 
   member this.Books =
     books
