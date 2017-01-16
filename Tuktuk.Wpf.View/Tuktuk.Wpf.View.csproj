@@ -77,10 +77,6 @@
       <SubType>Designer</SubType>
       <Generator>MSBuild:Compile</Generator>
     </Page>
-    <Page Include="Controls\TabControl.xaml">
-      <SubType>Designer</SubType>
-      <Generator>MSBuild:Compile</Generator>
-    </Page>
     <Page Include="Controls\WorkspaceControl.xaml">
       <SubType>Designer</SubType>
       <Generator>MSBuild:Compile</Generator>
@@ -105,9 +101,6 @@
     <Compile Include="Controls\ShelveControl.xaml.cs">
       <DependentUpon>ShelveControl.xaml</DependentUpon>
     </Compile>
-    <Compile Include="Controls\TabControl.xaml.cs">
-      <DependentUpon>TabControl.xaml</DependentUpon>
-    </Compile>
     <Compile Include="Controls\WorkspaceControl.xaml.cs">
       <DependentUpon>WorkspaceControl.xaml</DependentUpon>
     </Compile>
@@ -116,6 +109,10 @@
       <SubType>Code</SubType>
     </Compile>
     <Page Include="PrimitiveResource.xaml">
+      <SubType>Designer</SubType>
+      <Generator>MSBuild:Compile</Generator>
+    </Page>
+    <Page Include="Resources\TabListStyle.xaml">
       <SubType>Designer</SubType>
       <Generator>MSBuild:Compile</Generator>
     </Page>

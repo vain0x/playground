@@ -4,5 +4,7 @@
     >
     <ResourceDictionary.MergedDictionaries>
         <ResourceDictionary Source="PrimitiveResource.xaml" />
+
+        <ResourceDictionary Source="Resources/TabListStyle.xaml" />
     </ResourceDictionary.MergedDictionaries>
 </ResourceDictionary>

@@ -13,14 +13,16 @@
     <DockPanel>
         <DockPanel>
             <DockPanel DockPanel.Dock="Top">
-                <viewControls:TabControl
+                <ListBox
+                    Style="{StaticResource TabListStyle}"
                     ItemsSource="{Binding Books}"
                     SelectedItem="{Binding SelectedBook.Value}"
                     />
             </DockPanel>
 
-            <viewControls:TabControl
+            <ListBox
                 DockPanel.Dock="Top"
+                Style="{StaticResource TabListStyle}"
                 ItemsSource="{Binding Pages.Value}"
                 SelectedItem="{Binding SelectedPage.Value}"
                 />
