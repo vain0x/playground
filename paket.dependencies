@@ -15,5 +15,8 @@ group Wpf
 group UnitTest
     source https://www.nuget.org/api/v2
 
+    nuget NUnit
+    nuget NUnit.Console
+
     nuget Persimmon
     nuget Persimmon.Console
