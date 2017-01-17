@@ -58,6 +58,7 @@
     <Compile Include="FileSystems\SealedFileSystem.cs" />
     <Compile Include="FileSystems\SubFileSystem.cs" />
     <Compile Include="Collections\InverseComparer.cs" />
+    <Compile Include="IFileSystemWatcher.cs" />
     <Compile Include="IO\CircularBuffer.cs" />
     <Compile Include="IO\ConcatStream.cs" />
     <Compile Include="Collections\EnumerableCollection.cs" />
@@ -74,9 +75,11 @@
     <Compile Include="IEntityMover.cs" />
     <Compile Include="IFileSystem.cs" />
     <Compile Include="ITypeDictionary.cs" />
+    <Compile Include="MemoryFileSystemWatcher.cs" />
     <Compile Include="ParseException.cs" />
     <Compile Include="IO\ProducerConsumerStream.cs" />
     <Compile Include="PhysicalEntityMover.cs" />
+    <Compile Include="PhysicalFileSystemWatcher.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="FileSystems\SeamlessArchiveFileSystem.cs" />
     <Compile Include="FileSystems\PhysicalFileSystem.cs" />

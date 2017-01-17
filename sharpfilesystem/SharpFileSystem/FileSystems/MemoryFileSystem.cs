@@ -17,6 +17,50 @@ namespace SharpFileSystem.FileSystems
             _directories.Add(FileSystemPath.Root, new HashSet<FileSystemPath>());
         }
 
+        public event FileSystemEventHandler Created;
+
+        void RaiseCreatedEvent(FileSystemPath path)
+        {
+            var h = Created;
+            if (h != null)
+            {
+                h(this, new FileSystemEventArgs(WatcherChangeTypes.Created, path.ParentPath.ToString(), path.ToString()));
+            }
+        }
+
+        public event FileSystemEventHandler Deleted;
+
+        void RaiseDeletedEvent(FileSystemPath path)
+        {
+            var h = Deleted;
+            if (h != null)
+            {
+                h(this, new FileSystemEventArgs(WatcherChangeTypes.Deleted, path.ParentPath.ToString(), path.ToString()));
+            }
+        }
+
+        public event FileSystemEventHandler Changed;
+
+        void RaiseChangedEvent(FileSystemPath path)
+        {
+            var h = Changed;
+            if (h != null && Exists(path))
+            {
+                h(this, new FileSystemEventArgs(WatcherChangeTypes.Changed, path.ParentPath.ToString(), path.ToString()));
+            }
+        }
+
+        public event RenamedEventHandler Renamed;
+
+        void RaiseRenamedEvent(FileSystemPath oldPath, FileSystemPath path)
+        {
+            var h = Renamed;
+            if (h != null)
+            {
+                h(this, new RenamedEventArgs(WatcherChangeTypes.Renamed, oldPath.ParentPath.ToString(), path.ToString(), oldPath.ToString()));
+            }
+        }
+
         public ICollection<FileSystemPath> GetEntities(FileSystemPath path)
         {
             if (!path.IsDirectory)
@@ -39,7 +83,9 @@ namespace SharpFileSystem.FileSystems
             if (!_directories.ContainsKey(path.ParentPath))
                 throw new DirectoryNotFoundException();
             _directories[path.ParentPath].Add(path);
-            return new MemoryFileStream(_files[path] = new MemoryFile());
+            var file = _files[path] = new MemoryFile();
+            RaiseCreatedEvent(path);
+            return new MemoryFileStream(file, () => RaiseChangedEvent(path));
         }
 
         public Stream OpenFile(FileSystemPath path, FileAccess access)
@@ -49,7 +95,7 @@ namespace SharpFileSystem.FileSystems
             MemoryFile file;
             if (!_files.TryGetValue(path, out file))
                 throw new FileNotFoundException();
-            return new MemoryFileStream(file);
+            return new MemoryFileStream(file, () => RaiseChangedEvent(path));
         }
 
         public void CreateDirectory(FileSystemPath path)
@@ -63,6 +109,7 @@ namespace SharpFileSystem.FileSystems
                 throw new DirectoryNotFoundException();
             subentities.Add(path);
             _directories[path] = new HashSet<FileSystemPath>();
+            RaiseCreatedEvent(path);
         }
 
         public void Delete(FileSystemPath path)
@@ -78,6 +125,7 @@ namespace SharpFileSystem.FileSystems
                 throw new ArgumentException("The specified path does not exist.");
             var parent = _directories[path.ParentPath];
             parent.Remove(path);
+            RaiseDeletedEvent(path);
         }
 
         public void Dispose()
@@ -102,6 +150,8 @@ namespace SharpFileSystem.FileSystems
         public class MemoryFileStream : Stream
         {
             private readonly MemoryFile _file;
+
+            readonly Action _onFlush;
 
             public byte[] Content
             {
@@ -131,13 +181,15 @@ namespace SharpFileSystem.FileSystems
 
             public override long Position { get; set; }
 
-            public MemoryFileStream(MemoryFile file)
+            public MemoryFileStream(MemoryFile file, Action onFlush)
             {
                 _file = file;
+                _onFlush = onFlush;
             }
 
             public override void Flush()
             {
+                _onFlush();
             }
 
             public override long Seek(long offset, SeekOrigin origin)
@@ -171,6 +223,16 @@ namespace SharpFileSystem.FileSystems
                     SetLength(Position + count);
                 Buffer.BlockCopy(buffer, offset, Content, (int)Position, count);
                 Position += count;
+            }
+
+            protected override void Dispose(bool disposing)
+            {
+                if (disposing)
+                {
+                    Flush();
+                }
+
+                base.Dispose(disposing);
             }
         }
     }
