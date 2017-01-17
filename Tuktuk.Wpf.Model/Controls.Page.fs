@@ -14,31 +14,39 @@ open Tuktuk.Runtime.Serialization
 
 [<Sealed>]
 type Page
-  ( fileSystem: IFileSystem
-  , directoryPath: FileSystemPath
-  , name: string
+  ( directoryPath: ReactiveProperty<FileSystemPath>
+  , name: ReactiveProperty<string>
+  , ancestorList: AncestorList
+  , fileTree: FileTree
+  , fileList: FileList
+  , launchCommand: ReactiveCommand<FileSystemPath>
+  , disposables: CompositeDisposable
   ) =
-  let disposables =
-    new CompositeDisposable()
-
-  let directoryPath =
-    directoryPath |> ReactiveProperty.create
-    |> tap disposables.Add
-
-  let name =
-    name |> ReactiveProperty.create
-    |> tap disposables.Add
-
-  let ancestorList =
-    new AncestorList("path/to/directory")
-
-  let fileTree =
-    new FileTree()
-    |> tap disposables.Add
-
-  let fileList =
-    new FileList(fileSystem, directoryPath.Value)
-    |> tap disposables.Add
+  new(fileSystem, directoryPath: FileSystemPath, name) =
+    let disposables =
+      new CompositeDisposable()
+    let directoryPath =
+      directoryPath |> ReactiveProperty.create
+      |> tap disposables.Add
+    let launchCommand =
+      new ReactiveCommand<FileSystemPath>()
+      |> tap disposables.Add
+    do
+      launchCommand.Where(fun path -> path.IsDirectory) |> Observable.subscribe
+        (fun path -> directoryPath.Value <- path)
+      |> disposables.Add
+    new Page
+      ( directoryPath
+      , name |> ReactiveProperty.create
+        |> tap disposables.Add
+      , new AncestorList("path/to/directory")
+      , new FileTree()
+        |> tap disposables.Add
+      , new FileList(fileSystem, directoryPath.Value, launchCommand)
+        |> tap disposables.Add
+      , launchCommand
+      , disposables
+      )
 
   new(fileSystem, directoryPath: FileSystemPath) =
     let name = directoryPath.EntityName
@@ -58,6 +66,9 @@ type Page
 
   member this.FileList =
     fileList
+
+  member this.LaunchCommand =
+    launchCommand
 
   member this.Dispose() =
     disposables.Dispose()

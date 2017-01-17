@@ -19,15 +19,28 @@
 
         <ListBox.ItemTemplate>
             <DataTemplate>
-                <DockPanel>
-                    <TextBlock
-                        DockPanel.Dock="Right"
-                        Text="{Binding LastUpdateDateTime.Value}"
-                        Opacity="0.5"
-                        />
+                <Border Margin="-8" Padding="8">
+                    <Border.InputBindings>
+                        <KeyBinding
+                            Gesture="Enter"
+                            Command="{Binding LaunchCommand}"
+                            />
+                        <MouseBinding
+                            Gesture="LeftDoubleClick"
+                            Command="{Binding LaunchCommand}"
+                            />
+                    </Border.InputBindings>
 
-                    <TextBlock Text="{Binding Name}" />
-                </DockPanel>
+                    <DockPanel>
+                        <TextBlock
+                            DockPanel.Dock="Right"
+                            Text="{Binding LastUpdateDateTime.Value}"
+                            Opacity="0.5"
+                            />
+
+                        <TextBlock Text="{Binding Name}" />
+                    </DockPanel>
+                </Border>
             </DataTemplate>
         </ListBox.ItemTemplate>
     </ListBox>
