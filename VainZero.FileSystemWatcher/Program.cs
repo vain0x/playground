@@ -48,11 +48,11 @@ namespace VainZero.FileSystemWatcher
             watcher.Renamed -= OnRenamed;
         }
 
-        void Read()
+        async Task ReadAsync()
         {
             while (true)
             {
-                var line = Console.ReadLine();
+                var line = await Console.In.ReadLineAsync();
                 if (line == null) return;
 
                 if (line.StartsWith("Add|"))
@@ -82,6 +82,8 @@ namespace VainZero.FileSystemWatcher
         {
             while (resetEvent.WaitOne())
             {
+                resetEvent.Reset();
+
                 var line = default(string);
                 if (writeQueue.TryDequeue(out line))
                 {
@@ -92,7 +94,7 @@ namespace VainZero.FileSystemWatcher
 
         void Run()
         {
-            var readTask = Task.Run(() => Read());
+            var readTask = ReadAsync();
             var writeTask = Task.Run(() => Write());
             Task.WhenAll(readTask, writeTask).Wait();
         }
