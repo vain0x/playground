@@ -9,6 +9,7 @@ using SharpFileSystem.FileSystems;
 namespace SharpFileSystem
 {
     public interface IFileSystemWatcher
+        : IDisposable
     {
         IFileSystem FileSystem { get; }
         FileSystemPath Path { get; }

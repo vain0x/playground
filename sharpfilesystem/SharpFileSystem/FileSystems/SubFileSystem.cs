@@ -1,3 +1,4 @@
+using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
@@ -60,6 +61,11 @@ namespace SharpFileSystem.FileSystems
         public void Delete(FileSystemPath path)
         {
             FileSystem.Delete(AppendRoot(path));
+        }
+
+        public IFileSystemWatcher CreateWatcher(FileSystemPath path)
+        {
+            return FileSystem.CreateWatcher(AppendRoot(path));
         }
     }
 }

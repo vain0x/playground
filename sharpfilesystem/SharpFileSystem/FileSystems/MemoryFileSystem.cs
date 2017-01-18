@@ -132,6 +132,11 @@ namespace SharpFileSystem.FileSystems
         {
         }
 
+        public IFileSystemWatcher CreateWatcher(FileSystemPath path)
+        {
+            return new MemoryFileSystemWatcher(this, path);
+        }
+
         public class MemoryFile
         {
             public byte[] Content { get; set; }

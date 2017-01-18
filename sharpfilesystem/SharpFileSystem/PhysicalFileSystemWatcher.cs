@@ -8,7 +8,7 @@ using SharpFileSystem.FileSystems;
 
 namespace SharpFileSystem
 {
-    sealed class PhysicalFileSystemWatcher
+    public sealed class PhysicalFileSystemWatcher
         : IFileSystemWatcher
     {
         readonly PhysicalFileSystem fileSystem;
@@ -54,6 +54,11 @@ namespace SharpFileSystem
         {
             add { watcher.Renamed += value; }
             remove { watcher.Renamed -= value; }
+        }
+
+        public void Dispose()
+        {
+            watcher.Dispose();
         }
         #endregion
 

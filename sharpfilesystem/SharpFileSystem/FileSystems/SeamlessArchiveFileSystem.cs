@@ -205,6 +205,11 @@ namespace SharpFileSystem.FileSystems
             FileSystem.Dispose();
         }
 
+        public IFileSystemWatcher CreateWatcher(FileSystemPath path)
+        {
+            throw new NotImplementedException();
+        }
+
         public class DummyDisposable : IDisposable
         {
             public void Dispose()

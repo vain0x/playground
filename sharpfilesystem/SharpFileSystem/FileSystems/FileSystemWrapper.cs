@@ -49,5 +49,10 @@ namespace SharpFileSystem.FileSystems
         {
             Parent.Dispose();
         }
+
+        public IFileSystemWatcher CreateWatcher(FileSystemPath path)
+        {
+            throw new NotImplementedException();
+        }
     }
 }

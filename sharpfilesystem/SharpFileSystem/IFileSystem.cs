@@ -11,5 +11,6 @@ public interface IFileSystem: IDisposable
     Stream OpenFile(FileSystemPath path, FileAccess access);
     void CreateDirectory(FileSystemPath path);
     void Delete(FileSystemPath path);
+    IFileSystemWatcher CreateWatcher(FileSystemPath path);
 }
 }

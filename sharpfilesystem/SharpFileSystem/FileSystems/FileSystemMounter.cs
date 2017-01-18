@@ -1,3 +1,4 @@
+using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
@@ -67,6 +68,11 @@ namespace SharpFileSystem.FileSystems
         {
             var pair = Get(path);
             pair.Value.Delete(path.RemoveParent(pair.Key));
+        }
+
+        public IFileSystemWatcher CreateWatcher(FileSystemPath path)
+        {
+            throw new NotImplementedException();
         }
     }
 }

@@ -76,5 +76,10 @@ namespace SharpFileSystem.FileSystems
             foreach(var fs in FileSystems.Where(fs => fs.Exists(path)))
                 fs.Delete(path);
         }
+
+        public IFileSystemWatcher CreateWatcher(FileSystemPath path)
+        {
+            throw new NotImplementedException();
+        }
     }
 }

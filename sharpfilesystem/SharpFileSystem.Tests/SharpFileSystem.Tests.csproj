@@ -37,6 +37,7 @@
     <Compile Include="FileSystems\EntityMoverRegistrationTest.cs" />
     <Compile Include="FileSystems\MemoryFileSystemTest.cs" />
     <Compile Include="FileSystems\PhysicalFileSystemTest.cs" />
+    <Compile Include="PhysicalFileSystemWatcherTest.cs" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\SharpFileSystem\SharpFileSystem.csproj">

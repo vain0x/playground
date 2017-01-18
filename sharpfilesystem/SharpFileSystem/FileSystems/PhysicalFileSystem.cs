@@ -126,6 +126,11 @@ namespace SharpFileSystem.FileSystems
         public void Dispose()
         {
         }
+
+        public IFileSystemWatcher CreateWatcher(FileSystemPath path)
+        {
+            return new PhysicalFileSystemWatcher(this, path);
+        }
     }
 }
 

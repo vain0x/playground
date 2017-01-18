@@ -1,3 +1,4 @@
+using System;
 using System.Collections.Generic;
 using System.IO;
 
@@ -45,6 +46,11 @@ namespace SharpFileSystem.FileSystems
         public void Dispose()
         {
             Parent.Dispose();
+        }
+
+        public IFileSystemWatcher CreateWatcher(FileSystemPath path)
+        {
+            throw new NotImplementedException();
         }
     }
 }

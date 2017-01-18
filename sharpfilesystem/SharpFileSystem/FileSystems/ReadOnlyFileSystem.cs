@@ -51,5 +51,10 @@ namespace SharpFileSystem.FileSystems
         {
             throw new InvalidOperationException("This is a read-only filesystem.");
         }
+
+        public IFileSystemWatcher CreateWatcher(FileSystemPath path)
+        {
+            throw new NotImplementedException();
+        }
     }
 }
