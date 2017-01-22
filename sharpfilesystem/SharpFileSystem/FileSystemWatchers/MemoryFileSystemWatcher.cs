@@ -14,7 +14,8 @@ namespace SharpFileSystem
     {
         readonly MemoryFileSystem fileSystem;
         readonly FileSystemPath path;
-        readonly Action dispose;
+
+        Action detach;
 
         #region IFileSystemWatcher implementation
         public IFileSystem FileSystem
@@ -27,7 +28,22 @@ namespace SharpFileSystem
             get { return path; }
         }
 
-        public bool EnableRaisingEvents { get; set; }
+        bool enableRaisingEvents;
+        public bool EnableRaisingEvents
+        {
+            get { return enableRaisingEvents; }
+            set
+            {
+                if (value)
+                {
+                    Attach();
+                }
+                else
+                {
+                    Detach();
+                }
+            }
+        }
 
         public event FileSystemEventHandler Changed;
         public event FileSystemEventHandler Created;
@@ -37,7 +53,18 @@ namespace SharpFileSystem
 
         public void Dispose()
         {
-            dispose();
+            Detach();
+        }
+
+        FileSystemPath ParsePath(string path)
+        {
+            var separator = FileSystemPath.DirectorySeparator;
+            var fullPath =
+                path
+                .Replace(System.IO.Path.DirectorySeparatorChar, separator)
+                .Replace(System.IO.Path.AltDirectorySeparatorChar, separator)
+                .Replace(string.Concat(separator, separator), separator.ToString());
+            return FileSystemPath.Parse(fullPath);
         }
 
         FileSystemEventHandler FileSystemEventHandler(Action<FileSystemEventArgs> raise)
@@ -45,7 +72,7 @@ namespace SharpFileSystem
             return
                 (sender, e) =>
                 {
-                    var path = FileSystemPath.Parse(e.FullPath);
+                    var path = ParsePath(e.FullPath);
                     if (path.ParentPath == this.path)
                     {
                         raise(e);
@@ -55,8 +82,8 @@ namespace SharpFileSystem
 
         void OnRenamed(object sender, RenamedEventArgs e)
         {
-            var oldPath = FileSystemPath.Parse(e.OldFullPath);
-            var newPath = FileSystemPath.Parse(e.FullPath);
+            var oldPath = ParsePath(e.OldFullPath);
+            var newPath = ParsePath(e.FullPath);
             if (oldPath.ParentPath == path)
             {
                 if (newPath.ParentPath == path)
@@ -77,10 +104,10 @@ namespace SharpFileSystem
             }
         }
 
-        public MemoryFileSystemWatcher(MemoryFileSystem fileSystem, FileSystemPath path)
+        void Attach()
         {
-            this.fileSystem = fileSystem;
-            this.path = path;
+            if (enableRaisingEvents) return;
+            enableRaisingEvents = true;
 
             var onChanged = FileSystemEventHandler(e => Changed?.Invoke(this, e));
             var onCreated = FileSystemEventHandler(e => Created?.Invoke(this, e));
@@ -90,7 +117,7 @@ namespace SharpFileSystem
             fileSystem.Deleted += onDeleted;
             fileSystem.Renamed += OnRenamed;
 
-            dispose =
+            detach =
                 new Action(() =>
                 {
                     fileSystem.Changed -= onChanged;
@@ -98,6 +125,19 @@ namespace SharpFileSystem
                     fileSystem.Deleted -= onDeleted;
                     fileSystem.Renamed -= OnRenamed;
                 });
+        }
+
+        void Detach()
+        {
+            if (!enableRaisingEvents) return;
+            enableRaisingEvents = false;
+            detach();
+        }
+
+        public MemoryFileSystemWatcher(MemoryFileSystem fileSystem, FileSystemPath path)
+        {
+            this.fileSystem = fileSystem;
+            this.path = path;
         }
     }
 }

@@ -24,7 +24,7 @@ namespace SharpFileSystem.FileSystems
             var h = Created;
             if (h != null)
             {
-                h(this, new FileSystemEventArgs(WatcherChangeTypes.Created, path.ParentPath.ToString(), path.ToString()));
+                h(this, new FileSystemEventArgs(WatcherChangeTypes.Created, path.ParentPath.ToString(), path.EntityName));
             }
         }
 
@@ -35,7 +35,7 @@ namespace SharpFileSystem.FileSystems
             var h = Deleted;
             if (h != null)
             {
-                h(this, new FileSystemEventArgs(WatcherChangeTypes.Deleted, path.ParentPath.ToString(), path.ToString()));
+                h(this, new FileSystemEventArgs(WatcherChangeTypes.Deleted, path.ParentPath.ToString(), path.EntityName));
             }
         }
 
@@ -46,7 +46,7 @@ namespace SharpFileSystem.FileSystems
             var h = Changed;
             if (h != null && Exists(path))
             {
-                h(this, new FileSystemEventArgs(WatcherChangeTypes.Changed, path.ParentPath.ToString(), path.ToString()));
+                h(this, new FileSystemEventArgs(WatcherChangeTypes.Changed, path.ParentPath.ToString(), path.EntityName));
             }
         }
 
@@ -57,7 +57,7 @@ namespace SharpFileSystem.FileSystems
             var h = Renamed;
             if (h != null)
             {
-                h(this, new RenamedEventArgs(WatcherChangeTypes.Renamed, oldPath.ParentPath.ToString(), path.ToString(), oldPath.ToString()));
+                h(this, new RenamedEventArgs(WatcherChangeTypes.Renamed, oldPath.ParentPath.ToString(), path.EntityName, oldPath.EntityName));
             }
         }
 

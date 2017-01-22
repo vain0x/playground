@@ -15,9 +15,6 @@ namespace SharpFileSystem
         FileSystemPath Path { get; }
         bool EnableRaisingEvents { get; set; }
 
-        event FileSystemEventHandler Changed;
-        event FileSystemEventHandler Created;
-        event FileSystemEventHandler Deleted;
-        event RenamedEventHandler Renamed;
+        event EventHandler<FileSystemChange> Changed;
     }
 }
