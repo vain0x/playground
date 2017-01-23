@@ -45,6 +45,7 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="AssemblyInfo.fs" />
+    <Compile Include="Parsing.ParsersTest.fs" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\Bracky.Runtime\Bracky.Runtime.fsproj">
