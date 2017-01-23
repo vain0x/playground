@@ -4,8 +4,45 @@ open System
 open FParsec
 
 module Parsers =
+  type private Tree<'x> =
+    | Leaf
+      of 'x
+    | Node
+      of Tree<'x> * Tree<'x>
+
+  [<CompilationRepresentation(CompilationRepresentationFlags.ModuleSuffix)>]
+  module private Tree =
+    let toArray =
+      let rec loop =
+        function
+        | Leaf x ->
+          [|x|]
+        | Node (l, r) ->
+          Array.append (loop l) (loop r)
+      loop
+
+  [<CompilationRepresentation(CompilationRepresentationFlags.ModuleSuffix)>]
+  module Array =
+    let decompose (this: array<'x>) =
+      (this.[0], this.[1..(this.Length - 1)])
+
   type Parser<'x> =
     Parser<'x, unit>
+
+  let keywords =
+    [
+      "val"
+      "true"
+      "false"
+      "if"
+      "else"
+    ] |> set
+
+  let keywordParser identifier =
+    parse {
+      do! skipString identifier
+      do! notFollowedBy (letter <|> digit <|> pchar '_')
+    }
 
   let singleLineCommentParser: Parser<unit> =
     skipString "//" >>. skipRestOfLine true
@@ -25,7 +62,10 @@ module Parsers =
       let! position = getPosition
       do! notFollowedBy digit
       let! identifier = many1Chars (letter <|> pchar '_' <|> digit)
-      return IdentifierPattern (position, identifier)
+      if keywords |> Set.contains identifier then
+        return! fail "Variable name can't be a keyword."
+      else
+        return IdentifierPattern (position, identifier)
     }
 
   patternParserRef :=
@@ -49,15 +89,46 @@ module Parsers =
     parse {
       let! position = getPosition
       let! value =
-        attempt (skipString "true" >>% true)
-        <|> (skipString "false" >>% false)
+        attempt (keywordParser "true" >>% true)
+        <|> (keywordParser "false" >>% false)
       return BoolExpression (position, value)
+    }
+
+  let ifExpressionParser: Parser<Expression> =
+    parse {
+      let ifClauseParser =
+        parse {
+          do! keywordParser "if" >>. blankParser
+          let! condition = expressionParser
+          do! blankParser >>. skipString "->" >>. blankParser
+          let! expression = expressionParser
+          do! blankParser
+          return IfClause (condition, expression)
+        }
+      let elseClauseParser =
+        parse {
+          do! keywordParser "else" >>. blankParser
+          let! expression = expressionParser
+          do! blankParser
+          return ElseClause expression
+        }
+      let clauseParser =
+        attempt ifClauseParser
+        <|>  elseClauseParser
+      do! skipChar '{' >>. blankParser
+      let! clauses =
+        chainl1
+          (clauseParser .>> blankParser |>> Leaf)
+          (skipChar ';' >>. blankParser |>> (fun () l r -> Node (l, r)))
+      do! skipChar '}'
+      return
+        clauses |> Tree.toArray |> Array.decompose |> IfExpression
     }
 
   let parenthesisExpressionParser: Parser<Expression> =
     between
       (skipChar '(' >>. blankParser)
-      (blankParser >>. skipChar ')')
+      (blankParser >>. optional (skipChar ';' >>. blankParser) >>. skipChar ')')
       expressionParser
 
   let atomicExpressionParser: Parser<Expression> =
@@ -74,7 +145,7 @@ module Parsers =
   let rightAssociatedOperationParser termParser operatorParser ctor =
     chainr1
       termParser
-      (attempt (blankParser >>. operatorParser >>. blankParser)
+      (attempt (blankParser >>. operatorParser >>. blankParser >>. followedBy termParser)
         |>> (fun () left right -> ctor (left, right)))
 
   let multitiveExpressionParser: Parser<Expression> =

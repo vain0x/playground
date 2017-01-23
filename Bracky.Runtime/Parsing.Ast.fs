@@ -21,6 +21,8 @@ type Expression =
     of Position * int64
   | BoolExpression
     of Position * bool
+  | IfExpression
+    of IfClause * array<IfClause>
   | AddExpression
     of Expression * Expression
   | MulExpression
@@ -36,6 +38,8 @@ with
       position
     | BoolExpression (position, _) ->
       position
+    | IfExpression (clause, _) ->
+      clause.Position
     | AddExpression (left, _) ->
       left.Position
     | MulExpression (left, _) ->
@@ -51,6 +55,9 @@ with
       IntExpression (position, value)
     | BoolExpression (_, value) ->
       BoolExpression (position, value)
+    | IfExpression (head, tail) ->
+      let tail = tail |> Array.map (fun c -> c.SetPosition(position))
+      IfExpression (head.SetPosition(position), tail)
     | AddExpression (left, right) ->
       AddExpression (left.SetPosition(position), right.SetPosition(position))
     | MulExpression (left, right) ->
@@ -59,3 +66,23 @@ with
       ValExpression (pattern.SetPosition(position), expression.SetPosition(position))
     | ThenExpression (left, right) ->
       ThenExpression (left.SetPosition(position), right.SetPosition(position))
+
+and IfClause =
+  | IfClause
+    of Expression * Expression
+  | ElseClause
+    of Expression
+with
+  member this.Position =
+    match this with
+    | IfClause (condition, _) ->
+      condition.Position
+    | ElseClause expression ->
+      expression.Position
+
+  member this.SetPosition(position) =
+    match this with
+    | IfClause (condition, expression) ->
+      IfClause (condition.SetPosition(position), expression.SetPosition(position))
+    | ElseClause expression ->
+      ElseClause (expression.SetPosition(position))
