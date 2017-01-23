@@ -49,9 +49,15 @@ module Parsers =
   let atomicExpressionParser: Parser<Expression> =
     attempt intExpressionParser
     <|> parenthesisExpressionParser
-
+    
   let leftAssociatedOperationParser termParser operatorParser ctor =
     chainl1
+      termParser
+      (attempt (blankParser >>. operatorParser >>. blankParser)
+        |>> (fun () left right -> ctor (left, right)))
+
+  let rightAssociatedOperationParser termParser operatorParser ctor =
+    chainr1
       termParser
       (attempt (blankParser >>. operatorParser >>. blankParser)
         |>> (fun () left right -> ctor (left, right)))
@@ -62,5 +68,8 @@ module Parsers =
   let additiveExpressionParser: Parser<Expression> =
     leftAssociatedOperationParser multitiveExpressionParser (skipChar '+') AddExpression
 
+  let thenExpressionParser: Parser<Expression> =
+    rightAssociatedOperationParser additiveExpressionParser (skipChar ';') ThenExpression
+
   expressionParserRef :=
-    additiveExpressionParser
+    thenExpressionParser
