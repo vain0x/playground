@@ -3,7 +3,25 @@ Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio 14
 VisualStudioVersion = 14.0.25420.1
 MinimumVisualStudioVersion = 10.0.40219.1
+Project("{F2A71F9B-5D33-465A-A702-920D77279786}") = "Bracky.Runtime", "Bracky.Runtime\Bracky.Runtime.fsproj", "{58099FC7-8C4F-474F-9A9F-F7AD2D36B90C}"
+EndProject
+Project("{F2A71F9B-5D33-465A-A702-920D77279786}") = "Bracky.Runtime.Console", "Bracky.Runtime.Console\Bracky.Runtime.Console.fsproj", "{7F438E01-0683-4123-B91D-50DC3DDAEEA4}"
+EndProject
 Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Release|Any CPU = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{58099FC7-8C4F-474F-9A9F-F7AD2D36B90C}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{58099FC7-8C4F-474F-9A9F-F7AD2D36B90C}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{58099FC7-8C4F-474F-9A9F-F7AD2D36B90C}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{58099FC7-8C4F-474F-9A9F-F7AD2D36B90C}.Release|Any CPU.Build.0 = Release|Any CPU
+		{7F438E01-0683-4123-B91D-50DC3DDAEEA4}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{7F438E01-0683-4123-B91D-50DC3DDAEEA4}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{7F438E01-0683-4123-B91D-50DC3DDAEEA4}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{7F438E01-0683-4123-B91D-50DC3DDAEEA4}.Release|Any CPU.Build.0 = Release|Any CPU
+	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
 	EndGlobalSection
