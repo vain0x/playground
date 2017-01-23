@@ -56,9 +56,11 @@ module Parsers =
       (attempt (blankParser >>. operatorParser >>. blankParser)
         |>> (fun () left right -> ctor (left, right)))
 
+  let multitiveExpressionParser: Parser<Expression> =
+    leftAssociatedOperationParser atomicExpressionParser (skipChar '*') MulExpression
+
   let additiveExpressionParser: Parser<Expression> =
-    leftAssociatedOperationParser atomicExpressionParser (skipChar '+') AddExpression
-    <|> atomicExpressionParser
+    leftAssociatedOperationParser multitiveExpressionParser (skipChar '+') AddExpression
 
   expressionParserRef :=
     additiveExpressionParser

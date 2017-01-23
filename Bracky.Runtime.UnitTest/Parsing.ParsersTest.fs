@@ -19,18 +19,24 @@ module ParsersTest =
       }
     let intParser = Parsers.intExpressionParser
     let parenParser = Parsers.parenthesisExpressionParser
+    let mulParser = Parsers.multitiveExpressionParser
     let addParser = Parsers.additiveExpressionParser
     let i value = IntExpression (p, value)
     let add left right = AddExpression (left, right)
+    let mul left right = MulExpression (left, right)
     parameterize {
       case (intParser, "1", i 1L)
       case (intParser, "12", i 12L)
       case (intParser, "9876543210", i 9876543210L)
       case (parenParser, "(12)", i 12L)
       case (parenParser, "( 12 )", i 12L)
+      case (mulParser, "2*3", mul (i 2L) (i 3L))
+      case (mulParser, "2 * 3 * 4", mul (mul (i 2L) (i 3L)) (i 4L))
       case (addParser, "1+2", add (i 1L) (i 2L))
       case (addParser, "1 + 2", add (i 1L) (i 2L))
       case (addParser, "1 + 2 + 3", add (add (i 1L) (i 2L)) (i 3L))
       case (addParser, "1 + (2 + 3)", add (i 1L) (add (i 2L) (i 3L)))
+      case (addParser, "2 * 3 + 4", add (mul (i 2L) (i 3L)) (i 4L))
+      case (addParser, "2 + 3 * 4", add (i 2L) (mul (i 3L) (i 4L)))
       run body
     }
