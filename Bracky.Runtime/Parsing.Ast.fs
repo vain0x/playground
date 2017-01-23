@@ -19,6 +19,8 @@ with
 type Expression =
   | IntExpression
     of Position * int64
+  | BoolExpression
+    of Position * bool
   | AddExpression
     of Expression * Expression
   | MulExpression
@@ -31,6 +33,8 @@ with
   member this.Position =
     match this with
     | IntExpression (position, _) ->
+      position
+    | BoolExpression (position, _) ->
       position
     | AddExpression (left, _) ->
       left.Position
@@ -45,6 +49,8 @@ with
     match this with
     | IntExpression (_, value) ->
       IntExpression (position, value)
+    | BoolExpression (_, value) ->
+      BoolExpression (position, value)
     | AddExpression (left, right) ->
       AddExpression (left.SetPosition(position), right.SetPosition(position))
     | MulExpression (left, right) ->

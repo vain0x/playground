@@ -39,6 +39,7 @@ module ParsersTest =
         do! actual |> assertEquals expected
       }
     let intParser = Parsers.intExpressionParser
+    let boolParser = Parsers.boolExpressionParser
     let parenParser = Parsers.parenthesisExpressionParser
     let mulParser = Parsers.multitiveExpressionParser
     let addParser = Parsers.additiveExpressionParser
@@ -46,6 +47,8 @@ module ParsersTest =
     let thenParser = Parsers.thenExpressionParser
     let id' name = IdentifierPattern (p, name)
     let i value = IntExpression (p, value)
+    let true' = BoolExpression (p, true)
+    let false' = BoolExpression (p, false)
     let add left right = AddExpression (left, right)
     let mul left right = MulExpression (left, right)
     let val' pattern expression = ValExpression (pattern, expression)
@@ -54,6 +57,8 @@ module ParsersTest =
       case (intParser, "1", i 1L)
       case (intParser, "12", i 12L)
       case (intParser, "9876543210", i 9876543210L)
+      case (boolParser, "true", true')
+      case (boolParser, "false", false')
       case (parenParser, "(12)", i 12L)
       case (parenParser, "( 12 )", i 12L)
       case (mulParser, "2*3", mul (i 2L) (i 3L))

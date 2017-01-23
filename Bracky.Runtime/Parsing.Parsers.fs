@@ -45,6 +45,15 @@ module Parsers =
         return! fail "Invalid integer literal."
     }
 
+  let boolExpressionParser: Parser<Expression> =
+    parse {
+      let! position = getPosition
+      let! value =
+        attempt (skipString "true" >>% true)
+        <|> (skipString "false" >>% false)
+      return BoolExpression (position, value)
+    }
+
   let parenthesisExpressionParser: Parser<Expression> =
     between
       (skipChar '(' >>. blankParser)
@@ -53,6 +62,7 @@ module Parsers =
 
   let atomicExpressionParser: Parser<Expression> =
     attempt intExpressionParser
+    <|> attempt boolExpressionParser
     <|> parenthesisExpressionParser
     
   let leftAssociatedOperationParser termParser operatorParser ctor =
