@@ -7,6 +7,8 @@ Project("{F2A71F9B-5D33-465A-A702-920D77279786}") = "Bracky.Runtime", "Bracky.Ru
 EndProject
 Project("{F2A71F9B-5D33-465A-A702-920D77279786}") = "Bracky.Runtime.Console", "Bracky.Runtime.Console\Bracky.Runtime.Console.fsproj", "{7F438E01-0683-4123-B91D-50DC3DDAEEA4}"
 EndProject
+Project("{F2A71F9B-5D33-465A-A702-920D77279786}") = "Bracky.Runtime.UnitTest", "Bracky.Runtime.UnitTest\Bracky.Runtime.UnitTest.fsproj", "{CF29C82B-DBBB-402D-B84E-E6B348640C28}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -21,6 +23,10 @@ Global
 		{7F438E01-0683-4123-B91D-50DC3DDAEEA4}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{7F438E01-0683-4123-B91D-50DC3DDAEEA4}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{7F438E01-0683-4123-B91D-50DC3DDAEEA4}.Release|Any CPU.Build.0 = Release|Any CPU
+		{CF29C82B-DBBB-402D-B84E-E6B348640C28}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{CF29C82B-DBBB-402D-B84E-E6B348640C28}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{CF29C82B-DBBB-402D-B84E-E6B348640C28}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{CF29C82B-DBBB-402D-B84E-E6B348640C28}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

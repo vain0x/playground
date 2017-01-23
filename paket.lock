@@ -4,3 +4,9 @@ GROUP Compiler
 NUGET
   remote: https://www.nuget.org/api/v2
     FParsec (1.0.2)
+
+GROUP UnitTest
+NUGET
+  remote: https://www.nuget.org/api/v2
+    Persimmon (1.2)
+    Persimmon.Console (1.2)

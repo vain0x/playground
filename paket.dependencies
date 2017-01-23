@@ -4,3 +4,9 @@ group Compiler
     source https://www.nuget.org/api/v2
 
     nuget FParsec
+
+group UnitTest
+    source https://www.nuget.org/api/v2
+
+    nuget Persimmon
+    nuget Persimmon.Console
