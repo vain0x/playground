@@ -11,20 +11,25 @@ module Parsers =
     skipString "//" >>. skipRestOfLine true
 
   let blank1Parser: Parser<unit> =
-    (attempt singleLineCommentParser <|> spaces1)
+    (attempt spaces1 <|> singleLineCommentParser)
     >>. skipSepBy singleLineCommentParser spaces
 
   let blankParser: Parser<unit> =
     spaces >>. skipSepBy singleLineCommentParser spaces
 
+  let (patternParser: Parser<Pattern>, patternParserRef) =
+    createParserForwardedToRef ()
+
   let identifierPatternParser: Parser<Pattern> =
     parse {
       let! position = getPosition
-      let! headChar = letter <|> pchar '_'
-      let! tailChars = manyChars (letter <|> pchar '_' <|> digit)
-      let identifier = string headChar + tailChars
+      do! notFollowedBy digit
+      let! identifier = many1Chars (letter <|> pchar '_' <|> digit)
       return IdentifierPattern (position, identifier)
     }
+
+  patternParserRef :=
+    identifierPatternParser
 
   let (expressionParser: Parser<Expression>, expressionParserRef) =
     createParserForwardedToRef ()
@@ -68,8 +73,19 @@ module Parsers =
   let additiveExpressionParser: Parser<Expression> =
     leftAssociatedOperationParser multitiveExpressionParser (skipChar '+') AddExpression
 
+  let valExpressionParser: Parser<Expression> =
+    attempt
+      (parse {
+        do! skipString "val" >>. blank1Parser
+        let! pattern = patternParser
+        do! blankParser >>. skipChar '=' >>. blankParser
+        let! expression = additiveExpressionParser
+        return ValExpression (pattern, expression)
+      })
+    <|> additiveExpressionParser
+
   let thenExpressionParser: Parser<Expression> =
-    rightAssociatedOperationParser additiveExpressionParser (skipChar ';') ThenExpression
+    rightAssociatedOperationParser valExpressionParser (skipChar ';') ThenExpression
 
   expressionParserRef :=
     thenExpressionParser

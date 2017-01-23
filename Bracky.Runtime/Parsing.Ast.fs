@@ -23,10 +23,10 @@ type Expression =
     of Expression * Expression
   | MulExpression
     of Expression * Expression
-  | ThenExpression
-    of Expression * Expression
   | ValExpression
     of Pattern * Expression
+  | ThenExpression
+    of Expression * Expression
 with
   member this.Position =
     match this with
@@ -36,10 +36,10 @@ with
       left.Position
     | MulExpression (left, _) ->
       left.Position
-    | ThenExpression (left, _) ->
-      left.Position
     | ValExpression (pattern, _) ->
       pattern.Position
+    | ThenExpression (left, _) ->
+      left.Position
 
   member this.SetPosition(position) =
     match this with
@@ -49,7 +49,7 @@ with
       AddExpression (left.SetPosition(position), right.SetPosition(position))
     | MulExpression (left, right) ->
       MulExpression (left.SetPosition(position), right.SetPosition(position))
-    | ThenExpression (left, right) ->
-      ThenExpression (left.SetPosition(position), right.SetPosition(position))
     | ValExpression (pattern, expression) ->
       ValExpression (pattern.SetPosition(position), expression.SetPosition(position))
+    | ThenExpression (left, right) ->
+      ThenExpression (left.SetPosition(position), right.SetPosition(position))

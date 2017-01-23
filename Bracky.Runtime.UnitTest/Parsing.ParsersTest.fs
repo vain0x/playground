@@ -8,23 +8,47 @@ module ParsersTest =
   let p =
     Position("", 0L, 0L, 0L)
 
+  let assertParse parser source =
+    test {
+      match runParserOnString parser () "test" source with
+      | Success (actual, _, _) ->
+        return actual |> Some
+      | Failure (message, _, _) ->
+        do! fail message
+        return None
+    }
+
+  let ``test blank1Parser`` =
+    let body source =
+      test {
+        let! result = assertParse Parsers.blank1Parser source
+        do! result.IsSome |> assertPred
+      }
+    parameterize {
+      case (" ")
+      case ("// x")
+      run body
+    }
+
   let ``test expression parsers`` =
     let body (parser: Parser<Expression, unit>, source, expected: Expression) =
       test {
-        match runParserOnString parser () "test" source with
-        | Success (actual, (), position) ->
-          do! actual.SetPosition(p) |> assertEquals (expected.SetPosition(p))
-        | Failure (message, _, _) ->
-          return! fail message
+        let! actual = assertParse parser source
+        let actual = actual |> Option.map (fun x -> x.SetPosition(p))
+        let expected = expected.SetPosition(p) |> Some
+        do! actual |> assertEquals expected
       }
     let intParser = Parsers.intExpressionParser
     let parenParser = Parsers.parenthesisExpressionParser
     let mulParser = Parsers.multitiveExpressionParser
     let addParser = Parsers.additiveExpressionParser
+    let valParser = Parsers.valExpressionParser
     let thenParser = Parsers.thenExpressionParser
+    let id' name = IdentifierPattern (p, name)
     let i value = IntExpression (p, value)
     let add left right = AddExpression (left, right)
     let mul left right = MulExpression (left, right)
+    let val' pattern expression = ValExpression (pattern, expression)
     let then' left right = ThenExpression (left, right)
     parameterize {
       case (intParser, "1", i 1L)
@@ -40,6 +64,16 @@ module ParsersTest =
       case (addParser, "1 + (2 + 3)", add (i 1L) (add (i 2L) (i 3L)))
       case (addParser, "2 * 3 + 4", add (mul (i 2L) (i 3L)) (i 4L))
       case (addParser, "2 + 3 * 4", add (i 2L) (mul (i 3L) (i 4L)))
-      case (thenParser, "1 ; 2 ; 3", then' (i 1L) (then' (i 2L) (i 3L)))
+      case (valParser, "val x = 1", val' (id' "x") (i 1L))
+      case
+        ( thenParser
+        , "val x = 1 + 2; val y = 3"
+        , then' (val' (id' "x") (add (i 1L) (i 2L))) (val' (id' "y") (i 3L))
+        )
+      case
+        ( thenParser
+        , "1 ; 2 ; 3"
+        , then' (i 1L) (then' (i 2L) (i 3L))
+        )
       run body
     }
