@@ -94,6 +94,9 @@ module Parsers =
       return BoolExpression (position, value)
     }
 
+  let rightBracketParser: Parser<unit> =
+    optional (skipChar ';' >>. blankParser) >>. skipChar '}'
+
   let ifExpressionParser: Parser<Expression> =
     parse {
       let ifClauseParser =
@@ -119,8 +122,9 @@ module Parsers =
       let! clauses =
         chainl1
           (clauseParser .>> blankParser |>> Leaf)
-          (skipChar ';' >>. blankParser |>> (fun () l r -> Node (l, r)))
-      do! skipChar '}'
+          (attempt (skipChar ';' >>. blankParser >>. notFollowedBy (skipChar '}'))
+            |>> (fun () l r -> Node (l, r)))
+      do! rightBracketParser
       return
         clauses |> Tree.toArray |> Array.decompose |> IfExpression
     }
@@ -157,7 +161,7 @@ module Parsers =
   let valExpressionParser: Parser<Expression> =
     attempt
       (parse {
-        do! skipString "val" >>. blank1Parser
+        do! keywordParser "val" >>. blankParser
         let! pattern = patternParser
         do! blankParser >>. skipChar '=' >>. blankParser
         let! expression = additiveExpressionParser

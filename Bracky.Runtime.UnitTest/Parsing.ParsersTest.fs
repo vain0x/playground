@@ -89,6 +89,11 @@ module ParsersTest =
         )
       case
         ( ifParser
+        , "{if true -> 1;}"
+        , if' true' (i 1L) [||]
+        )
+      case
+        ( ifParser
         , "{ if true -> 1 ; else 2 }"
         , if' true' (i 1L) [|ElseClause (i 2L)|]
         )
