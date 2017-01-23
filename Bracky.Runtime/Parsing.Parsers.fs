@@ -116,14 +116,15 @@ module Parsers =
           return ElseClause expression
         }
       let clauseParser =
-        attempt ifClauseParser
-        <|>  elseClauseParser
+        attempt ifClauseParser <|> elseClauseParser
+      let clauseSeparatorParser =
+        skipChar ';' >>. blankParser
+        >>. followedBy (attempt (keywordParser "if") <|> keywordParser "else")
       do! skipChar '{' >>. blankParser
       let! clauses =
         chainl1
           (clauseParser .>> blankParser |>> Leaf)
-          (attempt (skipChar ';' >>. blankParser >>. notFollowedBy (skipChar '}'))
-            |>> (fun () l r -> Node (l, r)))
+          (attempt clauseSeparatorParser |>> (fun () l r -> Node (l, r)))
       do! rightBracketParser
       return
         clauses |> Tree.toArray |> Array.decompose |> IfExpression

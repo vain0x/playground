@@ -94,12 +94,18 @@ module ParsersTest =
         )
       case
         ( ifParser
-        , "{ if true -> 1 ; else 2 }"
+        , "{ if true -> 1; else 2 }"
         , if' true' (i 1L) [|ElseClause (i 2L)|]
         )
       case
         ( ifParser
-        , "{ if true -> val x = 1; 2; else 3 }"
+        , "{ if true -> val x = 1; 2; if false -> 3; else 4 }"
+        , if' true' (then' (val' (id' "x") (i 1L)) (i 2L))
+            [|IfClause (false', (i 3L)); ElseClause (i 4L)|]
+        )
+      case
+        ( ifParser
+        , "{ if true -> val x = 1; 2; else 3; }"
         , if' true' (then' (val' (id' "x") (i 1L)) (i 2L)) [|ElseClause (i 3L)|]
         )
       run body
