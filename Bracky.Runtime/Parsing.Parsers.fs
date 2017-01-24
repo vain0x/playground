@@ -29,21 +29,16 @@ module Parsers =
   type Parser<'x> =
     Parser<'x, unit>
 
-  let keywords =
+  /// Identifiers which can't be an identifier pattern.
+  let reservedIdentifiers =
     [
-      "val"
+      "_"
       "true"
       "false"
-      "fun"
+      "val"
       "if"
       "else"
     ] |> set
-
-  let keywordParser identifier =
-    parse {
-      do! skipString identifier
-      do! notFollowedBy (letter <|> digit <|> pchar '_')
-    }
 
   let singleLineCommentParser: Parser<unit> =
     skipString "//" >>. skipRestOfLine true
@@ -55,18 +50,35 @@ module Parsers =
   let blankParser: Parser<unit> =
     spaces >>. skipSepBy singleLineCommentParser spaces
 
+  let identifierCharParser =
+    letter <|> pchar '_' <|> digit
+
+  /// Parser which parses an exact identifier.
+  let keywordParser identifier =
+    parse {
+      do! skipString identifier
+      do! notFollowedBy identifierCharParser
+    }
+
+  // Parser which parsers a non-reserved identifier.
+  let identifierParser: Parser<string> =
+    parse {
+      do! notFollowedBy digit
+      let! identifier = many1Chars identifierCharParser
+      if reservedIdentifiers |> Set.contains identifier then
+        return! pzero
+      else
+        return identifier
+    }
+
   let (patternParser: Parser<Pattern>, patternParserRef) =
     createParserForwardedToRef ()
 
   let identifierPatternParser: Parser<Pattern> =
     parse {
       let! position = getPosition
-      do! notFollowedBy digit
-      let! identifier = many1Chars (letter <|> pchar '_' <|> digit)
-      if keywords |> Set.contains identifier then
-        return! fail "Variable name can't be a keyword."
-      else
-        return IdentifierPattern (position, identifier)
+      let! identifier = identifierParser
+      return IdentifierPattern (position, identifier)
     }
 
   patternParserRef :=
@@ -79,7 +91,7 @@ module Parsers =
     parse {
       let! position = getPosition
       let! digits = many1Chars digit
-      do! notFollowedBy (letter <|> pchar '_')
+      do! notFollowedBy identifierCharParser
       match Int64.TryParse(digits) with
       | (true, value) ->
         return IntExpression (position, value)
@@ -94,6 +106,13 @@ module Parsers =
         attempt (keywordParser "true" >>% true)
         <|> (keywordParser "false" >>% false)
       return BoolExpression (position, value)
+    }
+
+  let refExpressionParser: Parser<Expression> =
+    parse {
+      let! position = getPosition
+      let! identifier = identifierParser
+      return RefExpression (position, identifier)
     }
 
   let rightBracketParser: Parser<unit> =
@@ -150,8 +169,9 @@ module Parsers =
       expressionParser
 
   let atomicExpressionParser: Parser<Expression> =
-    attempt intExpressionParser
-    <|> attempt boolExpressionParser
+    attempt boolExpressionParser
+    <|> attempt refExpressionParser
+    <|> attempt intExpressionParser
     <|> parenthesisExpressionParser
     
   let leftAssociatedOperationParser termParser operatorParser ctor =

@@ -21,6 +21,9 @@ type Expression =
     of Position * int64
   | BoolExpression
     of Position * bool
+  /// Represents an expression to read the value of variable.
+  | RefExpression
+    of Position * string
   | FunExpression
     of Position * Pattern * Expression
   | IfExpression
@@ -41,6 +44,8 @@ with
     | IntExpression (position, _) ->
       position
     | BoolExpression (position, _) ->
+      position
+    | RefExpression (position, _) ->
       position
     | FunExpression (position, _, _) ->
       position
@@ -63,6 +68,8 @@ with
       IntExpression (position, value)
     | BoolExpression (_, value) ->
       BoolExpression (position, value)
+    | RefExpression (_, name) ->
+      RefExpression (position, name)
     | FunExpression (_, pattern, expression) ->
       let expression = expression.SetPosition(position)
       FunExpression (position, pattern.SetPosition(position), expression)
