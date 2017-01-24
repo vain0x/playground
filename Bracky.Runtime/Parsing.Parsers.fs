@@ -34,6 +34,7 @@ module Parsers =
       "val"
       "true"
       "false"
+      "fun"
       "if"
       "else"
     ] |> set
@@ -96,6 +97,17 @@ module Parsers =
 
   let rightBracketParser: Parser<unit> =
     optional (skipChar ';' >>. blankParser) >>. skipChar '}'
+
+  let funExpressionParser: Parser<Expression> =
+    parse {
+      let! position = getPosition
+      do! skipChar '{' >>. blankParser >>. keywordParser "fun" >>. blankParser
+      let! pattern = patternParser
+      do! blankParser >>. skipString "->" >>. blankParser
+      let! expression = expressionParser
+      do! blankParser >>. rightBracketParser
+      return FunExpression (position, pattern, expression)
+    }
 
   let ifExpressionParser: Parser<Expression> =
     parse {

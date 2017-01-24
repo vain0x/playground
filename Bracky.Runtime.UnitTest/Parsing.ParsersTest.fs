@@ -41,6 +41,7 @@ module ParsersTest =
     let intParser = Parsers.intExpressionParser
     let boolParser = Parsers.boolExpressionParser
     let parenParser = Parsers.parenthesisExpressionParser
+    let funParser = Parsers.funExpressionParser
     let ifParser = Parsers.ifExpressionParser
     let mulParser = Parsers.multitiveExpressionParser
     let addParser = Parsers.additiveExpressionParser
@@ -50,6 +51,7 @@ module ParsersTest =
     let i value = IntExpression (p, value)
     let true' = BoolExpression (p, true)
     let false' = BoolExpression (p, false)
+    let fun' pattern body = FunExpression (p, pattern, body)
     let if' hc hx tail = IfExpression (IfClause (hc, hx), tail)
     let add left right = AddExpression (left, right)
     let mul left right = MulExpression (left, right)
@@ -81,6 +83,12 @@ module ParsersTest =
         ( thenParser
         , "1 ; 2 ; 3"
         , then' (i 1L) (then' (i 2L) (i 3L))
+        )
+      case (funParser, "{fun x -> 0}", fun' (id' "x") (i 0L))
+      case
+        ( funParser
+        , "{ fun x -> val y = 1; 2; }"
+        , fun' (id' "x") (then' (val' (id' "y") (i 1L)) (i 2L))
         )
       case
         ( ifParser
