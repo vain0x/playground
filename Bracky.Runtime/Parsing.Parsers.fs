@@ -79,6 +79,7 @@ module Parsers =
     parse {
       let! position = getPosition
       let! digits = many1Chars digit
+      do! notFollowedBy (letter <|> pchar '_')
       match Int64.TryParse(digits) with
       | (true, value) ->
         return IntExpression (position, value)
@@ -165,8 +166,14 @@ module Parsers =
       (attempt (blankParser >>. operatorParser >>. blankParser >>. followedBy termParser)
         |>> (fun () left right -> ctor (left, right)))
 
+  let applyExpressionParser: Parser<Expression> =
+    chainl1
+      atomicExpressionParser
+      (attempt (blankParser >>. followedBy atomicExpressionParser)
+        |>> (fun () left right -> ApplyExpression (left, right)))
+
   let multitiveExpressionParser: Parser<Expression> =
-    leftAssociatedOperationParser atomicExpressionParser (skipChar '*') MulExpression
+    leftAssociatedOperationParser applyExpressionParser (skipChar '*') MulExpression
 
   let additiveExpressionParser: Parser<Expression> =
     leftAssociatedOperationParser multitiveExpressionParser (skipChar '+') AddExpression

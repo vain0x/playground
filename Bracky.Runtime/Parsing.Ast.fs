@@ -25,6 +25,8 @@ type Expression =
     of Position * Pattern * Expression
   | IfExpression
     of IfClause * array<IfClause>
+  | ApplyExpression
+    of Expression * Expression
   | MulExpression
     of Expression * Expression
   | AddExpression
@@ -44,6 +46,8 @@ with
       position
     | IfExpression (clause, _) ->
       clause.Position
+    | ApplyExpression (f, _) ->
+      f.Position
     | MulExpression (left, _) ->
       left.Position
     | AddExpression (left, _) ->
@@ -65,6 +69,8 @@ with
     | IfExpression (head, tail) ->
       let tail = tail |> Array.map (fun c -> c.SetPosition(position))
       IfExpression (head.SetPosition(position), tail)
+    | ApplyExpression (f, x) ->
+      ApplyExpression (f.SetPosition(position), x.SetPosition(position))
     | MulExpression (left, right) ->
       MulExpression (left.SetPosition(position), right.SetPosition(position))
     | AddExpression (left, right) ->
