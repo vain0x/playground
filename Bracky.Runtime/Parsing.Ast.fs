@@ -55,7 +55,7 @@ with
       left.Position
     | ValExpression (pattern, _) ->
       pattern.Position
-
+      
   member this.SetPosition(position) =
     match this with
     | IntExpression (_, value) ->
