@@ -174,29 +174,29 @@ module Parsers =
     <|> attempt intExpressionParser
     <|> parenthesisExpressionParser
     
-  let leftAssociatedOperationParser termParser operatorParser ctor =
+  let leftAssociatedOperationParser termParser operatorParser operator =
     chainl1
       termParser
       (attempt (blankParser >>. operatorParser >>. blankParser)
-        |>> (fun () left right -> ctor (left, right)))
+        |>> (fun () left right -> BinaryOperationExpression (operator, left, right)))
 
-  let rightAssociatedOperationParser termParser operatorParser ctor =
+  let rightAssociatedOperationParser termParser operatorParser operator =
     chainr1
       termParser
       (attempt (blankParser >>. operatorParser >>. blankParser >>. followedBy termParser)
-        |>> (fun () left right -> ctor (left, right)))
+        |>> (fun () left right -> BinaryOperationExpression (operator, left, right)))
 
   let applyExpressionParser: Parser<Expression> =
     chainl1
       atomicExpressionParser
       (attempt (blankParser >>. followedBy atomicExpressionParser)
-        |>> (fun () left right -> ApplyExpression (left, right)))
+        |>> (fun () left right -> BinaryOperationExpression (ApplyOperator, left, right)))
 
   let multitiveExpressionParser: Parser<Expression> =
-    leftAssociatedOperationParser applyExpressionParser (skipChar '*') MulExpression
+    leftAssociatedOperationParser applyExpressionParser (skipChar '*') MulOperator
 
   let additiveExpressionParser: Parser<Expression> =
-    leftAssociatedOperationParser multitiveExpressionParser (skipChar '+') AddExpression
+    leftAssociatedOperationParser multitiveExpressionParser (skipChar '+') AddOperator
 
   let valExpressionParser: Parser<Expression> =
     attempt
@@ -210,7 +210,7 @@ module Parsers =
     <|> additiveExpressionParser
 
   let thenExpressionParser: Parser<Expression> =
-    rightAssociatedOperationParser valExpressionParser (skipChar ';') ThenExpression
+    rightAssociatedOperationParser valExpressionParser (skipChar ';') ThenOperator
 
   expressionParserRef :=
     thenExpressionParser

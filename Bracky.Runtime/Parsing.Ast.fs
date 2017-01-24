@@ -16,6 +16,12 @@ with
     | IdentifierPattern (_, name) ->
       IdentifierPattern (position, name)
 
+type BinaryOperator =
+  | ApplyOperator
+  | AddOperator
+  | MulOperator
+  | ThenOperator
+
 type Expression =
   | IntExpression
     of Position * int64
@@ -28,16 +34,10 @@ type Expression =
     of Position * Pattern * Expression
   | IfExpression
     of IfClause * array<IfClause>
-  | ApplyExpression
-    of Expression * Expression
-  | MulExpression
-    of Expression * Expression
-  | AddExpression
-    of Expression * Expression
+  | BinaryOperationExpression
+    of BinaryOperator * Expression * Expression
   | ValExpression
     of Pattern * Expression
-  | ThenExpression
-    of Expression * Expression
 with
   member this.Position =
     match this with
@@ -51,16 +51,10 @@ with
       position
     | IfExpression (clause, _) ->
       clause.Position
-    | ApplyExpression (f, _) ->
-      f.Position
-    | MulExpression (left, _) ->
-      left.Position
-    | AddExpression (left, _) ->
+    | BinaryOperationExpression (_, left, _) ->
       left.Position
     | ValExpression (pattern, _) ->
       pattern.Position
-    | ThenExpression (left, _) ->
-      left.Position
 
   member this.SetPosition(position) =
     match this with
@@ -76,16 +70,12 @@ with
     | IfExpression (head, tail) ->
       let tail = tail |> Array.map (fun c -> c.SetPosition(position))
       IfExpression (head.SetPosition(position), tail)
-    | ApplyExpression (f, x) ->
-      ApplyExpression (f.SetPosition(position), x.SetPosition(position))
-    | MulExpression (left, right) ->
-      MulExpression (left.SetPosition(position), right.SetPosition(position))
-    | AddExpression (left, right) ->
-      AddExpression (left.SetPosition(position), right.SetPosition(position))
+    | BinaryOperationExpression (operator, left, right) ->
+      let left = left.SetPosition(position)
+      let right = right.SetPosition(position)
+      BinaryOperationExpression (operator, left, right)
     | ValExpression (pattern, expression) ->
       ValExpression (pattern.SetPosition(position), expression.SetPosition(position))
-    | ThenExpression (left, right) ->
-      ThenExpression (left.SetPosition(position), right.SetPosition(position))
 
 and IfClause =
   | IfClause

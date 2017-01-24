@@ -50,10 +50,10 @@ module ParsersTest =
     let ref' identifier = RefExpression (p, identifier)
     let fun' pattern body = FunExpression (p, pattern, body)
     let if' hc hx tail = IfExpression (IfClause (hc, hx), tail)
-    let add left right = AddExpression (left, right)
-    let mul left right = MulExpression (left, right)
+    let add left right = BinaryOperationExpression (AddOperator, left, right)
+    let mul left right = BinaryOperationExpression (MulOperator, left, right)
     let val' pattern expression = ValExpression (pattern, expression)
-    let then' left right = ThenExpression (left, right)
+    let then' left right = BinaryOperationExpression (ThenOperator, left, right)
 
     let ``test expression parsers`` =
       let body (parser: Parser<Expression, unit>, source, expected: Expression) =
