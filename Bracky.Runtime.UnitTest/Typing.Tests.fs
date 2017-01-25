@@ -1,5 +1,6 @@
 ﻿namespace Bracky.Runtime.Typing
 
+open DotNetKit.FSharp.ErrorHandling
 open FParsec
 open Persimmon
 open Persimmon.Syntax.UseTestNameByReflection
@@ -106,12 +107,12 @@ module TypeInferenceTest =
     let body (source, expected) =
       test {
         match Parsers.parseExpression "test" source with
-        | Ok expression ->
+        | Result.Ok expression ->
           let tv = TypeVariable.fresh ()
           let (substitution, environment) =
             TypeInference.infer expression (tRef tv) Substitution.Empty Map.empty
           do! substitution.Apply(tRef tv) |> assertEquals expected
-        | Error message ->
+        | Result.Error message ->
           return! fail message
       }
     parameterize {
