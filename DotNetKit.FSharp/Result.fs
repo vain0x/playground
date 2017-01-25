@@ -115,16 +115,32 @@ module Result =
       f e
 
   let exists (p: 'x -> bool) (result: Result<'x, _>): bool =
-    result |> tryGet |> Option.exists p
+    match result with
+    | Ok x ->
+      p x
+    | Error _ ->
+      false
 
   let existsError (p: 'e -> bool) (result: Result<_, 'e>): bool =
-    result |> tryGetError |> Option.exists p
+    match result with
+    | Ok x ->
+      false
+    | Error e ->
+      p e
 
   let forall (p: 'x -> bool) (result: Result<'x, _>): bool =
-    result |> tryGet |> Option.forall p
+    match result with
+    | Ok x ->
+      p x
+    | Error _ ->
+      true
 
   let forallError (p: 'e -> bool) (result: Result<_, 'e>): bool =
-    result |> tryGetError |> Option.forall p
+    match result with
+    | Ok x ->
+      true
+    | Error e ->
+      p e
 
   let tryApply<'x, 'y, 'e when 'e :> exn> (f: 'x -> 'y) (x: 'x): Result<'y, 'e> =
     try
