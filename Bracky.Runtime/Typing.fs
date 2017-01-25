@@ -85,14 +85,19 @@ type Substitution() =
       AppTypeExpression (kind, arguments |> Array.map this.Apply)
 
   member this.Extend(tu: TypeVariable, t: TypeExpression) =
-    let that = this
-    { new Substitution() with
-        override this.Item
-          with get tv =
-            if tv = tu then t else that.[tv]
-    }
+    if this.Apply(t) = RefTypeExpression tu then
+      this
+    else
+      let that = this
+      { new Substitution() with
+          override this.Item
+            with get tv =
+              if tv = tu then t else that.[tv]
+      }
 
   member this.ExtendMany(bindings: Map<TypeVariable, TypeExpression>) =
+    let bindings =
+      bindings |> Map.filter (fun tv t -> this.Apply(t) <> RefTypeExpression tv)
     let that = this
     { new Substitution() with
         override this.Item

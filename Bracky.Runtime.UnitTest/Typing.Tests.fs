@@ -95,8 +95,7 @@ module TypeInferenceTest =
       case (tRef tx, tRef ty)
       case (tFun tInt tUnit, tFun tInt tUnit)
       case (tFun tInt tUnit, tFun (tRef tx) (tRef ty))
-      //case (tFun (tRef ty) (tRef tx), tFun (tRef tx) (tRef ty))
-      // Substitution happens to map tRef ty to tRef ty and causes a stack overflow.
+      case (tFun (tRef ty) (tRef tx), tFun (tRef tx) (tRef ty)) //=> tx = ty = 'x
       run body
     }
 
