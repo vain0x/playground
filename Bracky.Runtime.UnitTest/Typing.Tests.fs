@@ -60,6 +60,24 @@ module SubstitutionTest =
       run body
     }
 
+module ``test Substitution`` =
+  let ``test unify success`` =
+    let body (t, t') =
+      test {
+        let substitution = Substitution.Empty |> Substitution.unify t t'
+        do! substitution.Apply(t) |> assertEquals (substitution.Apply(t'))
+      }
+    parameterize {
+      case (tInt, tInt)
+      case (tInt, tRef tx)
+      case (tRef tx, tRef tx)
+      case (tRef tx, tRef ty)
+      case (tFun tInt tUnit, tFun tInt tUnit)
+      case (tFun tInt tUnit, tFun (tRef tx) (tRef ty))
+      case (tFun (tRef ty) (tRef tx), tFun (tRef tx) (tRef ty))
+      run body
+    }
+
 module ForallTypeSchemeTest =
   let ``test FreeTypeVariableSet`` =
     test {
@@ -81,24 +99,7 @@ module ForallTypeSchemeTest =
         return! fail "Some variable isn't fresh."
     }
 
-module TypeInferenceTest =
-  let ``test unify success`` =
-    let body (t, t') =
-      test {
-        let substitution = Substitution.Empty |> TypeInference.unify t t'
-        do! substitution.Apply(t) |> assertEquals (substitution.Apply(t'))
-      }
-    parameterize {
-      case (tInt, tInt)
-      case (tInt, tRef tx)
-      case (tRef tx, tRef tx)
-      case (tRef tx, tRef ty)
-      case (tFun tInt tUnit, tFun tInt tUnit)
-      case (tFun tInt tUnit, tFun (tRef tx) (tRef ty))
-      case (tFun (tRef ty) (tRef tx), tFun (tRef tx) (tRef ty))
-      run body
-    }
-
+module TypeInfererTest =
   open Bracky.Runtime.Parsing
   open Bracky.Runtime.Parsing.ExpressionBuilders
 
@@ -108,12 +109,8 @@ module TypeInferenceTest =
         match Parsers.parseExpression "test" source with
         | Result.Ok expression ->
           let tv = TypeVariable.fresh ()
-          let (substitution, environment) =
-            TypeInference.infer
-              expression
-              (tRef tv)
-              Substitution.Empty
-              TypeEnvironment.Empty
+          let inferer = TypeInferer.empty |> TypeInferer.infer expression (tRef tv)
+          let substitution = inferer |> TypeInferer.substitution
           do! substitution.Apply(tRef tv) |> assertEquals expected
         | Result.Error message ->
           return! fail message

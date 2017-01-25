@@ -1,7 +1,6 @@
 ﻿namespace Bracky.Runtime.Typing
 
 open System
-open Bracky.Runtime.Parsing
 
 module private Map =
   let addMany kvs this =
@@ -108,6 +107,31 @@ type Substitution private (map: Map<_, _>) =
   static member val Empty =
     Substitution(Map.empty)
 
+[<CompilationRepresentation(CompilationRepresentationFlags.ModuleSuffix)>]
+module Substitution =
+  /// Unifies two type expressions
+  /// to update the substitution so that it equalizes them.
+  let rec unify t t' (this: Substitution) =
+    match (this.Apply(t), this.Apply(t')) with
+    | (RefTypeExpression tv, RefTypeExpression tv') when tv = tv' ->
+      this.Extend(tv, t')
+    | (RefTypeExpression tv, _)
+      when (t': TypeExpression).TypeVariableSet |> Set.contains tv |> not ->
+      this.Extend(tv, t')
+    | (_, RefTypeExpression tv) ->
+      unify t' t this
+    | (FunTypeExpression (s, u), FunTypeExpression (s', u')) ->
+      this
+      |> unify u u'
+      |> unify s s'
+    | (AppTypeExpression (kind, ts), AppTypeExpression (kind', ts'))
+      when kind = kind' && ts.Length = ts'.Length ->
+      Array.zip ts ts' |> Array.fold
+        (fun this (u, u') -> unify u u' this)
+        this
+    | (_, _) ->
+      failwith "TODO: error handling"
+
 type ForallTypeScheme =
   | ForallTypeScheme
     of array<TypeVariable> * TypeExpression
@@ -153,52 +177,61 @@ type TypeEnvironment private (map: Map<string, ForallTypeScheme>) =
   static member val Empty =
     TypeEnvironment(Map.empty)
 
+type TypeInferer =
+  internal
+    {
+      Substitution:
+        Substitution
+      TypeEnvironment:
+        TypeEnvironment
+    }
+
 [<CompilationRepresentation(CompilationRepresentationFlags.ModuleSuffix)>]
-module TypeInference =
+module TypeInferer =
   open Bracky.Runtime.Parsing
 
-  /// Unifies two type expressions under the given substitution
-  /// and returns an extended substitution which equalize them.
-  let rec unify t t' (substitution: Substitution) =
-    match (substitution.Apply(t), substitution.Apply(t')) with
-    | (RefTypeExpression tv, RefTypeExpression tv') when tv = tv' ->
-      substitution.Extend(tv, t')
-    | (RefTypeExpression tv, _)
-      when (t': TypeExpression).TypeVariableSet |> Set.contains tv |> not ->
-      substitution.Extend(tv, t')
-    | (_, RefTypeExpression tv) ->
-      unify t' t substitution
-    | (FunTypeExpression (s, u), FunTypeExpression (s', u')) ->
-      substitution
-      |> unify u u'
-      |> unify s s'
-    | (AppTypeExpression (kind, arguments), AppTypeExpression (kind', arguments'))
-      when kind = kind' && arguments.Length = arguments'.Length ->
-      Array.zip arguments arguments' |> Array.fold
-        (fun substitution (a, a') ->
-          unify a a' substitution
-        ) substitution
-    | (_, _) ->
-      failwith "TODO: error handling"
+  let empty =
+    {
+      Substitution =
+        Substitution.Empty
+      TypeEnvironment =
+        TypeEnvironment.Empty
+    }
+
+  let substitution (this: TypeInferer) =
+    this.Substitution
+
+  let typeEnvironment (this: TypeInferer) =
+    this.TypeEnvironment
+
+  let bind tv t (this: TypeInferer) =
+    { this with Substitution = this.Substitution.Extend(tv, t) }
+
+  let conclude identifier typeScheme (this: TypeInferer) =
+    { this with TypeEnvironment = this.TypeEnvironment.Add(identifier, typeScheme) }
+
+  let local f (this: TypeInferer) =
+    let inferer = this |> f
+    { inferer with TypeEnvironment = this.TypeEnvironment }
+
+  let unify t t' (this: TypeInferer) =
+    { this with Substitution = this.Substitution |> Substitution.unify t t' }
 
   /// Infers the type of the expression `x` under the given substitution and environment
   /// and returns an extended substitution and an environment which describes type of each variable.
   let infer =
-    let rec loop previous expression t (substitution, environment: TypeEnvironment) =
-      let loop = loop (Some expression)
+    let rec infer previous expression t this =
+      let infer = infer (Some expression)
       match expression with
       | IntExpression _ ->
-        let substitution = substitution |> unify t TypeExpression.int
-        (substitution, environment)
+        this |> unify t TypeExpression.int
       | BoolExpression _ ->
-        let substitution = substitution |> unify t TypeExpression.bool
-        (substitution, environment)
+        this |> unify t TypeExpression.bool
       | RefExpression (_, identifier) ->
-        match environment.TryFind(identifier) with
+        match this.TypeEnvironment.TryFind(identifier) with
         | Some (typeScheme: ForallTypeScheme) ->
           let t' = typeScheme.Instantiate()
-          let substitution = unify t t' substitution
-          (substitution, environment)
+          this |> unify t t'
         | None ->
           failwith "TODO: variable not defined"
       | FunExpression (_, pattern, expression) ->
@@ -206,40 +239,37 @@ module TypeInference =
         let tv = TypeVariable.fresh () |> RefTypeExpression
         let tu = TypeVariable.fresh () |> RefTypeExpression
         let t' = FunTypeExpression (tv, tu)
-        let substitution =
-          substitution |> unify t t'
-        let innerEnvironment =
-          environment.Add(identifier, ForallTypeScheme ([||], tv))
-        let (substitution, _) =
-          loop expression tu (substitution, innerEnvironment)
-        (substitution, environment)
+        this
+        |> unify t t'
+        |> local
+            (fun this ->
+              this
+              |> conclude identifier (ForallTypeScheme ([||], tv))
+              |> infer expression tu
+            )
       | IfExpression _ ->
         NotImplementedException() |> raise
       | BinaryOperationExpression (operator, left, right) ->
         match operator with
         | ApplyOperator ->
           let tv = TypeVariable.fresh () |> RefTypeExpression
-          let tu = TypeVariable.fresh () |> RefTypeExpression
-          let (substitution, environment) =
-            (substitution, environment)
-            |> loop left (FunTypeExpression (tv, tu))
-            |> loop right tu
-          let substitution =
-            substitution |> unify t tu
-          (substitution, environment)
+          this
+          |> infer left (FunTypeExpression (tv, t))
+          |> infer right t
         | ThenOperator ->
-          (substitution, environment)
-          |> loop left TypeExpression.unit
-          |> loop right t
+          this
+          |> infer left TypeExpression.unit
+          |> infer right t
         | _ ->
           NotImplementedException() |> raise
       | ValExpression ((IdentifierPattern (_, identifier)), expression) ->
         let tv = TypeVariable.fresh () |> RefTypeExpression
-        let (substitution, environment) =
-          (substitution, environment) |> loop expression tv
-        let variableType = environment.Generalize(substitution.Apply(tv))
-        let environment = environment.Add(identifier, variableType)
-        let substitution = substitution |> unify t TypeExpression.unit
-        (substitution, environment)
-    fun expression t substitution environment ->
-      loop None expression t (substitution, environment)
+        this
+        |> unify t TypeExpression.unit
+        |> infer expression tv
+        |>  (fun this ->
+              let t = this.TypeEnvironment.Generalize(this.Substitution.Apply(tv))
+              this |> conclude identifier t
+            )
+    fun expression t this ->
+      this |> infer None expression t
