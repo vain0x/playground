@@ -189,9 +189,13 @@ module TypeInference =
         let tv = TypeVariable.fresh () |> RefTypeExpression
         let tu = TypeVariable.fresh () |> RefTypeExpression
         let t' = FunTypeExpression (tv, tu)
-        let substitution = substitution |> unify t t'
-        let environment = environment |> Map.add identifier (ForallTypeScheme ([||], tv))
-        loop expression tu (substitution, environment)
+        let substitution =
+          substitution |> unify t t'
+        let innerEnvironment =
+          environment |> Map.add identifier (ForallTypeScheme ([||], tv))
+        let (substitution, _) =
+          loop expression tu (substitution, innerEnvironment)
+        (substitution, environment)
       | IfExpression _ ->
         NotImplementedException() |> raise
       | BinaryOperationExpression (operator, left, right) ->
