@@ -3,6 +3,10 @@
 open System
 open Bracky.Runtime.Parsing
 
+module private Map =
+  let addMany kvs this =
+    kvs |> Seq.fold (fun this (k, v) -> this |> Map.add k v) this
+
 [<RequireQualifiedAccess>]
 type Kind =
   | Unit
@@ -65,51 +69,44 @@ module TypeExpression =
   let bool =
     AppTypeExpression (Kind.Bool, [||])
 
-[<AbstractClass>]
-type Substitution() =
-  abstract Item: TypeVariable -> TypeExpression with get
+[<Sealed>]
+type Substitution private (map: Map<_, _>) =
+  let apply =
+    let lookup tv =
+      match map |> Map.tryFind tv with
+      | Some t -> t
+      | None -> RefTypeExpression tv
+    let rec apply t =
+      match t with
+      | RefTypeExpression tv ->
+        let t' = lookup tv
+        if t = t' then t else apply t'
+      | FunTypeExpression (s, t) ->
+        FunTypeExpression (apply s, apply t)
+      | AppTypeExpression (kind, arguments) ->
+        AppTypeExpression (kind, arguments |> Array.map apply)
+    apply
 
   member this.Apply(t: TypeExpression) =
-    match t with
-    | RefTypeExpression tv ->
-      let t' = this.[tv]
-      if t = t' then t else this.Apply(t')
-    | FunTypeExpression (s, t) ->
-      FunTypeExpression (this.Apply(s), this.Apply(t))
-    | AppTypeExpression (kind, arguments) ->
-      AppTypeExpression (kind, arguments |> Array.map this.Apply)
+    apply t
 
   member this.Extend(tu: TypeVariable, t: TypeExpression) =
-    if this.Apply(t) = RefTypeExpression tu then
+    if apply t = RefTypeExpression tu then
       this
     else
-      let that = this
-      { new Substitution() with
-          override this.Item
-            with get tv =
-              if tv = tu then t else that.[tv]
-      }
+      Substitution(map |> Map.add tu t)
 
-  member this.ExtendMany(bindings: Map<TypeVariable, TypeExpression>) =
+  member this.ExtendMany(bindings: array<TypeVariable * TypeExpression>) =
     let bindings =
-      bindings |> Map.filter (fun tv t -> this.Apply(t) <> RefTypeExpression tv)
-    if bindings.Count = 0 then
+      bindings |> Array.filter
+        (fun (tv, t) -> apply t <> RefTypeExpression tv)
+    if bindings.Length = 0 then
       this
     else
-      let that = this
-      { new Substitution() with
-          override this.Item
-            with get tv =
-              match bindings |> Map.tryFind tv with
-              | Some t -> t
-              | None -> that.[tv]
-      }
+      Substitution(map |> Map.addMany bindings)
 
   static member val Empty =
-    { new Substitution() with
-        override this.Item
-          with get tv = RefTypeExpression tv
-    }
+    Substitution(Map.empty)
 
 type ForallTypeScheme =
   | ForallTypeScheme
@@ -118,9 +115,8 @@ with
   member this.Instantiate() =
     let (ForallTypeScheme (tvs, t)) = this
     let bindings =
-      tvs
-      |> Array.map (fun tv -> (tv, TypeVariable.fresh () |> RefTypeExpression))
-      |> Map.ofArray
+      tvs |> Array.map
+        (fun tv -> (tv, TypeVariable.fresh () |> RefTypeExpression))
     let substitution =
       Substitution.Empty.ExtendMany(bindings)
     substitution.Apply(t)

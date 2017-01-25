@@ -41,12 +41,12 @@ module SubstitutionTest =
         .Extend(tx, tUnit)
         .Extend(ty, tFun tInt (tRef tx))
     let substitution2 =
-      let map =
-        [
+      let bindings =
+        [|
           (tx, tUnit)
           (ty, tFun tInt (tRef tx))
-        ]
-      Substitution.Empty.ExtendMany(Map.ofList map)
+        |]
+      Substitution.Empty.ExtendMany(bindings)
     let body (t, expected) =
       test {
         do! substitution1.Apply(t) |> assertEquals expected
