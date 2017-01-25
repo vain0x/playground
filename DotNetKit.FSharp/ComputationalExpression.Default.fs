@@ -1,4 +1,4 @@
-﻿namespace DotNetKit.FSharp.ComputationExpression
+﻿namespace DotNetKit.FSharp.ComputationalExpression
 
 open System
 open System.Collections.Generic

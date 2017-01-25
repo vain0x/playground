@@ -34,11 +34,11 @@ module Option =
     | (false, _) ->
       None
 
-namespace DotNetKit.FSharp.ComputationExpression
+namespace DotNetKit.FSharp.ComputationalExpression
   [<Sealed>]
   type OptionBuilder internal () =
     member this.Zero() =
-      None
+      Some ()
 
     member this.Return(x) =
       Some x
@@ -53,7 +53,7 @@ namespace DotNetKit.FSharp.ComputationExpression
       using x f
 
 namespace DotNetKit.FSharp
-  open DotNetKit.FSharp.ComputationExpression
+  open DotNetKit.FSharp.ComputationalExpression
 
   [<AutoOpen>]
   module OptionSyntax =
