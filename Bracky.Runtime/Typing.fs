@@ -93,14 +93,17 @@ type Substitution() =
   member this.ExtendMany(bindings: Map<TypeVariable, TypeExpression>) =
     let bindings =
       bindings |> Map.filter (fun tv t -> this.Apply(t) <> RefTypeExpression tv)
-    let that = this
-    { new Substitution() with
-        override this.Item
-          with get tv =
-            match bindings |> Map.tryFind tv with
-            | Some t -> t
-            | None -> that.[tv]
-    }
+    if bindings.Count = 0 then
+      this
+    else
+      let that = this
+      { new Substitution() with
+          override this.Item
+            with get tv =
+              match bindings |> Map.tryFind tv with
+              | Some t -> t
+              | None -> that.[tv]
+      }
 
   static member val Empty =
     { new Substitution() with
@@ -127,22 +130,22 @@ with
     Set.difference t.TypeVariableSet (tvs |> Set.ofArray)
 
 /// From variables to type schemes.
-type Environment =
+type TypeEnvironment =
   Map<string, ForallTypeScheme>
 
 [<CompilationRepresentation(CompilationRepresentationFlags.ModuleSuffix)>]
-module Environment =
+module TypeEnvironment =
   // not used
-  let freeTypeVariableSet (this: Environment) =
+  let freeTypeVariableSet (this: TypeEnvironment) =
     this
     |> Seq.map (fun (KeyValue (_, ts)) -> ts.FreeTypeVariableSet)
     |> Set.unionMany
 
-  let variableSet (this: Environment) =
+  let variableSet (this: TypeEnvironment) =
     this |> Seq.map (fun (KeyValue (k, v)) -> k) |> Set.ofSeq
 
   /// Converts a type expression to a type scheme by binding all free variables with ∀.
-  let generalize t (this: Environment) =
+  let generalize t (this: TypeEnvironment) =
     let tvs = (t: TypeExpression).TypeVariableSet |> Set.toArray
     ForallTypeScheme (tvs, t)
 
@@ -226,7 +229,7 @@ module TypeInference =
         let tv = TypeVariable.fresh () |> RefTypeExpression
         let (substitution, environment) =
           (substitution, environment) |> loop expression tv
-        let variableType = environment |> Environment.generalize (substitution.Apply(tv))
+        let variableType = environment |> TypeEnvironment.generalize (substitution.Apply(tv))
         let environment = environment |> Map.add identifier variableType
         let substitution = substitution |> unify t TypeExpression.unit
         (substitution, environment)
