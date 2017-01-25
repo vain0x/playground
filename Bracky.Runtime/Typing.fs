@@ -216,78 +216,97 @@ module TypeInferer =
   let unify t t' (inferer: TypeInferer) =
     { inferer with Substitution = inferer.Substitution |> Substitution.unify t t' }
 
-  /// Infers the type of the expression `x` under the given substitution and environment
-  /// and returns an extended substitution and an environment which describes type of each variable.
-  let infer =
-    let rec infer previous expression t inferer =
-      let infer = infer (Some expression)
+  type private InferFunction(previous, expression, t, inferer) =
+    let infer expression' t' inferer' =
+      InferFunction(Some expression, expression', t', inferer').Run()
+
+    member this.InferRef(identifier) =
+      match inferer.TypeEnvironment.TryFind(identifier) with
+      | Some (typeScheme: ForallTypeScheme) ->
+        let t' = typeScheme.Instantiate()
+        inferer |> unify t t'
+      | None ->
+        failwith "TODO: variable not defined"
+
+    member this.InferFun(pattern, expression) =
+      let (IdentifierPattern (_, identifier)) = pattern
+      let tv = TypeVariable.fresh () |> RefTypeExpression
+      let tu = TypeVariable.fresh () |> RefTypeExpression
+      let t' = FunTypeExpression (tv, tu)
+      inferer
+      |> unify t t'
+      |> local
+          (fun inferer ->
+            inferer
+            |> conclude identifier (ForallTypeScheme ([||], tv))
+            |> infer expression tu
+          )
+
+    member this.InferIf(clauses) =
+      let (inferer, elseExists) =
+        clauses |> Array.fold
+          (fun (inferer, elseExists) clause ->
+            match clause with
+            | IfClause (condition, expression) ->
+              let inferer =
+                inferer
+                |> infer condition TypeExpression.bool
+                |> infer expression t
+              (inferer, elseExists)
+            | ElseClause expression ->
+              (inferer |> infer expression t, true)
+          ) (inferer, false)
+      if elseExists
+      then inferer
+      else inferer |> unify t TypeExpression.unit
+
+    member this.InferBinaryOperation(operator, left, right) =
+      match operator with
+      | ApplyOperator ->
+        let tv = TypeVariable.fresh () |> RefTypeExpression
+        inferer
+        |> infer left (FunTypeExpression (tv, t))
+        |> infer right t
+      | ThenOperator ->
+        inferer
+        |> infer left TypeExpression.unit
+        |> infer right t
+      | AddOperator
+      | MulOperator ->
+        inferer
+        |> infer left TypeExpression.int
+        |> infer right TypeExpression.int
+        |> unify t TypeExpression.int
+
+    member this.InferVal(pattern, expression) =
+      let (IdentifierPattern (_, identifier)) = pattern
+      let tv = TypeVariable.fresh () |> RefTypeExpression
+      inferer
+      |> unify t TypeExpression.unit
+      |> infer expression tv
+      |>  (fun inferer ->
+            let t = inferer.TypeEnvironment.Generalize(inferer.Substitution.Apply(tv))
+            inferer |> conclude identifier t
+          )
+
+    member this.Run() =
       match expression with
       | IntExpression _ ->
         inferer |> unify t TypeExpression.int
       | BoolExpression _ ->
         inferer |> unify t TypeExpression.bool
       | RefExpression (_, identifier) ->
-        match inferer.TypeEnvironment.TryFind(identifier) with
-        | Some (typeScheme: ForallTypeScheme) ->
-          let t' = typeScheme.Instantiate()
-          inferer |> unify t t'
-        | None ->
-          failwith "TODO: variable not defined"
+        this.InferRef(identifier)
       | FunExpression (_, pattern, expression) ->
-        let (IdentifierPattern (_, identifier)) = pattern
-        let tv = TypeVariable.fresh () |> RefTypeExpression
-        let tu = TypeVariable.fresh () |> RefTypeExpression
-        let t' = FunTypeExpression (tv, tu)
-        inferer
-        |> unify t t'
-        |> local
-            (fun inferer ->
-              inferer
-              |> conclude identifier (ForallTypeScheme ([||], tv))
-              |> infer expression tu
-            )
+        this.InferFun(pattern, expression)
       | IfExpression (headClause, tailClauses) ->
-        let (inferer, elseExists) =
-          Array.append [|headClause|] tailClauses |> Array.fold
-            (fun (inferer, elseExists) clause ->
-              match clause with
-              | IfClause (condition, expression) ->
-                let inferer =
-                  inferer
-                  |> infer condition TypeExpression.bool
-                  |> infer expression t
-                (inferer, elseExists)
-              | ElseClause expression ->
-                (inferer |> infer expression t, true)
-            ) (inferer, false)
-        if elseExists
-        then inferer
-        else inferer |> unify t TypeExpression.unit
+        this.InferIf(Array.append [|headClause|] tailClauses)
       | BinaryOperationExpression (operator, left, right) ->
-        match operator with
-        | ApplyOperator ->
-          let tv = TypeVariable.fresh () |> RefTypeExpression
-          inferer
-          |> infer left (FunTypeExpression (tv, t))
-          |> infer right t
-        | ThenOperator ->
-          inferer
-          |> infer left TypeExpression.unit
-          |> infer right t
-        | AddOperator
-        | MulOperator ->
-          inferer
-          |> infer left TypeExpression.int
-          |> infer right TypeExpression.int
-          |> unify t TypeExpression.int
-      | ValExpression ((IdentifierPattern (_, identifier)), expression) ->
-        let tv = TypeVariable.fresh () |> RefTypeExpression
-        inferer
-        |> unify t TypeExpression.unit
-        |> infer expression tv
-        |>  (fun inferer ->
-              let t = inferer.TypeEnvironment.Generalize(inferer.Substitution.Apply(tv))
-              inferer |> conclude identifier t
-            )
-    fun expression t inferer ->
-      inferer |> infer None expression t
+        this.InferBinaryOperation(operator, left, right)
+      | ValExpression (pattern, expression) ->
+        this.InferVal(pattern, expression)
+
+  /// Infers the type of the expression `x` under the given substitution and environment
+  /// and returns an extended substitution and an environment which describes type of each variable.
+  let infer expression t inferer =
+    InferFunction(None, expression, t, inferer).Run()
