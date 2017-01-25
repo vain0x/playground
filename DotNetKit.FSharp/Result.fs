@@ -25,7 +25,7 @@ module Result =
       None
     | Error e ->
       Some e
-      
+
   let getOr (value: 'x) (result: Result<'x, _>): 'x =
     match result with
     | Ok x ->
