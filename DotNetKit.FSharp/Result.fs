@@ -101,7 +101,11 @@ module Result =
       Error (f e)
       
   let bind (f: 'x -> Result<'y, 'e>) (result: Result<'x, 'e>): Result<'y, 'e> =
-    result |> map f |> flatten
+    match result with
+    | Ok x ->
+      f x
+    | Error e ->
+      Error e
 
   let bindError (f: 'e -> Result<'x, 'f>) (result: Result<'x, 'e>): Result<'x, 'f> =
     result |> mapError f |> flattenError
