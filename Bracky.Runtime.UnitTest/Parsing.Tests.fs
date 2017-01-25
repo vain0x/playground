@@ -9,16 +9,16 @@ module ExpressionBuilders =
 
   let pVar name = VariablePattern (p, name)
 
-  let i value = IntExpression (p, value)
-  let true' = BoolExpression (p, true)
-  let false' = BoolExpression (p, false)
-  let ref' identifier = RefExpression (p, identifier)
-  let fun' pattern body = FunExpression (p, pattern, body)
-  let if' hc hx tail = IfExpression (IfClause (hc, hx), tail)
-  let add left right = BinaryOperationExpression (AddOperator, left, right)
-  let mul left right = BinaryOperationExpression (MulOperator, left, right)
-  let val' pattern expression = ValExpression (pattern, expression)
-  let then' left right = BinaryOperationExpression (ThenOperator, left, right)
+  let vInt value = IntExpression (p, value)
+  let vTrue = BoolExpression (p, true)
+  let vFalse = BoolExpression (p, false)
+  let vVar identifier = RefExpression (p, identifier)
+  let vFun pattern body = FunExpression (p, pattern, body)
+  let vIf hc hx tail = IfExpression (IfClause (hc, hx), tail)
+  let vAdd left right = BinaryOperationExpression (AddOperator, left, right)
+  let vMul left right = BinaryOperationExpression (MulOperator, left, right)
+  let vVal pattern expression = ValExpression (pattern, expression)
+  let vThen left right = BinaryOperationExpression (ThenOperator, left, right)
 
 module ParsersTest =
   let assertParse parser source =
@@ -66,64 +66,64 @@ module ParsersTest =
           do! actual |> assertEquals expected
         }
       parameterize {
-        case (intParser, "1", i 1L)
-        case (intParser, "12", i 12L)
-        case (intParser, "9876543210", i 9876543210L)
-        case (boolParser, "true", true')
-        case (boolParser, "false", false')
-        case (refParser, "x", ref' "x")
-        case (parenParser, "(12)", i 12L)
-        case (parenParser, "( 12 )", i 12L)
-        case (mulParser, "2*3", mul (i 2L) (i 3L))
-        case (mulParser, "2 * 3 * 4", mul (mul (i 2L) (i 3L)) (i 4L))
-        case (addParser, "1+2", add (i 1L) (i 2L))
-        case (addParser, "1 + 2", add (i 1L) (i 2L))
-        case (addParser, "1 + 2 + 3", add (add (i 1L) (i 2L)) (i 3L))
-        case (addParser, "1 + (2 + 3)", add (i 1L) (add (i 2L) (i 3L)))
-        case (addParser, "2 * 3 + 4", add (mul (i 2L) (i 3L)) (i 4L))
-        case (addParser, "2 + 3 * 4", add (i 2L) (mul (i 3L) (i 4L)))
-        case (valParser, "val x = 1", val' (pVar "x") (i 1L))
+        case (intParser, "1", vInt 1L)
+        case (intParser, "12", vInt 12L)
+        case (intParser, "9876543210", vInt 9876543210L)
+        case (boolParser, "true", vTrue)
+        case (boolParser, "false", vFalse)
+        case (refParser, "x", vVar "x")
+        case (parenParser, "(12)", vInt 12L)
+        case (parenParser, "( 12 )", vInt 12L)
+        case (mulParser, "2*3", vMul (vInt 2L) (vInt 3L))
+        case (mulParser, "2 * 3 * 4", vMul (vMul (vInt 2L) (vInt 3L)) (vInt 4L))
+        case (addParser, "1+2", vAdd (vInt 1L) (vInt 2L))
+        case (addParser, "1 + 2", vAdd (vInt 1L) (vInt 2L))
+        case (addParser, "1 + 2 + 3", vAdd (vAdd (vInt 1L) (vInt 2L)) (vInt 3L))
+        case (addParser, "1 + (2 + 3)", vAdd (vInt 1L) (vAdd (vInt 2L) (vInt 3L)))
+        case (addParser, "2 * 3 + 4", vAdd (vMul (vInt 2L) (vInt 3L)) (vInt 4L))
+        case (addParser, "2 + 3 * 4", vAdd (vInt 2L) (vMul (vInt 3L) (vInt 4L)))
+        case (valParser, "val x = 1", vVal (pVar "x") (vInt 1L))
         case
           ( thenParser
           , "val x = 1 + 2; val y = 3"
-          , then' (val' (pVar "x") (add (i 1L) (i 2L))) (val' (pVar "y") (i 3L))
+          , vThen (vVal (pVar "x") (vAdd (vInt 1L) (vInt 2L))) (vVal (pVar "y") (vInt 3L))
           )
         case
           ( thenParser
           , "1 ; 2 ; 3"
-          , then' (i 1L) (then' (i 2L) (i 3L))
+          , vThen (vInt 1L) (vThen (vInt 2L) (vInt 3L))
           )
-        case (funParser, "{fun x -> 0}", fun' (pVar "x") (i 0L))
+        case (funParser, "{fun x -> 0}", vFun (pVar "x") (vInt 0L))
         case
           ( funParser
           , "{ fun x -> val y = 1; 2; }"
-          , fun' (pVar "x") (then' (val' (pVar "y") (i 1L)) (i 2L))
+          , vFun (pVar "x") (vThen (vVal (pVar "y") (vInt 1L)) (vInt 2L))
           )
         case
           ( ifParser
           , "{if true -> 1}"
-          , if' true' (i 1L) [||]
+          , vIf vTrue (vInt 1L) [||]
           )
         case
           ( ifParser
           , "{if true -> 1;}"
-          , if' true' (i 1L) [||]
+          , vIf vTrue (vInt 1L) [||]
           )
         case
           ( ifParser
           , "{ if true -> 1; else 2 }"
-          , if' true' (i 1L) [|ElseClause (i 2L)|]
+          , vIf vTrue (vInt 1L) [|ElseClause (vInt 2L)|]
           )
         case
           ( ifParser
           , "{ if true -> val x = 1; 2; if false -> 3; else 4 }"
-          , if' true' (then' (val' (pVar "x") (i 1L)) (i 2L))
-              [|IfClause (false', (i 3L)); ElseClause (i 4L)|]
+          , vIf vTrue (vThen (vVal (pVar "x") (vInt 1L)) (vInt 2L))
+              [|IfClause (vFalse, (vInt 3L)); ElseClause (vInt 4L)|]
           )
         case
           ( ifParser
           , "{ if true -> val x = 1; 2; else 3; }"
-          , if' true' (then' (val' (pVar "x") (i 1L)) (i 2L)) [|ElseClause (i 3L)|]
+          , vIf vTrue (vThen (vVal (pVar "x") (vInt 1L)) (vInt 2L)) [|ElseClause (vInt 3L)|]
           )
         run body
       }
