@@ -229,7 +229,7 @@ module TypeInferer =
         failwith "TODO: variable not defined"
 
     member this.InferFun(pattern, expression) =
-      let (IdentifierPattern (_, identifier)) = pattern
+      let (VariablePattern (_, identifier)) = pattern
       let tv = TypeVariable.fresh () |> RefTypeExpression
       let tu = TypeVariable.fresh () |> RefTypeExpression
       let t' = FunTypeExpression (tv, tu)
@@ -279,7 +279,7 @@ module TypeInferer =
         |> unify t TypeExpression.int
 
     member this.InferVal(pattern, expression) =
-      let (IdentifierPattern (_, identifier)) = pattern
+      let (VariablePattern (_, identifier)) = pattern
       let tv = TypeVariable.fresh () |> RefTypeExpression
       inferer
       |> unify t TypeExpression.unit

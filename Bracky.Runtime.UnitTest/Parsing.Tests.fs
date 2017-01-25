@@ -7,7 +7,7 @@ open Persimmon.Syntax.UseTestNameByReflection
 module ExpressionBuilders =
   let p = Position("", 0L, 0L, 0L)
 
-  let id' name = IdentifierPattern (p, name)
+  let pVar name = VariablePattern (p, name)
 
   let i value = IntExpression (p, value)
   let true' = BoolExpression (p, true)
@@ -82,22 +82,22 @@ module ParsersTest =
         case (addParser, "1 + (2 + 3)", add (i 1L) (add (i 2L) (i 3L)))
         case (addParser, "2 * 3 + 4", add (mul (i 2L) (i 3L)) (i 4L))
         case (addParser, "2 + 3 * 4", add (i 2L) (mul (i 3L) (i 4L)))
-        case (valParser, "val x = 1", val' (id' "x") (i 1L))
+        case (valParser, "val x = 1", val' (pVar "x") (i 1L))
         case
           ( thenParser
           , "val x = 1 + 2; val y = 3"
-          , then' (val' (id' "x") (add (i 1L) (i 2L))) (val' (id' "y") (i 3L))
+          , then' (val' (pVar "x") (add (i 1L) (i 2L))) (val' (pVar "y") (i 3L))
           )
         case
           ( thenParser
           , "1 ; 2 ; 3"
           , then' (i 1L) (then' (i 2L) (i 3L))
           )
-        case (funParser, "{fun x -> 0}", fun' (id' "x") (i 0L))
+        case (funParser, "{fun x -> 0}", fun' (pVar "x") (i 0L))
         case
           ( funParser
           , "{ fun x -> val y = 1; 2; }"
-          , fun' (id' "x") (then' (val' (id' "y") (i 1L)) (i 2L))
+          , fun' (pVar "x") (then' (val' (pVar "y") (i 1L)) (i 2L))
           )
         case
           ( ifParser
@@ -117,13 +117,13 @@ module ParsersTest =
         case
           ( ifParser
           , "{ if true -> val x = 1; 2; if false -> 3; else 4 }"
-          , if' true' (then' (val' (id' "x") (i 1L)) (i 2L))
+          , if' true' (then' (val' (pVar "x") (i 1L)) (i 2L))
               [|IfClause (false', (i 3L)); ElseClause (i 4L)|]
           )
         case
           ( ifParser
           , "{ if true -> val x = 1; 2; else 3; }"
-          , if' true' (then' (val' (id' "x") (i 1L)) (i 2L)) [|ElseClause (i 3L)|]
+          , if' true' (then' (val' (pVar "x") (i 1L)) (i 2L)) [|ElseClause (i 3L)|]
           )
         run body
       }

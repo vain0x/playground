@@ -3,18 +3,18 @@
 open FParsec
 
 type Pattern =
-  | IdentifierPattern
+  | VariablePattern
     of Position * string
 with
   member this.Position =
     match this with
-    | IdentifierPattern (position, _) ->
+    | VariablePattern (position, _) ->
       position
 
   member this.SetPosition(position) =
     match this with
-    | IdentifierPattern (_, name) ->
-      IdentifierPattern (position, name)
+    | VariablePattern (_, name) ->
+      VariablePattern (position, name)
 
 type BinaryOperator =
   | ApplyOperator

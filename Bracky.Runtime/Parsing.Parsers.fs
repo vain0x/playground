@@ -75,15 +75,15 @@ module Parsers =
   let (patternParser: Parser<Pattern>, patternParserRef) =
     createParserForwardedToRef ()
 
-  let identifierPatternParser: Parser<Pattern> =
+  let variablePatternParser: Parser<Pattern> =
     parse {
       let! position = getPosition
       let! identifier = identifierParser
-      return IdentifierPattern (position, identifier)
+      return VariablePattern (position, identifier)
     }
 
   patternParserRef :=
-    identifierPatternParser
+    variablePatternParser
 
   let (expressionParser: Parser<Expression>, expressionParserRef) =
     createParserForwardedToRef ()
