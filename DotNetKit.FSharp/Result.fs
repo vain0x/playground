@@ -118,6 +118,13 @@ module Result =
   let forallError (p: 'e -> bool) (result: Result<_, 'e>): bool =
     result |> tryGetError |> Option.forall p
 
+  let tryApply<'x, 'y, 'e when 'e :> exn> (f: 'x -> 'y) (x: 'x): Result<'y, 'e> =
+    try
+      f x |> Ok
+    with
+    | :? 'e as e ->
+      Error e
+
 namespace DotNetKit.FSharp.ComputationExpression
   open DotNetKit.FSharp.ErrorHandling
   
