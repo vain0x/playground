@@ -126,20 +126,32 @@ with
     Set.difference t.TypeVariableSet (tvs |> Set.ofArray)
 
 /// From variables to type schemes.
-type TypeEnvironment =
-  Map<string, ForallTypeScheme>
-
-[<CompilationRepresentation(CompilationRepresentationFlags.ModuleSuffix)>]
-module TypeEnvironment =
-  let freeTypeVariableSet (this: TypeEnvironment) =
-    this |> Map.fold (fun set _ ts -> Set.union set ts.FreeTypeVariableSet) Set.empty
+[<Sealed>]
+type TypeEnvironment private (map: Map<string, ForallTypeScheme>) =
+  let freeTypeVariableSet =
+    lazy
+      map |> Map.fold
+        (fun set _ ts -> Set.union set ts.FreeTypeVariableSet)
+        Set.empty
 
   /// Converts a type expression to a type scheme by binding all free variables with ∀.
-  let generalize t (this: TypeEnvironment) =
+  let generalize t =
     let tvs =
-      Set.difference (t: TypeExpression).TypeVariableSet (this |> freeTypeVariableSet)
+      Set.difference (t: TypeExpression).TypeVariableSet freeTypeVariableSet.Value
       |> Set.toArray
     ForallTypeScheme (tvs, t)
+
+  member this.TryFind(identifier) =
+    map |> Map.tryFind identifier
+
+  member this.Add(identifier, ts) =
+    TypeEnvironment(map |> Map.add identifier ts)
+
+  member this.Generalize(t) =
+    generalize t
+
+  static member val Empty =
+    TypeEnvironment(Map.empty)
 
 [<CompilationRepresentation(CompilationRepresentationFlags.ModuleSuffix)>]
 module TypeInference =
@@ -172,7 +184,7 @@ module TypeInference =
   /// Infers the type of the expression `x` under the given substitution and environment
   /// and returns an extended substitution and an environment which describes type of each variable.
   let infer =
-    let rec loop previous expression t (substitution, environment) =
+    let rec loop previous expression t (substitution, environment: TypeEnvironment) =
       let loop = loop (Some expression)
       match expression with
       | IntExpression _ ->
@@ -182,7 +194,7 @@ module TypeInference =
         let substitution = substitution |> unify t TypeExpression.bool
         (substitution, environment)
       | RefExpression (_, identifier) ->
-        match environment |> Map.tryFind identifier with
+        match environment.TryFind(identifier) with
         | Some (typeScheme: ForallTypeScheme) ->
           let t' = typeScheme.Instantiate()
           let substitution = unify t t' substitution
@@ -197,7 +209,7 @@ module TypeInference =
         let substitution =
           substitution |> unify t t'
         let innerEnvironment =
-          environment |> Map.add identifier (ForallTypeScheme ([||], tv))
+          environment.Add(identifier, ForallTypeScheme ([||], tv))
         let (substitution, _) =
           loop expression tu (substitution, innerEnvironment)
         (substitution, environment)
@@ -225,8 +237,8 @@ module TypeInference =
         let tv = TypeVariable.fresh () |> RefTypeExpression
         let (substitution, environment) =
           (substitution, environment) |> loop expression tv
-        let variableType = environment |> TypeEnvironment.generalize (substitution.Apply(tv))
-        let environment = environment |> Map.add identifier variableType
+        let variableType = environment.Generalize(substitution.Apply(tv))
+        let environment = environment.Add(identifier, variableType)
         let substitution = substitution |> unify t TypeExpression.unit
         (substitution, environment)
     fun expression t substitution environment ->

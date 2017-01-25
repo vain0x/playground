@@ -109,7 +109,11 @@ module TypeInferenceTest =
         | Result.Ok expression ->
           let tv = TypeVariable.fresh ()
           let (substitution, environment) =
-            TypeInference.infer expression (tRef tv) Substitution.Empty Map.empty
+            TypeInference.infer
+              expression
+              (tRef tv)
+              Substitution.Empty
+              TypeEnvironment.Empty
           do! substitution.Apply(tRef tv) |> assertEquals expected
         | Result.Error message ->
           return! fail message
