@@ -3,10 +3,10 @@
   open DotNetKit.FSharp.ErrorHandling
 
   /// Represents an intermediate result of imperative operations.
-  /// Ok () means that it continues to calculate;
-  /// Error x means that the total computation resulted in x.
+  /// None means that it continues to calculate or returns "void";
+  /// Some x means that the total computation resulted in x.
   type private ImperativeResult<'x> =
-    Result<unit, 'x>
+    option<'x>
 
   [<Sealed>]
   type ImperativeBuilder internal () =
@@ -15,24 +15,24 @@
 
     member this.Run(f: unit -> ImperativeResult<'x>) =
       match f () with
-      | Ok () ->
+      | None ->
         // Never come because of the conversion rule.
         InvalidOperationException() |> raise
-      | Error x ->
+      | Some x ->
         x
 
     member this.Run(f: unit -> ImperativeResult<unit>) =
       f () |> ignore
 
     member this.Return(x) =
-      Error x
+      Some x
 
     member this.Combine(r: ImperativeResult<'x>, f: unit -> ImperativeResult<'x>) =
       match r with
-      | Ok () ->
+      | None ->
         f ()
-      | Error x ->
-        Error x
+      | Some x ->
+        Some x
 
     member this.Using(x: 'x, f: 'x -> ImperativeResult<'y>) =
       using x f
@@ -44,7 +44,7 @@
       Default.tryFinally f g
 
     member this.Zero() =
-      Ok ()
+      None
 
     member this.While(p, f) =
       Default.``while`` this.Combine this.Zero p f
