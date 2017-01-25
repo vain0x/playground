@@ -125,5 +125,29 @@ module TypeInfererTest =
       case ("val x = 2; x", tInt)
       case ("{fun x -> x; 2}", tFun tUnit tInt)
       case ("val id = {fun x -> x}; id (val x = id 0)", tUnit)
+      case ("{if true -> 1; else 0}", tInt)
+      case ("{if true -> (val x = 0)}", tUnit)
+      run body
+    }
+
+  let ``test infer failure`` =
+    let body source =
+      test {
+        match Parsers.parseExpression "test" source with
+        | Result.Ok expression ->
+          let tv = TypeVariable.fresh ()
+          let run () =
+            TypeInferer.empty |> TypeInferer.infer expression (tRef tv)
+          let! e = trap { it (run ()) }
+          return ()
+        | Result.Error message ->
+          return! fail message
+      }
+    parameterize {
+      case "x"
+      case "{fun x -> val y = 0} + 0"
+      case "{if 1 -> then; else false}"
+      case "{if true -> 1; else false}"
+      case "{if true -> 1}"
       run body
     }

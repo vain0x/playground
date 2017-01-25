@@ -247,8 +247,23 @@ module TypeInferer =
               |> conclude identifier (ForallTypeScheme ([||], tv))
               |> infer expression tu
             )
-      | IfExpression _ ->
-        NotImplementedException() |> raise
+      | IfExpression (headClause, tailClauses) ->
+        let (this, elseExists) =
+          Array.append [|headClause|] tailClauses |> Array.fold
+            (fun (this, elseExists) clause ->
+              match clause with
+              | IfClause (condition, expression) ->
+                let this =
+                  this
+                  |> infer condition TypeExpression.bool
+                  |> infer expression t
+                (this, elseExists)
+              | ElseClause expression ->
+                (this |> infer expression t, true)
+            ) (this, false)
+        if elseExists
+        then this
+        else this |> unify t TypeExpression.unit
       | BinaryOperationExpression (operator, left, right) ->
         match operator with
         | ApplyOperator ->
