@@ -118,6 +118,9 @@ module TypeInfererTest =
     parameterize {
       case ("0", tInt)
       case ("true", tBool)
+      case ("1 + 2", tInt)
+      case ("{fun x -> x + 1}", tFun tInt tInt)
+      case ("{fun x -> 2 * x}", tFun tInt tInt)
       case ("val x = 2", tUnit)
       case ("val x = 2; x", tInt)
       case ("{fun x -> x; 2}", tFun tUnit tInt)

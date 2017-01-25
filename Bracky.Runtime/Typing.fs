@@ -260,8 +260,12 @@ module TypeInferer =
           this
           |> infer left TypeExpression.unit
           |> infer right t
-        | _ ->
-          NotImplementedException() |> raise
+        | AddOperator
+        | MulOperator ->
+          this
+          |> infer left TypeExpression.int
+          |> infer right TypeExpression.int
+          |> unify t TypeExpression.int
       | ValExpression ((IdentifierPattern (_, identifier)), expression) ->
         let tv = TypeVariable.fresh () |> RefTypeExpression
         this
