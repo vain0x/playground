@@ -25,7 +25,7 @@ module Result =
       None
     | Error e ->
       Some e
-      
+
   let getOr (value: 'x) (result: Result<'x, _>): 'x =
     match result with
     | Ok x ->
@@ -101,22 +101,46 @@ module Result =
       Error (f e)
       
   let bind (f: 'x -> Result<'y, 'e>) (result: Result<'x, 'e>): Result<'y, 'e> =
-    result |> map f |> flatten
+    match result with
+    | Ok x ->
+      f x
+    | Error e ->
+      Error e
 
   let bindError (f: 'e -> Result<'x, 'f>) (result: Result<'x, 'e>): Result<'x, 'f> =
-    result |> mapError f |> flattenError
+    match result with
+    | Ok x ->
+      Ok x
+    | Error e ->
+      f e
 
   let exists (p: 'x -> bool) (result: Result<'x, _>): bool =
-    result |> tryGet |> Option.exists p
+    match result with
+    | Ok x ->
+      p x
+    | Error _ ->
+      false
 
   let existsError (p: 'e -> bool) (result: Result<_, 'e>): bool =
-    result |> tryGetError |> Option.exists p
+    match result with
+    | Ok x ->
+      false
+    | Error e ->
+      p e
 
   let forall (p: 'x -> bool) (result: Result<'x, _>): bool =
-    result |> tryGet |> Option.forall p
+    match result with
+    | Ok x ->
+      p x
+    | Error _ ->
+      true
 
   let forallError (p: 'e -> bool) (result: Result<_, 'e>): bool =
-    result |> tryGetError |> Option.forall p
+    match result with
+    | Ok x ->
+      true
+    | Error e ->
+      p e
 
   let tryApply<'x, 'y, 'e when 'e :> exn> (f: 'x -> 'y) (x: 'x): Result<'y, 'e> =
     try
