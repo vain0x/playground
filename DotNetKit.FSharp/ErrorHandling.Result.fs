@@ -149,7 +149,7 @@ module Result =
     | :? 'e as e ->
       Error e
 
-namespace DotNetKit.FSharp.ComputationExpression
+namespace DotNetKit.FSharp.ComputationalExpression
   open DotNetKit.FSharp.ErrorHandling
   
   [<Sealed>]
@@ -181,7 +181,7 @@ namespace DotNetKit.FSharp.ComputationExpression
       using x f
 
 namespace DotNetKit.FSharp.ErrorHandling
-  open DotNetKit.FSharp.ComputationExpression
+  open DotNetKit.FSharp.ComputationalExpression
 
   [<AutoOpen>]
   module ResultSyntax =

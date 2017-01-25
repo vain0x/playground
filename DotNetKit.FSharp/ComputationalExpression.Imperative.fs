@@ -1,4 +1,4 @@
-﻿namespace DotNetKit.FSharp.ComputationExpression
+﻿namespace DotNetKit.FSharp.ComputationalExpression
   open System
   open DotNetKit.FSharp.ErrorHandling
 
@@ -56,4 +56,4 @@ namespace DotNetKit.FSharp
   [<AutoOpen>]
   module ImperativeSyntax =
     let imperative =
-      ComputationExpression.ImperativeBuilder()
+      ComputationalExpression.ImperativeBuilder()

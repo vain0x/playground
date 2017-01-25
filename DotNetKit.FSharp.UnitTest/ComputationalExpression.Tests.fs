@@ -1,4 +1,4 @@
-﻿namespace DotNetKit.FSharp.UnitTest
+﻿namespace DotNetKit.FSharp.ComputationalExpression
 
 open System
 open System.Collections
@@ -7,7 +7,7 @@ open Persimmon
 open Persimmon.Syntax.UseTestNameByReflection
 open DotNetKit.FSharp
 
-module ComputationExpressionTest =
+module ``test imperative`` =
   let ``test simple cases`` =
     test {
       do!

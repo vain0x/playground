@@ -1,11 +1,10 @@
-﻿namespace DotNetKit.FSharp.UnitTest
+﻿namespace DotNetKit.FSharp.ErrorHandling
 
 open System
-open DotNetKit.FSharp.ErrorHandling
 open Persimmon
 open Persimmon.Syntax.UseTestNameByReflection
 
-module ResultTest =
+module ``test Result`` =
   let ``test isOk and isError`` =
     let body (actual, expected) =
       test {

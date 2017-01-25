@@ -1,11 +1,57 @@
-﻿namespace DotNetKit.FSharp.UnitTest
+﻿namespace DotNetKit.FSharp
 
 open System
 open Persimmon
 open Persimmon.Syntax.UseTestNameByReflection
-open DotNetKit.FSharp
 
-module StringTest =
+module ``test Option`` =
+  module ``test option builder`` =
+    let ``test return`` =
+      test {
+        do!
+          option {
+            return 0
+          }
+          |> assertEquals (Some 0)
+        do!
+          option {
+            ()
+          }
+          |> assertEquals (Some ())
+      }
+
+    let ``test return!`` =
+      test {
+        do!
+          option {
+            return! Some 0
+          }
+          |> assertEquals (Some 0)
+        do!
+          option {
+            return! None
+          }
+          |> assertEquals None
+      }
+
+    let ``test let!`` =
+      test {
+        do!
+          option {
+            let! x = Some 1
+            return x + 2
+          }
+          |> assertEquals (Some 3)
+        do!
+          option {
+            let! x = None
+            exn() |> raise
+            return 0
+          }
+          |> assertEquals None
+      }
+
+module ``test String`` =
   let ``test toSeq`` =
     parameterize {
       case ("", [])
