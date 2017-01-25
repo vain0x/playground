@@ -3,11 +3,6 @@
 open System
 open Bracky.Runtime.Parsing
 
-// 参考
-// https://sites.google.com/site/scalajp/home/documentation/scala-by-example/chapter16
-// http://uehaj.hatenablog.com/entry/2014/02/01/183039
-// http://www.fos.kuis.kyoto-u.ac.jp/~igarashi/class/isle4-06w/text/miniml011.html
-
 [<RequireQualifiedAccess>]
 type Kind =
   | Unit

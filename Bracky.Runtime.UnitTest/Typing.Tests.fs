@@ -95,7 +95,7 @@ module TypeInferenceTest =
       case (tRef tx, tRef ty)
       case (tFun tInt tUnit, tFun tInt tUnit)
       case (tFun tInt tUnit, tFun (tRef tx) (tRef ty))
-      case (tFun (tRef ty) (tRef tx), tFun (tRef tx) (tRef ty)) //=> tx = ty = 'x
+      case (tFun (tRef ty) (tRef tx), tFun (tRef tx) (tRef ty))
       run body
     }
 
