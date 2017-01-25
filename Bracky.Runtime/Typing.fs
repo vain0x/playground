@@ -135,15 +135,6 @@ type TypeEnvironment =
 
 [<CompilationRepresentation(CompilationRepresentationFlags.ModuleSuffix)>]
 module TypeEnvironment =
-  // not used
-  let freeTypeVariableSet (this: TypeEnvironment) =
-    this
-    |> Seq.map (fun (KeyValue (_, ts)) -> ts.FreeTypeVariableSet)
-    |> Set.unionMany
-
-  let variableSet (this: TypeEnvironment) =
-    this |> Seq.map (fun (KeyValue (k, v)) -> k) |> Set.ofSeq
-
   /// Converts a type expression to a type scheme by binding all free variables with ∀.
   let generalize t (this: TypeEnvironment) =
     let tvs = (t: TypeExpression).TypeVariableSet |> Set.toArray
