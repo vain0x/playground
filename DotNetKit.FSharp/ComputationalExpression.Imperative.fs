@@ -1,12 +1,12 @@
-﻿namespace DotNetKit.FSharp.ComputationExpression
+﻿namespace DotNetKit.FSharp.ComputationalExpression
   open System
   open DotNetKit.FSharp.ErrorHandling
 
   /// Represents an intermediate result of imperative operations.
-  /// Success () means that it continues to calculate;
-  /// Failure x means that the total computation resulted in x.
+  /// None means that it continues to calculate or returns "void";
+  /// Some x means that the total computation resulted in x.
   type private ImperativeResult<'x> =
-    Result<unit, 'x>
+    option<'x>
 
   [<Sealed>]
   type ImperativeBuilder internal () =
@@ -15,24 +15,24 @@
 
     member this.Run(f: unit -> ImperativeResult<'x>) =
       match f () with
-      | Success () ->
+      | None ->
         // Never come because of the conversion rule.
         InvalidOperationException() |> raise
-      | Failure x ->
+      | Some x ->
         x
 
     member this.Run(f: unit -> ImperativeResult<unit>) =
       f () |> ignore
 
     member this.Return(x) =
-      Failure x
+      Some x
 
     member this.Combine(r: ImperativeResult<'x>, f: unit -> ImperativeResult<'x>) =
       match r with
-      | Success () ->
+      | None ->
         f ()
-      | Failure x ->
-        Failure x
+      | Some x ->
+        Some x
 
     member this.Using(x: 'x, f: 'x -> ImperativeResult<'y>) =
       using x f
@@ -44,7 +44,7 @@
       Default.tryFinally f g
 
     member this.Zero() =
-      Success ()
+      None
 
     member this.While(p, f) =
       Default.``while`` this.Combine this.Zero p f
@@ -56,4 +56,4 @@ namespace DotNetKit.FSharp
   [<AutoOpen>]
   module ImperativeSyntax =
     let imperative =
-      ComputationExpression.ImperativeBuilder()
+      ComputationalExpression.ImperativeBuilder()
