@@ -108,7 +108,11 @@ module Result =
       Error e
 
   let bindError (f: 'e -> Result<'x, 'f>) (result: Result<'x, 'e>): Result<'x, 'f> =
-    result |> mapError f |> flattenError
+    match result with
+    | Ok x ->
+      Ok x
+    | Error e ->
+      f e
 
   let exists (p: 'x -> bool) (result: Result<'x, _>): bool =
     result |> tryGet |> Option.exists p
