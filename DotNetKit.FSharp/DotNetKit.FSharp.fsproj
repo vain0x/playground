@@ -46,15 +46,15 @@
     <Compile Include="AssemblyInfo.fs" />
     <Compile Include="Types.fs" />
     <Compile Include="Operators.fs" />
-    <Compile Include="ComputationalExpression.fs" />
-    <Compile Include="Imperative.fs" />
+    <Compile Include="ComputationalExpression.Default.fs" />
+    <Compile Include="ComputationalExpression.Imperative.fs" />
     <Compile Include="Option.fs" />
-    <Compile Include="Result.fs" />
-    <Compile Include="Dictionary.fs" />
-    <Compile Include="Seq.fs" />
-    <Compile Include="List.fs" />
-    <Compile Include="Set.fs" />
-    <Compile Include="Map.fs" />
+    <Compile Include="ErrorHandling.Result.fs" />
+    <Compile Include="Collections.Dictionary.fs" />
+    <Compile Include="Collections.Seq.fs" />
+    <Compile Include="Collections.List.fs" />
+    <Compile Include="Collections.Set.fs" />
+    <Compile Include="Collections.Map.fs" />
     <Compile Include="String.fs" />
   </ItemGroup>
   <PropertyGroup>
