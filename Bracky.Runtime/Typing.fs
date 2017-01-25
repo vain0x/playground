@@ -131,9 +131,14 @@ type TypeEnvironment =
 
 [<CompilationRepresentation(CompilationRepresentationFlags.ModuleSuffix)>]
 module TypeEnvironment =
+  let freeTypeVariableSet (this: TypeEnvironment) =
+    this |> Map.fold (fun set _ ts -> Set.union set ts.FreeTypeVariableSet) Set.empty
+
   /// Converts a type expression to a type scheme by binding all free variables with ∀.
   let generalize t (this: TypeEnvironment) =
-    let tvs = (t: TypeExpression).TypeVariableSet |> Set.toArray
+    let tvs =
+      Set.difference (t: TypeExpression).TypeVariableSet (this |> freeTypeVariableSet)
+      |> Set.toArray
     ForallTypeScheme (tvs, t)
 
 [<CompilationRepresentation(CompilationRepresentationFlags.ModuleSuffix)>]
