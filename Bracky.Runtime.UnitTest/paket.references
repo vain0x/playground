@@ -1,4 +1,5 @@
 group Compiler
+    DotNetKit.FSharp
     FParsec
 
 group UnitTest

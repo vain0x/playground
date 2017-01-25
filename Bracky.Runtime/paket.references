@@ -1,2 +1,3 @@
 group Compiler
+    DotNetKit.FSharp
     FParsec

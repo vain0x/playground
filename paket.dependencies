@@ -3,6 +3,7 @@ source https://www.nuget.org/api/v2
 group Compiler
     source https://www.nuget.org/api/v2
 
+    nuget DotNetKit.FSharp
     nuget FParsec
 
 group UnitTest
