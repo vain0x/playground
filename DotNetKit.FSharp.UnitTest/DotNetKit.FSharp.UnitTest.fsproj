@@ -51,7 +51,7 @@
   <Import Project="$(FSharpTargetsPath)" />
   <ItemGroup>
     <Compile Include="AssemblyInfo.fs" />
-    <Compile Include="ComputationExpressionTest.fs" />
+    <Compile Include="ComputationalExpressionTest.fs" />
     <Compile Include="OptionTest.fs" />
     <Compile Include="ResultTest.fs" />
     <Compile Include="StringTest.fs" />

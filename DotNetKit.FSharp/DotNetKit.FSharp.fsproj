@@ -46,7 +46,7 @@
     <Compile Include="AssemblyInfo.fs" />
     <Compile Include="Types.fs" />
     <Compile Include="Operators.fs" />
-    <Compile Include="ComputationExpression.fs" />
+    <Compile Include="ComputationalExpression.fs" />
     <Compile Include="Imperative.fs" />
     <Compile Include="Option.fs" />
     <Compile Include="Result.fs" />
