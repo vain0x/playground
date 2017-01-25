@@ -151,7 +151,7 @@ with
 
 /// From variables to type schemes.
 [<Sealed>]
-type TypeEnvironment private (map: Map<string, ForallTypeScheme>) =
+type TypeEnvironment private (map: Map<int64, ForallTypeScheme>) =
   let freeTypeVariableSet =
     lazy
       map |> Map.fold
@@ -207,8 +207,8 @@ module TypeInferer =
   let bind tv t (inferer: TypeInferer) =
     { inferer with Substitution = inferer.Substitution.Extend(tv, t) }
 
-  let conclude identifier typeScheme (inferer: TypeInferer) =
-    { inferer with TypeEnvironment = inferer.TypeEnvironment.Add(identifier, typeScheme) }
+  let conclude variable typeScheme (inferer: TypeInferer) =
+    { inferer with TypeEnvironment = inferer.TypeEnvironment.Add(variable, typeScheme) }
 
   let local f (inferer: TypeInferer) =
     { f inferer with TypeEnvironment = inferer.TypeEnvironment }
@@ -229,7 +229,7 @@ module TypeInferer =
         failwith "TODO: variable not defined"
 
     member this.InferFun(pattern, expression) =
-      let (VariablePattern (_, identifier)) = pattern
+      let (VariablePattern (_, variable)) = pattern
       let tv = TypeVariable.fresh () |> RefTypeExpression
       let tu = TypeVariable.fresh () |> RefTypeExpression
       let t' = FunTypeExpression (tv, tu)
@@ -238,7 +238,7 @@ module TypeInferer =
       |> local
           (fun inferer ->
             inferer
-            |> conclude identifier (ForallTypeScheme ([||], tv))
+            |> conclude variable (ForallTypeScheme ([||], tv))
             |> infer expression tu
           )
 
@@ -279,14 +279,14 @@ module TypeInferer =
         |> unify t TypeExpression.int
 
     member this.InferVal(pattern, expression) =
-      let (VariablePattern (_, identifier)) = pattern
+      let (VariablePattern (_, variable)) = pattern
       let tv = TypeVariable.fresh () |> RefTypeExpression
       inferer
       |> unify t TypeExpression.unit
       |> infer expression tv
       |>  (fun inferer ->
             let t = inferer.TypeEnvironment.Generalize(inferer.Substitution.Apply(tv))
-            inferer |> conclude identifier t
+            inferer |> conclude variable t
           )
 
     member this.Run() =

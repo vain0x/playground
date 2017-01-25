@@ -2,9 +2,30 @@
 
 open FParsec
 
+/// Represents an occurence of variable.
+type Variable =
+  {
+    Name:
+      string
+    Id:
+      int64
+  }
+
+[<CompilationRepresentation(CompilationRepresentationFlags.ModuleSuffix)>]
+module Variable =
+  let count = ref 0L
+
+  let create name =
+    let identifier = !count
+    count := identifier + 1L
+    {
+      Name = name
+      Id = identifier
+    }
+
 type Pattern =
   | VariablePattern
-    of Position * string
+    of Position * Variable
 with
   member this.Position =
     match this with
