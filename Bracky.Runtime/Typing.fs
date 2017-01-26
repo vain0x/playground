@@ -134,7 +134,7 @@ module Substitution =
         (fun this (u, u') -> unify u u' this)
         this
     | (_, _) ->
-      failwith "TODO: error handling"
+      failwith "TODO: unification error"
 
 type TypeScheme =
   | TypeScheme
@@ -232,6 +232,13 @@ module TypeInferer =
   let unify t t' (inferer: TypeInferer) =
     { inferer with Substitution = inferer.Substitution |> Substitution.unify t t' }
 
+  /// 式 expression の型を t と仮定する。
+  /// t には型変数が含まれていることがあるため、その具体的な型はまだ分からないが、
+  /// これを式 expression の構造にもとづいて決定する。
+  /// 結果として、型 t を具体的な型に置換できるように、置換が拡張される。
+  /// また、expresssion が変数を定義する場合は、環境が拡張される。
+  /// expression の型が t になりえない場合はエラーとする。
+  /// なお previous は直前に推論した式を表す。(エラー出力用に使う。)
   type private InferFunction(previous, expression, t, inferer) =
     let infer expression' t' inferer' =
       InferFunction(Some expression, expression', t', inferer').Run()
@@ -244,19 +251,26 @@ module TypeInferer =
       | None ->
         failwith "TODO: variable not defined"
 
-    member this.InferFun(pattern, expression) =
-      let (VariablePattern (_, variable)) = pattern
-      let tv = TypeVariable.fresh () |> RefTypeExpression
-      let tu = TypeVariable.fresh () |> RefTypeExpression
-      let t' = FunTypeExpression (tv, tu)
-      inferer
-      |> unify t t'
-      |> local
-          (fun inferer ->
-            inferer
-            |> conclude variable (TypeScheme ([||], tv))
-            |> infer expression tu
-          )
+    member this.InferFun(pattern, body) =
+      match pattern with
+      | UnitPattern _ ->
+        let tu = TypeVariable.fresh () |> RefTypeExpression
+        let t' = FunTypeExpression (TypeExpression.unit, tu)
+        inferer
+        |> unify t t'
+        |> infer body tu
+      | VariablePattern (_, variable) ->
+        let tv = TypeVariable.fresh () |> RefTypeExpression
+        let tu = TypeVariable.fresh () |> RefTypeExpression
+        let t' = FunTypeExpression (tv, tu)
+        inferer
+        |> unify t t'
+        |> local
+            (fun inferer ->
+              inferer
+              |> conclude variable (TypeScheme ([||], tv))
+              |> infer body tu
+            )
 
     member this.InferIf(clauses) =
       let (inferer, elseExists) =
@@ -282,7 +296,7 @@ module TypeInferer =
         let tv = TypeVariable.fresh () |> RefTypeExpression
         inferer
         |> infer left (FunTypeExpression (tv, t))
-        |> infer right t
+        |> infer right tv
       | ThenOperator ->
         inferer
         |> infer left TypeExpression.unit
@@ -294,16 +308,21 @@ module TypeInferer =
         |> infer right TypeExpression.int
         |> unify t TypeExpression.int
 
-    member this.InferVal(pattern, expression) =
-      let (VariablePattern (_, variable)) = pattern
-      let tv = TypeVariable.fresh () |> RefTypeExpression
-      inferer
-      |> unify t TypeExpression.unit
-      |> infer expression tv
-      |>  (fun inferer ->
-            let t = inferer.TypeEnvironment.Generalize(inferer.Substitution.Apply(tv))
-            inferer |> conclude variable t
-          )
+    member this.InferVal(pattern, right) =
+      match pattern with
+      | UnitPattern _ ->
+        inferer
+        |> unify t TypeExpression.unit
+        |> infer right TypeExpression.unit
+      | VariablePattern (_, variable) ->
+        let tv = TypeVariable.fresh () |> RefTypeExpression
+        inferer
+        |> unify t TypeExpression.unit
+        |> infer right tv
+        |>  (fun inferer ->
+              let t = inferer.TypeEnvironment.Generalize(inferer.Substitution.Apply(tv))
+              inferer |> conclude variable t
+            )
 
     member this.Run() =
       match expression with

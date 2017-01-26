@@ -72,6 +72,13 @@ module Parsers =
         return identifier
     }
 
+  let unitParser: Parser<Position> =
+    parse {
+      let! position = getPosition
+      do! between (skipChar '(') (skipChar ')') blankParser
+      return position
+    }
+
   let (patternParser: Parser<Pattern>, patternParserRef) =
     createParserForwardedToRef ()
 
@@ -82,18 +89,21 @@ module Parsers =
       return VariablePattern (position, Variable.create name)
     }
 
+  let unitPatternParser =
+    unitParser |>> UnitPattern
+
+  let atomicPatternParser =
+    attempt variablePatternParser
+    <|> unitPatternParser
+
   patternParserRef :=
-    variablePatternParser
+    atomicPatternParser
 
   let (expressionParser: Parser<Expression>, expressionParserRef) =
     createParserForwardedToRef ()
 
-  let unitExpressionParser: Parser<Expression> =
-    parse {
-      let! position = getPosition
-      do! between (skipChar '(') (skipChar ')') blankParser
-      return UnitExpression position
-    }
+  let unitExpressionParser =
+    unitParser |>> UnitExpression
 
   let intExpressionParser: Parser<Expression> =
     parse {

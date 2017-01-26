@@ -116,18 +116,27 @@ module TypeInfererTest =
           return! fail message
       }
     parameterize {
+      // literal
       case ("()", tUnit)
       case ("0", tInt)
       case ("true", tBool)
       case ("1 + 2", tInt)
-      case ("{fun x -> x + 1}", tFun tInt tInt)
-      case ("{fun x -> 2 * x}", tFun tInt tInt)
+      // val
+      case ("val () = ()", tUnit)
+      case ("val () = (val x = 0)", tUnit)
       case ("val x = 2", tUnit)
       case ("val x = 2; x", tInt)
+      // fun
+      case ("{fun () -> 1}", tFun tUnit tInt)
       case ("{fun x -> x; 2}", tFun tUnit tInt)
-      case ("val id = {fun x -> x}; id (); id 0", tInt)
+      case ("{fun x -> x + 1}", tFun tInt tInt)
+      case ("{fun x -> 2 * x}", tFun tInt tInt)
+      // if
       case ("{if true -> 1; else 0}", tInt)
       case ("{if true -> val x = 0}", tUnit)
+      // apply
+      case ("{fun () -> 1} ()", tInt)
+      case ("val id = {fun x -> x}; id (); id 0", tInt)
       run body
     }
 
@@ -145,10 +154,17 @@ module TypeInfererTest =
           return! fail message
       }
     parameterize {
+      // literals
       case "x"
-      case "{fun x -> val y = 0} + 0"
+      // if
       case "{if 1 -> then; else false}"
       case "{if true -> 1; else false}"
       case "{if true -> 1}"
+      // apply
+      case "{fun () -> 1} 0"
+      // add
+      case "() + ()"
+      case "() + 0"
+      case "() * 0"
       run body
     }

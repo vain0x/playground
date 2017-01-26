@@ -33,16 +33,22 @@ module Variable =
     }
 
 type Pattern =
+  | UnitPattern
+    of Position
   | VariablePattern
     of Position * Variable
 with
   member this.Position =
     match this with
+    | UnitPattern position ->
+      position
     | VariablePattern (position, _) ->
       position
 
   member this.PositionFree =
     match this with
+    | UnitPattern _ ->
+      UnitPattern Position.empty
     | VariablePattern (_, variable) ->
       VariablePattern (Position.empty, Variable.positionFree variable.Name)
 
