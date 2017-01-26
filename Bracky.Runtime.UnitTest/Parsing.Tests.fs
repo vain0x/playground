@@ -9,19 +9,44 @@ module ExpressionBuilders =
 
   let pVar name = VariablePattern (p, Variable.positionFree name)
 
-  let vUnit = UnitExpression p
-  let vInt value = IntExpression (p, value)
-  let vTrue = BoolExpression (p, true)
-  let vFalse = BoolExpression (p, false)
-  let vOp operator = OperatorExpression (p, operator)
-  let vVar identifier = VarExpression (p, identifier)
-  let vFun pattern body = FunExpression (p, pattern, body)
-  let vIf hc hx tail = IfExpression (IfClause (hc, hx), tail)
-  let vApp left right = ApplyExpression (p, left, right)
-  let vAdd left right = vApp (vApp (vOp AddOperator) left) right
-  let vMul left right = vApp (vApp (vOp MulOperator) left) right
-  let vVal pattern expression = ValExpression (pattern, expression)
-  let vThen left right = ThenExpression (p, left, right)
+  let vUnit =
+    UnitExpression p
+
+  let vInt value =
+    IntExpression (p, value)
+
+  let vTrue =
+    BoolExpression (p, true)
+
+  let vFalse =
+    BoolExpression (p, false)
+
+  let vOp operator =
+    OperatorExpression (p, operator)
+
+  let vVar identifier =
+    VarExpression (p, identifier)
+
+  let vFun pattern body =
+    FunExpression (p, pattern, body)
+
+  let vIf hc hx tail =
+    IfExpression (IfClause (hc, hx), tail)
+
+  let vApp left right =
+    ApplyExpression (p, left, right)
+
+  let vAdd left right =
+    vApp (vApp (vOp AddOperator) left) right
+
+  let vMul left right =
+    vApp (vApp (vOp MulOperator) left) right
+
+  let vVal pattern expression =
+    ValExpression (pattern, expression)
+
+  let vThen left right =
+    ThenExpression (p, left, right)
 
 module ParsersTest =
   let assertParse parser source =

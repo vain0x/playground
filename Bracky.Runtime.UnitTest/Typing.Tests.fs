@@ -7,12 +7,23 @@ open Persimmon.Syntax.UseTestNameByReflection
 open Bracky.Runtime.Typing
 
 module TypeExpressionBuilders =
-  let tUnit = TypeExpression.unit
-  let tBool = TypeExpression.bool
-  let tInt = TypeExpression.int
-  let tVar tv = VarTypeExpression tv
-  let tFun s t = FunTypeExpression (s, t)
-  let tApp k a = AppTypeExpression (k, a)
+  let tUnit =
+    TypeExpression.unit
+
+  let tBool =
+    TypeExpression.bool
+
+  let tInt =
+    TypeExpression.int
+
+  let tVar tv =
+    VarTypeExpression tv
+
+  let tFun sourceType targetType =
+    FunTypeExpression (sourceType, targetType)
+
+  let tApp kind types =
+    AppTypeExpression (kind, types)
 
   let tx = TypeVariable.fresh ()
   let ty = TypeVariable.fresh ()
