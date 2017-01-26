@@ -237,18 +237,20 @@ module Parsers =
       multitiveExpressionParser (operatorParser AddOperator "+")
 
   let valExpressionParser =
-    attempt
-      (parse {
-        do! keywordParser "val" >>. blankParser
-        let! pattern = patternParser
-        do! blankParser >>. skipChar '=' >>. blankParser
-        let! expression = additiveExpressionParser
-        return ValExpression (pattern, expression)
-      })
+    parse {
+      do! keywordParser "val" >>. blankParser
+      let! pattern = patternParser
+      do! blankParser >>. skipChar '=' >>. blankParser
+      let! expression = additiveExpressionParser
+      return ValExpression (pattern, expression)
+    }
+
+  let definitiveExpressionParser =
+    attempt valExpressionParser
     <|> additiveExpressionParser
 
   let thenExpressionParser: Parser<Expression> =
-    let termParser = valExpressionParser
+    let termParser = definitiveExpressionParser
     let separatorParser =
       parse {
         do! blankParser
