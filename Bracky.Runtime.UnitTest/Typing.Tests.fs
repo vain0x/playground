@@ -10,7 +10,7 @@ module TypeExpressionBuilders =
   let tUnit = TypeExpression.unit
   let tBool = TypeExpression.bool
   let tInt = TypeExpression.int
-  let tRef tv = RefTypeExpression tv
+  let tVar tv = VarTypeExpression tv
   let tFun s t = FunTypeExpression (s, t)
   let tApp k a = AppTypeExpression (k, a)
 
@@ -28,9 +28,9 @@ module TypeExpressionTest =
       }
     parameterize {
       case (tUnit, [])
-      case (tRef tx, [tx])
-      case (tFun (tRef tx) (tRef tx), [tx])
-      case (tFun (tRef tx) (tFun tUnit (tRef ty)), [tx; ty])
+      case (tVar tx, [tx])
+      case (tFun (tVar tx) (tVar tx), [tx])
+      case (tFun (tVar tx) (tFun tUnit (tVar ty)), [tx; ty])
       run body
     }
 
@@ -39,12 +39,12 @@ module SubstitutionTest =
     let substitution1 =
       Substitution.Empty
         .Extend(tx, tUnit)
-        .Extend(ty, tFun tInt (tRef tx))
+        .Extend(ty, tFun tInt (tVar tx))
     let substitution2 =
       let bindings =
         [|
           (tx, tUnit)
-          (ty, tFun tInt (tRef tx))
+          (ty, tFun tInt (tVar tx))
         |]
       Substitution.Empty.ExtendMany(bindings)
     let body (t, expected) =
@@ -55,8 +55,8 @@ module SubstitutionTest =
     parameterize {
       case (tUnit, tUnit)
       case (tFun tInt tUnit, tFun tInt tUnit)
-      case (tRef tx, tUnit)
-      case (tRef ty, tFun tInt tUnit)
+      case (tVar tx, tUnit)
+      case (tVar ty, tFun tInt tUnit)
       run body
     }
 
@@ -69,29 +69,29 @@ module ``test Substitution`` =
       }
     parameterize {
       case (tInt, tInt)
-      case (tInt, tRef tx)
-      case (tRef tx, tRef tx)
-      case (tRef tx, tRef ty)
+      case (tInt, tVar tx)
+      case (tVar tx, tVar tx)
+      case (tVar tx, tVar ty)
       case (tFun tInt tUnit, tFun tInt tUnit)
-      case (tFun tInt tUnit, tFun (tRef tx) (tRef ty))
-      case (tFun (tRef ty) (tRef tx), tFun (tRef tx) (tRef ty))
+      case (tFun tInt tUnit, tFun (tVar tx) (tVar ty))
+      case (tFun (tVar ty) (tVar tx), tFun (tVar tx) (tVar ty))
       run body
     }
 
 module TypeSchemeTest =
   let ``test FreeTypeVariableSet`` =
     test {
-      let ts = TypeScheme ([| tx; ty |], tFun (tRef tx) (tFun (tRef ty) (tRef tz)))
+      let ts = TypeScheme ([| tx; ty |], tFun (tVar tx) (tFun (tVar ty) (tVar tz)))
       do! ts.FreeTypeVariableSet |> assertEquals (Set.singleton tz)
     }
 
   let ``test Instantiate`` =
     test {
-      let ts = TypeScheme ([| tx; ty |], tFun (tRef tx) (tFun (tRef ty) (tRef tz)))
+      let ts = TypeScheme ([| tx; ty |], tFun (tVar tx) (tFun (tVar ty) (tVar tz)))
       match ts.Instantiate() with
       | FunTypeExpression
-        ( RefTypeExpression tx'
-        , (FunTypeExpression (RefTypeExpression ty', RefTypeExpression tz'))
+        ( VarTypeExpression tx'
+        , (FunTypeExpression (VarTypeExpression ty', VarTypeExpression tz'))
         ) ->
         do! [tx; ty; tz; tx'; ty'] |> set |> Set.count |> assertEquals 5
         do! tz' |> assertEquals tz
@@ -109,9 +109,9 @@ module TypeInfererTest =
         match Parsers.parseExpression "test" source with
         | Result.Ok expression ->
           let tv = TypeVariable.fresh ()
-          let inferer = TypeInferer.empty |> TypeInferer.infer expression (tRef tv)
+          let inferer = TypeInferer.empty |> TypeInferer.infer expression (tVar tv)
           let substitution = inferer |> TypeInferer.substitution
-          do! substitution.Apply(tRef tv) |> assertEquals expected
+          do! substitution.Apply(tVar tv) |> assertEquals expected
         | Result.Error message ->
           return! fail message
       }
@@ -147,7 +147,7 @@ module TypeInfererTest =
         | Result.Ok expression ->
           let tv = TypeVariable.fresh ()
           let run () =
-            TypeInferer.empty |> TypeInferer.infer expression (tRef tv)
+            TypeInferer.empty |> TypeInferer.infer expression (tVar tv)
           let! e = trap { it (run ()) }
           return ()
         | Result.Error message ->

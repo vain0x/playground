@@ -65,8 +65,7 @@ type Expression =
     of Position * int64
   | BoolExpression
     of Position * bool
-  /// Represents an expression to read the value of variable.
-  | RefExpression
+  | VarExpression
     of Position * string
   | FunExpression
     of Position * Pattern * Expression
@@ -85,7 +84,7 @@ with
       position
     | BoolExpression (position, _) ->
       position
-    | RefExpression (position, _) ->
+    | VarExpression (position, _) ->
       position
     | FunExpression (position, _, _) ->
       position
@@ -104,8 +103,8 @@ with
       IntExpression (Position.empty, value)
     | BoolExpression (_, value) ->
       BoolExpression (Position.empty, value)
-    | RefExpression (_, name) ->
-      RefExpression (Position.empty, name)
+    | VarExpression (_, name) ->
+      VarExpression (Position.empty, name)
     | FunExpression (_, pattern, expression) ->
       FunExpression (Position.empty, pattern.PositionFree, expression.PositionFree)
     | IfExpression (head, tail) ->

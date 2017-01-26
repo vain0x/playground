@@ -126,11 +126,11 @@ module Parsers =
       return BoolExpression (position, value)
     }
 
-  let refExpressionParser: Parser<Expression> =
+  let varExpressionParser: Parser<Expression> =
     parse {
       let! position = getPosition
       let! identifier = identifierParser
-      return RefExpression (position, identifier)
+      return VarExpression (position, identifier)
     }
 
   let rightBracketParser: Parser<unit> =
@@ -188,7 +188,7 @@ module Parsers =
 
   let atomicExpressionParser: Parser<Expression> =
     attempt boolExpressionParser
-    <|> attempt refExpressionParser
+    <|> attempt varExpressionParser
     <|> attempt intExpressionParser
     <|> attempt funExpressionParser
     <|> attempt ifExpressionParser

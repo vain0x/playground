@@ -28,7 +28,7 @@ module TypeVariable =
     value |> TypeVariable
 
 type TypeExpression =
-  | RefTypeExpression
+  | VarTypeExpression
     of TypeVariable
   | FunTypeExpression
     of TypeExpression * TypeExpression
@@ -37,7 +37,7 @@ type TypeExpression =
 with
   override this.ToString() =
     match this with
-    | RefTypeExpression tv ->
+    | VarTypeExpression tv ->
       string tv
     | FunTypeExpression (sourceType, targetType) ->
       sprintf "(%s -> %s)" (string sourceType) (string targetType)
@@ -62,7 +62,7 @@ module TypeExpression =
   let rec typeVariables t =
     seq {
       match t with
-      | RefTypeExpression tv ->
+      | VarTypeExpression tv ->
         yield tv
       | FunTypeExpression (s, u) ->
         yield! typeVariables s
@@ -78,10 +78,10 @@ type Substitution private (map: Map<_, _>) =
     let lookup tv =
       match map |> Map.tryFind tv with
       | Some t -> t
-      | None -> RefTypeExpression tv
+      | None -> VarTypeExpression tv
     let rec apply t =
       match t with
-      | RefTypeExpression tv ->
+      | VarTypeExpression tv ->
         let t' = lookup tv
         if t = t' then t else apply t'
       | FunTypeExpression (s, t) ->
@@ -94,7 +94,7 @@ type Substitution private (map: Map<_, _>) =
     apply t
 
   member this.Extend(tu: TypeVariable, t: TypeExpression) =
-    if apply t = RefTypeExpression tu then
+    if apply t = VarTypeExpression tu then
       this
     else
       Substitution(map |> Map.add tu t)
@@ -102,7 +102,7 @@ type Substitution private (map: Map<_, _>) =
   member this.ExtendMany(bindings: array<TypeVariable * TypeExpression>) =
     let bindings =
       bindings |> Array.filter
-        (fun (tv, t) -> apply t <> RefTypeExpression tv)
+        (fun (tv, t) -> apply t <> VarTypeExpression tv)
     if bindings.Length = 0 then
       this
     else
@@ -117,12 +117,12 @@ module Substitution =
   /// to update the substitution so that it equalizes them.
   let rec unify t t' (this: Substitution) =
     match (this.Apply(t), this.Apply(t')) with
-    | (RefTypeExpression tv, RefTypeExpression tv') when tv = tv' ->
+    | (VarTypeExpression tv, VarTypeExpression tv') when tv = tv' ->
       this.Extend(tv, t')
-    | (RefTypeExpression tv, _)
+    | (VarTypeExpression tv, _)
       when t' |> TypeExpression.typeVariables |> Seq.forall ((<>) tv) ->
       this.Extend(tv, t')
-    | (_, RefTypeExpression tv) ->
+    | (_, VarTypeExpression tv) ->
       unify t' t this
     | (FunTypeExpression (s, u), FunTypeExpression (s', u')) ->
       this
@@ -144,7 +144,7 @@ with
     let (TypeScheme (tvs, t)) = this
     let bindings =
       tvs |> Array.map
-        (fun tv -> (tv, TypeVariable.fresh () |> RefTypeExpression))
+        (fun tv -> (tv, TypeVariable.fresh () |> VarTypeExpression))
     let substitution =
       Substitution.Empty.ExtendMany(bindings)
     substitution.Apply(t)
@@ -243,7 +243,7 @@ module TypeInferer =
     let infer expression' t' inferer' =
       InferFunction(Some expression, expression', t', inferer').Run()
 
-    member this.InferRef(identifier) =
+    member this.InferVar(identifier) =
       match inferer.TypeEnvironment.TryFind(identifier) with
       | Some (typeScheme: TypeScheme) ->
         let t' = typeScheme.Instantiate()
@@ -254,14 +254,14 @@ module TypeInferer =
     member this.InferFun(pattern, body) =
       match pattern with
       | UnitPattern _ ->
-        let tu = TypeVariable.fresh () |> RefTypeExpression
+        let tu = TypeVariable.fresh () |> VarTypeExpression
         let t' = FunTypeExpression (TypeExpression.unit, tu)
         inferer
         |> unify t t'
         |> infer body tu
       | VariablePattern (_, variable) ->
-        let tv = TypeVariable.fresh () |> RefTypeExpression
-        let tu = TypeVariable.fresh () |> RefTypeExpression
+        let tv = TypeVariable.fresh () |> VarTypeExpression
+        let tu = TypeVariable.fresh () |> VarTypeExpression
         let t' = FunTypeExpression (tv, tu)
         inferer
         |> unify t t'
@@ -293,7 +293,7 @@ module TypeInferer =
     member this.InferBinaryOperation(operator, left, right) =
       match operator with
       | ApplyOperator ->
-        let tv = TypeVariable.fresh () |> RefTypeExpression
+        let tv = TypeVariable.fresh () |> VarTypeExpression
         inferer
         |> infer left (FunTypeExpression (tv, t))
         |> infer right tv
@@ -315,7 +315,7 @@ module TypeInferer =
         |> unify t TypeExpression.unit
         |> infer right TypeExpression.unit
       | VariablePattern (_, variable) ->
-        let tv = TypeVariable.fresh () |> RefTypeExpression
+        let tv = TypeVariable.fresh () |> VarTypeExpression
         inferer
         |> unify t TypeExpression.unit
         |> infer right tv
@@ -332,8 +332,8 @@ module TypeInferer =
         inferer |> unify t TypeExpression.int
       | BoolExpression _ ->
         inferer |> unify t TypeExpression.bool
-      | RefExpression (_, identifier) ->
-        this.InferRef(identifier)
+      | VarExpression (_, identifier) ->
+        this.InferVar(identifier)
       | FunExpression (_, pattern, expression) ->
         this.InferFun(pattern, expression)
       | IfExpression (headClause, tailClauses) ->

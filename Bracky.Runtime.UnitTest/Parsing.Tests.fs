@@ -13,7 +13,7 @@ module ExpressionBuilders =
   let vInt value = IntExpression (p, value)
   let vTrue = BoolExpression (p, true)
   let vFalse = BoolExpression (p, false)
-  let vVar identifier = RefExpression (p, identifier)
+  let vVar identifier = VarExpression (p, identifier)
   let vFun pattern body = FunExpression (p, pattern, body)
   let vIf hc hx tail = IfExpression (IfClause (hc, hx), tail)
   let vAdd left right = BinaryOperationExpression (AddOperator, left, right)
@@ -49,7 +49,7 @@ module ParsersTest =
 
     let intParser = Parsers.intExpressionParser
     let boolParser = Parsers.boolExpressionParser
-    let refParser = Parsers.refExpressionParser
+    let varParser = Parsers.varExpressionParser
     let parenParser = Parsers.parenthesisExpressionParser
     let funParser = Parsers.funExpressionParser
     let ifParser = Parsers.ifExpressionParser
@@ -72,7 +72,7 @@ module ParsersTest =
         case (intParser, "9876543210", vInt 9876543210L)
         case (boolParser, "true", vTrue)
         case (boolParser, "false", vFalse)
-        case (refParser, "x", vVar "x")
+        case (varParser, "x", vVar "x")
         case (parenParser, "(12)", vInt 12L)
         case (parenParser, "( 12 )", vInt 12L)
         case (mulParser, "2*3", vMul (vInt 2L) (vInt 3L))
@@ -139,8 +139,8 @@ module ParsersTest =
             return ()
         }
       parameterize {
-        case (refParser, "_")
-        case (refParser, "true")
+        case (varParser, "_")
+        case (varParser, "true")
         case (intParser, "1x")
         case (thenParser, "1;;2")
         run body
