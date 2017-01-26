@@ -7,7 +7,7 @@ open Persimmon.Syntax.UseTestNameByReflection
 module ExpressionBuilders =
   let p = Position.empty
 
-  let pVar name = VariablePattern (p, VariableOccurrence.positionFree name)
+  let pVar name = VariablePattern (p, Variable.positionFree name)
 
   let vInt value = IntExpression (p, value)
   let vTrue = BoolExpression (p, true)
