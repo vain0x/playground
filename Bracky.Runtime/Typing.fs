@@ -32,7 +32,7 @@ type TypeExpression =
     of TypeVariable
   | FunTypeExpression
     of TypeExpression * TypeExpression
-  | AppTypeExpression
+  | KindTypeExpression
     of Kind * array<TypeExpression>
 with
   override this.ToString() =
@@ -41,7 +41,7 @@ with
       string tv
     | FunTypeExpression (sourceType, targetType) ->
       sprintf "(%s -> %s)" (string sourceType) (string targetType)
-    | AppTypeExpression (kind, arguments) ->
+    | KindTypeExpression (kind, arguments) ->
       if arguments |> Array.isEmpty then
         string kind
       else
@@ -51,13 +51,13 @@ with
 [<CompilationRepresentation(CompilationRepresentationFlags.ModuleSuffix)>]
 module TypeExpression =
   let unit =
-    AppTypeExpression (Kind.Unit, [||])
+    KindTypeExpression (Kind.Unit, [||])
 
   let int =
-    AppTypeExpression (Kind.Int, [||])
+    KindTypeExpression (Kind.Int, [||])
 
   let bool =
-    AppTypeExpression (Kind.Bool, [||])
+    KindTypeExpression (Kind.Bool, [||])
 
   let rec typeVariables t =
     seq {
@@ -67,7 +67,7 @@ module TypeExpression =
       | FunTypeExpression (s, u) ->
         yield! typeVariables s
         yield! typeVariables u
-      | AppTypeExpression (_, ts) ->
+      | KindTypeExpression (_, ts) ->
         for u in ts do
           yield! typeVariables u
     }
@@ -86,8 +86,8 @@ type Substitution private (map: Map<_, _>) =
         if t = t' then t else apply t'
       | FunTypeExpression (s, t) ->
         FunTypeExpression (apply s, apply t)
-      | AppTypeExpression (kind, arguments) ->
-        AppTypeExpression (kind, arguments |> Array.map apply)
+      | KindTypeExpression (kind, arguments) ->
+        KindTypeExpression (kind, arguments |> Array.map apply)
     apply
 
   member this.Apply(t: TypeExpression) =
@@ -128,7 +128,7 @@ module Substitution =
       this
       |> unify u u'
       |> unify s s'
-    | (AppTypeExpression (kind, ts), AppTypeExpression (kind', ts'))
+    | (KindTypeExpression (kind, ts), KindTypeExpression (kind', ts'))
       when kind = kind' && ts.Length = ts'.Length ->
       Array.zip ts ts' |> Array.fold
         (fun this (u, u') -> unify u u' this)
@@ -348,7 +348,5 @@ module TypeInferer =
       | ValExpression (pattern, expression) ->
         this.InferVal(pattern, expression)
 
-  /// Infers the type of the expression `x` under the given substitution and environment
-  /// and returns an extended substitution and an environment which describes type of each variable.
   let infer expression t inferer =
     InferFunction(None, expression, t, inferer).Run()

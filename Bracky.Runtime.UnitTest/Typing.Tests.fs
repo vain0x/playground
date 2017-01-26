@@ -22,8 +22,8 @@ module TypeExpressionBuilders =
   let tFun sourceType targetType =
     FunTypeExpression (sourceType, targetType)
 
-  let tApp kind types =
-    AppTypeExpression (kind, types)
+  let tKind kind types =
+    KindTypeExpression (kind, types)
 
   let tx = TypeVariable.fresh ()
   let ty = TypeVariable.fresh ()
