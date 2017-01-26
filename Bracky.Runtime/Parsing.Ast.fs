@@ -2,6 +2,12 @@
 
 open FParsec
 
+type Result<'x, 'e> =
+  | Ok
+    of 'x
+  | Error
+    of 'e
+
 type Pattern =
   | IdentifierPattern
     of Position * string

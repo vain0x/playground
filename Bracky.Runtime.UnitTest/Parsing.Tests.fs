@@ -4,10 +4,23 @@ open FParsec
 open Persimmon
 open Persimmon.Syntax.UseTestNameByReflection
 
-module ParsersTest =
-  let p =
-    Position("", 0L, 0L, 0L)
+module ExpressionBuilders =
+  let p = Position("", 0L, 0L, 0L)
 
+  let id' name = IdentifierPattern (p, name)
+
+  let i value = IntExpression (p, value)
+  let true' = BoolExpression (p, true)
+  let false' = BoolExpression (p, false)
+  let ref' identifier = RefExpression (p, identifier)
+  let fun' pattern body = FunExpression (p, pattern, body)
+  let if' hc hx tail = IfExpression (IfClause (hc, hx), tail)
+  let add left right = BinaryOperationExpression (AddOperator, left, right)
+  let mul left right = BinaryOperationExpression (MulOperator, left, right)
+  let val' pattern expression = ValExpression (pattern, expression)
+  let then' left right = BinaryOperationExpression (ThenOperator, left, right)
+
+module ParsersTest =
   let assertParse parser source =
     test {
       match runParserOnString (parser .>> eof) () "test" source with
@@ -31,6 +44,8 @@ module ParsersTest =
     }
 
   module ExpressionParserTest =
+    open ExpressionBuilders
+
     let intParser = Parsers.intExpressionParser
     let boolParser = Parsers.boolExpressionParser
     let refParser = Parsers.refExpressionParser
@@ -41,19 +56,6 @@ module ParsersTest =
     let addParser = Parsers.additiveExpressionParser
     let valParser = Parsers.valExpressionParser
     let thenParser = Parsers.thenExpressionParser
-
-    let id' name = IdentifierPattern (p, name)
-
-    let i value = IntExpression (p, value)
-    let true' = BoolExpression (p, true)
-    let false' = BoolExpression (p, false)
-    let ref' identifier = RefExpression (p, identifier)
-    let fun' pattern body = FunExpression (p, pattern, body)
-    let if' hc hx tail = IfExpression (IfClause (hc, hx), tail)
-    let add left right = BinaryOperationExpression (AddOperator, left, right)
-    let mul left right = BinaryOperationExpression (MulOperator, left, right)
-    let val' pattern expression = ValExpression (pattern, expression)
-    let then' left right = BinaryOperationExpression (ThenOperator, left, right)
 
     let ``test expression parsers`` =
       let body (parser: Parser<Expression, unit>, source, expected: Expression) =

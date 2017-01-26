@@ -172,6 +172,8 @@ module Parsers =
     attempt boolExpressionParser
     <|> attempt refExpressionParser
     <|> attempt intExpressionParser
+    <|> attempt funExpressionParser
+    <|> attempt ifExpressionParser
     <|> parenthesisExpressionParser
     
   let leftAssociatedOperationParser termParser operatorParser operator =
@@ -214,3 +216,13 @@ module Parsers =
 
   expressionParserRef :=
     thenExpressionParser
+
+  let programParser =
+    blankParser >>. expressionParser .>> blankParser .>> eof
+
+  let parseExpression sourceName source =
+    match runParserOnString programParser () sourceName source with
+    | Success (expression, (), _) ->
+      Result.Ok expression
+    | Failure (message, _, ()) ->
+      Result.Error message
