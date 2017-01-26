@@ -53,6 +53,8 @@ type BinaryOperator =
   | ThenOperator
 
 type Expression =
+  | UnitExpression
+    of Position
   | IntExpression
     of Position * int64
   | BoolExpression
@@ -71,6 +73,8 @@ type Expression =
 with
   member this.Position =
     match this with
+    | UnitExpression position ->
+      position
     | IntExpression (position, _) ->
       position
     | BoolExpression (position, _) ->
@@ -88,6 +92,8 @@ with
 
   member this.PositionFree =
     match this with
+    | UnitExpression _ ->
+      UnitExpression Position.empty
     | IntExpression (_, value) ->
       IntExpression (Position.empty, value)
     | BoolExpression (_, value) ->

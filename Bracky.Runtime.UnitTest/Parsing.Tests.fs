@@ -9,6 +9,7 @@ module ExpressionBuilders =
 
   let pVar name = VariablePattern (p, Variable.positionFree name)
 
+  let vUnit = UnitExpression p
   let vInt value = IntExpression (p, value)
   let vTrue = BoolExpression (p, true)
   let vFalse = BoolExpression (p, false)

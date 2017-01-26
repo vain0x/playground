@@ -88,6 +88,13 @@ module Parsers =
   let (expressionParser: Parser<Expression>, expressionParserRef) =
     createParserForwardedToRef ()
 
+  let unitExpressionParser: Parser<Expression> =
+    parse {
+      let! position = getPosition
+      do! between (skipChar '(') (skipChar ')') blankParser
+      return UnitExpression position
+    }
+
   let intExpressionParser: Parser<Expression> =
     parse {
       let! position = getPosition
@@ -175,6 +182,7 @@ module Parsers =
     <|> attempt intExpressionParser
     <|> attempt funExpressionParser
     <|> attempt ifExpressionParser
+    <|> attempt unitExpressionParser
     <|> parenthesisExpressionParser
     
   let leftAssociatedOperationParser termParser operatorParser operator =

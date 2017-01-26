@@ -116,6 +116,7 @@ module TypeInfererTest =
           return! fail message
       }
     parameterize {
+      case ("()", tUnit)
       case ("0", tInt)
       case ("true", tBool)
       case ("1 + 2", tInt)
@@ -124,9 +125,9 @@ module TypeInfererTest =
       case ("val x = 2", tUnit)
       case ("val x = 2; x", tInt)
       case ("{fun x -> x; 2}", tFun tUnit tInt)
-      case ("val id = {fun x -> x}; id (val x = id 0)", tUnit)
+      case ("val id = {fun x -> x}; id (); id 0", tInt)
       case ("{if true -> 1; else 0}", tInt)
-      case ("{if true -> (val x = 0)}", tUnit)
+      case ("{if true -> val x = 0}", tUnit)
       run body
     }
 

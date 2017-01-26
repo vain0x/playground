@@ -307,6 +307,8 @@ module TypeInferer =
 
     member this.Run() =
       match expression with
+      | UnitExpression _ ->
+        inferer |> unify t TypeExpression.unit
       | IntExpression _ ->
         inferer |> unify t TypeExpression.int
       | BoolExpression _ ->
