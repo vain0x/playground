@@ -76,7 +76,7 @@ type Expression =
   | ThenExpression
     of Position * Expression * Expression
   | ValExpression
-    of Pattern * Expression
+    of Position * Pattern * Expression
 with
   member this.Position =
     match this with
@@ -98,8 +98,8 @@ with
       position
     | ThenExpression (position, _, _) ->
       position
-    | ValExpression (pattern, _) ->
-      pattern.Position
+    | ValExpression (position, _, _) ->
+      position
 
   member this.PositionFree =
     match this with
@@ -122,8 +122,8 @@ with
       ApplyExpression (Position.empty, left.PositionFree, right.PositionFree)
     | ThenExpression (_, left, right) ->
       ThenExpression (Position.empty, left.PositionFree, right.PositionFree)
-    | ValExpression (pattern, expression) ->
-      ValExpression (pattern.PositionFree, expression.PositionFree)
+    | ValExpression (_, pattern, expression) ->
+      ValExpression (Position.empty, pattern.PositionFree, expression.PositionFree)
 
 and IfClause =
   | IfClause

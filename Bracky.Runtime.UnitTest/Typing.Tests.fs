@@ -137,6 +137,8 @@ module TypeInfererTest =
       case ("val () = (val x = 0)", tUnit)
       case ("val x = 2", tUnit)
       case ("val x = 2; x", tInt)
+      case ("val f x = x + 1; f", tFun tInt tInt)
+      case ("val f x y = (x; y); f () 1", tInt)
       // fun
       case ("{fun () -> 1}", tFun tUnit tInt)
       case ("{fun x -> x; 2}", tFun tUnit tInt)

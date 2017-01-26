@@ -345,7 +345,7 @@ module TypeInferer =
         this.InferApply(left, right)
       | ThenExpression (_, left, right) ->
         this.InferThen(left, right)
-      | ValExpression (pattern, expression) ->
+      | ValExpression (_, pattern, expression) ->
         this.InferVal(pattern, expression)
 
   let infer expression t inferer =

@@ -43,7 +43,7 @@ module ExpressionBuilders =
     vApp (vApp (vOp MulOperator) left) right
 
   let vVal pattern expression =
-    ValExpression (pattern, expression)
+    ValExpression (p, pattern, expression)
 
   let vThen left right =
     ThenExpression (p, left, right)
@@ -84,6 +84,7 @@ module ParsersTest =
     let addParser = Parsers.additiveExpressionParser
     let valParser = Parsers.valExpressionParser
     let thenParser = Parsers.thenExpressionParser
+    let exParser = Parsers.expressionParser
 
     let ``test expression parsers`` =
       let body (parser: Parser<Expression, unit>, source, expected: Expression) =
@@ -111,6 +112,16 @@ module ParsersTest =
         case (addParser, "2 * 3 + 4", vAdd (vMul (vInt 2L) (vInt 3L)) (vInt 4L))
         case (addParser, "2 + 3 * 4", vAdd (vInt 2L) (vMul (vInt 3L) (vInt 4L)))
         case (valParser, "val x = 1", vVal (pVar "x") (vInt 1L))
+        case
+          ( valParser
+          , "val f x = x + 1"
+          , vVal (pVar "f") (vFun (pVar "x") (vAdd (vVar "x") (vInt 1L)))
+          )
+        case
+          ( valParser
+          , "val f x y = x + y"
+          , vVal (pVar "f") (vFun (pVar "x") (vFun (pVar "y") (vAdd (vVar "x") (vVar "y"))))
+          )
         case
           ( thenParser
           , "val x = 1 + 2; val y = 3"
@@ -170,5 +181,6 @@ module ParsersTest =
         case (varParser, "true")
         case (intParser, "1x")
         case (thenParser, "1;;2")
+        case (valParser, "val = ()")
         run body
       }

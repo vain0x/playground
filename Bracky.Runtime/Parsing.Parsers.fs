@@ -4,6 +4,12 @@ open System
 open DotNetKit.FSharp.ErrorHandling
 open FParsec
 
+module private List =
+  let decompose =
+    function
+    | [] -> invalidOp "List has no value."
+    | x :: xs -> (x, xs)
+
 module Parsers =
   type private Tree<'x> =
     | Leaf
@@ -238,11 +244,18 @@ module Parsers =
 
   let valExpressionParser =
     parse {
+      let! position = getPosition
       do! keywordParser "val" >>. blankParser
-      let! pattern = patternParser
-      do! blankParser >>. skipChar '=' >>. blankParser
-      let! expression = additiveExpressionParser
-      return ValExpression (pattern, expression)
+      let! patterns =
+        sepBy1 (patternParser .>> blankParser) (notFollowedBy (skipChar '='))
+      do! skipChar '=' >>. blankParser
+      let! body = additiveExpressionParser
+      let (pattern, parameters) = patterns |> List.decompose
+      let body =
+        parameters |> List.rev |> List.fold
+          (fun body parameter -> FunExpression (position, parameter, body))
+          body
+      return ValExpression (position, pattern, body)
     }
 
   let definitiveExpressionParser =
