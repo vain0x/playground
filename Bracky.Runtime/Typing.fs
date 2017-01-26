@@ -243,6 +243,14 @@ module TypeInferer =
     let infer expression' t' inferer' =
       InferFunction(Some expression, expression', t', inferer').Run()
 
+    member this.InferOperator(operator) =
+      match operator with
+      | AddOperator
+      | MulOperator ->
+        let tFun = FunTypeExpression
+        let tInt = TypeExpression.int
+        inferer |> unify t (tFun (tInt, tFun (tInt, tInt)))
+
     member this.InferVar(identifier) =
       match inferer.TypeEnvironment.TryFind(identifier) with
       | Some (typeScheme: TypeScheme) ->
@@ -290,23 +298,16 @@ module TypeInferer =
       then inferer
       else inferer |> unify t TypeExpression.unit
 
-    member this.InferBinaryOperation(operator, left, right) =
-      match operator with
-      | ApplyOperator ->
-        let tv = TypeVariable.fresh () |> VarTypeExpression
-        inferer
-        |> infer left (FunTypeExpression (tv, t))
-        |> infer right tv
-      | ThenOperator ->
-        inferer
-        |> infer left TypeExpression.unit
-        |> infer right t
-      | AddOperator
-      | MulOperator ->
-        inferer
-        |> infer left TypeExpression.int
-        |> infer right TypeExpression.int
-        |> unify t TypeExpression.int
+    member this.InferApply(left, right) =
+      let tv = TypeVariable.fresh () |> VarTypeExpression
+      inferer
+      |> infer left (FunTypeExpression (tv, t))
+      |> infer right tv
+
+    member this.InferThen(left, right) =
+      inferer
+      |> infer left TypeExpression.unit
+      |> infer right t
 
     member this.InferVal(pattern, right) =
       match pattern with
@@ -332,14 +333,18 @@ module TypeInferer =
         inferer |> unify t TypeExpression.int
       | BoolExpression _ ->
         inferer |> unify t TypeExpression.bool
+      | OperatorExpression (_, operator) ->
+        this.InferOperator(operator)
       | VarExpression (_, identifier) ->
         this.InferVar(identifier)
       | FunExpression (_, pattern, expression) ->
         this.InferFun(pattern, expression)
       | IfExpression (headClause, tailClauses) ->
         this.InferIf(Array.append [|headClause|] tailClauses)
-      | BinaryOperationExpression (operator, left, right) ->
-        this.InferBinaryOperation(operator, left, right)
+      | ApplyExpression (_, left, right) ->
+        this.InferApply(left, right)
+      | ThenExpression (_, left, right) ->
+        this.InferThen(left, right)
       | ValExpression (pattern, expression) ->
         this.InferVal(pattern, expression)
 

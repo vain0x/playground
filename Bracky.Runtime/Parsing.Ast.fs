@@ -52,11 +52,9 @@ with
     | VariablePattern (_, variable) ->
       VariablePattern (Position.empty, Variable.positionFree variable.Name)
 
-type BinaryOperator =
-  | ApplyOperator
+type Operator =
   | AddOperator
   | MulOperator
-  | ThenOperator
 
 type Expression =
   | UnitExpression
@@ -65,14 +63,18 @@ type Expression =
     of Position * int64
   | BoolExpression
     of Position * bool
+  | OperatorExpression
+    of Position * Operator
   | VarExpression
     of Position * string
   | FunExpression
     of Position * Pattern * Expression
   | IfExpression
     of IfClause * array<IfClause>
-  | BinaryOperationExpression
-    of BinaryOperator * Expression * Expression
+  | ApplyExpression
+    of Position * Expression * Expression
+  | ThenExpression
+    of Position * Expression * Expression
   | ValExpression
     of Pattern * Expression
 with
@@ -84,14 +86,18 @@ with
       position
     | BoolExpression (position, _) ->
       position
+    | OperatorExpression (position, _) ->
+      position
     | VarExpression (position, _) ->
       position
     | FunExpression (position, _, _) ->
       position
     | IfExpression (clause, _) ->
       clause.Position
-    | BinaryOperationExpression (_, left, _) ->
-      left.Position
+    | ApplyExpression (position, _, _) ->
+      position
+    | ThenExpression (position, _, _) ->
+      position
     | ValExpression (pattern, _) ->
       pattern.Position
 
@@ -103,6 +109,8 @@ with
       IntExpression (Position.empty, value)
     | BoolExpression (_, value) ->
       BoolExpression (Position.empty, value)
+    | OperatorExpression (_, operator) ->
+      OperatorExpression (Position.empty, operator)
     | VarExpression (_, name) ->
       VarExpression (Position.empty, name)
     | FunExpression (_, pattern, expression) ->
@@ -110,8 +118,10 @@ with
     | IfExpression (head, tail) ->
       let tail = tail |> Array.map (fun c -> c.PositionFree)
       IfExpression (head.PositionFree, tail)
-    | BinaryOperationExpression (operator, left, right) ->
-      BinaryOperationExpression (operator, left.PositionFree, right.PositionFree)
+    | ApplyExpression (_, left, right) ->
+      ApplyExpression (Position.empty, left.PositionFree, right.PositionFree)
+    | ThenExpression (_, left, right) ->
+      ThenExpression (Position.empty, left.PositionFree, right.PositionFree)
     | ValExpression (pattern, expression) ->
       ValExpression (pattern.PositionFree, expression.PositionFree)
 

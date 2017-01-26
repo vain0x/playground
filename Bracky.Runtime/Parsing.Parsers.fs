@@ -194,32 +194,49 @@ module Parsers =
     <|> attempt ifExpressionParser
     <|> attempt unitExpressionParser
     <|> parenthesisExpressionParser
-    
-  let leftAssociatedOperationParser termParser operatorParser operator =
-    chainl1
-      termParser
-      (attempt (blankParser >>. operatorParser >>. blankParser)
-        |>> (fun () left right -> BinaryOperationExpression (operator, left, right)))
-
-  let rightAssociatedOperationParser termParser operatorParser operator =
-    chainr1
-      termParser
-      (attempt (blankParser >>. operatorParser >>. blankParser >>. followedBy termParser)
-        |>> (fun () left right -> BinaryOperationExpression (operator, left, right)))
 
   let applyExpressionParser: Parser<Expression> =
-    chainl1
-      atomicExpressionParser
-      (attempt (blankParser >>. followedBy atomicExpressionParser)
-        |>> (fun () left right -> BinaryOperationExpression (ApplyOperator, left, right)))
+    parse {
+      let! position = getPosition
+      let separatorParser =
+        parse {
+          do! blankParser
+          do! followedBy atomicExpressionParser
+          return (fun left right -> ApplyExpression (position, left, right))
+        }
+      return! chainl1 atomicExpressionParser (attempt separatorParser)
+    }
 
-  let multitiveExpressionParser: Parser<Expression> =
-    leftAssociatedOperationParser applyExpressionParser (skipChar '*') MulOperator
+  let leftAssociatedOperationParser termParser operatorParser =
+    let separatorParser =
+      parse {
+        do! blankParser
+        let! operator = operatorParser
+        do! blankParser
+        let position = (operator: Expression).Position
+        let f left right =
+          ApplyExpression (position, ApplyExpression (position, operator, left), right)
+        return f
+      }
+    chainl1 termParser (attempt separatorParser)
 
-  let additiveExpressionParser: Parser<Expression> =
-    leftAssociatedOperationParser multitiveExpressionParser (skipChar '+') AddOperator
+  let operatorParser operator representation =
+    parse {
+      let! position = getPosition
+      do! skipString representation
+      do! notFollowedBy (skipAnyOf "<>-=+*!?%&|^~:")
+      return OperatorExpression(position, operator)
+    }
 
-  let valExpressionParser: Parser<Expression> =
+  let multitiveExpressionParser =
+    leftAssociatedOperationParser
+      applyExpressionParser (operatorParser MulOperator "*")
+
+  let additiveExpressionParser =
+    leftAssociatedOperationParser
+      multitiveExpressionParser (operatorParser AddOperator "+")
+
+  let valExpressionParser =
     attempt
       (parse {
         do! keywordParser "val" >>. blankParser
@@ -231,7 +248,16 @@ module Parsers =
     <|> additiveExpressionParser
 
   let thenExpressionParser: Parser<Expression> =
-    rightAssociatedOperationParser valExpressionParser (skipChar ';') ThenOperator
+    let termParser = valExpressionParser
+    let separatorParser =
+      parse {
+        do! blankParser
+        let! position = getPosition
+        do! skipChar ';' >>. blankParser
+        do! followedBy termParser // TODO: improve
+        return (fun left right -> ThenExpression (position, left, right))
+      }
+    chainr1 termParser (attempt separatorParser)
 
   expressionParserRef :=
     thenExpressionParser
