@@ -151,7 +151,7 @@ with
 
 /// From variables to type schemes.
 [<Sealed>]
-type TypeEnvironment private (map: Map<int64, ForallTypeScheme>) =
+type TypeEnvironment private (map: Map<string, ForallTypeScheme>) =
   let freeTypeVariableSet =
     lazy
       map |> Map.fold
@@ -177,6 +177,9 @@ type TypeEnvironment private (map: Map<int64, ForallTypeScheme>) =
   static member val Empty =
     TypeEnvironment(Map.empty)
 
+type VariableTypeMap =
+  Map<int64, ForallTypeScheme>
+
 type TypeInferer =
   internal
     {
@@ -184,6 +187,8 @@ type TypeInferer =
         Substitution
       TypeEnvironment:
         TypeEnvironment
+      VariableTypeMap:
+        VariableTypeMap
     }
 
 [<CompilationRepresentation(CompilationRepresentationFlags.ModuleSuffix)>]
@@ -196,6 +201,8 @@ module TypeInferer =
         Substitution.Empty
       TypeEnvironment =
         TypeEnvironment.Empty
+      VariableTypeMap =
+        Map.empty
     }
 
   let substitution (inferer: TypeInferer) =
@@ -208,7 +215,13 @@ module TypeInferer =
     { inferer with Substitution = inferer.Substitution.Extend(tv, t) }
 
   let conclude variable typeScheme (inferer: TypeInferer) =
-    { inferer with TypeEnvironment = inferer.TypeEnvironment.Add(variable, typeScheme) }
+    { inferer
+      with
+        TypeEnvironment =
+          inferer.TypeEnvironment.Add(variable.Name, typeScheme)
+        VariableTypeMap =
+          inferer.VariableTypeMap |> Map.add variable.Id typeScheme
+    }
 
   let local f (inferer: TypeInferer) =
     { f inferer with TypeEnvironment = inferer.TypeEnvironment }

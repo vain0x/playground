@@ -78,8 +78,8 @@ module Parsers =
   let variablePatternParser: Parser<Pattern> =
     parse {
       let! position = getPosition
-      let! identifier = identifierParser
-      return VariablePattern (position, Variable.create identifier)
+      let! name = identifierParser
+      return VariablePattern (position, VariableOccurrence.create name)
     }
 
   patternParserRef :=

@@ -2,8 +2,7 @@
 
 open FParsec
 
-/// Represents an occurence of variable.
-type Variable =
+type VariableOccurrence =
   {
     Name:
       string
@@ -12,7 +11,7 @@ type Variable =
   }
 
 [<CompilationRepresentation(CompilationRepresentationFlags.ModuleSuffix)>]
-module Variable =
+module VariableOccurrence =
   let count = ref 0L
 
   let create name =
@@ -23,9 +22,15 @@ module Variable =
       Id = identifier
     }
 
+  let positionFree name =
+    {
+      Name = name
+      Id = -1L
+    }
+
 type Pattern =
   | VariablePattern
-    of Position * Variable
+    of Position * VariableOccurrence
 with
   member this.Position =
     match this with
@@ -34,8 +39,8 @@ with
 
   member this.SetPosition(position) =
     match this with
-    | VariablePattern (_, name) ->
-      VariablePattern (position, name)
+    | VariablePattern (_, occurence) ->
+      VariablePattern (position, VariableOccurrence.positionFree occurence.Name)
 
 type BinaryOperator =
   | ApplyOperator
