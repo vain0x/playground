@@ -2,6 +2,10 @@
 
 open FParsec
 
+[<CompilationRepresentation(CompilationRepresentationFlags.ModuleSuffix)>]
+module Position =
+  let empty = Position("", 0L, 0L, 0L)
+
 type VariableOccurrence =
   {
     Name:
@@ -37,10 +41,10 @@ with
     | VariablePattern (position, _) ->
       position
 
-  member this.SetPosition(position) =
+  member this.PositionFree =
     match this with
     | VariablePattern (_, occurence) ->
-      VariablePattern (position, VariableOccurrence.positionFree occurence.Name)
+      VariablePattern (Position.empty, VariableOccurrence.positionFree occurence.Name)
 
 type BinaryOperator =
   | ApplyOperator
@@ -81,27 +85,24 @@ with
       left.Position
     | ValExpression (pattern, _) ->
       pattern.Position
-      
-  member this.SetPosition(position) =
+
+  member this.PositionFree =
     match this with
     | IntExpression (_, value) ->
-      IntExpression (position, value)
+      IntExpression (Position.empty, value)
     | BoolExpression (_, value) ->
-      BoolExpression (position, value)
+      BoolExpression (Position.empty, value)
     | RefExpression (_, name) ->
-      RefExpression (position, name)
+      RefExpression (Position.empty, name)
     | FunExpression (_, pattern, expression) ->
-      let expression = expression.SetPosition(position)
-      FunExpression (position, pattern.SetPosition(position), expression)
+      FunExpression (Position.empty, pattern.PositionFree, expression.PositionFree)
     | IfExpression (head, tail) ->
-      let tail = tail |> Array.map (fun c -> c.SetPosition(position))
-      IfExpression (head.SetPosition(position), tail)
+      let tail = tail |> Array.map (fun c -> c.PositionFree)
+      IfExpression (head.PositionFree, tail)
     | BinaryOperationExpression (operator, left, right) ->
-      let left = left.SetPosition(position)
-      let right = right.SetPosition(position)
-      BinaryOperationExpression (operator, left, right)
+      BinaryOperationExpression (operator, left.PositionFree, right.PositionFree)
     | ValExpression (pattern, expression) ->
-      ValExpression (pattern.SetPosition(position), expression.SetPosition(position))
+      ValExpression (pattern.PositionFree, expression.PositionFree)
 
 and IfClause =
   | IfClause
@@ -116,9 +117,9 @@ with
     | ElseClause expression ->
       expression.Position
 
-  member this.SetPosition(position) =
+  member this.PositionFree =
     match this with
     | IfClause (condition, expression) ->
-      IfClause (condition.SetPosition(position), expression.SetPosition(position))
+      IfClause (condition.PositionFree, expression.PositionFree)
     | ElseClause expression ->
-      ElseClause (expression.SetPosition(position))
+      ElseClause (expression.PositionFree)

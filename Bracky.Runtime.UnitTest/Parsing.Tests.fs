@@ -5,7 +5,7 @@ open Persimmon
 open Persimmon.Syntax.UseTestNameByReflection
 
 module ExpressionBuilders =
-  let p = Position("", 0L, 0L, 0L)
+  let p = Position.empty
 
   let pVar name = VariablePattern (p, VariableOccurrence.positionFree name)
 
@@ -61,8 +61,8 @@ module ParsersTest =
       let body (parser: Parser<Expression, unit>, source, expected: Expression) =
         test {
           let! actual = assertParse parser source
-          let actual = actual |> Option.map (fun x -> x.SetPosition(p))
-          let expected = expected.SetPosition(p) |> Some
+          let actual = actual |> Option.map (fun x -> x.PositionFree)
+          let expected = expected.PositionFree |> Some
           do! actual |> assertEquals expected
         }
       parameterize {
