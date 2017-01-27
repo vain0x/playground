@@ -78,16 +78,16 @@ module ``test Substitution`` =
       run body
     }
 
-module ForallTypeSchemeTest =
+module TypeSchemeTest =
   let ``test FreeTypeVariableSet`` =
     test {
-      let ts = ForallTypeScheme ([| tx; ty |], tFun (tRef tx) (tFun (tRef ty) (tRef tz)))
+      let ts = TypeScheme ([| tx; ty |], tFun (tRef tx) (tFun (tRef ty) (tRef tz)))
       do! ts.FreeTypeVariableSet |> assertEquals (Set.singleton tz)
     }
 
   let ``test Instantiate`` =
     test {
-      let ts = ForallTypeScheme ([| tx; ty |], tFun (tRef tx) (tFun (tRef ty) (tRef tz)))
+      let ts = TypeScheme ([| tx; ty |], tFun (tRef tx) (tFun (tRef ty) (tRef tz)))
       match ts.Instantiate() with
       | FunTypeExpression
         ( RefTypeExpression tx'

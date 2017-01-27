@@ -136,12 +136,12 @@ module Substitution =
     | (_, _) ->
       failwith "TODO: error handling"
 
-type ForallTypeScheme =
-  | ForallTypeScheme
+type TypeScheme =
+  | TypeScheme
     of array<TypeVariable> * TypeExpression
 with
   member this.Instantiate() =
-    let (ForallTypeScheme (tvs, t)) = this
+    let (TypeScheme (tvs, t)) = this
     let bindings =
       tvs |> Array.map
         (fun tv -> (tv, TypeVariable.fresh () |> RefTypeExpression))
@@ -150,12 +150,12 @@ with
     substitution.Apply(t)
 
   member this.FreeTypeVariableSet =
-    let (ForallTypeScheme (tvs, t)) = this
+    let (TypeScheme (tvs, t)) = this
     Set.difference (TypeExpression.typeVariables t |> Set.ofSeq) (tvs |> Set.ofArray)
 
 /// From variables to type schemes.
 [<Sealed>]
-type TypeEnvironment private (map: Map<string, ForallTypeScheme>) =
+type TypeEnvironment private (map: Map<string, TypeScheme>) =
   /// Converts a type expression to a type scheme by binding all free variables with ∀.
   let generalize t =
     let freeTypeVariableSet =
@@ -166,7 +166,7 @@ type TypeEnvironment private (map: Map<string, ForallTypeScheme>) =
       t |> TypeExpression.typeVariables
       |> Seq.filter (fun tv -> freeTypeVariableSet |> Set.contains tv |> not)
       |> Seq.toArray
-    ForallTypeScheme (tvs, t)
+    TypeScheme (tvs, t)
 
   member this.TryFind(identifier) =
     map |> Map.tryFind identifier
@@ -181,7 +181,7 @@ type TypeEnvironment private (map: Map<string, ForallTypeScheme>) =
     TypeEnvironment(Map.empty)
 
 type VariableTypeMap =
-  Map<int64, ForallTypeScheme>
+  Map<int64, TypeScheme>
 
 type TypeInferer =
   internal
@@ -238,7 +238,7 @@ module TypeInferer =
 
     member this.InferRef(identifier) =
       match inferer.TypeEnvironment.TryFind(identifier) with
-      | Some (typeScheme: ForallTypeScheme) ->
+      | Some (typeScheme: TypeScheme) ->
         let t' = typeScheme.Instantiate()
         inferer |> unify t t'
       | None ->
@@ -254,7 +254,7 @@ module TypeInferer =
       |> local
           (fun inferer ->
             inferer
-            |> conclude variable (ForallTypeScheme ([||], tv))
+            |> conclude variable (TypeScheme ([||], tv))
             |> infer expression tu
           )
 
