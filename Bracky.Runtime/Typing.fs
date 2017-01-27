@@ -48,15 +48,6 @@ with
         let argumentList = arguments |> Array.map string |> String.concat " "
         sprintf "(%s %s)" (string kind) argumentList
 
-  member this.TypeVariableSet =
-    match this with
-    | RefTypeExpression tv ->
-      Set.singleton tv
-    | FunTypeExpression (s, t) ->
-      Set.union s.TypeVariableSet t.TypeVariableSet
-    | AppTypeExpression (_, arguments) ->
-      arguments |> Seq.map (fun t -> t.TypeVariableSet) |> Set.unionMany
-
 [<CompilationRepresentation(CompilationRepresentationFlags.ModuleSuffix)>]
 module TypeExpression =
   let unit =
@@ -67,6 +58,19 @@ module TypeExpression =
 
   let bool =
     AppTypeExpression (Kind.Bool, [||])
+
+  let rec typeVariables t =
+    seq {
+      match t with
+      | RefTypeExpression tv ->
+        yield tv
+      | FunTypeExpression (s, u) ->
+        yield! typeVariables s
+        yield! typeVariables u
+      | AppTypeExpression (_, ts) ->
+        for u in ts do
+          yield! typeVariables u
+    }
 
 [<Sealed>]
 type Substitution private (map: Map<_, _>) =
@@ -116,7 +120,7 @@ module Substitution =
     | (RefTypeExpression tv, RefTypeExpression tv') when tv = tv' ->
       this.Extend(tv, t')
     | (RefTypeExpression tv, _)
-      when (t': TypeExpression).TypeVariableSet |> Set.contains tv |> not ->
+      when t' |> TypeExpression.typeVariables |> Seq.forall ((<>) tv) ->
       this.Extend(tv, t')
     | (_, RefTypeExpression tv) ->
       unify t' t this
@@ -147,22 +151,21 @@ with
 
   member this.FreeTypeVariableSet =
     let (ForallTypeScheme (tvs, t)) = this
-    Set.difference t.TypeVariableSet (tvs |> Set.ofArray)
+    Set.difference (TypeExpression.typeVariables t |> Set.ofSeq) (tvs |> Set.ofArray)
 
 /// From variables to type schemes.
 [<Sealed>]
 type TypeEnvironment private (map: Map<string, ForallTypeScheme>) =
-  let freeTypeVariableSet =
-    lazy
+  /// Converts a type expression to a type scheme by binding all free variables with ∀.
+  let generalize t =
+    let freeTypeVariableSet =
       map |> Map.fold
         (fun set _ ts -> Set.union set ts.FreeTypeVariableSet)
         Set.empty
-
-  /// Converts a type expression to a type scheme by binding all free variables with ∀.
-  let generalize t =
     let tvs =
-      Set.difference (t: TypeExpression).TypeVariableSet freeTypeVariableSet.Value
-      |> Set.toArray
+      t |> TypeExpression.typeVariables
+      |> Seq.filter (fun tv -> freeTypeVariableSet |> Set.contains tv |> not)
+      |> Seq.toArray
     ForallTypeScheme (tvs, t)
 
   member this.TryFind(identifier) =

@@ -21,16 +21,16 @@ module TypeExpressionBuilders =
 open TypeExpressionBuilders
 
 module TypeExpressionTest =
-  let ``test TypeVariableSet`` =
+  let ``test typeVariables`` =
     let body (t, expected) =
       test {
-        do! (t: TypeExpression).TypeVariableSet |> assertEquals expected
+        do! t |> TypeExpression.typeVariables |> Set.ofSeq |> assertEquals (expected |> Set.ofList)
       }
     parameterize {
-      case (tUnit, Set.empty)
-      case (tRef tx, Set.singleton tx)
-      case (tFun (tRef tx) (tRef tx), Set.singleton tx)
-      case (tFun (tRef tx) (tFun tUnit (tRef ty)), set [tx; ty])
+      case (tUnit, [])
+      case (tRef tx, [tx])
+      case (tFun (tRef tx) (tRef tx), [tx])
+      case (tFun (tRef tx) (tFun tUnit (tRef ty)), [tx; ty])
       run body
     }
 
