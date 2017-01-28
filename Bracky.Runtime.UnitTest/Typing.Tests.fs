@@ -170,7 +170,7 @@ module TypeInfererTest =
       // literals
       case "x"
       // if
-      case "{if 1 -> then; else false}"
+      case "{if 1 -> true; else false}"
       case "{if true -> 1; else false}"
       case "{if true -> 1}"
       // apply
