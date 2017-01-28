@@ -27,6 +27,9 @@ module ExpressionBuilders =
   let vVar identifier =
     VarExpression (p, identifier)
 
+  let vVal pattern expression =
+    ValExpression (p, pattern, expression)
+
   let vFun pattern body =
     FunExpression (p, pattern, body)
 
@@ -41,9 +44,6 @@ module ExpressionBuilders =
 
   let vMul left right =
     vApp (vApp (vOp MulOperator) left) right
-
-  let vVal pattern expression =
-    ValExpression (p, pattern, expression)
 
   let vThen left right =
     ThenExpression (p, left, right)
@@ -78,11 +78,11 @@ module ParsersTest =
     let boolParser = Parsers.boolExpressionParser
     let varParser = Parsers.varExpressionParser
     let parenParser = Parsers.parenthesisExpressionParser
+    let valParser = Parsers.valExpressionParser
     let funParser = Parsers.funExpressionParser
     let ifParser = Parsers.ifExpressionParser
     let mulParser = Parsers.multitiveExpressionParser
     let addParser = Parsers.additiveExpressionParser
-    let valParser = Parsers.valExpressionParser
     let thenParser = Parsers.thenExpressionParser
     let exParser = Parsers.expressionParser
 
@@ -111,20 +111,20 @@ module ParsersTest =
         case (addParser, "1 + (2 + 3)", vAdd (vInt 1L) (vAdd (vInt 2L) (vInt 3L)))
         case (addParser, "2 * 3 + 4", vAdd (vMul (vInt 2L) (vInt 3L)) (vInt 4L))
         case (addParser, "2 + 3 * 4", vAdd (vInt 2L) (vMul (vInt 3L) (vInt 4L)))
-        case (valParser, "val x = 1", vVal (pVar "x") (vInt 1L))
+        case (valParser, "{val x = 1}", vVal (pVar "x") (vInt 1L))
         case
           ( valParser
-          , "val f x = x + 1"
+          , "{val f x = x + 1}"
           , vVal (pVar "f") (vFun (pVar "x") (vAdd (vVar "x") (vInt 1L)))
           )
         case
           ( valParser
-          , "val f x y = x + y"
+          , "{val f x y = x + y}"
           , vVal (pVar "f") (vFun (pVar "x") (vFun (pVar "y") (vAdd (vVar "x") (vVar "y"))))
           )
         case
           ( thenParser
-          , "val x = 1 + 2; val y = 3"
+          , "{val x = 1 + 2}; {val y = 3}"
           , vThen (vVal (pVar "x") (vAdd (vInt 1L) (vInt 2L))) (vVal (pVar "y") (vInt 3L))
           )
         case
@@ -135,7 +135,7 @@ module ParsersTest =
         case (funParser, "{fun x -> 0}", vFun (pVar "x") (vInt 0L))
         case
           ( funParser
-          , "{ fun x -> val y = 1; 2; }"
+          , "{ fun x -> {val y = 1}; 2; }"
           , vFun (pVar "x") (vThen (vVal (pVar "y") (vInt 1L)) (vInt 2L))
           )
         case
@@ -155,13 +155,13 @@ module ParsersTest =
           )
         case
           ( ifParser
-          , "{ if true -> val x = 1; 2; if false -> 3; else 4 }"
+          , "{ if true -> {val x = 1}; 2; if false -> 3; else 4 }"
           , vIf vTrue (vThen (vVal (pVar "x") (vInt 1L)) (vInt 2L))
               [|IfClause (vFalse, (vInt 3L)); ElseClause (vInt 4L)|]
           )
         case
           ( ifParser
-          , "{ if true -> val x = 1; 2; else 3; }"
+          , "{ if true -> {val x = 1}; 2; else 3; }"
           , vIf vTrue (vThen (vVal (pVar "x") (vInt 1L)) (vInt 2L)) [|ElseClause (vInt 3L)|]
           )
         run body
@@ -181,6 +181,6 @@ module ParsersTest =
         case (varParser, "true")
         case (intParser, "1x")
         case (thenParser, "1;;2")
-        case (valParser, "val = ()")
+        case (valParser, "{val = ()}")
         run body
       }

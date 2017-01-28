@@ -67,6 +67,8 @@ type Expression =
     of Position * Operator
   | VarExpression
     of Position * string
+  | ValExpression
+    of Position * Pattern * Expression
   | FunExpression
     of Position * Pattern * Expression
   | IfExpression
@@ -75,8 +77,6 @@ type Expression =
     of Position * Expression * Expression
   | ThenExpression
     of Position * Expression * Expression
-  | ValExpression
-    of Position * Pattern * Expression
 with
   member this.Position =
     match this with
@@ -90,6 +90,8 @@ with
       position
     | VarExpression (position, _) ->
       position
+    | ValExpression (position, _, _) ->
+      position
     | FunExpression (position, _, _) ->
       position
     | IfExpression (clause, _) ->
@@ -97,8 +99,6 @@ with
     | ApplyExpression (position, _, _) ->
       position
     | ThenExpression (position, _, _) ->
-      position
-    | ValExpression (position, _, _) ->
       position
 
   member this.PositionFree =
@@ -113,6 +113,8 @@ with
       OperatorExpression (Position.empty, operator)
     | VarExpression (_, name) ->
       VarExpression (Position.empty, name)
+    | ValExpression (_, pattern, expression) ->
+      ValExpression (Position.empty, pattern.PositionFree, expression.PositionFree)
     | FunExpression (_, pattern, expression) ->
       FunExpression (Position.empty, pattern.PositionFree, expression.PositionFree)
     | IfExpression (head, tail) ->
@@ -122,8 +124,6 @@ with
       ApplyExpression (Position.empty, left.PositionFree, right.PositionFree)
     | ThenExpression (_, left, right) ->
       ThenExpression (Position.empty, left.PositionFree, right.PositionFree)
-    | ValExpression (_, pattern, expression) ->
-      ValExpression (Position.empty, pattern.PositionFree, expression.PositionFree)
 
 and IfClause =
   | IfClause

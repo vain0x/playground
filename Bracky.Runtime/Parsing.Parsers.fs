@@ -142,6 +142,24 @@ module Parsers =
   let rightBracketParser: Parser<unit> =
     optional (skipChar ';' >>. blankParser) >>. skipChar '}'
 
+  let valExpressionParser =
+    parse {
+      let! position = getPosition
+      do! skipChar '{' >>. blankParser
+      do! keywordParser "val" >>. blankParser
+      let! patterns =
+        sepBy1 (patternParser .>> blankParser) (notFollowedBy (skipChar '='))
+      do! skipChar '=' >>. blankParser
+      let! body = expressionParser
+      do! blankParser >>. rightBracketParser
+      let (pattern, parameters) = patterns |> List.decompose
+      let body =
+        parameters |> List.rev |> List.fold
+          (fun body parameter -> FunExpression (position, parameter, body))
+          body
+      return ValExpression (position, pattern, body)
+    }
+
   let funExpressionParser: Parser<Expression> =
     parse {
       let! position = getPosition
@@ -196,6 +214,7 @@ module Parsers =
     attempt boolExpressionParser
     <|> attempt varExpressionParser
     <|> attempt intExpressionParser
+    <|> attempt valExpressionParser
     <|> attempt funExpressionParser
     <|> attempt ifExpressionParser
     <|> attempt unitExpressionParser
@@ -242,28 +261,8 @@ module Parsers =
     leftAssociatedOperationParser
       multitiveExpressionParser (operatorParser AddOperator "+")
 
-  let valExpressionParser =
-    parse {
-      let! position = getPosition
-      do! keywordParser "val" >>. blankParser
-      let! patterns =
-        sepBy1 (patternParser .>> blankParser) (notFollowedBy (skipChar '='))
-      do! skipChar '=' >>. blankParser
-      let! body = additiveExpressionParser
-      let (pattern, parameters) = patterns |> List.decompose
-      let body =
-        parameters |> List.rev |> List.fold
-          (fun body parameter -> FunExpression (position, parameter, body))
-          body
-      return ValExpression (position, pattern, body)
-    }
-
-  let definitiveExpressionParser =
-    attempt valExpressionParser
-    <|> additiveExpressionParser
-
   let thenExpressionParser: Parser<Expression> =
-    let termParser = definitiveExpressionParser
+    let termParser = additiveExpressionParser
     let separatorParser =
       parse {
         do! blankParser
