@@ -1,43 +1,26 @@
-trait Stack[+A] {
-  def push[E >: A](e: E): Stack[E]
-  def top: A
-  def pop: Stack[A]
-  def isEmpty: Boolean
-}
-
-class NonEmptyStack[+A](private val first: A, private val rest: Stack[A]) extends Stack[A] {
-  def push[E >: A](e: E): Stack[E] =
-    new NonEmptyStack(e, this)
-  def top: A = first
-  def pop: Stack[A] = rest
-  def isEmpty: Boolean = false
-}
-
-case object EmptyStack extends Stack[Nothing] {
-  def push[E >: Nothing](e: E): Stack[E] = new NonEmptyStack[E](e, this)
-  def top: Nothing = throw new IllegalArgumentException("empty stack")
-  def pop: Nothing = throw new IllegalArgumentException("empty stack")
-  def isEmpty: Boolean = true
-}
-
-object Stack {
-  def apply(): Stack[Nothing] = EmptyStack
-}
+import scala.io._
 
 object Hello {
-  def main(args: Array[String]): Unit = {
-    val intStack: Stack[Int] = Stack()
-    println(intStack.equals(EmptyStack))
-
-    val stringStack: Stack[String] = Stack()
-    println(stringStack.equals(EmptyStack))
-
-    def loop(stack: Stack[_]): Unit = {
-      if (! stack.isEmpty) {
-        println(stack.top)
-        loop(stack.pop)
-      }
+  def withFile[X](filePath: String)(f: Source => X): X = {
+    val source = Source.fromFile(filePath)
+    try {
+      f(source)
+    } finally {
+      source.close()
     }
-    loop(Stack().push(2).push(1).push(0))
+  }
+
+  def main(args: Array[String]): Unit = {
+    val currentDirectory = System.getProperty("user.dir")
+    println(s"Current directory: $currentDirectory")
+
+    withFile("input.txt")(source => {
+        var i = 1
+        for (line <- source.getLines()) {
+          println(s"$i: $line")
+          i += 1
+        }
+      }
+    )
   }
 }
