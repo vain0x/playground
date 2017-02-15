@@ -1,42 +1,43 @@
-/**
-  * Represents a point in a plane.
-  * @param x The X component.
-  * @param y The Y component.
-  */
-case class Point(x: Int, y: Int) {
-  def +(r: Point): Point = {
-    Point(x + r.x, y + r.y)
-  }
-
-  override def toString: String = {
-    s"Point($x, $y)"
-  }
+trait Stack[+A] {
+  def push[E >: A](e: E): Stack[E]
+  def top: A
+  def pop: Stack[A]
+  def isEmpty: Boolean
 }
 
-class SuperClass(val x: Int) {
-  val y: Int = x + 1
+class NonEmptyStack[+A](private val first: A, private val rest: Stack[A]) extends Stack[A] {
+  def push[E >: A](e: E): Stack[E] =
+    new NonEmptyStack(e, this)
+  def top: A = first
+  def pop: Stack[A] = rest
+  def isEmpty: Boolean = false
 }
 
-class Subclass(x: Int) extends SuperClass(x) {
-  val z: Int = x + y
+case object EmptyStack extends Stack[Nothing] {
+  def push[E >: Nothing](e: E): Stack[E] = new NonEmptyStack[E](e, this)
+  def top: Nothing = throw new IllegalArgumentException("empty stack")
+  def pop: Nothing = throw new IllegalArgumentException("empty stack")
+  def isEmpty: Boolean = true
 }
 
-class Ref[X](x: X) {
-  var value: X = x
-  def put(x: X): Unit = {
-    value = x
-  }
-  def get = value
+object Stack {
+  def apply(): Stack[Nothing] = EmptyStack
 }
 
 object Hello {
   def main(args: Array[String]): Unit = {
-    println(s"${Point(1, 2) + Point(10, 10)}")
-    println(s"${Point(1, 2).equals(Point(1, 2))}")
-    println(s"${new Subclass(2).z}")
+    val intStack: Stack[Int] = Stack()
+    println(intStack.equals(EmptyStack))
 
-    val r = new Ref(1)
-    r.put(r.get + 1)
-    println(s"${r.value}")
+    val stringStack: Stack[String] = Stack()
+    println(stringStack.equals(EmptyStack))
+
+    def loop(stack: Stack[_]): Unit = {
+      if (! stack.isEmpty) {
+        println(stack.top)
+        loop(stack.pop)
+      }
+    }
+    loop(Stack().push(2).push(1).push(0))
   }
 }
