@@ -79,7 +79,7 @@ namespace DotNetKit.Wpf
         object cancelButtonContent = "Cancel";
 
         /// <summary>
-        /// Gets or sets the content the cancel button contains.
+        /// Gets or sets the content of the cancel button.
         /// "Cancel" (string) by default.
         /// <para lang="ja">
         /// キャンセルボタンに表示する内容を取得・設定する。
