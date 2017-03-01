@@ -43,6 +43,7 @@
                 Padding="20,0,20,0"
                 Click="cancelButton_Click"
                 IsCancel="True"
+                IsDefault="True"
                 />
         </StackPanel>
     </Grid>
