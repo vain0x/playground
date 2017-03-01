@@ -7,7 +7,7 @@
     Width="525"
     Height="350"
     >
-    <TabControl>
+    <TabControl Background="LightGray">
         <TabItem Header="Minimum">
             <local:MinimumSampleControl />
         </TabItem>
