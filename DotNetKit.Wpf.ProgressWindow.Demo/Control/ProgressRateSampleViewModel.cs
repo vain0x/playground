@@ -74,7 +74,7 @@ namespace DotNetKit.Wpf.Demo
 
             Message = "Running...";
 
-            // When the task is completed, update the message.
+            // When the task completed, update the message.
             task.ContinueWith(_ =>
             {
                 switch (task.Status)
