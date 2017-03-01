@@ -20,8 +20,9 @@
                 <RowDefinition Height="*" />
                 <RowDefinition Height="30" />
             </Grid.RowDefinitions>
-            <Label
+            <ContentControl
                 Grid.Row="0"
+                Margin="10,5,10,5"
                 HorizontalAlignment="Left"
                 VerticalAlignment="Center"
                 Content="{Binding Content}"
