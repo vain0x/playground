@@ -16,7 +16,7 @@ using System.Windows.Shapes;
 namespace DotNetKit.Windows.Controls
 {
     /// <summary>
-    /// ToastNotificationControl.xaml の相互作用ロジック
+    /// Represents a control to display <see cref="ToastNotification"/>.
     /// </summary>
     public partial class ToastNotificationControl : UserControl
     {
@@ -29,6 +29,9 @@ namespace DotNetKit.Windows.Controls
             }
         }
 
+        /// <summary>
+        /// Constructs an instance.
+        /// </summary>
         public ToastNotificationControl()
         {
             InitializeComponent();

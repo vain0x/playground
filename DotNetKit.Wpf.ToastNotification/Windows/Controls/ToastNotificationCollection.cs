@@ -10,6 +10,9 @@ using System.Windows.Input;
 
 namespace DotNetKit.Windows.Controls
 {
+    /// <summary>
+    /// Represents a collection of toast notifications.
+    /// </summary>
     public class ToastNotificationCollection
         : ObservableCollection<ToastNotification>
     {
@@ -37,6 +40,9 @@ namespace DotNetKit.Windows.Controls
             }
         }
 
+        /// <summary>
+        /// Constructs an instance.
+        /// </summary>
         public ToastNotificationCollection()
         {
             CollectionChanged += OnCollectionChanged;
