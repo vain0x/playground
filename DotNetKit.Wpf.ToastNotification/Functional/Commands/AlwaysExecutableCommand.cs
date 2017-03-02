@@ -10,7 +10,7 @@ namespace DotNetKit.Functional.Commands
     sealed class AlwaysExecutableCommand
         : ICommand
     {
-        Action execute;
+        readonly Action execute;
 
         public event EventHandler CanExecuteChanged
         {
