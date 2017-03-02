@@ -44,7 +44,7 @@ namespace DotNetKit.Wpf.ToastNotification.Demo
 
         void Add(SimpleToastNotificationTheme theme)
         {
-            ToastNotificationCollection.InsertFirst(
+            ToastNotificationCollection.Add(
                 new SimpleToastNotification(theme)
                 {
                     Title = "Demo",

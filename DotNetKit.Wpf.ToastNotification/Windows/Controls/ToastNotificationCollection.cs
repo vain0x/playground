@@ -13,11 +13,6 @@ namespace DotNetKit.Windows.Controls
     public class ToastNotificationCollection
         : ObservableCollection<ToastNotification>
     {
-        public void InsertFirst(ToastNotification item)
-        {
-            Insert(0, item);
-        }
-
         void OnItemRemoved(object sender, EventArgs e)
         {
             Remove((ToastNotification)sender);
