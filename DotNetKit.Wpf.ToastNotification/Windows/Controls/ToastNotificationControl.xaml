@@ -18,7 +18,7 @@
                         From="1.0"
                         To="0.0"
                         Duration="{Binding FadeDuration}"
-                        BeginTime="00:00:02"
+                        BeginTime="00:00:05"
                         Completed="OnFadeOutCompleted"
                         />
                 </Storyboard>
@@ -30,7 +30,7 @@
             <SeekStoryboard
                 BeginStoryboardName="StoryboardFade"
                 Origin="BeginTime"
-                Offset="00:00:02"
+                Offset="00:00:00"
                 />
         </EventTrigger>
 

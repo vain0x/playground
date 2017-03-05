@@ -20,7 +20,7 @@ namespace DotNetKit.Windows.Controls
         /// Gets the default duration to fade out.
         /// </summary>
         public static Duration DefaultFadeDuration { get; set; } =
-            new Duration(TimeSpan.FromSeconds(8.0));
+            new Duration(TimeSpan.FromSeconds(1.0));
 
         /// <summary>
         /// Gets the duration to fade out.
