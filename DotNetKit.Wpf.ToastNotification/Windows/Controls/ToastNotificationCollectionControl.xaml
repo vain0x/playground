@@ -10,17 +10,9 @@
     d:DesignHeight="300"
     >
     <ItemsControl ItemsSource="{Binding}" Margin="0,0,50,50">
-        <ItemsControl.LayoutTransform>
-            <RotateTransform Angle="180" />
-        </ItemsControl.LayoutTransform>
-        
         <ItemsControl.ItemTemplate>
             <DataTemplate>
-                <controls:ToastNotificationControl Margin="0,0,0,30">
-                    <controls:ToastNotificationControl.LayoutTransform>
-                        <RotateTransform Angle="180" />
-                    </controls:ToastNotificationControl.LayoutTransform>
-                </controls:ToastNotificationControl>
+                <controls:ToastNotificationControl Margin="0,30,0,0" />
             </DataTemplate>
         </ItemsControl.ItemTemplate>
     </ItemsControl>

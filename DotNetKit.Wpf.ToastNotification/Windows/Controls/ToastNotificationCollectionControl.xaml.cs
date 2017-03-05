@@ -16,10 +16,14 @@ using System.Windows.Shapes;
 namespace DotNetKit.Windows.Controls
 {
     /// <summary>
-    /// ToastNotificationCollectionControl.xaml の相互作用ロジック
+    /// Represents a collection control to display notifications.
+    /// The DataContext must be a <see cref="ToastNotificationCollection"/>.
     /// </summary>
     public partial class ToastNotificationCollectionControl : UserControl
     {
+        /// <summary>
+        /// Constructs an instance.
+        /// </summary>
         public ToastNotificationCollectionControl()
         {
             InitializeComponent();

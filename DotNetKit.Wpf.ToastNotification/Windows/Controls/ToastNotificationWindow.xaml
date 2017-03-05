@@ -14,7 +14,7 @@
     WindowStyle="None"
     Topmost="True"
     >
-    <Window.Content>
-        <controls:ToastNotificationCollectionControl />
-    </Window.Content>
+    <controls:ToastNotificationCollectionControl
+        VerticalAlignment="Bottom"
+        />
 </Window>

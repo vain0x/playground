@@ -17,7 +17,7 @@ using System.Windows.Threading;
 namespace DotNetKit.Windows.Controls
 {
     /// <summary>
-    /// ToastNotificationWindow.xaml の相互作用ロジック
+    /// Represents a window to display notifications as if they are on the screen.
     /// </summary>
     public partial class ToastNotificationWindow : Window
     {
@@ -47,6 +47,11 @@ namespace DotNetKit.Windows.Controls
             Adjust();
         }
 
+        /// <summary>
+        /// Constructs an instance.
+        /// </summary>
+        /// <param name="notifications"></param>
+        /// <param name="owner"></param>
         public
             ToastNotificationWindow(
                 ToastNotificationCollection notifications,
