@@ -2,13 +2,13 @@
 <package xmlns="http://schemas.microsoft.com/packaging/2010/07/nuspec.xsd">
   <metadata>
     <id>DotNetKit.Wpf.ToastNotification</id>
-    <version>0.0.0</version>
+    <version>1.0.0</version>
     <authors>vain0</authors>
     <language>en-US</language>
     <projectUrl>https://github.com/DotNetKit/DotNetKit.Wpf.ToastNotification</projectUrl>
     <licenseUrl>http://opensource.org/licenses/MIT</licenseUrl>
     <description>
-      Provides WPF controls for toast notifications.
+      Provides a WPF control for toast notifications.
     </description>
   </metadata>
   <files>
