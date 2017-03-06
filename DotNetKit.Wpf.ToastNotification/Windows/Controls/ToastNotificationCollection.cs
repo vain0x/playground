@@ -27,7 +27,7 @@ namespace DotNetKit.Windows.Controls
             {
                 foreach (var item in e.OldItems.Cast<ToastNotification>())
                 {
-                    item.Removed -= OnItemRemoved;
+                    item.CloseRequested -= OnItemRemoved;
                 }
             }
 
@@ -35,7 +35,7 @@ namespace DotNetKit.Windows.Controls
             {
                 foreach (var item in e.NewItems.Cast<ToastNotification>())
                 {
-                    item.Removed += OnItemRemoved;
+                    item.CloseRequested += OnItemRemoved;
                 }
             }
         }

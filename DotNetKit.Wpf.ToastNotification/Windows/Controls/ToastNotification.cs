@@ -18,9 +18,9 @@ namespace DotNetKit.Windows.Controls
     public abstract class ToastNotification
     {
         /// <summary>
-        /// Occurs when the user or system requested to remove the notification.
+        /// Occurs when the user or system requested to close the notification.
         /// </summary>
-        public event EventHandler Removed;
+        public event EventHandler CloseRequested;
 
         /// <summary>
         /// Gets the duration to fade out.
@@ -32,7 +32,7 @@ namespace DotNetKit.Windows.Controls
         /// </summary>
         public void Remove()
         {
-            Removed?.Invoke(this, EventArgs.Empty);
+            CloseRequested?.Invoke(this, EventArgs.Empty);
         }
 
         /// <summary>
