@@ -1,8 +1,10 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.ComponentModel;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using System.Runtime.CompilerServices;
 using System.Windows;
 using System.Windows.Input;
 using System.Windows.Media;
@@ -15,6 +17,7 @@ namespace DotNetKit.Windows.Controls
     /// </summary>
     public sealed class SimpleToastNotification
         : ToastNotification
+        , INotifyPropertyChanged
     {
         /// <summary>
         /// Gets or sets the default duration until beginning to fade out.
@@ -23,11 +26,27 @@ namespace DotNetKit.Windows.Controls
             TimeSpan.FromSeconds(5.0);
 
         /// <summary>
-        /// Gets the default duration to fade out.
+        /// Gets or sets the default duration to fade out.
         /// <c>null</c> for forever.
         /// </summary>
         public static Duration DefaultFadeDuration { get; set; } =
             new Duration(TimeSpan.FromSeconds(1.0));
+
+        /// <summary>
+        /// Occurs when one of properties changed.
+        /// </summary>
+        public event PropertyChangedEventHandler PropertyChanged;
+
+        void RaisePropertyChanged([CallerMemberName] string propertyName = default(string))
+        {
+            PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(propertyName));
+        }
+
+        /// <summary>
+        /// Gets or sets the default width.
+        /// </summary>
+        public static double DefaultWidth { get; set; } =
+            250.0;
 
         /// <summary>
         /// Gets the duration until beginning to fade out.
@@ -44,23 +63,49 @@ namespace DotNetKit.Windows.Controls
         /// </summary>
         public SimpleToastNotificationTheme Theme { get; }
 
+        string title = "";
+
         /// <summary>
         /// Gets or sets the title.
         /// </summary>
-        public string Title { get; set; } =
-            "";
+        public string Title
+        {
+            get { return title; }
+            set { title = value; RaisePropertyChanged(); }
+        }
+
+        string message = "";
 
         /// <summary>
         /// Gets or sets the message.
         /// </summary>
-        public string Message { get; set; } =
-            "";
+        public string Message
+        {
+            get { return message; }
+            set { message = value; RaisePropertyChanged(); }
+        }
+
+        ICommand command = AlwaysExecutableCommand.Empty;
 
         /// <summary>
         /// Gets or sets the command, which is executed when clicked or tapped.
         /// </summary>
-        public ICommand Command { get; set; } =
-            AlwaysExecutableCommand.Empty;
+        public ICommand Command
+        {
+            get { return command; }
+            set { command = value; RaisePropertyChanged(); }
+        }
+
+        double width = DefaultWidth;
+
+        /// <summary>
+        /// Gets or sets the width.
+        /// </summary>
+        public double Width
+        {
+            get { return width; }
+            set { width = value; RaisePropertyChanged(); }
+        }
 
         /// <summary>
         /// Constructs an instance.

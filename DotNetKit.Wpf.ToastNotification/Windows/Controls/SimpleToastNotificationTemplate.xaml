@@ -6,7 +6,7 @@
     <DataTemplate DataType="{x:Type controls:SimpleToastNotification}">
         <Grid>
             <Button
-                Width="250"
+                Width="{Binding Width}"
                 Command="{Binding Command}"
                 CommandParameter="{Binding}"
                 >
