@@ -37,9 +37,10 @@ namespace DotNetKit.Windows.Controls
 
         /// <summary>
         /// Gets or sets the default command.
+        /// The initial command is one to remove the notification.
         /// </summary>
         public static ICommand DefaultCommand { get; set; } =
-            AlwaysExecutableCommand.Empty;
+            ToastNotificationCloseCommand.Instance;
 
         /// <summary>
         /// Gets the duration until beginning to fade out.
