@@ -36,6 +36,12 @@ namespace DotNetKit.Windows.Controls
             250.0;
 
         /// <summary>
+        /// Gets or sets the default command.
+        /// </summary>
+        public static ICommand DefaultCommand { get; set; } =
+            AlwaysExecutableCommand.Empty;
+
+        /// <summary>
         /// Gets the duration until beginning to fade out.
         /// </summary>
         public override TimeSpan? Duration =>
@@ -74,7 +80,7 @@ namespace DotNetKit.Windows.Controls
             set { message = value; RaisePropertyChanged(); }
         }
 
-        ICommand command = AlwaysExecutableCommand.Empty;
+        ICommand command = DefaultCommand;
 
         /// <summary>
         /// Gets or sets the command, which is executed when clicked or tapped.
