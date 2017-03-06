@@ -15,7 +15,7 @@ namespace DotNetKit.Windows.Controls
     /// <summary>
     /// Reprsents a simple toast notification, which contains an icon, title, and a message.
     /// </summary>
-    public sealed class SimpleToastNotification
+    public class SimpleToastNotification
         : ToastNotification
         , INotifyPropertyChanged
     {
