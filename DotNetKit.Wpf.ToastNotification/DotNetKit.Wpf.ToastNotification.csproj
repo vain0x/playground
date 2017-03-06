@@ -52,6 +52,7 @@
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="Windows\Controls\SimpleToastNotification.cs" />
     <Compile Include="Windows\Controls\ToastNotification.cs" />
+    <Compile Include="Windows\Controls\ToastNotificationCloseCommand.cs" />
     <Compile Include="Windows\Controls\ToastNotificationCollection.cs" />
     <Compile Include="Windows\Controls\ToastNotificationCollectionControl.xaml.cs">
       <DependentUpon>ToastNotificationCollectionControl.xaml</DependentUpon>

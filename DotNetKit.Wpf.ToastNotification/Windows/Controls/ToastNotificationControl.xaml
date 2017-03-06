@@ -4,7 +4,7 @@
     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
     xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006" 
     xmlns:d="http://schemas.microsoft.com/expression/blend/2008" 
-    xmlns:local="clr-namespace:DotNetKit.Windows.Controls"
+    xmlns:controls="clr-namespace:DotNetKit.Windows.Controls"
     mc:Ignorable="d" 
     d:DesignWidth="300"
     d:DesignHeight="300"
@@ -42,26 +42,10 @@
     <Grid>
         <ContentPresenter Content="{Binding}" />
 
-        <Button
+        <ContentPresenter
+            Content="{x:Static controls:ToastNotificationCloseCommand.Instance}"
             HorizontalAlignment="Right"
             VerticalAlignment="Top"
-            Command="{Binding RemoveCommand}"
-            >
-            <Button.Content>
-                <ContentControl
-                    HorizontalAlignment="Center"
-                    VerticalAlignment="Center"
-                    Margin="5"
-                    >
-                    <Path
-                        Width="8"
-                        Height="8"
-                        Stretch="Fill"
-                        Fill="Black"
-                        Data="F1 M 151,217L 152,217L 154.5,219.5L 157,217L 158,217L 158,218L 155.5,220.5L 158,223L 158,224L 157,224L 154.5,221.5L 152,224L 151,224L 151,223L 153.5,220.5L 151,218L 151,217 Z"
-                        />
-                </ContentControl>
-            </Button.Content>
-        </Button>
+            />
     </Grid>
 </UserControl>

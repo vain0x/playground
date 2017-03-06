@@ -23,21 +23,16 @@ namespace DotNetKit.Windows.Controls
         public event EventHandler Removed;
 
         /// <summary>
-        /// Gets a command to remove this notification.
-        /// </summary>
-        public ICommand RemoveCommand { get; }
-
-        /// <summary>
         /// Gets the duration to fade out.
         /// </summary>
         public abstract Duration FadeDuration { get; }
 
         /// <summary>
-        /// Remove the notification from <see cref="ToastNotificationCollection"/>.
+        /// Removes the notification from <see cref="ToastNotificationCollection"/>.
         /// </summary>
         public void Remove()
         {
-            RemoveCommand.Execute(null);
+            Removed?.Invoke(this, EventArgs.Empty);
         }
 
         /// <summary>
@@ -45,8 +40,6 @@ namespace DotNetKit.Windows.Controls
         /// </summary>
         protected ToastNotification()
         {
-            RemoveCommand =
-                new AlwaysExecutableCommand(() => Removed?.Invoke(this, EventArgs.Empty));
         }
     }
 }
