@@ -17,10 +17,22 @@ namespace DotNetKit.Windows.Controls
         : ToastNotification
     {
         /// <summary>
+        /// Gets or sets the default duration until beginning to fade out.
+        /// </summary>
+        public static TimeSpan? DefaultDuration { get; set; } =
+            TimeSpan.FromSeconds(5.0);
+
+        /// <summary>
         /// Gets the default duration to fade out.
+        /// <c>null</c> for forever.
         /// </summary>
         public static Duration DefaultFadeDuration { get; set; } =
             new Duration(TimeSpan.FromSeconds(1.0));
+
+        /// <summary>
+        /// Gets the duration until beginning to fade out.
+        /// </summary>
+        public override TimeSpan? Duration => DefaultDuration;
 
         /// <summary>
         /// Gets the duration to fade out.

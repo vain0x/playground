@@ -18,7 +18,7 @@
                         From="1.0"
                         To="0.0"
                         Duration="{Binding FadeDuration}"
-                        BeginTime="00:00:05"
+                        BeginTime="{Binding Duration}"
                         Completed="OnFadeOutCompleted"
                         />
                 </Storyboard>

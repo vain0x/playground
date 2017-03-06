@@ -23,6 +23,12 @@ namespace DotNetKit.Windows.Controls
         public event EventHandler CloseRequested;
 
         /// <summary>
+        /// Gets the duration until beginning to fade out.
+        /// <c>null</c> for forever.
+        /// </summary>
+        public abstract TimeSpan? Duration { get; }
+
+        /// <summary>
         /// Gets the duration to fade out.
         /// </summary>
         public abstract Duration FadeDuration { get; }
