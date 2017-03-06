@@ -1,7 +1,7 @@
 # DotNetKit.Wpf.ToastNotification
 [![NuGet version](https://badge.fury.io/nu/DotNetKit.Wpf.ToastNotification.svg)](https://badge.fury.io/nu/DotNetKit.Wpf.ToastNotification)
 
-![](document/images/Screenshot.gif)
+![](documents/images/screenshot.gif)
 
 A toast notification library for WPF.
 
