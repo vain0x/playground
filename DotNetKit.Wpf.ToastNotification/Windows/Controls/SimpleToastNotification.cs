@@ -8,7 +8,6 @@ using System.Runtime.CompilerServices;
 using System.Windows;
 using System.Windows.Input;
 using System.Windows.Media;
-using DotNetKit.Functional.Commands;
 
 namespace DotNetKit.Windows.Controls
 {
@@ -34,6 +33,13 @@ namespace DotNetKit.Windows.Controls
         /// </summary>
         public static double DefaultWidth { get; set; } =
             250.0;
+
+        /// <summary>
+        /// Gets or sets the default command.
+        /// The initial command is one to remove the notification.
+        /// </summary>
+        public static ICommand DefaultCommand { get; set; } =
+            ToastNotificationCloseCommand.Instance;
 
         /// <summary>
         /// Gets the duration until beginning to fade out.
@@ -74,7 +80,7 @@ namespace DotNetKit.Windows.Controls
             set { message = value; RaisePropertyChanged(); }
         }
 
-        ICommand command = AlwaysExecutableCommand.Empty;
+        ICommand command = DefaultCommand;
 
         /// <summary>
         /// Gets or sets the command, which is executed when clicked or tapped.
