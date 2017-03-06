@@ -15,23 +15,10 @@ namespace DotNetKit.Windows.Controls
     /// <summary>
     /// Reprsents a simple toast notification, which contains an icon, title, and a message.
     /// </summary>
-    public sealed class SimpleToastNotification
+    public class SimpleToastNotification
         : ToastNotification
         , INotifyPropertyChanged
     {
-        /// <summary>
-        /// Gets or sets the default duration until beginning to fade out.
-        /// </summary>
-        public static TimeSpan? DefaultDuration { get; set; } =
-            TimeSpan.FromSeconds(5.0);
-
-        /// <summary>
-        /// Gets or sets the default duration to fade out.
-        /// <c>null</c> for forever.
-        /// </summary>
-        public static Duration DefaultFadeDuration { get; set; } =
-            new Duration(TimeSpan.FromSeconds(1.0));
-
         /// <summary>
         /// Occurs when one of properties changed.
         /// </summary>
@@ -51,12 +38,14 @@ namespace DotNetKit.Windows.Controls
         /// <summary>
         /// Gets the duration until beginning to fade out.
         /// </summary>
-        public override TimeSpan? Duration => DefaultDuration;
+        public override TimeSpan? Duration =>
+            TimeSpan.FromSeconds(5.0);
 
         /// <summary>
         /// Gets the duration to fade out.
         /// </summary>
-        public override Duration FadeDuration => DefaultFadeDuration;
+        public override Duration FadeDuration =>
+            new Duration(TimeSpan.FromSeconds(1.0));
 
         /// <summary>
         /// Gets the theme.
