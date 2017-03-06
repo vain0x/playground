@@ -39,13 +39,5 @@
         </EventTrigger>
     </UserControl.Triggers>
 
-    <Grid>
-        <ContentPresenter Content="{Binding}" />
-
-        <ContentPresenter
-            Content="{x:Static controls:ToastNotificationCloseCommand.Instance}"
-            HorizontalAlignment="Right"
-            VerticalAlignment="Top"
-            />
-    </Grid>
+    <ContentPresenter Content="{Binding}" />
 </UserControl>
