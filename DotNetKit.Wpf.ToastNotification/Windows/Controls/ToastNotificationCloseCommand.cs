@@ -38,7 +38,7 @@ namespace DotNetKit.Windows.Controls
         /// <param name="parameter"></param>
         public void Execute(object parameter)
         {
-            (parameter as ToastNotification)?.Remove();
+            (parameter as ToastNotification)?.Close();
         }
 
         ToastNotificationCloseCommand()

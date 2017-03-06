@@ -28,9 +28,9 @@ namespace DotNetKit.Windows.Controls
         public abstract Duration FadeDuration { get; }
 
         /// <summary>
-        /// Removes the notification from <see cref="ToastNotificationCollection"/>.
+        /// Requests to close the notification from <see cref="ToastNotificationCollection"/>.
         /// </summary>
-        public void Remove()
+        public void Close()
         {
             CloseRequested?.Invoke(this, EventArgs.Empty);
         }

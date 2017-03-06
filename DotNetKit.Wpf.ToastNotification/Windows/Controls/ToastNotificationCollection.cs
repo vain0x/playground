@@ -16,7 +16,7 @@ namespace DotNetKit.Windows.Controls
     public class ToastNotificationCollection
         : ObservableCollection<ToastNotification>
     {
-        void OnItemRemoved(object sender, EventArgs e)
+        void OnCloseRequested(object sender, EventArgs e)
         {
             Remove((ToastNotification)sender);
         }
@@ -27,7 +27,7 @@ namespace DotNetKit.Windows.Controls
             {
                 foreach (var item in e.OldItems.Cast<ToastNotification>())
                 {
-                    item.CloseRequested -= OnItemRemoved;
+                    item.CloseRequested -= OnCloseRequested;
                 }
             }
 
@@ -35,7 +35,7 @@ namespace DotNetKit.Windows.Controls
             {
                 foreach (var item in e.NewItems.Cast<ToastNotification>())
                 {
-                    item.CloseRequested += OnItemRemoved;
+                    item.CloseRequested += OnCloseRequested;
                 }
             }
         }
