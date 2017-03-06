@@ -5,25 +5,6 @@
     >
     <DataTemplate DataType="{x:Type controls:SimpleToastNotification}">
         <Grid>
-            <Grid.Triggers>
-                <EventTrigger RoutedEvent="Loaded">
-                    <BeginStoryboard Name="StoryboardOnLoaded">
-                        <Storyboard>
-                            <DoubleAnimation
-                                Storyboard.TargetProperty="RenderTransform.(TranslateTransform.X)"
-                                From="250"
-                                To="0"
-                                Duration="00:00:01"
-                                />
-                        </Storyboard>
-                    </BeginStoryboard>
-                </EventTrigger>
-            </Grid.Triggers>
-
-            <Grid.RenderTransform>
-                <TranslateTransform X="0" />
-            </Grid.RenderTransform>
-
             <Button
                 Width="250"
                 Command="{Binding Command}"
