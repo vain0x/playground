@@ -30,6 +30,12 @@ namespace DotNetKit.Windows.Controls
             new Duration(TimeSpan.FromSeconds(1.0));
 
         /// <summary>
+        /// Gets or sets the default width.
+        /// </summary>
+        public static double DefaultWidth { get; set; } =
+            250.0;
+
+        /// <summary>
         /// Gets the duration until beginning to fade out.
         /// </summary>
         public override TimeSpan? Duration => DefaultDuration;
@@ -61,6 +67,12 @@ namespace DotNetKit.Windows.Controls
         /// </summary>
         public ICommand Command { get; set; } =
             AlwaysExecutableCommand.Empty;
+
+        /// <summary>
+        /// Gets or sets the width.
+        /// </summary>
+        public double Width { get; set; } =
+            DefaultWidth;
 
         /// <summary>
         /// Constructs an instance.
