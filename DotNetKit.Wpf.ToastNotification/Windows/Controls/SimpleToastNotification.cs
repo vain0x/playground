@@ -26,7 +26,7 @@ namespace DotNetKit.Windows.Controls
             TimeSpan.FromSeconds(5.0);
 
         /// <summary>
-        /// Gets the default duration to fade out.
+        /// Gets or sets the default duration to fade out.
         /// <c>null</c> for forever.
         /// </summary>
         public static Duration DefaultFadeDuration { get; set; } =
