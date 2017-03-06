@@ -16,5 +16,6 @@
     >
     <controls:ToastNotificationCollectionControl
         VerticalAlignment="Bottom"
+        Margin="0,0,30,30"
         />
 </Window>

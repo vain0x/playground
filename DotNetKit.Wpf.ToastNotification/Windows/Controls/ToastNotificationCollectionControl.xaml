@@ -29,10 +29,10 @@
         </DataTemplate>
     </UserControl.Resources>
     
-    <ItemsControl ItemsSource="{Binding}" Margin="0,0,50,50">
+    <ItemsControl ItemsSource="{Binding}">
         <ItemsControl.ItemTemplate>
             <DataTemplate>
-                <controls:ToastNotificationControl Margin="0,30,0,0" />
+                <controls:ToastNotificationControl Margin="0,20,0,0" />
             </DataTemplate>
         </ItemsControl.ItemTemplate>
     </ItemsControl>
