@@ -18,14 +18,9 @@ namespace DotNetKit.Windows.Controls
     public abstract class ToastNotification
     {
         /// <summary>
-        /// Occurs when the user or system requested to remove the notification.
+        /// Occurs when the user or system requested to close the notification.
         /// </summary>
-        public event EventHandler Removed;
-
-        /// <summary>
-        /// Gets a command to remove this notification.
-        /// </summary>
-        public ICommand RemoveCommand { get; }
+        public event EventHandler CloseRequested;
 
         /// <summary>
         /// Gets the duration to fade out.
@@ -33,11 +28,11 @@ namespace DotNetKit.Windows.Controls
         public abstract Duration FadeDuration { get; }
 
         /// <summary>
-        /// Remove the notification from <see cref="ToastNotificationCollection"/>.
+        /// Requests to close the notification from <see cref="ToastNotificationCollection"/>.
         /// </summary>
-        public void Remove()
+        public void Close()
         {
-            RemoveCommand.Execute(null);
+            CloseRequested?.Invoke(this, EventArgs.Empty);
         }
 
         /// <summary>
@@ -45,8 +40,6 @@ namespace DotNetKit.Windows.Controls
         /// </summary>
         protected ToastNotification()
         {
-            RemoveCommand =
-                new AlwaysExecutableCommand(() => Removed?.Invoke(this, EventArgs.Empty));
         }
     }
 }

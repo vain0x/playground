@@ -9,6 +9,26 @@
     d:DesignWidth="300"
     d:DesignHeight="300"
     >
+    <UserControl.Resources>
+        <DataTemplate DataType="{x:Type controls:ToastNotificationCloseCommand}">
+            <Button Command="{Binding}">
+                <ContentControl
+                    HorizontalAlignment="Center"
+                    VerticalAlignment="Center"
+                    Margin="5"
+                    >
+                    <Path
+                        Width="8"
+                        Height="8"
+                        Stretch="Fill"
+                        Fill="Black"
+                        Data="F1 M 151,217L 152,217L 154.5,219.5L 157,217L 158,217L 158,218L 155.5,220.5L 158,223L 158,224L 157,224L 154.5,221.5L 152,224L 151,224L 151,223L 153.5,220.5L 151,218L 151,217 Z"
+                        />
+                </ContentControl>
+            </Button>
+        </DataTemplate>
+    </UserControl.Resources>
+    
     <ItemsControl ItemsSource="{Binding}" Margin="0,0,50,50">
         <ItemsControl.ItemTemplate>
             <DataTemplate>

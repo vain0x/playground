@@ -4,50 +4,8 @@
     xmlns:controls="clr-namespace:DotNetKit.Windows.Controls"
     >
     <DataTemplate DataType="{x:Type controls:SimpleToastNotification}">
-        <Button
-            Width="250"
-            Command="{Binding Command}"
-            CommandParameter="{Binding}"
-            >
-            <Button.Template>
-                <ControlTemplate TargetType="Button">
-                    <Border
-                        BorderBrush="Black"
-                        BorderThickness="1"
-                        CornerRadius="3"
-                        Background="{Binding Theme.Background}"
-                        >
-                        <DockPanel Margin="5">
-                            <Grid DockPanel.Dock="Left">
-                                <Path
-                                    Width="38"
-                                    Height="38"
-                                    Stretch="Fill"
-                                    Fill="White"
-                                    Data="{Binding Theme.Icon}"
-                                    />
-                            </Grid>
-
-                            <StackPanel Margin="5">
-                                <TextBlock
-                                    FontSize="{Binding Theme.TitleFontSize}"
-                                    Foreground="{Binding Theme.Foreground}"
-                                    TextWrapping="Wrap"
-                                    Text="{Binding Title}"
-                                    />
-                                <TextBlock
-                                    FontSize="{Binding Theme.MessageFontSize}"
-                                    Foreground="{Binding Theme.Foreground}"
-                                    TextWrapping="Wrap"
-                                    Text="{Binding Message}"
-                                    />
-                            </StackPanel>
-                        </DockPanel>
-                    </Border>
-                </ControlTemplate>
-            </Button.Template>
-
-            <Button.Triggers>
+        <Grid>
+            <Grid.Triggers>
                 <EventTrigger RoutedEvent="Loaded">
                     <BeginStoryboard Name="StoryboardOnLoaded">
                         <Storyboard>
@@ -60,11 +18,61 @@
                         </Storyboard>
                     </BeginStoryboard>
                 </EventTrigger>
-            </Button.Triggers>
+            </Grid.Triggers>
 
-            <Button.RenderTransform>
+            <Grid.RenderTransform>
                 <TranslateTransform X="0" />
-            </Button.RenderTransform>
-        </Button>
+            </Grid.RenderTransform>
+
+            <Button
+                Width="250"
+                Command="{Binding Command}"
+                CommandParameter="{Binding}"
+                >
+                <Button.Template>
+                    <ControlTemplate TargetType="Button">
+                        <Border
+                            BorderBrush="Black"
+                            BorderThickness="1"
+                            CornerRadius="3"
+                            Background="{Binding Theme.Background}"
+                            >
+                            <DockPanel Margin="5">
+                                <Grid DockPanel.Dock="Left">
+                                    <Path
+                                        Width="38"
+                                        Height="38"
+                                        Stretch="Fill"
+                                        Fill="White"
+                                        Data="{Binding Theme.Icon}"
+                                        />
+                                </Grid>
+
+                                <StackPanel Margin="5">
+                                    <TextBlock
+                                        FontSize="{Binding Theme.TitleFontSize}"
+                                        Foreground="{Binding Theme.Foreground}"
+                                        TextWrapping="Wrap"
+                                        Text="{Binding Title}"
+                                        />
+                                    <TextBlock
+                                        FontSize="{Binding Theme.MessageFontSize}"
+                                        Foreground="{Binding Theme.Foreground}"
+                                        TextWrapping="Wrap"
+                                        Text="{Binding Message}"
+                                        />
+                                </StackPanel>
+                            </DockPanel>
+                        </Border>
+                    </ControlTemplate>
+                </Button.Template>
+            </Button>
+
+            <ContentPresenter
+                Content="{x:Static controls:ToastNotificationCloseCommand.Instance}"
+                HorizontalAlignment="Right"
+                VerticalAlignment="Top"
+                />
+        </Grid>
     </DataTemplate>
 </ResourceDictionary>

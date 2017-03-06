@@ -25,7 +25,7 @@ namespace DotNetKit.Windows.Controls
             var notification = DataContext as ToastNotification;
             if (notification != null)
             {
-                notification.Remove();
+                notification.Close();
             }
         }
 
