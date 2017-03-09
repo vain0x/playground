@@ -1,7 +1,9 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Collections.ObjectModel;
 using System.Linq;
 using System.Text;
+using System.Threading;
 using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Controls;
@@ -20,9 +22,45 @@ namespace VainZero.SandBox.Wpf
     /// </summary>
     public partial class MainWindow : Window
     {
+        sealed class Main
+        {
+            readonly Timer timer;
+            int id;
+
+            public ObservableCollection<ObservableSequence<int>> Lists { get; } =
+                new ObservableCollection<ObservableSequence<int>>();
+
+            public void Add()
+            {
+                Lists.Add(new ObservableSequence<int>());
+            }
+
+            public Main()
+            {
+                timer =
+                    new Timer(state =>
+                    {
+                        foreach (var list in Lists)
+                        {
+                            list.InsertAsync(0, Interlocked.Increment(ref id));
+                        }
+                    }, null, 1000, 1000);
+            }
+        }
+
+        readonly Main main;
+
         public MainWindow()
         {
             InitializeComponent();
+
+            main = new Main();
+            DataContext = main;
+        }
+
+        private void Button_Click(object sender, RoutedEventArgs e)
+        {
+            main.Add();
         }
     }
 }
