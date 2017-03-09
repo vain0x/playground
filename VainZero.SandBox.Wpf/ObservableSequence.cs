@@ -21,22 +21,17 @@ namespace VainZero.SandBox.Wpf
 
         public void InsertAsync(int index, TValue value)
         {
+            list.Insert(index, value);
+
             context.Post(_ =>
             {
-                list.Insert(index, value);
-
                 CollectionChanged?.Invoke(this, new NotifyCollectionChangedEventArgs(NotifyCollectionChangedAction.Add, value, index));
             }, null);
         }
 
         public IEnumerator<TValue> GetEnumerator()
         {
-            var copy = default(List<TValue>);
-            context.Send(_ =>
-            {
-                copy = list.ToList();
-            }, null);
-            return copy.GetEnumerator();
+            return list.ToList().GetEnumerator();
         }
 
         IEnumerator IEnumerable.GetEnumerator()

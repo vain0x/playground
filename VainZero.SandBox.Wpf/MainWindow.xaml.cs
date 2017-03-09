@@ -44,7 +44,7 @@ namespace VainZero.SandBox.Wpf
                         {
                             list.InsertAsync(0, Interlocked.Increment(ref id));
                         }
-                    }, null, 1000, 1000);
+                    }, null, 1000, 300);
             }
         }
 
