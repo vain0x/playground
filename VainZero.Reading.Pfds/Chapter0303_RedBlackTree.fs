@@ -1,4 +1,4 @@
-﻿namespace DotNetLab.Fs.Lib.PFDS
+﻿namespace VainZero.Reading.Pfds
 
 module Chapter0303 =
   open Chapter02.Exercise06

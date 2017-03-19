@@ -5,14 +5,14 @@
     <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
     <Platform Condition=" '$(Platform)' == '' ">AnyCPU</Platform>
     <SchemaVersion>2.0</SchemaVersion>
-    <ProjectGuid>d700d1df-58fa-453e-9195-2af3e0afde5a</ProjectGuid>
+    <ProjectGuid>ca01a859-b3c0-4fa9-982a-09b3edc3bc29</ProjectGuid>
     <OutputType>Library</OutputType>
-    <RootNamespace>DotNetLab.Fs.Lib</RootNamespace>
-    <AssemblyName>DotNetLab.Fs.Lib</AssemblyName>
+    <RootNamespace>VainZero.Reading.Pfds</RootNamespace>
+    <AssemblyName>VainZero.Reading.Pfds</AssemblyName>
     <TargetFrameworkVersion>v4.5.2</TargetFrameworkVersion>
     <TargetFSharpCoreVersion>4.4.0.0</TargetFSharpCoreVersion>
     <AutoGenerateBindingRedirects>true</AutoGenerateBindingRedirects>
-    <Name>DotNetLab.Fs.Lib</Name>
+    <Name>VainZero.Reading.Pfds</Name>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
     <DebugSymbols>true</DebugSymbols>
@@ -22,7 +22,7 @@
     <OutputPath>bin\Debug\</OutputPath>
     <DefineConstants>DEBUG;TRACE</DefineConstants>
     <WarningLevel>3</WarningLevel>
-    <DocumentationFile>bin\Debug\DotNetLab.Fs.Lib.XML</DocumentationFile>
+    <DocumentationFile>bin\Debug\VainZero.Reading.Pfds.XML</DocumentationFile>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|AnyCPU' ">
     <DebugType>pdbonly</DebugType>
@@ -31,7 +31,7 @@
     <OutputPath>bin\Release\</OutputPath>
     <DefineConstants>TRACE</DefineConstants>
     <WarningLevel>3</WarningLevel>
-    <DocumentationFile>bin\Release\DotNetLab.Fs.Lib.XML</DocumentationFile>
+    <DocumentationFile>bin\Release\VainZero.Reading.Pfds.XML</DocumentationFile>
   </PropertyGroup>
   <ItemGroup>
     <Reference Include="mscorlib" />
