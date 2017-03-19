@@ -1,4 +1,4 @@
-﻿namespace DotNetLab.Fs.Lib.PFDS
+﻿namespace VainZero.Reading.Pfds
 
 open System.Collections.Generic
 

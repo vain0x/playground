@@ -1,7 +1,7 @@
-﻿namespace DotNetLab.Fs.Lib.PFDS
+﻿namespace VainZero.Reading.Pfds
 
 open System.Runtime.CompilerServices
-open DotNetLab.Fs.Lib.PFDS.Chapter0301
+open VainZero.Reading.Pfds.Chapter0301
 
 module Chapter0302 =
   (*

@@ -1,8 +1,8 @@
-﻿namespace DotNetLab.Fs.Lib.PFDS
+﻿namespace VainZero.Reading.Pfds
 
 open Persimmon
 open Persimmon.Syntax.UseTestNameByReflection
-open DotNetLab.Fs.Lib.PFDS.Chapter0302
+open VainZero.Reading.Pfds.Chapter0302
 
 module Chapter0302Test =
   open Chapter0301Test

@@ -1,9 +1,9 @@
-﻿namespace DotNetLab.Fs.Lib.PFDS
+﻿namespace VainZero.Reading.Pfds
 
 open System
 open Persimmon
 open Persimmon.Syntax.UseTestNameByReflection
-open DotNetLab.Fs.Lib.PFDS.Chapter0301
+open VainZero.Reading.Pfds.Chapter0301
 
 module Chapter0301Test =
   let testHeap (heapSig: HeapSignature<_, _>) =
