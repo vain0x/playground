@@ -16,33 +16,65 @@ namespace SharpFileSystem
         readonly FileSystemWatcher watcher;
         EventHandler<FileSystemChange> changed;
 
+        FileSystemPath GetVirtualPath(string fullPath)
+        {
+            if (System.IO.File.Exists(fullPath))
+            {
+                return fileSystem.GetVirtualFilePath(fullPath);
+            }
+            else if (System.IO.Directory.Exists(fullPath))
+            {
+                return fileSystem.GetVirtualDirectoryPath(fullPath);
+            }
+            else
+            {
+                // TODO: We need to use a dictionary or something to discriminate.
+                throw new NotSupportedException();
+            }
+        }
+
         void OnCreated(object sender, FileSystemEventArgs e)
         {
-            if (System.IO.File.Exists(e.FullPath))
-            {
-                var path = fileSystem.GetVirtualDirectoryPath(e.FullPath);
-                 changed?.Invoke(this, FileSystemChange.FromCreated(path));
-            }
-            else if (System.IO.Directory.Exists(e.FullPath))
-            {
-                var path = fileSystem.GetVirtualDirectoryPath(e.FullPath);
-                changed?.Invoke(this, FileSystemChange.FromCreated(path));
-            }
+            var path = GetVirtualPath(e.FullPath);
+            changed?.Invoke(this, FileSystemChange.FromCreated(path));
+        }
+
+        void OnChanged(object sender, FileSystemEventArgs e)
+        {
+            var path = GetVirtualPath(e.FullPath);
+            changed?.Invoke(this, FileSystemChange.FromChanged(path));
         }
 
         void OnDeleted(object sender, FileSystemEventArgs e)
         {
-            e.
+            // TODO: Invoke changed.
+        }
+
+        void OnRenamed(object sender, RenamedEventArgs e)
+        {
+            // TODO: Invoke changed.
         }
 
         void Attach()
         {
             if (watcher.EnableRaisingEvents) return;
+            watcher.EnableRaisingEvents = true;
 
             watcher.Created += OnCreated;
+            watcher.Changed += OnChanged;
             watcher.Deleted += OnDeleted;
+            watcher.Renamed += OnRenamed;
+        }
 
-            watcher.EnableRaisingEvents = true;
+        void Detach()
+        {
+            if (!watcher.EnableRaisingEvents) return;
+            watcher.EnableRaisingEvents = false;
+
+            watcher.Created -= OnCreated;
+            watcher.Changed -= OnChanged;
+            watcher.Deleted -= OnDeleted;
+            watcher.Renamed -= OnRenamed;
         }
 
         #region IFileSystemWatcher implementation
