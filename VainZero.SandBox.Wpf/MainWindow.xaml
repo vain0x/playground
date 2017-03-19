@@ -11,5 +11,11 @@
     Height="350"
     >
     <DockPanel>
+        <DataGrid
+            x:Name="grid"
+            ItemsSource="{Binding Items}"
+            IsReadOnly="False"
+            CanUserAddRows="True"
+            />
     </DockPanel>
 </Window>
