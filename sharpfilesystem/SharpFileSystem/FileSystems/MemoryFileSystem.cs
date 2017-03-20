@@ -17,49 +17,29 @@ namespace SharpFileSystem.FileSystems
             _directories.Add(FileSystemPath.Root, new HashSet<FileSystemPath>());
         }
 
-        public event FileSystemEventHandler Created;
+        #region Changed event
+        public event EventHandler<FileSystemChange> Changed;
 
-        void RaiseCreatedEvent(FileSystemPath path)
+        void RaiseCreated(FileSystemPath path)
         {
-            var h = Created;
-            if (h != null)
-            {
-                h(this, new FileSystemEventArgs(WatcherChangeTypes.Created, path.ParentPath.ToString(), path.EntityName));
-            }
+            Changed?.Invoke(this, FileSystemChange.FromCreated(path));
         }
 
-        public event FileSystemEventHandler Deleted;
-
-        void RaiseDeletedEvent(FileSystemPath path)
+        void RaiseChanged(FileSystemPath path)
         {
-            var h = Deleted;
-            if (h != null)
-            {
-                h(this, new FileSystemEventArgs(WatcherChangeTypes.Deleted, path.ParentPath.ToString(), path.EntityName));
-            }
+            Changed?.Invoke(this, FileSystemChange.FromChanged(path));
         }
 
-        public event FileSystemEventHandler Changed;
-
-        void RaiseChangedEvent(FileSystemPath path)
+        void RaiseDeleted(FileSystemPath path)
         {
-            var h = Changed;
-            if (h != null && Exists(path))
-            {
-                h(this, new FileSystemEventArgs(WatcherChangeTypes.Changed, path.ParentPath.ToString(), path.EntityName));
-            }
+            Changed?.Invoke(this, FileSystemChange.FromDeleted(path));
         }
 
-        public event RenamedEventHandler Renamed;
-
-        void RaiseRenamedEvent(FileSystemPath oldPath, FileSystemPath path)
+        void RaiseRenamed(FileSystemPath oldPath, FileSystemPath newPath)
         {
-            var h = Renamed;
-            if (h != null)
-            {
-                h(this, new RenamedEventArgs(WatcherChangeTypes.Renamed, oldPath.ParentPath.ToString(), path.EntityName, oldPath.EntityName));
-            }
+            Changed?.Invoke(this, FileSystemChange.FromRenamed(oldPath, newPath));
         }
+        #endregion
 
         public ICollection<FileSystemPath> GetEntities(FileSystemPath path)
         {
@@ -84,8 +64,8 @@ namespace SharpFileSystem.FileSystems
                 throw new DirectoryNotFoundException();
             _directories[path.ParentPath].Add(path);
             var file = _files[path] = new MemoryFile();
-            RaiseCreatedEvent(path);
-            return new MemoryFileStream(file, () => RaiseChangedEvent(path));
+            RaiseCreated(path);
+            return new MemoryFileStream(file, () => RaiseChanged(path));
         }
 
         public Stream OpenFile(FileSystemPath path, FileAccess access)
@@ -95,7 +75,7 @@ namespace SharpFileSystem.FileSystems
             MemoryFile file;
             if (!_files.TryGetValue(path, out file))
                 throw new FileNotFoundException();
-            return new MemoryFileStream(file, () => RaiseChangedEvent(path));
+            return new MemoryFileStream(file, () => RaiseChanged(path));
         }
 
         public void CreateDirectory(FileSystemPath path)
@@ -109,7 +89,7 @@ namespace SharpFileSystem.FileSystems
                 throw new DirectoryNotFoundException();
             subentities.Add(path);
             _directories[path] = new HashSet<FileSystemPath>();
-            RaiseCreatedEvent(path);
+            RaiseCreated(path);
         }
 
         public void Delete(FileSystemPath path)
@@ -125,7 +105,7 @@ namespace SharpFileSystem.FileSystems
                 throw new ArgumentException("The specified path does not exist.");
             var parent = _directories[path.ParentPath];
             parent.Remove(path);
-            RaiseDeletedEvent(path);
+            RaiseDeleted(path);
         }
 
         public void Dispose()
