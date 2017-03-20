@@ -14,7 +14,13 @@ namespace SharpFileSystem
         readonly PhysicalFileSystem fileSystem;
         readonly FileSystemPath path;
         readonly FileSystemWatcher watcher;
-        EventHandler<FileSystemChange> changed;
+
+        public event EventHandler<FileSystemChange> Changed;
+
+        void RaiseChanged(FileSystemChange change)
+        {
+            Changed?.Invoke(this, change);
+        }
 
         FileSystemPath GetVirtualPath(string fullPath)
         {
@@ -36,13 +42,13 @@ namespace SharpFileSystem
         void OnCreated(object sender, FileSystemEventArgs e)
         {
             var path = GetVirtualPath(e.FullPath);
-            changed?.Invoke(this, FileSystemChange.FromCreated(path));
+            RaiseChanged(FileSystemChange.FromCreated(path));
         }
 
         void OnChanged(object sender, FileSystemEventArgs e)
         {
             var path = GetVirtualPath(e.FullPath);
-            changed?.Invoke(this, FileSystemChange.FromChanged(path));
+            RaiseChanged(FileSystemChange.FromChanged(path));
         }
 
         void OnDeleted(object sender, FileSystemEventArgs e)
@@ -102,12 +108,6 @@ namespace SharpFileSystem
         FileSystemPath IFileSystemWatcher.Path
         {
             get { return path; }
-        }
-
-        event EventHandler<FileSystemChange> IFileSystemWatcher.Changed
-        {
-            add { changed += value; }
-            remove { changed -= value; }
         }
 
         public void Dispose()

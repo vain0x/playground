@@ -50,19 +50,22 @@ namespace SharpFileSystem.Tests
     public class PhysicalFileSystemWatcherTest_Created
         : PhysicalFileSystemWatcherTestBase
     {
-        List<string> Paths { get; set; }
+        List<FileSystemPath> Paths { get; set; }
         PhysicalFileSystemWatcher Watcher { get; set; }
 
         public override void Initialize()
         {
             base.Initialize();
 
-            Paths = new List<string>();
+            Paths = new List<FileSystemPath>();
             Watcher = new PhysicalFileSystemWatcher(FileSystem, FileSystemPath.Root);
-            Watcher.Created += (sender, e) =>
+            Watcher.Changed += (sender, e) =>
             {
-                Paths.Add(e.FullPath);
-                ResetEvent.Set();
+                if (e.ChangeType == WatcherChangeTypes.Created)
+                {
+                    Paths.Add(e.NewPath);
+                    ResetEvent.Set();
+                }
             };
             Watcher.EnableRaisingEvents = true;
         }
@@ -74,7 +77,7 @@ namespace SharpFileSystem.Tests
         }
 
         [Test]
-        public void test_creating_a_file_raises_Created()
+        public void test_creating_a_file_raises()
         {
             var filePath = FileSystemPath.Root.AppendFile("file.tmp");
             using (var stream = FileSystem.CreateFile(filePath))
@@ -83,20 +86,26 @@ namespace SharpFileSystem.Tests
 
             WaitNext();
             Assert.AreEqual(
-                new[] { Path.Combine(Root, filePath.EntityName) },
+                new[]
+                {
+                    FileSystem.GetVirtualFilePath(Path.Combine(Root, filePath.EntityName))
+                },
                 Paths
             );
         }
 
         [Test]
-        public void test_creating_a_directory_raises_Created()
+        public void test_creating_a_directory_raises()
         {
             var directoryPath = FileSystemPath.Root.AppendDirectory("dir");
             FileSystem.CreateDirectory(directoryPath);
 
             WaitNext();
             Assert.AreEqual(
-                new[] { Path.Combine(Root, directoryPath.EntityName) },
+                new[]
+                {
+                    FileSystem.GetVirtualDirectoryPath(Path.Combine(Root, directoryPath.EntityName))
+                },
                 Paths
             );
         }
@@ -129,7 +138,7 @@ namespace SharpFileSystem.Tests
         }
 
         [Test]
-        public void test_writing_to_a_file_raises_Changed()
+        public void test_writing_to_a_file_raises()
         {
             var filePath = FileSystemPath.Root.AppendFile("file.tmp");
             using (var stream = FileSystem.CreateFile(filePath))
@@ -146,19 +155,22 @@ namespace SharpFileSystem.Tests
     public class PhysicalFileSystemWatcherTest_Deleted
         : PhysicalFileSystemWatcherTestBase
     {
-        List<string> Paths { get; set; }
+        List<FileSystemPath> Paths { get; set; }
         PhysicalFileSystemWatcher Watcher { get; set; }
 
         public override void Initialize()
         {
             base.Initialize();
 
-            Paths = new List<string>();
+            Paths = new List<FileSystemPath>();
             Watcher = new PhysicalFileSystemWatcher(FileSystem, FileSystemPath.Root);
-            Watcher.Deleted += (sender, e) =>
+            Watcher.Changed += (sender, e) =>
             {
-                Paths.Add(e.FullPath);
-                ResetEvent.Set();
+                if (e.ChangeType == WatcherChangeTypes.Changed)
+                {
+                    Paths.Add(e.OldPath);
+                    ResetEvent.Set();
+                }
             };
             Watcher.EnableRaisingEvents = true;
         }
@@ -170,21 +182,7 @@ namespace SharpFileSystem.Tests
         }
 
         [Test]
-        public void test_removing_a_directory_raises_Removed()
-        {
-            var directoryPath = FileSystemPath.Root.AppendDirectory("dir");
-            FileSystem.CreateDirectory(directoryPath);
-            FileSystem.Delete(directoryPath);
-
-            WaitNext();
-            Assert.AreEqual(
-                new[] { Path.Combine(Root, directoryPath.EntityName) },
-                Paths
-            );
-        }
-
-        [Test]
-        public void test_removing_a_file_raises_Created()
+        public void test_removing_a_file_raises()
         {
             var filePath = FileSystemPath.Root.AppendFile("file.tmp");
             using (var stream = FileSystem.CreateFile(filePath))
@@ -194,7 +192,27 @@ namespace SharpFileSystem.Tests
 
             WaitNext();
             Assert.AreEqual(
-                new[] { Path.Combine(Root, filePath.EntityName) },
+                new[]
+                {
+                    FileSystem.GetVirtualFilePath(Path.Combine(Root, filePath.EntityName))
+                },
+                Paths
+            );
+        }
+
+        [Test]
+        public void test_removing_a_directory_raises()
+        {
+            var directoryPath = FileSystemPath.Root.AppendDirectory("dir");
+            FileSystem.CreateDirectory(directoryPath);
+            FileSystem.Delete(directoryPath);
+
+            WaitNext();
+            Assert.AreEqual(
+                new[]
+                {
+                    FileSystem.GetVirtualDirectoryPath(Path.Combine(Root, directoryPath.EntityName))
+                },
                 Paths
             );
         }

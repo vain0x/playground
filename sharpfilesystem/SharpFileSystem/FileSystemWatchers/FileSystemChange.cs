@@ -6,21 +6,24 @@ using System.Threading.Tasks;
 
 namespace SharpFileSystem
 {
+    /// <summary>
+    /// Represents a change of a file/directory.
+    /// </summary>
     public struct FileSystemChange
     {
-        System.IO.WatcherChangeTypes ChangeType { get; }
+        public System.IO.WatcherChangeTypes ChangeType { get; }
 
         /// <summary>
         /// Gets the path to the affected file/directory.
         /// It's valid if ChangeType is Deleted, Changed, or Renamed.
         /// </summary>
-        FileSystemPath OldPath { get; }
+        public FileSystemPath OldPath { get; }
 
         /// <summary>
         /// Gets the path to the affected file/directory.
         /// It's valid if ChangeType is Created, Changed, or Renamed.
         /// </summary>
-        FileSystemPath NewPath { get; }
+        public FileSystemPath NewPath { get; }
 
         FileSystemChange(
             System.IO.WatcherChangeTypes changeType,

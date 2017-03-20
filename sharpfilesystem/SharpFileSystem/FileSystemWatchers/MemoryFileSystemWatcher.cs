@@ -29,6 +29,7 @@ namespace SharpFileSystem
         }
 
         bool enableRaisingEvents;
+
         public bool EnableRaisingEvents
         {
             get { return enableRaisingEvents; }
@@ -45,10 +46,7 @@ namespace SharpFileSystem
             }
         }
 
-        public event FileSystemEventHandler Changed;
-        public event FileSystemEventHandler Created;
-        public event FileSystemEventHandler Deleted;
-        public event RenamedEventHandler Renamed;
+        public event EventHandler<FileSystemChange> Changed;
         #endregion
 
         public void Dispose()
@@ -67,7 +65,13 @@ namespace SharpFileSystem
             return FileSystemPath.Parse(fullPath);
         }
 
-        FileSystemEventHandler FileSystemEventHandler(Action<FileSystemEventArgs> raise)
+        void RaiseChanged(FileSystemChange change)
+        {
+            Changed?.Invoke(this, change);
+        }
+
+        FileSystemEventHandler
+            FileSystemEventHandler(Func<FileSystemPath, FileSystemChange> changeFromPath)
         {
             return
                 (sender, e) =>
@@ -75,7 +79,7 @@ namespace SharpFileSystem
                     var path = ParsePath(e.FullPath);
                     if (path.ParentPath == this.path)
                     {
-                        raise(e);
+                        RaiseChanged(changeFromPath(path));
                     }
                 };
         }
@@ -88,18 +92,18 @@ namespace SharpFileSystem
             {
                 if (newPath.ParentPath == path)
                 {
-                    Renamed?.Invoke(this, e);
+                    RaiseChanged(FileSystemChange.FromRenamed(oldPath, newPath));
                 }
                 else
                 {
-                    Deleted?.Invoke(this, new FileSystemEventArgs(WatcherChangeTypes.Deleted, path.ToString(), oldPath.ToString()));
+                    RaiseChanged(FileSystemChange.FromDeleted(oldPath));
                 }
             }
             else
             {
                 if (newPath.ParentPath == path)
                 {
-                    Created?.Invoke(this, new FileSystemEventArgs(WatcherChangeTypes.Created, path.ToString(), newPath.ToString()));
+                    RaiseChanged(FileSystemChange.FromCreated(newPath));
                 }
             }
         }
@@ -109,9 +113,9 @@ namespace SharpFileSystem
             if (enableRaisingEvents) return;
             enableRaisingEvents = true;
 
-            var onChanged = FileSystemEventHandler(e => Changed?.Invoke(this, e));
-            var onCreated = FileSystemEventHandler(e => Created?.Invoke(this, e));
-            var onDeleted = FileSystemEventHandler(e => Deleted?.Invoke(this, e));
+            var onChanged = FileSystemEventHandler(FileSystemChange.FromChanged);
+            var onCreated = FileSystemEventHandler(FileSystemChange.FromCreated);
+            var onDeleted = FileSystemEventHandler(FileSystemChange.FromDeleted);
             fileSystem.Changed += onChanged;
             fileSystem.Created += onCreated;
             fileSystem.Deleted += onDeleted;

@@ -36,9 +36,12 @@ namespace SharpFileSystem.Tests
             base.SetUp();
 
             Paths = new List<string>();
-            Watcher.Created += (sender, e) =>
+            Watcher.Changed += (sender, e) =>
             {
-                Paths.Add(e.FullPath);
+                if (e.ChangeType == WatcherChangeTypes.Created)
+                {
+                    Paths.Add(e.NewPath.ToString());
+                }
             };
             Watcher.EnableRaisingEvents = true;
         }
@@ -50,7 +53,7 @@ namespace SharpFileSystem.Tests
         }
 
         [Test]
-        public void test_creating_a_file_raises_Created()
+        public void test_creating_a_file_raises()
         {
             var filePath = Watcher.Path.AppendFile("file.tmp");
             using (var stream = FileSystem.CreateFile(filePath))
@@ -64,7 +67,7 @@ namespace SharpFileSystem.Tests
         }
 
         [Test]
-        public void test_creating_a_directory_raises_Created()
+        public void test_creating_a_directory_raises()
         {
             var directoryPath = Watcher.Path.AppendDirectory("dir");
             FileSystem.CreateDirectory(directoryPath);
