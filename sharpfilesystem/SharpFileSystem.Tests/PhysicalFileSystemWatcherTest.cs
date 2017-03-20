@@ -166,7 +166,7 @@ namespace SharpFileSystem.Tests
             Watcher = new PhysicalFileSystemWatcher(FileSystem, FileSystemPath.Root);
             Watcher.Changed += (sender, e) =>
             {
-                if (e.ChangeType == WatcherChangeTypes.Changed)
+                if (e.ChangeType == WatcherChangeTypes.Deleted)
                 {
                     Paths.Add(e.OldPath);
                     ResetEvent.Set();

@@ -22,25 +22,36 @@ namespace SharpFileSystem
             Changed?.Invoke(this, change);
         }
 
+        readonly HashSet<string> directoryNameSet =
+            new HashSet<string>();
+
+        void RefreshDirectoryNameSet()
+        {
+            directoryNameSet.Clear();
+
+            foreach (var entity in fileSystem.GetEntities(path))
+            {
+                if (entity.IsFile) break;
+                directoryNameSet.Add(entity.EntityName);
+            }
+        }
+
         FileSystemPath GetVirtualPath(string fullPath)
         {
-            if (System.IO.File.Exists(fullPath))
-            {
-                return fileSystem.GetVirtualFilePath(fullPath);
-            }
-            else if (System.IO.Directory.Exists(fullPath))
-            {
-                return fileSystem.GetVirtualDirectoryPath(fullPath);
-            }
-            else
-            {
-                // TODO: We need to use a dictionary or something to discriminate.
-                throw new NotSupportedException();
-            }
+            var name = Path.GetFileName(fullPath);
+            return
+                directoryNameSet.Contains(name)
+                    ? fileSystem.GetVirtualDirectoryPath(fullPath)
+                    : fileSystem.GetVirtualFilePath(fullPath);
         }
 
         void OnCreated(object sender, FileSystemEventArgs e)
         {
+            if (System.IO.Directory.Exists(e.FullPath))
+            {
+                directoryNameSet.Add(Path.GetFileName(e.FullPath));
+            }
+
             var path = GetVirtualPath(e.FullPath);
             RaiseChanged(FileSystemChange.FromCreated(path));
         }
@@ -53,18 +64,39 @@ namespace SharpFileSystem
 
         void OnDeleted(object sender, FileSystemEventArgs e)
         {
-            // TODO: Invoke changed.
+            var path = GetVirtualPath(e.FullPath);
+
+            if (path.IsDirectory)
+            {
+                directoryNameSet.Remove(path.EntityName);
+            }
+
+            RaiseChanged(FileSystemChange.FromDeleted(path));
         }
 
         void OnRenamed(object sender, RenamedEventArgs e)
         {
-            // TODO: Invoke changed.
+            var oldPath = GetVirtualPath(e.OldFullPath);
+            var newPath = GetVirtualPath(e.FullPath);
+
+            if (oldPath.IsDirectory)
+            {
+                directoryNameSet.Remove(oldPath.EntityName);
+            }
+            if (newPath.IsDirectory)
+            {
+                directoryNameSet.Add(newPath.EntityName);
+            }
+
+            RaiseChanged(FileSystemChange.FromRenamed(oldPath, newPath));
         }
 
         void Attach()
         {
             if (watcher.EnableRaisingEvents) return;
             watcher.EnableRaisingEvents = true;
+
+            RefreshDirectoryNameSet();
 
             watcher.Created += OnCreated;
             watcher.Changed += OnChanged;
