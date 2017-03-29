@@ -2,21 +2,21 @@
 <package xmlns="http://schemas.microsoft.com/packaging/2010/07/nuspec.xsd">
   <metadata>
     <id>DotNetKit.FSharp</id>
-    <version>0.2.1</version>
+    <version>0.2.2</version>
     <authors>vain0</authors>
     <language>en-US</language>
     <projectUrl>https://github.com/DotNetKit/DotNetKit.FSharp</projectUrl>
-    <licenseUrl>http://opensource.org/licenses/MIT</licenseUrl>
+    <licenseUrl>https://github.com/DotNetKit/DotNetKit.FSharp/blob/master/LICENSE.md</licenseUrl>
     <description>
       Provides utilities for F#.
     </description>
-    <dependencies>
+    <references>
       <group>
-        <dependency id="FSharp.Core" version="4.0.0.1"></dependency>
+        <reference file="FSharp.Core.dll" />
       </group>
-    </dependencies>
+    </references>
   </metadata>
   <files>
-    <file src="bin\Release\**" target="lib" />
+    <file src="bin\Release\**" target="lib\net45" />
   </files>
 </package>
