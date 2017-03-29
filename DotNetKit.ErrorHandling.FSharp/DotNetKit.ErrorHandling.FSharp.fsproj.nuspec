@@ -10,11 +10,11 @@
     <description>
       Provides interoperability between C# and F# for DotNetKit.ErrorHandling.
     </description>
-    <dependencies>
+    <references>
       <group>
-        <dependency id="FSharp.Core" version="4.0.0.1"></dependency>
+        <reference file="FSharp.Core.dll" />
       </group>
-    </dependencies>
+    </references>
   </metadata>
   <files>
     <file src="bin\Release\**" target="lib" />
