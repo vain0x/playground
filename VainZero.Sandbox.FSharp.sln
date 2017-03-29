@@ -4,8 +4,21 @@ Microsoft Visual Studio Solution File, Format Version 12.00
 VisualStudioVersion = 15.0.26730.16
 # Visual Studio 14
 VisualStudioVersion = 14.0.25420.1
+VisualStudioVersion = 15.0.26228.9
 MinimumVisualStudioVersion = 10.0.40219.1
+Project("{F2A71F9B-5D33-465A-A702-920D77279786}") = "VainZero.Sandbox.Cli", "VainZero.Sandbox.Cli\VainZero.Sandbox.Cli.fsproj", "{D56D6858-A88E-4098-AE58-998237D7DA80}"
+EndProject
 Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Release|Any CPU = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{D56D6858-A88E-4098-AE58-998237D7DA80}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{D56D6858-A88E-4098-AE58-998237D7DA80}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{D56D6858-A88E-4098-AE58-998237D7DA80}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{D56D6858-A88E-4098-AE58-998237D7DA80}.Release|Any CPU.Build.0 = Release|Any CPU
+	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
 	EndGlobalSection
