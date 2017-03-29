@@ -17,6 +17,6 @@
     </references>
   </metadata>
   <files>
-    <file src="bin\Release\**" target="lib" />
+    <file src="bin\Release\**" target="lib\net45" />
   </files>
 </package>
