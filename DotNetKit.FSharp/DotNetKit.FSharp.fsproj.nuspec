@@ -6,7 +6,7 @@
     <authors>vain0</authors>
     <language>en-US</language>
     <projectUrl>https://github.com/DotNetKit/DotNetKit.FSharp</projectUrl>
-    <licenseUrl>http://opensource.org/licenses/MIT</licenseUrl>
+    <licenseUrl>https://github.com/DotNetKit/DotNetKit.FSharp/blob/master/LICENSE.md</licenseUrl>
     <description>
       Provides utilities for F#.
     </description>
