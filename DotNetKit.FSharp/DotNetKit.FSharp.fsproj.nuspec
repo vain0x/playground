@@ -2,7 +2,7 @@
 <package xmlns="http://schemas.microsoft.com/packaging/2010/07/nuspec.xsd">
   <metadata>
     <id>DotNetKit.FSharp</id>
-    <version>0.2.2</version>
+    <version>0.2.3</version>
     <authors>vain0</authors>
     <language>en-US</language>
     <projectUrl>https://github.com/DotNetKit/DotNetKit.FSharp</projectUrl>
@@ -10,13 +10,8 @@
     <description>
       Provides utilities for F#.
     </description>
-    <references>
-      <group>
-        <reference file="FSharp.Core.dll" />
-      </group>
-    </references>
   </metadata>
   <files>
-    <file src="bin\Release\**" target="lib\net45" />
+    <file src="bin\Release\DotNetKit.FSharp.*" target="lib\net45" />
   </files>
 </package>
