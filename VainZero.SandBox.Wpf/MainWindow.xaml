@@ -11,5 +11,6 @@
     Height="350"
     >
     <DockPanel>
+        <local:BehaviorSampleControl />
     </DockPanel>
 </Window>
