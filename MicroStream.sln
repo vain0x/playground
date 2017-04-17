@@ -25,6 +25,10 @@ Project("{F2A71F9B-5D33-465A-A702-920D77279786}") = "MicroStream.Cli.UnitTest", 
 EndProject
 Project("{F2A71F9B-5D33-465A-A702-920D77279786}") = "MicroStream.Desktop.Model.UnitTest", "MicroStream.Desktop.Model.UnitTest\MicroStream.Desktop.Model.UnitTest.fsproj", "{C88A2314-879A-43A7-A2E9-0492072058D3}"
 EndProject
+Project("{F2A71F9B-5D33-465A-A702-920D77279786}") = "FSharpKit.ErrorHandling", "..\FSharpKit.ErrorHandling\FSharpKit.ErrorHandling\FSharpKit.ErrorHandling.fsproj", "{0557360A-E1DF-4BB4-8ADC-6448F992D3AD}"
+EndProject
+Project("{F2A71F9B-5D33-465A-A702-920D77279786}") = "FSharpKit.ErrorHandling.UnitTest", "..\FSharpKit.ErrorHandling\FSharpKit.ErrorHandling.UnitTest\FSharpKit.ErrorHandling.UnitTest.fsproj", "{8AF5CE5C-661E-41CB-B858-00C2D29D4E24}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -59,6 +63,14 @@ Global
 		{C88A2314-879A-43A7-A2E9-0492072058D3}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{C88A2314-879A-43A7-A2E9-0492072058D3}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{C88A2314-879A-43A7-A2E9-0492072058D3}.Release|Any CPU.Build.0 = Release|Any CPU
+		{0557360A-E1DF-4BB4-8ADC-6448F992D3AD}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{0557360A-E1DF-4BB4-8ADC-6448F992D3AD}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{0557360A-E1DF-4BB4-8ADC-6448F992D3AD}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{0557360A-E1DF-4BB4-8ADC-6448F992D3AD}.Release|Any CPU.Build.0 = Release|Any CPU
+		{8AF5CE5C-661E-41CB-B858-00C2D29D4E24}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{8AF5CE5C-661E-41CB-B858-00C2D29D4E24}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{8AF5CE5C-661E-41CB-B858-00C2D29D4E24}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{8AF5CE5C-661E-41CB-B858-00C2D29D4E24}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
@@ -71,5 +83,7 @@ Global
 		{37414AAA-EF7E-4746-A9FF-FEF78D233D0B} = {B8275CA3-5055-4ED5-87EF-46D02A9AFED4}
 		{60C0F5D0-71AD-45E4-9684-745882E66DC2} = {AEA72269-5DE2-40FC-BF4C-BCAB03F7A46C}
 		{C88A2314-879A-43A7-A2E9-0492072058D3} = {B8275CA3-5055-4ED5-87EF-46D02A9AFED4}
+		{0557360A-E1DF-4BB4-8ADC-6448F992D3AD} = {17EAF9DF-CB7E-4B06-B92C-B28273EB2B7E}
+		{8AF5CE5C-661E-41CB-B858-00C2D29D4E24} = {17EAF9DF-CB7E-4B06-B92C-B28273EB2B7E}
 	EndGlobalSection
 EndGlobal
