@@ -9,9 +9,28 @@ using System.Diagnostics;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using SQLite.CodeFirst;
 
 namespace VainZero.Sandbox
 {
+    public class MyDbInitializer
+        : SqliteCreateDatabaseIfNotExists<MyContext>
+    {
+        public MyDbInitializer(DbModelBuilder mb)
+            : base(mb, nullByteFileMeansNotExisting: true)
+        {
+        }
+
+        protected override void Seed(MyContext context)
+        {
+            base.Seed(context);
+
+            context.Set<Person>().Add(new Person() { Name = "John Doe" });
+            context.Set<Person>().Add(new Person() { Name = "vain0" });
+            context.SaveChanges();
+        }
+    }
+
     public class MyContext : DbContext
     {
         const string dbPath = @"./database.sqlite";
@@ -35,7 +54,7 @@ namespace VainZero.Sandbox
 
         protected sealed override void OnModelCreating(DbModelBuilder mb)
         {
-            Database.SetInitializer(new SQLite.CodeFirst.SqliteCreateDatabaseIfNotExists<MyContext>(mb));
+            Database.SetInitializer(new MyDbInitializer(mb));
 
             mb.Entity<Person>();
         }
@@ -56,13 +75,6 @@ namespace VainZero.Sandbox
     {
         public void Run()
         {
-            using (var context = new MyContext())
-            {
-                context.Set<Person>().Add(new Person() { Name = "John Doe" });
-                context.Set<Person>().Add(new Person() { Name = "vain0" });
-                context.SaveChanges();
-            }
-
             using (var context = new MyContext())
             {
                 foreach (var person in context.Set<Person>())
