@@ -13,26 +13,27 @@ using SQLite.CodeFirst;
 
 namespace VainZero.Sandbox
 {
-    public class MyDbInitializer
-        : SqliteCreateDatabaseIfNotExists<MyContext>
+    public class Person
     {
-        public MyDbInitializer(DbModelBuilder mb)
-            : base(mb, nullByteFileMeansNotExisting: true)
-        {
-        }
+        [Key]
+        [Column]
+        public long Id { get; set; }
 
-        protected override void Seed(MyContext context)
-        {
-            base.Seed(context);
-
-            context.Set<Person>().Add(new Person() { Name = "John Doe" });
-            context.Set<Person>().Add(new Person() { Name = "vain0" });
-            context.SaveChanges();
-        }
+        [Column]
+        [StringLength(512)]
+        public string Name { get; set; }
     }
 
-    public class MyContext : DbContext
+    public class MyContext
+        : DbContext
     {
+        public MyContext()
+            : base(new SQLiteConnection(ConnectionString), contextOwnsConnection: true)
+        {
+            Database.Log = text => Debug.WriteLine(text);
+        }
+
+        #region ConnectionString
         const string dbPath = @"./database.sqlite";
 
         static SQLiteConnectionStringBuilder ConnectionStringBuilder =>
@@ -45,11 +46,25 @@ namespace VainZero.Sandbox
 
         static string ConnectionString { get; } =
             ConnectionStringBuilder.ConnectionString;
+        #endregion
 
-        public MyContext()
-            : base(new SQLiteConnection(ConnectionString), contextOwnsConnection: true)
+        #region OnModelCreating
+        class MyDbInitializer
+            : SqliteCreateDatabaseIfNotExists<MyContext>
         {
-            Database.Log = text => Debug.WriteLine(text);
+            public MyDbInitializer(DbModelBuilder mb)
+                : base(mb, nullByteFileMeansNotExisting: true)
+            {
+            }
+
+            protected override void Seed(MyContext context)
+            {
+                base.Seed(context);
+
+                context.Set<Person>().Add(new Person() { Name = "John Doe" });
+                context.Set<Person>().Add(new Person() { Name = "vain0" });
+                context.SaveChanges();
+            }
         }
 
         protected sealed override void OnModelCreating(DbModelBuilder mb)
@@ -58,17 +73,7 @@ namespace VainZero.Sandbox
 
             mb.Entity<Person>();
         }
-    }
-
-    public class Person
-    {
-        [Key]
-        [Column]
-        public long Id { get; set; }
-
-        [Column]
-        [StringLength(512)]
-        public string Name { get; set; }
+        #endregion
     }
 
     public sealed class Program
