@@ -15,7 +15,7 @@ module Program =
 
   let runAsync database =
     async {
-      let instance = "mstdn.jp"
+      let instance = "pawoo.net"
       let userName = "vain0"
       let! client = Mastodon.tryClientAsync database instance userName tryCodeAsync
       match client with
