@@ -145,6 +145,10 @@
     <None Include="packages.config" />
   </ItemGroup>
   <ItemGroup>
+    <ProjectReference Include="..\..\FSharpKit.ErrorHandling\FSharpKit.ErrorHandling\FSharpKit.ErrorHandling.fsproj">
+      <Project>{0557360a-e1df-4bb4-8adc-6448f992d3ad}</Project>
+      <Name>FSharpKit.ErrorHandling</Name>
+    </ProjectReference>
     <ProjectReference Include="..\MicroStream.Core\MicroStream.Core.fsproj">
       <Project>{4e07b438-05ce-4167-9f57-a118ac65567a}</Project>
       <Name>MicroStream.Core</Name>

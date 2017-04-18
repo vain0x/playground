@@ -126,6 +126,11 @@
     <Reference Include="WindowsBase" />
   </ItemGroup>
   <ItemGroup>
+    <ProjectReference Include="..\..\FSharpKit.ErrorHandling\FSharpKit.ErrorHandling\FSharpKit.ErrorHandling.fsproj">
+      <Name>FSharpKit.ErrorHandling</Name>
+      <Project>{0557360a-e1df-4bb4-8adc-6448f992d3ad}</Project>
+      <Private>True</Private>
+    </ProjectReference>
     <ProjectReference Include="..\MicroStream.Core\MicroStream.Core.fsproj">
       <Name>MicroStream.Core</Name>
       <Project>{4e07b438-05ce-4167-9f57-a118ac65567a}</Project>
