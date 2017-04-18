@@ -59,6 +59,7 @@
     <Compile Include="Data\Entity\AppDatabase.cs" />
     <Compile Include="Data\Entity\AppDbContext.cs" />
     <Compile Include="Data\Entity\IDatabase.cs" />
+    <Compile Include="Data\Entity\QueryableExtension.cs" />
     <Compile Include="Data\Entity\Tables\MastodonApp.cs" />
     <Compile Include="Data\Entity\Tables\MastodonAuth.cs" />
     <Compile Include="Data\Entity\Tables\Sequence.cs" />

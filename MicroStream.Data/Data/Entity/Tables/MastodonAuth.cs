@@ -26,5 +26,14 @@ namespace MicroStream.Data.Entity
         [Column]
         [StringLength(1024)]
         public string AccessToken { get; set; }
+
+        public static MastodonAuth Create(long id, string instance, string userName, string accessToken) =>
+            new MastodonAuth()
+            {
+                Id = id,
+                Instance = instance,
+                UserName = userName,
+                AccessToken = accessToken,
+            };
     }
 }

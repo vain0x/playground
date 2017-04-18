@@ -11,6 +11,9 @@ module DbContext =
     }
 
 module Database =
+  let connect (database: IDatabase) =
+    database.Connect()
+
   let generateIdAsync (database: IDatabase) =
     async {
       use context = database.Connect()

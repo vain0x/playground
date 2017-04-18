@@ -55,6 +55,7 @@
   <ItemGroup>
     <Compile Include="AssemblyInfo.fs" />
     <Compile Include="Data.Entity.fs" />
+    <Compile Include="Data.Queryable.fs" />
     <Content Include="packages.config" />
     <Content Include="App.config" />
   </ItemGroup>

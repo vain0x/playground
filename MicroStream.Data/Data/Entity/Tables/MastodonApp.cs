@@ -25,6 +25,15 @@ namespace MicroStream.Data.Entity
 
         [Column]
         [StringLength(1024)]
-        public string ClientCode { get; set; }
+        public string ClientSecret { get; set; }
+
+        public static MastodonApp Create(long id, string instance, string clientId, string clientSecret) =>
+            new MastodonApp()
+            {
+                Id = id,
+                Instance = instance,
+                ClientId = clientId,
+                ClientSecret = clientSecret,
+            };
     }
 }

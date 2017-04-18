@@ -44,6 +44,9 @@ namespace MicroStream.Data.Entity
             public AppDbInitializer(DbModelBuilder mb)
                 : base(mb)
             {
+                mb.Entity<Sequence>();
+                mb.Entity<MastodonApp>();
+                mb.Entity<MastodonAuth>();
             }
         }
 
