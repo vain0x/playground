@@ -23,7 +23,7 @@ namespace MicroStream.Data.Entity
         }
 
         #region ConnectionString
-        const string databaseFilePath = @"./database.sqlite";
+        const string databaseFilePath = @"./data/database.sqlite";
 
         static SQLiteConnectionStringBuilder ConnectionStringBuilder =>
             new SQLiteConnectionStringBuilder
