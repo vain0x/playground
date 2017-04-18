@@ -149,6 +149,10 @@
       <Project>{4e07b438-05ce-4167-9f57-a118ac65567a}</Project>
       <Name>MicroStream.Core</Name>
     </ProjectReference>
+    <ProjectReference Include="..\MicroStream.Data\MicroStream.Data.csproj">
+      <Project>{50ead2ff-ddcf-4188-accd-496c0aa7837c}</Project>
+      <Name>MicroStream.Data</Name>
+    </ProjectReference>
     <ProjectReference Include="..\MicroStream.Desktop.Model\MicroStream.Desktop.Model.fsproj">
       <Project>{4f5da809-0f24-4064-b40a-aa96d37884dd}</Project>
       <Name>MicroStream.Desktop.Model</Name>
