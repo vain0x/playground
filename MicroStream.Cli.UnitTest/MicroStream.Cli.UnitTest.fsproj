@@ -126,6 +126,11 @@
     <Reference Include="WindowsBase" />
   </ItemGroup>
   <ItemGroup>
+    <ProjectReference Include="..\libraries\Mastonet.Net46\Mastonet.Net46.csproj">
+      <Name>Mastonet.Net46</Name>
+      <Project>{98591b69-f142-4c20-bd8d-95362cf49ac1}</Project>
+      <Private>True</Private>
+    </ProjectReference>
     <ProjectReference Include="..\MicroStream.Cli\MicroStream.Cli.fsproj">
       <Name>MicroStream.Cli</Name>
       <Project>{ad828750-fc27-4488-9ff4-36877dcf9a18}</Project>
