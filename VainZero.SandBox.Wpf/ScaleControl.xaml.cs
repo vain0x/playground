@@ -20,19 +20,29 @@ namespace VainZero.SandBox.Wpf
     /// </summary>
     public partial class ScaleControl : UserControl
     {
-        private double scale;
+        double scale;
 
         protected override Size MeasureOverride(Size availableSize)
         {
-            var height = 0.0;
-            var childSize = new Size(availableSize.Width, double.PositiveInfinity);
-            for (var i = 0; i < VisualChildrenCount; i++)
+            scale = 1.0;
+            var min = 0.01;
+
+            while (scale > min)
             {
-                var child = (UIElement)VisualTreeHelper.GetChild(this, i);
-                child.Measure(childSize);
-                height += child.DesiredSize.Height;
+                var height = 0.0;
+                var childSize = new Size(availableSize.Width / scale, double.PositiveInfinity);
+                for (var i = 0; i < VisualChildrenCount; i++)
+                {
+                    var child = (UIElement)VisualTreeHelper.GetChild(this, i);
+                    child.Measure(childSize);
+                    height += child.DesiredSize.Height;
+                }
+
+                var availableHeight = availableSize.Height / scale;
+                if (height <= availableHeight) break;
+                scale = Math.Max(min, Math.Min(scale * 0.95, (scale * 2 + height / availableHeight) / 3));
             }
-            scale = Math.Min(1.0, availableSize.Height / height);
+
             return availableSize;
         }
 
