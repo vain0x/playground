@@ -45,6 +45,7 @@ namespace MicroStream.Data.Entity
                 : base(mb)
             {
                 mb.Entity<Sequence>();
+                mb.Entity<TwitterAuth>();
                 mb.Entity<MastodonApp>();
                 mb.Entity<MastodonAuth>();
             }

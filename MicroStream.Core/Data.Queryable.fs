@@ -23,3 +23,15 @@ type QueryableExtensionForFSharp =
   [<Extension>]
   static member TryFirstAsync(q: IQueryable<_>, predicate: Expression<Func<_, bool>>) =
     q.Where(predicate).TryFirstAsync()
+
+  [<Extension>]
+  static member TryMaxByAsync(q: IQueryable<_>, selector: Expression<Func<_, _>>) =
+    q.OrderByDescending(selector).TryFirstAsync()
+
+[<CompilationRepresentation(CompilationRepresentationFlags.ModuleSuffix)>]
+module Queryable =
+  let toArrayAsync (q: IQueryable<'x>) =
+    async {
+      let! cancellationToken = Async.CancellationToken
+      return! q.ToArrayAsync(cancellationToken) |> Async.AwaitTask
+    }

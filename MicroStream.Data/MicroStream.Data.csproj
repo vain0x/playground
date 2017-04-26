@@ -63,6 +63,7 @@
     <Compile Include="Data\Entity\Tables\MastodonApp.cs" />
     <Compile Include="Data\Entity\Tables\MastodonAuth.cs" />
     <Compile Include="Data\Entity\Tables\Sequence.cs" />
+    <Compile Include="Data\Entity\Tables\TwitterAuth.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
   </ItemGroup>
   <ItemGroup>
