@@ -54,6 +54,7 @@
   <Import Project="$(FSharpTargetsPath)" />
   <ItemGroup>
     <Compile Include="AssemblyInfo.fs" />
+    <Compile Include="Types.fs" />
     <Compile Include="Data.Entity.fs" />
     <Compile Include="Data.Queryable.fs" />
     <Compile Include="Sources.Mastodon.fs" />

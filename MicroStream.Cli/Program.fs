@@ -6,18 +6,21 @@ open MicroStream.Data.Entity
 open MicroStream.Sources
 
 module Program =
-  let tryCodeAsync (url: string) =
-    async {
-      Process.Start(url) |> ignore
-      let! line = Console.In.ReadLineAsync() |> Async.AwaitTask
-      return line |> Option.ofObj
+  let authenticator =
+    { new IAuthenticator with
+        override this.AuthenticateAsync(uri: Uri) =
+          async {
+            Process.Start(uri |> string) |> ignore
+            let! line = Console.In.ReadLineAsync() |> Async.AwaitTask
+            return line |> Option.ofObj
+          }
     }
 
   let runAsync database =
     async {
       let instance = "pawoo.net"
       let userName = "vain0"
-      let! client = Mastodon.tryClientAsync database instance userName tryCodeAsync
+      let! client = Mastodon.tryClientAsync database authenticator instance userName
       match client with
       | Some client ->
         let streaming = client.GetPublicStreaming()

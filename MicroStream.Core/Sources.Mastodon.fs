@@ -5,6 +5,7 @@ open System.Data.Entity
 open System.Linq
 open Mastonet
 open Mastonet.Entities
+open MicroStream
 open MicroStream.Data.Entity
 
 module Mastodon =
@@ -59,10 +60,10 @@ module Mastodon =
         return None
     }
 
-  let private authorizeAsync app instance userName tryCodeAsync =
+  let private authorizeAsync authenticator app instance userName =
     async {
       let client = MastodonClient(app)
-      let! code = client.OAuthUrl() |> tryCodeAsync
+      let! code = (authenticator: IAuthenticator).AuthenticateAsync(client.OAuthUrl() |> Uri)
       match code with
       | Some code ->
         let! auth = client.ConnectWithCode(code) |> Async.AwaitTask
@@ -81,8 +82,7 @@ module Mastodon =
     }
 
   let private getOrCreateAccessTokenAsync
-    (database: IDatabase) (app: AppRegistration) (instance: string) (userName: string)
-    (tryCodeAsync: string -> Async<Option<string>>)
+    (database: IDatabase) authenticator (app: AppRegistration) (instance: string) (userName: string)
     =
     async {
       let! accessToken = tryGetAccessTokenAsync database instance userName
@@ -90,7 +90,7 @@ module Mastodon =
       | Some accessToken ->
         return Some accessToken
       | None ->
-        let! accessToken = authorizeAsync app instance userName tryCodeAsync
+        let! accessToken = authorizeAsync authenticator app instance userName
         match accessToken with
         | Some accessToken ->
           do! saveAccessTokenAsync database instance userName accessToken
@@ -100,12 +100,11 @@ module Mastodon =
     }
 
   let tryClientAsync
-    (database: IDatabase) (instance: string) (userName: string)
-    (tryCodeAsync: string -> Async<Option<string>>)
+    (database: IDatabase) (authenticator: IAuthenticator) (instance: string) (userName: string)
     =
     async {
       let! app = getOrCreateAppAsync database instance
-      let! accessToken = getOrCreateAccessTokenAsync database app instance userName tryCodeAsync
+      let! accessToken = getOrCreateAccessTokenAsync database authenticator app instance userName
       match accessToken with
       | Some accessToken ->
         return MastodonClient(app, accessToken) |> Some
