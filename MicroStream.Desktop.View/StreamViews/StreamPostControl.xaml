@@ -1,0 +1,30 @@
+﻿<UserControl
+    x:Class="MicroStream.StreamViews.StreamPostControl"
+    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006" 
+    xmlns:d="http://schemas.microsoft.com/expression/blend/2008" 
+    xmlns:local="clr-namespace:MicroStream.StreamViews"
+    mc:Ignorable="d" 
+    d:DesignHeight="300"
+    d:DesignWidth="300"
+    >
+    <DockPanel>
+        <DockPanel DockPanel.Dock="Top">
+            <TextBlock
+                DockPanel.Dock="Right"
+                Text="{Binding CreatedAt}"
+                />
+
+            <TextBlock>
+                <Run Text="{Binding DisplayName, Mode=OneTime}" FontWeight="Bold" />
+                <Run Text="@" FontSize="12" /><Run Text="{Binding UserName, Mode=OneTime}" FontSize="12" />
+            </TextBlock>
+        </DockPanel>
+
+        <TextBlock
+            TextWrapping="WrapWithOverflow"
+            Text="{Binding Content}"
+            />
+    </DockPanel>
+</UserControl>

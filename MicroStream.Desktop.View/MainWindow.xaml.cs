@@ -12,6 +12,8 @@ using System.Windows.Media;
 using System.Windows.Media.Imaging;
 using System.Windows.Navigation;
 using System.Windows.Shapes;
+using MicroStream.Authentication;
+using Reactive.Bindings;
 
 namespace MicroStream
 {
@@ -20,9 +22,24 @@ namespace MicroStream
     /// </summary>
     public partial class MainWindow : Window
     {
+        static MainWindow()
+        {
+            ReactivePropertyScheduler.SetDefault(UIDispatcherScheduler.Default);
+        }
+
         public MainWindow()
         {
             InitializeComponent();
+
+            var authenticator = new AuthenticationView(this);
+            var mainView = MainView.Create(authenticator);
+
+            DataContext = mainView;
+
+            Loaded += (sender, e) =>
+            {
+                mainView.Start();
+            };
         }
     }
 }

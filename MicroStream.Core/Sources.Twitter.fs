@@ -4,6 +4,8 @@ open System
 open System.Data.Entity
 open System.Data.Entity.Infrastructure
 open System.Linq
+open System.Reactive.Subjects
+open FSharp.Control.Reactive
 open FSharpKit
 open MicroStream
 open MicroStream.Data.Entity

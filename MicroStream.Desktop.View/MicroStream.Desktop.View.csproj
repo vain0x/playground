@@ -142,7 +142,21 @@
       <Generator>MSBuild:Compile</Generator>
       <SubType>Designer</SubType>
     </ApplicationDefinition>
+    <Compile Include="Authentication\AuthenticationWindow.xaml.cs">
+      <DependentUpon>AuthenticationWindow.xaml</DependentUpon>
+    </Compile>
+    <Compile Include="Authentication\AuthenticationView.cs" />
+    <Compile Include="StreamViews\StreamPostControl.xaml.cs">
+      <DependentUpon>StreamPostControl.xaml</DependentUpon>
+    </Compile>
+    <Compile Include="StreamViews\StreamViewControl.xaml.cs">
+      <DependentUpon>StreamViewControl.xaml</DependentUpon>
+    </Compile>
     <Page Include="AppResource.xaml">
+      <SubType>Designer</SubType>
+      <Generator>MSBuild:Compile</Generator>
+    </Page>
+    <Page Include="Authentication\AuthenticationWindow.xaml">
       <SubType>Designer</SubType>
       <Generator>MSBuild:Compile</Generator>
     </Page>
@@ -159,6 +173,14 @@
       <SubType>Code</SubType>
     </Compile>
     <Page Include="RootResource.xaml">
+      <SubType>Designer</SubType>
+      <Generator>MSBuild:Compile</Generator>
+    </Page>
+    <Page Include="StreamViews\StreamPostControl.xaml">
+      <SubType>Designer</SubType>
+      <Generator>MSBuild:Compile</Generator>
+    </Page>
+    <Page Include="StreamViews\StreamViewControl.xaml">
       <SubType>Designer</SubType>
       <Generator>MSBuild:Compile</Generator>
     </Page>
