@@ -27,8 +27,9 @@ namespace VainZero.SandBox.Wpf
             scale = 1.0;
             var min = 0.01;
 
-            while (scale > min)
+            while (true)
             {
+                var width = 0.0;
                 var height = 0.0;
                 var childSize = new Size(availableSize.Width / scale, double.PositiveInfinity);
                 for (var i = 0; i < VisualChildrenCount; i++)
@@ -36,14 +37,17 @@ namespace VainZero.SandBox.Wpf
                     var child = (UIElement)VisualTreeHelper.GetChild(this, i);
                     child.Measure(childSize);
                     height += child.DesiredSize.Height;
+                    width = Math.Max(width, child.DesiredSize.Width);
                 }
 
                 var availableHeight = availableSize.Height / scale;
-                if (height <= availableHeight) break;
+                if (height <= availableHeight || scale <= min)
+                {
+                    return new Size(width * scale, height * scale);
+                }
+
                 scale = Math.Max(min, Math.Min(scale * 0.95, (scale * 2 + height / availableHeight) / 3));
             }
-
-            return availableSize;
         }
 
         protected override Size ArrangeOverride(Size finalSize)

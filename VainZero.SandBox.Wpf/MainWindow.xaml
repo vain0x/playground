@@ -7,29 +7,28 @@
     xmlns:local="clr-namespace:VainZero.SandBox.Wpf"
     mc:Ignorable="d"
     Title="MainWindow"
-    Width="525"
-    Height="350"
+    SizeToContent="WidthAndHeight"
     >
-    <Border x:Name="border" Margin="30" BorderBrush="Black" BorderThickness="1">
-        <!--
-        <Viewbox StretchDirection="DownOnly">
-            <TextBlock Width="{Binding ActualWidth, ElementName=border}" TextWrapping="Wrap">
-                いろはにほへとちりぬるをわかよたれそつねならむうゐのおくやまけふこえてあさきゆめみしゑひもせす
-                いろはにほへとちりぬるをわかよたれそつねならむうゐのおくやまけふこえてあさきゆめみしゑひもせす
-                いろはにほへとちりぬるをわかよたれそつねならむうゐのおくやまけふこえてあさきゆめみしゑひもせす
-                いろはにほへとちりぬるをわかよたれそつねならむうゐのおくやまけふこえてあさきゆめみしゑひもせす
-                いろはにほへとちりぬるをわかよたれそつねならむうゐのおくやまけふこえてあさきゆめみしゑひもせす
-            </TextBlock>
-        </Viewbox>
-        -->
-        <local:ScaleControl>
-            <TextBlock TextWrapping="Wrap">
-                いろはにほへとちりぬるをわかよたれそつねならむうゐのおくやまけふこえてあさきゆめみしゑひもせす
-                いろはにほへとちりぬるをわかよたれそつねならむうゐのおくやまけふこえてあさきゆめみしゑひもせす
-                いろはにほへとちりぬるをわかよたれそつねならむうゐのおくやまけふこえてあさきゆめみしゑひもせす
-                いろはにほへとちりぬるをわかよたれそつねならむうゐのおくやまけふこえてあさきゆめみしゑひもせす
-                いろはにほへとちりぬるをわかよたれそつねならむうゐのおくやまけふこえてあさきゆめみしゑひもせす
-            </TextBlock>
-        </local:ScaleControl>
-    </Border>
+    <Grid>
+        <Grid>
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="*" />
+                <ColumnDefinition Width="*" />
+            </Grid.ColumnDefinitions>
+
+            <Border Grid.Column="0">
+                <TextBlock Text="Hello!" />
+            </Border>
+
+            <local:ScaleControl Grid.Column="1" x:Name="border" Margin="30" BorderBrush="Black" BorderThickness="1">
+                <TextBlock TextWrapping="Wrap">
+                    いろはにほへとちりぬるをわかよたれそつねならむうゐのおくやまけふこえてあさきゆめみしゑひもせす
+                    いろはにほへとちりぬるをわかよたれそつねならむうゐのおくやまけふこえてあさきゆめみしゑひもせす
+                    いろはにほへとちりぬるをわかよたれそつねならむうゐのおくやまけふこえてあさきゆめみしゑひもせす
+                    いろはにほへとちりぬるをわかよたれそつねならむうゐのおくやまけふこえてあさきゆめみしゑひもせす
+                    いろはにほへとちりぬるをわかよたれそつねならむうゐのおくやまけふこえてあさきゆめみしゑひもせす
+                </TextBlock>
+            </local:ScaleControl>
+        </Grid>
+    </Grid>
 </Window>
