@@ -1,0 +1,29 @@
+﻿<Window
+    x:Class="MicroStream.MainWindow"
+    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+    xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+    xmlns:local="clr-namespace:MicroStream"
+    xmlns:streamViews="clr-namespace:MicroStream.StreamViews"
+    xmlns:sourceEditors="clr-namespace:MicroStream.SourceEditors"
+    mc:Ignorable="d"
+    Style="{StaticResource AppWindowStyle}"
+    Title="MainWindow" Height="350" Width="525"
+    >
+    <TabControl>
+        <TabItem Header="Stream">
+            <streamViews:StreamViewControl
+                DataContext="{Binding StreamView}"
+                Style="{StaticResource MaterialDesignControlStyle}"
+                />
+        </TabItem>
+
+        <TabItem Header="Source">
+            <sourceEditors:SourceEditorControl
+                DataContext="{Binding SourceEditor}"
+                Style="{StaticResource MaterialDesignControlStyle}"
+                />
+        </TabItem>
+    </TabControl>
+</Window>
