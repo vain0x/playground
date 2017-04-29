@@ -146,6 +146,9 @@
       <DependentUpon>AuthenticationWindow.xaml</DependentUpon>
     </Compile>
     <Compile Include="Authentication\AuthenticationView.cs" />
+    <Compile Include="SourceEditors\SourceEditorControl.xaml.cs">
+      <DependentUpon>SourceEditorControl.xaml</DependentUpon>
+    </Compile>
     <Compile Include="StreamViews\StreamPostControl.xaml.cs">
       <DependentUpon>StreamPostControl.xaml</DependentUpon>
     </Compile>
@@ -173,6 +176,10 @@
       <SubType>Code</SubType>
     </Compile>
     <Page Include="RootResource.xaml">
+      <SubType>Designer</SubType>
+      <Generator>MSBuild:Compile</Generator>
+    </Page>
+    <Page Include="SourceEditors\SourceEditorControl.xaml">
       <SubType>Designer</SubType>
       <Generator>MSBuild:Compile</Generator>
     </Page>
@@ -216,6 +223,7 @@
       <Name>MicroStream.Desktop.Model</Name>
     </ProjectReference>
   </ItemGroup>
+  <ItemGroup />
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <Import Project="..\packages\System.Data.SQLite.Core.1.0.105.0\build\net46\System.Data.SQLite.Core.targets" Condition="Exists('..\packages\System.Data.SQLite.Core.1.0.105.0\build\net46\System.Data.SQLite.Core.targets')" />
   <Target Name="EnsureNuGetPackageBuildImports" BeforeTargets="PrepareForBuild">

@@ -4,11 +4,16 @@ open System
 open System.Data.Entity
 open System.Data.Entity.Infrastructure
 open System.Linq
+open System.Reactive.Disposables
 open System.Reactive.Subjects
 open FSharp.Control.Reactive
 open FSharpKit
 open MicroStream
 open MicroStream.Data.Entity
+open MicroStream.Reactive.Linq
+
+exception TwitterLoginFailure
+  of userName: string
 
 [<CompilationRepresentation(CompilationRepresentationFlags.ModuleSuffix)>]
 module Twitter =
@@ -66,4 +71,35 @@ module Twitter =
           return Some client
         | None ->
           return None
+    }
+
+  let userStreamAsync
+    (database: IDatabase)
+    (authenticator: IAuthenticator)
+    (userName: string)
+    =
+    async {
+      let! client = tryClientAsync database authenticator userName
+      match client with
+      | Some client ->
+        return
+          { new IObservable<_> with
+              override this.Subscribe(observer) =
+                let subscription = new CompositeDisposable()
+                let observer = observer |> Observer.performFinally subscription.Dispose
+                let stream = Tweetinvi.Stream.CreateUserStream(client)
+
+                stream.TweetCreatedByAnyone
+                |> Observable.subscribeObserver observer
+                |> subscription.Add
+
+                Disposable.Create(fun () -> stream.StopStream())
+                |> subscription.Add
+
+                stream.StartStreamAsync() |> ignore
+                subscription :> IDisposable
+          }
+          |> Observable.map (fun e -> e.Tweet |> TwitterPost)
+      | None ->
+        return! TwitterLoginFailure userName |> raise
     }

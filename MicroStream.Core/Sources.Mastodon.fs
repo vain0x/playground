@@ -3,10 +3,14 @@
 open System
 open System.Data.Entity
 open System.Linq
+open FSharp.Control.Reactive
 open Mastonet
 open Mastonet.Entities
 open MicroStream
 open MicroStream.Data.Entity
+
+exception MastodonLoginFailure
+  of instance: string * userName: string
 
 module Mastodon =
   [<Literal>]
@@ -110,4 +114,28 @@ module Mastodon =
         return MastodonClient(app, accessToken) |> Some
       | None ->
         return None
+    }
+
+  let publicStreamAsync
+    (database: IDatabase)
+    (authenticator: IAuthenticator)
+    (instance: string)
+    (userName: string)
+    =
+    async {
+      let! client = tryClientAsync database authenticator instance userName
+      match client with
+      | Some client ->
+        return
+          { new IObservable<_> with
+              override this.Subscribe(observer) =
+                let stream = client.GetPublicStreaming()
+                let subscription = stream.OnUpdate |> Observable.subscribeObserver observer
+                stream.Start()
+                subscription
+          }
+          |> Observable.filteri (fun i _ -> i % 5 = 0)
+          |> Observable.map (fun e -> e.Status |> MastodonPost)
+      | None ->
+        return! MastodonLoginFailure (instance, userName) |> raise
     }

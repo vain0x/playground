@@ -17,18 +17,23 @@
         >
         <Setter Property="AcceptsReturn" Value="True" />
         <Setter Property="MinLines" Value="2" />
-        <Setter Property="MaxLines" Value="6" />
         <Setter Property="TextWrapping" Value="Wrap" />
         <Setter Property="VerticalScrollBarVisibility" Value="Auto" />
     </Style>
 
-    <Style x:Key="AppWindowStyle" TargetType="Window">
+    <Style x:Key="MaterialDesignControlStyle" TargetType="Control">
         <Setter Property="TextElement.Foreground" Value="{DynamicResource MaterialDesignBody}" />
         <Setter Property="TextElement.FontWeight" Value="Regular" />
+        <Setter Property="TextElement.FontFamily" Value="{StaticResource MaterialDesignFont}" />
         <Setter Property="TextElement.FontSize" Value="13" />
         <Setter Property="TextOptions.TextFormattingMode" Value="Ideal" />
         <Setter Property="TextOptions.TextRenderingMode" Value="Auto" />
         <Setter Property="Background" Value="{DynamicResource MaterialDesignPaper}" />
-        <Setter Property="FontFamily" Value="{StaticResource MaterialDesignFont}" />
     </Style>
+
+    <Style
+        x:Key="AppWindowStyle"
+        TargetType="Window"
+        BasedOn="{StaticResource MaterialDesignControlStyle}"
+        />
 </ResourceDictionary>

@@ -54,12 +54,14 @@
   <Import Project="$(FSharpTargetsPath)" />
   <ItemGroup>
     <Compile Include="AssemblyInfo.fs" />
+    <Compile Include="Reactive.Linq.fs" />
     <Compile Include="String.fs" />
     <Compile Include="Types.fs" />
     <Compile Include="Data.Entity.fs" />
     <Compile Include="Data.Queryable.fs" />
     <Compile Include="Sources.Twitter.fs" />
     <Compile Include="Sources.Mastodon.fs" />
+    <Compile Include="Scripting.Runner.fs" />
     <Content Include="packages.config" />
     <Content Include="App.config" />
   </ItemGroup>

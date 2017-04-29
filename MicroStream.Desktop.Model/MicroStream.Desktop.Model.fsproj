@@ -64,6 +64,7 @@
   <ItemGroup>
     <Compile Include="AssemblyInfo.fs" />
     <Compile Include="Reactive.Bindings.fs" />
+    <Compile Include="SourceEditors.fs" />
     <Compile Include="StreamViews.StreamPost.fs" />
     <Compile Include="StreamViews.StreamView.fs" />
     <Compile Include="Authentication.fs" />
