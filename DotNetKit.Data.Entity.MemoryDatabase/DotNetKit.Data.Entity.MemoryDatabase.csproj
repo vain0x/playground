@@ -52,7 +52,19 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="Collections\AnonymousEnumerable.cs" />
+    <Compile Include="Collections\StructuralEqualityComparer.cs" />
+    <Compile Include="Data\Entity\EntityOperation.cs" />
+    <Compile Include="Data\Entity\IDbSchema.cs" />
+    <Compile Include="Data\Entity\Infrastructure\SynchronousDbAsyncEnumerator.cs" />
+    <Compile Include="Data\Entity\Infrastructure\SynchronousDbAsyncQueryProvider.cs" />
+    <Compile Include="Data\Entity\MemoryDbContext.cs" />
+    <Compile Include="Data\Entity\MemoryDbSchema.cs" />
+    <Compile Include="Data\Entity\MemoryDbSet.cs" />
+    <Compile Include="Data\Entity\MemoryDbTable.cs" />
+    <Compile Include="Linq\Queryable\Operators\SynchronousAsyncQueryable.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
+    <Compile Include="Threading\Tasks\BooleanTaskModule.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="App.config" />
