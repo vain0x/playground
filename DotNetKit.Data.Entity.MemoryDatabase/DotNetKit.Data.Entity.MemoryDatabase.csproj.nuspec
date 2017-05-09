@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="utf-8"?>
+<package xmlns="http://schemas.microsoft.com/packaging/2010/07/nuspec.xsd">
+  <metadata>
+    <id>DotNetKit.Data.Entity.MemoryDatabase</id>
+    <version>1.0.0</version>
+    <authors>vain0</authors>
+    <language>en-US</language>
+    <projectUrl>https://github.com/DotNetKit/DotNetKit.Data.Entity.MemoryDatabase</projectUrl>
+    <licenseUrl>https://github.com/DotNetKit/DotNetKit.Data.Entity.MemoryDatabase/blob/master/LICENSE.md</licenseUrl>
+    <description>
+      Provides queryable in-memory database.
+    </description>
+    <dependencies>
+      <dependency id="EntityFramework" version="[6.0.0, 7.0.0)" />
+    </dependencies>
+  </metadata>
+  <files>
+    <file src="bin\Release\DotNetKit.Data.Entity.MemoryDatabase.*" target="lib\net45" />
+  </files>
+</package>
