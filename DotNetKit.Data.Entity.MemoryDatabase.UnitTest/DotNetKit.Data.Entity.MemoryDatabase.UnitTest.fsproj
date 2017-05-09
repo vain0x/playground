@@ -86,6 +86,10 @@
       <Private>True</Private>
     </Reference>
   </ItemGroup>
+  <PropertyGroup>
+    <PostBuildEvent>$(SolutionDir)\packages\Persimmon.Console.2.0.1\tools\Persimmon.Console.exe $(TargetPath)
+</PostBuildEvent>
+  </PropertyGroup>
   <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 
        Other similar extension points exist, see Microsoft.Common.targets.
   <Target Name="BeforeBuild">
