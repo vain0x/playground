@@ -3,7 +3,25 @@ Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio 14
 VisualStudioVersion = 14.0.25420.1
 MinimumVisualStudioVersion = 10.0.40219.1
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "DotNetKit.Data.Entity.MemoryDatabase", "DotNetKit.Data.Entity.MemoryDatabase\DotNetKit.Data.Entity.MemoryDatabase.csproj", "{D029E189-1087-417A-B59C-92ED90EC8FD0}"
+EndProject
+Project("{F2A71F9B-5D33-465A-A702-920D77279786}") = "DotNetKit.Data.Entity.MemoryDatabase.UnitTest", "DotNetKit.Data.Entity.MemoryDatabase.UnitTest\DotNetKit.Data.Entity.MemoryDatabase.UnitTest.fsproj", "{45869506-6270-447F-916B-E7FA1CE873AA}"
+EndProject
 Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Release|Any CPU = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{D029E189-1087-417A-B59C-92ED90EC8FD0}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{D029E189-1087-417A-B59C-92ED90EC8FD0}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{D029E189-1087-417A-B59C-92ED90EC8FD0}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{D029E189-1087-417A-B59C-92ED90EC8FD0}.Release|Any CPU.Build.0 = Release|Any CPU
+		{45869506-6270-447F-916B-E7FA1CE873AA}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{45869506-6270-447F-916B-E7FA1CE873AA}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{45869506-6270-447F-916B-E7FA1CE873AA}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{45869506-6270-447F-916B-E7FA1CE873AA}.Release|Any CPU.Build.0 = Release|Any CPU
+	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
 	EndGlobalSection
