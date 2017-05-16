@@ -12,20 +12,17 @@ using System.Windows.Media;
 using System.Windows.Media.Imaging;
 using System.Windows.Navigation;
 using System.Windows.Shapes;
-using VainZero.Dancehall.Fronts;
 
-namespace VainZero.Dancehall
+namespace VainZero.Dancehall.Fronts
 {
     /// <summary>
-    /// Interaction logic for MainWindow.xaml
+    /// Interaction logic for PlayControllerControl.xaml
     /// </summary>
-    public partial class MainWindow : Window
+    public partial class PlayControllerControl : UserControl
     {
-        public MainWindow()
+        public PlayControllerControl()
         {
             InitializeComponent();
-
-            DataContext = Main.Create();
         }
     }
 }
