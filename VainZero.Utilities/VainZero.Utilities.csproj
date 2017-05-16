@@ -30,6 +30,9 @@
     <WarningLevel>4</WarningLevel>
   </PropertyGroup>
   <ItemGroup>
+    <Reference Include="DotNetKit.ErrorHandling, Version=1.0.0.21600, Culture=neutral, processorArchitecture=MSIL">
+      <HintPath>..\packages\DotNetKit.ErrorHandling.2.0.0\lib\netstandard10\DotNetKit.ErrorHandling.dll</HintPath>
+    </Reference>
     <Reference Include="System" />
     <Reference Include="System.Core" />
     <Reference Include="System.ValueTuple, Version=4.0.1.1, Culture=neutral, PublicKeyToken=cc7b13ffcd2ddd51, processorArchitecture=MSIL">
