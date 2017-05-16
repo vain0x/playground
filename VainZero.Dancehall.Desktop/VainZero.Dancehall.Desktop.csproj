@@ -156,6 +156,16 @@
   <ItemGroup>
     <None Include="App.config" />
   </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\VainZero.Dancehall.Core\VainZero.Dancehall.Core.csproj">
+      <Project>{ee7fe738-4606-45c6-85c1-ee228f7ad670}</Project>
+      <Name>VainZero.Dancehall.Core</Name>
+    </ProjectReference>
+    <ProjectReference Include="..\VainZero.Utilities\VainZero.Utilities.csproj">
+      <Project>{d2f9c58c-f300-49ca-8c49-e7d2579f7070}</Project>
+      <Name>VainZero.Utilities</Name>
+    </ProjectReference>
+  </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <Import Project="..\packages\System.Data.SQLite.Core.1.0.105.1\build\net46\System.Data.SQLite.Core.targets" Condition="Exists('..\packages\System.Data.SQLite.Core.1.0.105.1\build\net46\System.Data.SQLite.Core.targets')" />
   <Target Name="EnsureNuGetPackageBuildImports" BeforeTargets="PrepareForBuild">
