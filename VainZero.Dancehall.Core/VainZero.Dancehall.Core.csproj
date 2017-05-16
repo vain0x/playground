@@ -7,7 +7,7 @@
     <ProjectGuid>{EE7FE738-4606-45C6-85C1-EE228F7AD670}</ProjectGuid>
     <OutputType>Library</OutputType>
     <AppDesignerFolder>Properties</AppDesignerFolder>
-    <RootNamespace>VainZero</RootNamespace>
+    <RootNamespace>VainZero.Dancehall</RootNamespace>
     <AssemblyName>VainZero.Dancehall.Core</AssemblyName>
     <TargetFrameworkVersion>v4.6</TargetFrameworkVersion>
     <FileAlignment>512</FileAlignment>
@@ -79,6 +79,21 @@
     </Reference>
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="Data\DatabaseRepository.cs" />
+    <Compile Include="Data\Entity\Album.cs" />
+    <Compile Include="Data\Entity\AlbumItem.cs" />
+    <Compile Include="Data\Entity\AppDbContext.cs" />
+    <Compile Include="Data\Entity\Tag.cs" />
+    <Compile Include="Data\Entity\Work.cs" />
+    <Compile Include="Data\Entity\WorkParty.cs" />
+    <Compile Include="Data\Entity\WorkPartyType.cs" />
+    <Compile Include="Data\Entity\WorkPlay.cs" />
+    <Compile Include="Data\Entity\WorkTagPair.cs" />
+    <Compile Include="Data\Entity\Person.cs" />
+    <Compile Include="Data\Entity\Playlist.cs" />
+    <Compile Include="Data\Entity\PlaylistItem.cs" />
+    <Compile Include="Data\Entity\Sequence.cs" />
+    <Compile Include="Data\IRepository.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
   </ItemGroup>
   <ItemGroup>
@@ -99,7 +114,7 @@
     </PropertyGroup>
     <Error Condition="!Exists('..\packages\System.Data.SQLite.Core.1.0.105.1\build\net46\System.Data.SQLite.Core.targets')" Text="$([System.String]::Format('$(ErrorText)', '..\packages\System.Data.SQLite.Core.1.0.105.1\build\net46\System.Data.SQLite.Core.targets'))" />
   </Target>
-  <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 
+  <!-- To modify your build process, add your task inside one of the targets below and uncomment it.
        Other similar extension points exist, see Microsoft.Common.targets.
   <Target Name="BeforeBuild">
   </Target>

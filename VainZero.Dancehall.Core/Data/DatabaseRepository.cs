@@ -1,17 +1,18 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Data.Entity;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using VainZero.Dancehall.Data.Entity;
 
-namespace VainZero.Dancehall
+namespace VainZero.Dancehall.Data
 {
-    public sealed class Program
+    public sealed class DatabaseRepository
+        : IRepository
     {
-        public static void Main(string[] args)
+        AppDbContext Connect()
         {
+            return new AppDbContext();
         }
     }
 }
