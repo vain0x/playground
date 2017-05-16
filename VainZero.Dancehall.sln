@@ -3,8 +3,52 @@ Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio 15
 VisualStudioVersion = 15.0.26403.7
 MinimumVisualStudioVersion = 10.0.40219.1
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "100-Libraries", "100-Libraries", "{E77D0EF7-B5B1-4AB3-B6D4-BF82626591C4}"
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "200-Core", "200-Core", "{EE3B890F-CA9D-453F-AA61-2C2406591D02}"
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "300-Cli", "300-Cli", "{31E40816-B7E8-4887-85F7-A85F653F9658}"
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "400-Desktop", "400-Desktop", "{8BBD77A5-AEFC-40EB-8C08-48BB23E88C65}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "VainZero.Utilities", "VainZero.Utilities\VainZero.Utilities.csproj", "{D2F9C58C-F300-49CA-8C49-E7D2579F7070}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "VainZero.Dancehall.Core", "VainZero.Dancehall.Core\VainZero.Dancehall.Core.csproj", "{EE7FE738-4606-45C6-85C1-EE228F7AD670}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "VainZero.Dancehall.Cli", "VainZero.Dancehall.Cli\VainZero.Dancehall.Cli.csproj", "{233CB1B0-DF4E-4EF8-A6AE-B4B7F59A8689}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "VainZero.Dancehall.Desktop", "VainZero.Dancehall.Desktop\VainZero.Dancehall.Desktop.csproj", "{EDACD363-D07A-4B9D-9658-70D607F2C6A5}"
+EndProject
 Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Release|Any CPU = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{D2F9C58C-F300-49CA-8C49-E7D2579F7070}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{D2F9C58C-F300-49CA-8C49-E7D2579F7070}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{D2F9C58C-F300-49CA-8C49-E7D2579F7070}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{D2F9C58C-F300-49CA-8C49-E7D2579F7070}.Release|Any CPU.Build.0 = Release|Any CPU
+		{EE7FE738-4606-45C6-85C1-EE228F7AD670}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{EE7FE738-4606-45C6-85C1-EE228F7AD670}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{EE7FE738-4606-45C6-85C1-EE228F7AD670}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{EE7FE738-4606-45C6-85C1-EE228F7AD670}.Release|Any CPU.Build.0 = Release|Any CPU
+		{233CB1B0-DF4E-4EF8-A6AE-B4B7F59A8689}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{233CB1B0-DF4E-4EF8-A6AE-B4B7F59A8689}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{233CB1B0-DF4E-4EF8-A6AE-B4B7F59A8689}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{233CB1B0-DF4E-4EF8-A6AE-B4B7F59A8689}.Release|Any CPU.Build.0 = Release|Any CPU
+		{EDACD363-D07A-4B9D-9658-70D607F2C6A5}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{EDACD363-D07A-4B9D-9658-70D607F2C6A5}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{EDACD363-D07A-4B9D-9658-70D607F2C6A5}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{EDACD363-D07A-4B9D-9658-70D607F2C6A5}.Release|Any CPU.Build.0 = Release|Any CPU
+	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(NestedProjects) = preSolution
+		{D2F9C58C-F300-49CA-8C49-E7D2579F7070} = {E77D0EF7-B5B1-4AB3-B6D4-BF82626591C4}
+		{EE7FE738-4606-45C6-85C1-EE228F7AD670} = {EE3B890F-CA9D-453F-AA61-2C2406591D02}
+		{233CB1B0-DF4E-4EF8-A6AE-B4B7F59A8689} = {31E40816-B7E8-4887-85F7-A85F653F9658}
+		{EDACD363-D07A-4B9D-9658-70D607F2C6A5} = {8BBD77A5-AEFC-40EB-8C08-48BB23E88C65}
 	EndGlobalSection
 EndGlobal
