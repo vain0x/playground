@@ -33,6 +33,9 @@
     <Reference Include="DotNetKit.ErrorHandling, Version=1.0.0.21600, Culture=neutral, processorArchitecture=MSIL">
       <HintPath>..\packages\DotNetKit.ErrorHandling.2.0.0\lib\netstandard10\DotNetKit.ErrorHandling.dll</HintPath>
     </Reference>
+    <Reference Include="NAudio, Version=1.8.0.0, Culture=neutral, processorArchitecture=MSIL">
+      <HintPath>..\packages\NAudio.1.8.0\lib\net35\NAudio.dll</HintPath>
+    </Reference>
     <Reference Include="policy.2.0.taglib-sharp, Version=0.0.0.0, Culture=neutral, PublicKeyToken=db62eba44689b5b0, processorArchitecture=MSIL">
       <HintPath>..\packages\taglib.2.1.0.0\lib\policy.2.0.taglib-sharp.dll</HintPath>
     </Reference>
