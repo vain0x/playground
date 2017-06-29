@@ -4,12 +4,18 @@
     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
     xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
     xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+    xmlns:lazyItemsControl="clr-namespace:DotNetKit.Windows.Controls"
     xmlns:local="clr-namespace:VainZero.SandBox.Wpf"
     mc:Ignorable="d"
     Title="MainWindow"
     Width="525"
     Height="350"
     >
-    <DockPanel>
-    </DockPanel>
+    <lazyItemsControl:LazyItemsControl NextItems="{Binding NextItems}">
+        <lazyItemsControl:LazyItemsControl.ItemTemplate>
+            <DataTemplate>
+                <local:ItemControl />
+            </DataTemplate>
+        </lazyItemsControl:LazyItemsControl.ItemTemplate>
+    </lazyItemsControl:LazyItemsControl>
 </Window>

@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
@@ -23,6 +24,22 @@ namespace VainZero.SandBox.Wpf
         public MainWindow()
         {
             InitializeComponent();
+
+            var iota = Enumerable.Range(0, 100).ToArray();
+            var i = 0;
+            var nextItems =
+                new Func<IEnumerable>(() =>
+                {
+                    i++;
+                    if (i > iota.Length) return new int[0];
+                    return new[] { iota[i - 1] };
+                });
+
+            DataContext =
+                new
+                {
+                    NextItems = nextItems,
+                };
         }
     }
 }
