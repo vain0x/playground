@@ -1,0 +1,22 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio 15
+VisualStudioVersion = 15.0.26430.13
+MinimumVisualStudioVersion = 10.0.40219.1
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "VainZero.EntityClassGenerator", "VainZero.EntityClassGenerator\VainZero.EntityClassGenerator.csproj", "{18FB2435-8718-4F52-93A5-94D26AF8091B}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Release|Any CPU = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{18FB2435-8718-4F52-93A5-94D26AF8091B}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{18FB2435-8718-4F52-93A5-94D26AF8091B}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{18FB2435-8718-4F52-93A5-94D26AF8091B}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{18FB2435-8718-4F52-93A5-94D26AF8091B}.Release|Any CPU.Build.0 = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+EndGlobal
