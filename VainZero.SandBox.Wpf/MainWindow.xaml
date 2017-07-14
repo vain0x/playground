@@ -5,11 +5,20 @@
     xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
     xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
     xmlns:local="clr-namespace:VainZero.SandBox.Wpf"
+    xmlns:dd="urn:gong-wpf-dragdrop"
     mc:Ignorable="d"
     Title="MainWindow"
     Width="525"
     Height="350"
     >
-    <DockPanel>
-    </DockPanel>
+    <DataGrid
+        ItemsSource="{Binding Persons}"
+        CanUserAddRows="False"
+        CanUserDeleteRows="False"
+        dd:DragDrop.IsDragSource="True"
+        dd:DragDrop.IsDropTarget="True"
+        dd:DragDrop.DropHandler="{Binding PersonsDropHandler}"
+        dd:DragDrop.DropScrollingMode="VerticalOnly"
+        dd:DragDrop.UseDefaultEffectDataTemplate="True"
+        />
 </Window>
