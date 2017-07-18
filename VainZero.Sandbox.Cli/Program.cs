@@ -4,21 +4,32 @@ using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
 using System.Data.Common;
 using System.Data.Entity;
+using System.Diagnostics;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using System.Transactions;
 
 namespace VainZero.Sandbox
 {
     public class Person
     {
         [Key]
-        [Column]
         public long Id { get; set; }
 
-        [Column]
         [StringLength(1024)]
         public string Name { get; set; }
+
+        public bool IsAdult { get; set; }
+
+        public Gender Gender { get; set; } = Gender.Other;
+    }
+
+    public enum Gender
+    {
+        Other,
+        Male,
+        Female,
     }
 
     public sealed class MyContext
@@ -34,41 +45,67 @@ namespace VainZero.Sandbox
 
     public sealed class Program
     {
-        public string Do(int type)
+        public string Name(IEnumerable<Person> persons)
         {
-            using (var context = new MyContext())
-            {
-                // Add records.
-                if (type % 2 == 0)
-                {
-                    context.Persons.Add(new Person() { Name = "Miku" });
-                    context.Persons.Add(new Person() { Name = "Rin" });
-                    context.Persons.Add(new Person() { Name = "Luka" });
-                }
-                else
-                {
-                    context.Persons.Add(new Person() { Name = "GUMI" });
-                    context.Persons.Add(new Person() { Name = "Gakupo" });
-                }
-                context.SaveChanges();
+            return string.Join(", ", persons.Select(p => p.Name));
+        }
 
-                // Gets all records.
+        public MyContext Connect()
+        {
+            var context = new MyContext();
+
+            context.Persons.Add(new Person() { Name = "Miku", Gender = Gender.Female });
+            context.Persons.Add(new Person() { Name = "Rin" });
+            context.Persons.Add(new Person() { Name = "Luka", IsAdult = true });
+            context.SaveChanges();
+
+            return context;
+        }
+
+        void TestInitialization()
+        {
+            using (var context = Connect())
+            {
                 var persons = context.Persons.ToArray();
-                return string.Join(", ", persons.Select(p => p.Name));
+                Debug.Assert(Name(context.Persons) == "Miku, Rin, Luka");
+
+                var miku = persons[0];
+                Debug.Assert(miku.Gender == Gender.Female);
+
+                var luka = persons[2];
+                Debug.Assert(luka.IsAdult && !miku.IsAdult);
             }
+        }
+
+        async Task TestRollbackAsync()
+        {
+            using (var context = Connect())
+            {
+                using (var transaction = new TransactionScope(TransactionScopeOption.Required, TransactionScopeAsyncFlowOption.Enabled))
+                {
+                    await Task.Yield();
+                    var persons = await context.Persons.ToArrayAsync();
+                    context.Persons.Remove(persons.Last());
+                    await context.SaveChangesAsync();
+
+                    context.Persons.Add(new Person() { Name = "GUMI" });
+                    await context.SaveChangesAsync();
+                    Debug.Assert(Name(context.Persons) == "Miku, Rin, GUMI");
+                }
+
+                Debug.Assert(Name(context.Persons) == "Miku, Rin, Luka");
+            }
+        }
+
+        void TestRollback()
+        {
+            TestRollbackAsync().Wait();
         }
 
         public void Run()
         {
-            var tasks =
-                Enumerable.Range(0, 100)
-                .Select(i => Task.Run(() => Do(i)))
-                .ToArray();
-
-            foreach (var result in Task.WhenAll(tasks).Result)
-            {
-                Console.WriteLine(result);
-            }
+            TestInitialization();
+            TestRollback();
         }
 
         public static void Main(string[] args)
