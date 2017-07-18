@@ -10,10 +10,6 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using SQLite.CodeFirst;
-using System.Data.Common;
-using System.Data;
-using System.Data.Entity.Core.EntityClient;
-using System.Data.Entity.Core.Metadata.Edm;
 
 namespace VainZero.Sandbox
 {
@@ -31,26 +27,14 @@ namespace VainZero.Sandbox
     public class MyContext
         : DbContext
     {
-        static DbConnection CreateConnection()
-        {
-            var connection = new SQLiteConnection(ConnectionString);
-            connection.Open();
-            return connection;
-        }
-
-        MyContext(DbConnection connection)
-            : base(connection, contextOwnsConnection: false)
+        public MyContext()
+            : base(new SQLiteConnection(ConnectionString), contextOwnsConnection: true)
         {
             Database.Log = text => Debug.WriteLine(text);
         }
 
-        public MyContext()
-            : this(CreateConnection())
-        {
-        }
-
         #region ConnectionString
-        const string dbPath = @":memory:";
+        const string dbPath = @"./database.sqlite";
 
         static SQLiteConnectionStringBuilder ConnectionStringBuilder =>
             new SQLiteConnectionStringBuilder
@@ -85,9 +69,9 @@ namespace VainZero.Sandbox
 
         protected sealed override void OnModelCreating(DbModelBuilder mb)
         {
-            mb.Entity<Person>();
-
             Database.SetInitializer(new MyDbInitializer(mb));
+
+            mb.Entity<Person>();
         }
         #endregion
     }
@@ -98,28 +82,6 @@ namespace VainZero.Sandbox
         {
             using (var context = new MyContext())
             {
-                Console.WriteLine("Start.");
-                var persons = context.Set<Person>().ToArray();
-                foreach (var person in persons)
-                {
-                    Console.WriteLine("{0}", person.Name);
-                }
-
-                using (var transaction = context.Database.BeginTransaction())
-                {
-                    context.Set<Person>().Remove(persons[0]);
-                    context.Set<Person>().Add(new Person() { Name = "Miku" });
-
-                    Console.WriteLine("Transaction.");
-
-                    foreach (var person in context.Set<Person>())
-                    {
-                        Console.WriteLine("{0}", person.Name);
-                    }
-
-                    Console.WriteLine("Rollback.");
-                }
-
                 foreach (var person in context.Set<Person>())
                 {
                     Console.WriteLine("{0}", person.Name);
