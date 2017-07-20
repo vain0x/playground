@@ -58,9 +58,9 @@ namespace VainZero.EntityClassGenerator.Providers
                     return "string";
                 case "date":
                 case "datetime":
+                case "timestamp":
                     return "DateTime" + question;
                 case "time":
-                case "timestamp":
                     return "TimeSpan" + question;
                 case "varbinary":
                 case "blob":
