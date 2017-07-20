@@ -6,7 +6,7 @@
     <Platform Condition=" '$(Platform)' == '' ">AnyCPU</Platform>
     <ProjectGuid>{18FB2435-8718-4F52-93A5-94D26AF8091B}</ProjectGuid>
     <OutputType>Exe</OutputType>
-    <RootNamespace>VainZero.EntityClassGenerator</RootNamespace>
+    <RootNamespace>VainZero</RootNamespace>
     <AssemblyName>VainZero.EntityClassGenerator</AssemblyName>
     <TargetFrameworkVersion>v4.6</TargetFrameworkVersion>
     <FileAlignment>512</FileAlignment>
@@ -49,12 +49,28 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="Program.cs" />
+    <Compile Include="EntityClassGenerator\AppArgument.cs" />
+    <Compile Include="EntityClassGenerator\CSharpWriters\CSharpIdentifier.cs" />
+    <Compile Include="EntityClassGenerator\CSharpWriters\EntityClass.cs" />
+    <Compile Include="EntityClassGenerator\CSharpWriters\EntityClassCollection.cs" />
+    <Compile Include="EntityClassGenerator\CSharpWriters\CSharpStyle.cs" />
+    <Compile Include="EntityClassGenerator\Domain\ITypeNameMapper.cs" />
+    <Compile Include="EntityClassGenerator\Domain\DbColumn.cs" />
+    <Compile Include="EntityClassGenerator\Domain\DbSchema.cs" />
+    <Compile Include="EntityClassGenerator\Domain\DbTable.cs" />
+    <Compile Include="EntityClassGenerator\Generator.cs" />
+    <Compile Include="EntityClassGenerator\Program.cs" />
+    <Compile Include="EntityClassGenerator\Providers\DbProviderType.cs" />
+    <Compile Include="EntityClassGenerator\Providers\IDbProvider.cs" />
+    <Compile Include="EntityClassGenerator\Providers\MySql\MySqlDbProvider.cs" />
+    <Compile Include="EntityClassGenerator\Providers\MySql\MySqlTypeNameMapper.cs" />
+    <Compile Include="Misc\Disposables\AnonymousDisposable.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="App.config" />
     <None Include="packages.config" />
   </ItemGroup>
+  <ItemGroup />
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
 </Project>
