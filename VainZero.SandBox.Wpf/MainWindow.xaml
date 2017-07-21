@@ -11,5 +11,7 @@
     Height="350"
     >
     <DockPanel>
+        <Button Content="Start" Click="Button_Click" Width="120" Height="40" />
+        <TextBlock Text="{Binding Message.Value}" />
     </DockPanel>
 </Window>
