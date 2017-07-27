@@ -11,6 +11,8 @@ using Microsoft.CodeAnalysis.CodeFixes;
 using Microsoft.CodeAnalysis.CSharp;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
 using Microsoft.CodeAnalysis.Diagnostics;
+using Microsoft.CodeAnalysis.Formatting;
+using Microsoft.CodeAnalysis.Simplification;
 
 namespace RecordTypeAnalyzer.Analyzers
 {
@@ -198,7 +200,7 @@ namespace RecordTypeAnalyzer.Analyzers
 
     public sealed class RecordTypeGenerator
     {
-        sealed class CopyAssignment
+        sealed class AssignableVariableMember
         {
             VariableMember Member { get; }
 
@@ -208,7 +210,7 @@ namespace RecordTypeAnalyzer.Analyzers
 
             public ITypeSymbol TypeSymbol => Member.TypeSymbol;
 
-            public CopyAssignment(VariableMember member)
+            public AssignableVariableMember(VariableMember member)
             {
                 Member = member;
                 ParameterName = member.NameAsCamelCase();
@@ -223,14 +225,33 @@ namespace RecordTypeAnalyzer.Analyzers
 
         CancellationToken CancellationToken { get; }
 
-        ConstructorDeclarationSyntax GenerateCopyConstructor()
+        LanguageVersion? LanguageVersion =>
+            (TypeDecl.SyntaxTree.Options as CSharpParseOptions).LanguageVersion;
+
+        TypeSyntax TypeSyntax(ITypeSymbol typeSymbol)
+        {
+            var typeName = typeSymbol.ToDisplayString();
+            return SyntaxFactory.IdentifierName(typeName);
+        }
+
+        MemberAccessExpressionSyntax ParameterNode(string parameterName)
+        {
+            return
+                SyntaxFactory.MemberAccessExpression(
+                    SyntaxKind.SimpleMemberAccessExpression,
+                    SyntaxFactory.ThisExpression(),
+                    SyntaxFactory.IdentifierName(parameterName)
+                );
+        }
+
+        ConstructorDeclarationSyntax GenerateRecordConstructor()
         {
             var varMembers = new VariableMemberCollector(SemanticModel).Collect(TypeDecl);
 
             var assignables =
                 varMembers
                 .Where(m => !m.HasInitializer)
-                .Select(m => new CopyAssignment(m))
+                .Select(m => new AssignableVariableMember(m))
                 .ToImmutableArray();
 
             var parameterList =
@@ -239,22 +260,39 @@ namespace RecordTypeAnalyzer.Analyzers
                         assignables.Select(a =>
                             SyntaxFactory.Parameter(
                                 SyntaxFactory.Identifier(a.ParameterName)
-                            ).WithType(SyntaxFactory.ParseTypeName(a.TypeSymbol.Name))
+                            ).WithType(TypeSyntax(a.TypeSymbol))
                         )));
 
-            var body =
-                SyntaxFactory.Block(
-                    assignables.Select(a =>
-                        SyntaxFactory.ExpressionStatement(
-                            SyntaxFactory.AssignmentExpression(
-                                SyntaxKind.SimpleAssignmentExpression,
-                                SyntaxFactory.MemberAccessExpression(
-                                    SyntaxKind.SimpleMemberAccessExpression,
-                                    SyntaxFactory.ThisExpression(),
-                                    SyntaxFactory.IdentifierName(a.ParameterName)
-                                ),
+            var aneType = SemanticModel.Compilation.GetTypeByMetadataName(typeof(ArgumentNullException).FullName);
+
+            var contracts =
+                (aneType == null ? ImmutableArray<AssignableVariableMember>.Empty : assignables)
+                .Where(a => a.TypeSymbol.IsReferenceType)
+                .Select(a =>
+                    SyntaxFactory.IfStatement(
+                        SyntaxFactory.BinaryExpression(
+                            SyntaxKind.NotEqualsExpression,
+                            ParameterNode(a.ParameterName),
+                            SyntaxFactory.LiteralExpression(SyntaxKind.NullKeyword)
+                        ),
+                        SyntaxFactory.ThrowStatement(
+                            SyntaxFactory.ObjectCreationExpression(TypeSyntax(aneType))
+                        )));
+
+            var assignments =
+                assignables.Select(a =>
+                    SyntaxFactory.ExpressionStatement(
+                        SyntaxFactory.AssignmentExpression(
+                            SyntaxKind.SimpleAssignmentExpression,
+                            SyntaxFactory.MemberAccessExpression(
+                                SyntaxKind.SimpleMemberAccessExpression,
+                                SyntaxFactory.ThisExpression(),
                                 SyntaxFactory.IdentifierName(a.ParameterName)
-                            ))));
+                            ),
+                            SyntaxFactory.IdentifierName(a.ParameterName)
+                        )));
+
+            var body = SyntaxFactory.Block(contracts.Concat<StatementSyntax>(assignments));
 
             var typeName = TypeDecl.Identifier.Text;
             return
@@ -262,7 +300,8 @@ namespace RecordTypeAnalyzer.Analyzers
                 .WithModifiers(SyntaxTokenList.Create(SyntaxFactory.Token(SyntaxKind.PublicKeyword)))
                 .WithParameterList(parameterList)
                 .WithBody(body)
-                .WithAdditionalAnnotations(Microsoft.CodeAnalysis.Formatting.Formatter.Annotation);
+                .WithAdditionalAnnotations(Formatter.Annotation)
+                .WithAdditionalAnnotations(Simplifier.Annotation);
         }
 
         public async Task<Document> FixAsync(Document document)
@@ -270,9 +309,9 @@ namespace RecordTypeAnalyzer.Analyzers
             var tree = await document.GetSyntaxTreeAsync(CancellationToken).ConfigureAwait(false);
             var root = await tree.GetRootAsync(CancellationToken);
 
-            var copyConstructorDecl = GenerateCopyConstructor();
+            var constructorDecl = GenerateRecordConstructor();
 
-            var newTypeDecl = TypeDecl.AddMembers(copyConstructorDecl);
+            var newTypeDecl = TypeDecl.AddMembers(constructorDecl);
 
             return document.WithSyntaxRoot(root.ReplaceNode(TypeDecl, newTypeDecl));
         }
@@ -299,7 +338,13 @@ namespace RecordTypeAnalyzer.Analyzers
 
             var root = await document.GetSyntaxRootAsync(cancellationToken).ConfigureAwait(false);
             var diagnosticSpan = diagnostic.Location.SourceSpan;
-            var typeDecl = root.FindToken(diagnosticSpan.Start).Parent.AncestorsAndSelf().OfType<TypeDeclarationSyntax>().First();
+            var typeDecl =
+                root
+                .FindToken(diagnosticSpan.Start)
+                .Parent
+                .AncestorsAndSelf()
+                .OfType<TypeDeclarationSyntax>()
+                .First();
 
             var semanticModel = await document.GetSemanticModelAsync(cancellationToken);
 
