@@ -10,18 +10,9 @@
     >
     <Grid>
         <ContentPresenter
+            Visibility="{Binding State.ContentVisibility, RelativeSource={RelativeSource AncestorType={x:Type local:TaskControl}}}"
             Content="{Binding Child, RelativeSource={RelativeSource AncestorType={x:Type local:TaskControl}}}"
             />
-
-        <!-- Mask border. -->
-        <Border
-            x:Name="maskBorder"
-            Visibility="{Binding State.MaskVisibility, RelativeSource={RelativeSource AncestorType={x:Type local:TaskControl}}}"
-            >
-            <Border.Background>
-                <SolidColorBrush Color="Black" Opacity="0.25" />
-            </Border.Background>
-        </Border>
 
         <!-- Error content. -->
         <ContentPresenter
@@ -31,6 +22,15 @@
             />
 
         <!-- Progress indicator. -->
+        <Border
+            x:Name="maskBorder"
+            Visibility="{Binding State.ProgressIndicatorVisibility, RelativeSource={RelativeSource AncestorType={x:Type local:TaskControl}}}"
+            >
+            <Border.Background>
+                <SolidColorBrush Color="Black" Opacity="0.25" />
+            </Border.Background>
+        </Border>
+
         <ProgressBar
             Visibility="{Binding State.ProgressIndicatorVisibility, RelativeSource={RelativeSource AncestorType={x:Type local:TaskControl}}}"
             VerticalAlignment="Top"

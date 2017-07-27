@@ -42,9 +42,25 @@ namespace VainZero.SandBox.Wpf
                 );
         }
 
-        void Button_Click(object sender, RoutedEventArgs e)
+        private void successButton_Click(object sender, RoutedEventArgs e)
         {
             Run();
+        }
+
+        private void failureButton_Click(object sender, RoutedEventArgs e)
+        {
+            var cts = new CancellationTokenSource();
+            taskHolder.Value =
+                TaskControl.MyTask.Create(
+                    Task.Run(async () =>
+                    {
+                        await Task.Delay(1500);
+                        cts.Token.ThrowIfCancellationRequested();
+                        count++;
+                        throw new Exception("ERROR! Count = " + count);
+                    }),
+                    cts
+                );
         }
 
         public MainWindow()

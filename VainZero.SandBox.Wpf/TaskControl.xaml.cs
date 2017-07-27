@@ -103,88 +103,58 @@ namespace VainZero.SandBox.Wpf
         }
 
         public sealed class MyState
-            : INotifyPropertyChanged
         {
-            #region INotifyPropertyChanged
-            public event PropertyChangedEventHandler PropertyChanged;
+            public Visibility ContentVisibility { get; private set; }
 
-            public void SetProperty<X>(ref X field, X value, [CallerMemberName] string propertyName = null)
+            public Visibility ErrorVisibility { get; private set; }
+            public AggregateException Error { get; private set; }
+
+            public Visibility ProgressIndicatorVisibility { get; private set; }
+            public ICommand CancelCommand { get; private set; }
+
+            MyState(Visibility contentVisibility, Visibility errorVisibility, AggregateException error, Visibility progressIndicatorVisibility, ICommand cancelCommand)
             {
-                if (EqualityComparer<X>.Default.Equals(field, value)) return;
-
-                field = value;
-                var h = PropertyChanged;
-                if (h != null) h(this, new PropertyChangedEventArgs(propertyName));
-            }
-            #endregion
-
-            Visibility maskVisibility = Visibility.Collapsed;
-            public Visibility MaskVisibility
-            {
-                get { return maskVisibility; }
-                set { SetProperty(ref maskVisibility, value); }
-            }
-
-            AggregateException error = null;
-            public AggregateException Error
-            {
-                get { return error; }
-                set { SetProperty(ref error, value); }
-            }
-
-            Visibility errorVisibility = Visibility.Collapsed;
-            public Visibility ErrorVisibility
-            {
-                get { return errorVisibility; }
-                set { SetProperty(ref errorVisibility, value); }
-            }
-
-            Visibility progressIndicatorVisibility = Visibility.Collapsed;
-            public Visibility ProgressIndicatorVisibility
-            {
-                get { return progressIndicatorVisibility; }
-                set { SetProperty(ref progressIndicatorVisibility, value); }
-            }
-
-            ICommand cancelCommand = null;
-            public ICommand CancelCommand
-            {
-                get { return cancelCommand; }
-                set { SetProperty(ref cancelCommand, value); }
-            }
-
-            public void ChangeToProgress(MyTask task, ICommand cancelCommand)
-            {
-                MaskVisibility = Visibility.Visible;
-                ErrorVisibility = Visibility.Collapsed;
-                ProgressIndicatorVisibility = Visibility.Visible;
+                ContentVisibility = contentVisibility;
+                ErrorVisibility = errorVisibility;
+                Error = error;
+                ProgressIndicatorVisibility = progressIndicatorVisibility;
                 CancelCommand = cancelCommand;
             }
 
-            public void ChangeToSuccessful()
+            public MyState ToProgress(ICommand cancelCommand)
             {
-                MaskVisibility = Visibility.Collapsed;
-                Error = null;
-                ErrorVisibility = Visibility.Collapsed;
-                ProgressIndicatorVisibility = Visibility.Collapsed;
-                CancelCommand = null;
+                return
+                    new MyState(
+                        contentVisibility: ContentVisibility,
+                        errorVisibility: ErrorVisibility,
+                        error: Error,
+                        progressIndicatorVisibility: Visibility.Visible,
+                        cancelCommand: cancelCommand
+                    );
             }
 
-            public void ChangeToError(AggregateException error)
+            public static MyState CreateSuccess()
             {
-                MaskVisibility = Visibility.Visible;
-                Error = error;
-                ErrorVisibility = Visibility.Visible;
-                ProgressIndicatorVisibility = Visibility.Collapsed;
-                CancelCommand = null;
+                return
+                    new MyState(
+                        contentVisibility: Visibility.Visible,
+                        errorVisibility: Visibility.Collapsed,
+                        error: null,
+                        progressIndicatorVisibility: Visibility.Collapsed,
+                        cancelCommand: null
+                    );
             }
 
-            public void ChangeToCanceled()
+            public static MyState CreateError(AggregateException error)
             {
-                MaskVisibility = Visibility.Collapsed;
-                ErrorVisibility = Visibility.Visible;
-                ProgressIndicatorVisibility = Visibility.Collapsed;
-                CancelCommand = null;
+                return
+                    new MyState(
+                        contentVisibility: Visibility.Hidden,
+                        errorVisibility: Visibility.Visible,
+                        error: error,
+                        progressIndicatorVisibility: Visibility.Collapsed,
+                        cancelCommand: null
+                    );
             }
         }
 
@@ -227,13 +197,15 @@ namespace VainZero.SandBox.Wpf
             set { SetValue(TaskProperty, value); }
         }
 
+        MyState previousState;
+
         void OnTaskCompleted(MyTask task)
         {
             switch (task.Task.Status)
             {
                 case TaskStatus.RanToCompletion:
                     {
-                        State.ChangeToSuccessful();
+                        State = MyState.CreateSuccess();
 
                         var result = task.Result;
                         var fe = Child as FrameworkElement;
@@ -251,33 +223,38 @@ namespace VainZero.SandBox.Wpf
                     }
                     break;
                 case TaskStatus.Faulted:
-                    State.ChangeToError(task.Task.Exception);
+                    State = MyState.CreateError(task.Task.Exception);
                     break;
                 case TaskStatus.Canceled:
-                    State.ChangeToCanceled();
+                    State = previousState;
                     break;
                 default:
                     throw new InvalidOperationException();
             }
         }
 
-        static void OnTaskChanged(DependencyObject sender, DependencyPropertyChangedEventArgs e)
+        void OnTaskChangedCore(MyTask task)
         {
-            var @this = (TaskControl)sender;
-            var task = (e.NewValue as MyTask) ?? MyTask.Default;
+            previousState = State;
+
+            var previousCancelCommand = previousState.CancelCommand;
+            if (previousCancelCommand != null && previousCancelCommand.CanExecute(default(object)))
+            {
+                previousCancelCommand.Execute(default(object));
+            }
 
             if (task.Task.IsCompleted)
             {
-                @this.OnTaskCompleted(task);
+                OnTaskCompleted(task);
             }
             else
             {
-                @this.State.ChangeToProgress(task, new CancelCommand(task.CancellationTokenSource));
+                State = State.ToProgress(new CancelCommand(task.CancellationTokenSource));
 
                 var context = SynchronizationContext.Current;
                 var action = new Action(() =>
                 {
-                    context.Post(__ => @this.OnTaskCompleted(task), default(object));
+                    context.Post(__ => OnTaskCompleted(task), default(object));
                 });
                 task.Task.ContinueWith(_ => action());
 
@@ -286,10 +263,17 @@ namespace VainZero.SandBox.Wpf
                     task.CancellationTokenSource.Token.Register(() =>
                     {
                         action = () => { };
-                        @this.State.ChangeToCanceled();
+                        State = previousState;
                     }, useSynchronizationContext: true);
                 }
             }
+        }
+
+        static void OnTaskChanged(DependencyObject sender, DependencyPropertyChangedEventArgs e)
+        {
+            var @this = (TaskControl)sender;
+            var task = (e.NewValue as MyTask) ?? MyTask.Default;
+            @this.OnTaskChangedCore(task);
         }
         #endregion
 
@@ -308,7 +292,7 @@ namespace VainZero.SandBox.Wpf
         {
             InitializeComponent();
 
-            State = new MyState();
+            State = MyState.CreateSuccess();
         }
     }
 }
