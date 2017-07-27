@@ -112,30 +112,31 @@ namespace VainZero.SandBox.Wpf
             {
                 if (EqualityComparer<X>.Default.Equals(field, value)) return;
 
+                field = value;
                 var h = PropertyChanged;
                 if (h != null) h(this, new PropertyChangedEventArgs(propertyName));
             }
             #endregion
-
-            Visibility contentVisibility = Visibility.Visible;
-            public Visibility ContentVisibility
-            {
-                get { return contentVisibility; }
-                set { SetProperty(ref contentVisibility, value); }
-            }
-
-            object contentDataContext;
-            public object ContentDataContext
-            {
-                get { return contentDataContext; }
-                set { SetProperty(ref contentDataContext, value); }
-            }
 
             Visibility maskVisibility = Visibility.Collapsed;
             public Visibility MaskVisibility
             {
                 get { return maskVisibility; }
                 set { SetProperty(ref maskVisibility, value); }
+            }
+
+            AggregateException error = null;
+            public AggregateException Error
+            {
+                get { return error; }
+                set { SetProperty(ref error, value); }
+            }
+
+            Visibility errorVisibility = Visibility.Collapsed;
+            public Visibility ErrorVisibility
+            {
+                get { return errorVisibility; }
+                set { SetProperty(ref errorVisibility, value); }
             }
 
             Visibility progressIndicatorVisibility = Visibility.Collapsed;
@@ -145,7 +146,7 @@ namespace VainZero.SandBox.Wpf
                 set { SetProperty(ref progressIndicatorVisibility, value); }
             }
 
-            ICommand cancelCommand;
+            ICommand cancelCommand = null;
             public ICommand CancelCommand
             {
                 get { return cancelCommand; }
@@ -155,33 +156,41 @@ namespace VainZero.SandBox.Wpf
             public void ChangeToProgress(MyTask task, ICommand cancelCommand)
             {
                 MaskVisibility = Visibility.Visible;
+                ErrorVisibility = Visibility.Collapsed;
                 ProgressIndicatorVisibility = Visibility.Visible;
                 CancelCommand = cancelCommand;
             }
 
-            public void ChangeToSuccessful(object dataContext)
+            public void ChangeToSuccessful()
             {
                 MaskVisibility = Visibility.Collapsed;
+                Error = null;
+                ErrorVisibility = Visibility.Collapsed;
                 ProgressIndicatorVisibility = Visibility.Collapsed;
                 CancelCommand = null;
-                ContentDataContext = dataContext;
             }
 
             public void ChangeToError(AggregateException error)
             {
-                // TODO:
+                MaskVisibility = Visibility.Visible;
+                Error = error;
+                ErrorVisibility = Visibility.Visible;
+                ProgressIndicatorVisibility = Visibility.Collapsed;
+                CancelCommand = null;
             }
 
             public void ChangeToCanceled()
             {
                 MaskVisibility = Visibility.Collapsed;
+                ErrorVisibility = Visibility.Visible;
                 ProgressIndicatorVisibility = Visibility.Collapsed;
+                CancelCommand = null;
             }
         }
 
         #region Child
         public static readonly DependencyProperty ChildProperty =
-            DependencyProperty.Register("Child", typeof(UIElement), typeof(TaskContinuationOptions));
+            DependencyProperty.Register("Child", typeof(UIElement), typeof(TaskControl));
 
         public UIElement Child
         {
@@ -203,7 +212,14 @@ namespace VainZero.SandBox.Wpf
 
         #region Task
         public static readonly DependencyProperty TaskProperty =
-            DependencyProperty.Register("Task", typeof(MyTask), typeof(TaskControl));
+            DependencyProperty.Register(
+                "Task",
+                typeof(MyTask),
+                typeof(TaskControl),
+                new PropertyMetadata()
+                {
+                    PropertyChangedCallback = OnTaskChanged,
+                });
 
         public MyTask Task
         {
@@ -216,7 +232,23 @@ namespace VainZero.SandBox.Wpf
             switch (task.Task.Status)
             {
                 case TaskStatus.RanToCompletion:
-                    State.ChangeToSuccessful(task.Result);
+                    {
+                        State.ChangeToSuccessful();
+
+                        var result = task.Result;
+                        var fe = Child as FrameworkElement;
+                        if (fe != null)
+                        {
+                            if (result != null)
+                            {
+                                fe.DataContext = result;
+                            }
+                            else
+                            {
+                                fe.ClearValue(DataContextProperty);
+                            }
+                        }
+                    }
                     break;
                 case TaskStatus.Faulted:
                     State.ChangeToError(task.Task.Exception);
@@ -242,7 +274,21 @@ namespace VainZero.SandBox.Wpf
             {
                 @this.State.ChangeToProgress(task, new CancelCommand(task.CancellationTokenSource));
 
-                task.Task.ContinueWith(_ => @this.OnTaskCompleted(task));
+                var context = SynchronizationContext.Current;
+                var action = new Action(() =>
+                {
+                    context.Post(__ => @this.OnTaskCompleted(task), default(object));
+                });
+                task.Task.ContinueWith(_ => action());
+
+                if (task.CancellationTokenSource != null)
+                {
+                    task.CancellationTokenSource.Token.Register(() =>
+                    {
+                        action = () => { };
+                        @this.State.ChangeToCanceled();
+                    }, useSynchronizationContext: true);
+                }
             }
         }
         #endregion

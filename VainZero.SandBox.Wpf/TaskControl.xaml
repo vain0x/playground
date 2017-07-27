@@ -9,18 +9,26 @@
     d:DesignHeight="300" d:DesignWidth="300"
     >
     <Grid>
-        <ContentControl x:Name="childContainer" Content="{Binding Child, RelativeSource={RelativeSource AncestorType={x:Type local:TaskControl}}}" />
+        <ContentPresenter
+            Content="{Binding Child, RelativeSource={RelativeSource AncestorType={x:Type local:TaskControl}}}"
+            />
 
-        <!-- Error content. -->
-
+        <!-- Mask border. -->
         <Border
             x:Name="maskBorder"
             Visibility="{Binding State.MaskVisibility, RelativeSource={RelativeSource AncestorType={x:Type local:TaskControl}}}"
             >
-            <Border.BorderBrush>
-                <SolidColorBrush Color="Black" Opacity="0.5" />
-            </Border.BorderBrush>
+            <Border.Background>
+                <SolidColorBrush Color="Black" Opacity="0.25" />
+            </Border.Background>
         </Border>
+
+        <!-- Error content. -->
+        <ContentPresenter
+            Visibility="{Binding State.ErrorVisibility, RelativeSource={RelativeSource AncestorType={x:Type local:TaskControl}}}"
+            Content="{Binding State.Error, RelativeSource={RelativeSource AncestorType={x:Type local:TaskControl}}}"
+            ContentTemplate="{Binding ErrorTemplate, RelativeSource={RelativeSource AncestorType={x:Type local:TaskControl}}}"
+            />
 
         <!-- Progress indicator. -->
         <ProgressBar
@@ -37,12 +45,14 @@
             <TextBlock
                 HorizontalAlignment="Center"
                 Text="処理中..."
+                FontSize="15"
+                FontWeight="Bold"
                 />
 
             <Button
                 HorizontalAlignment="Center"
                 Content="キャンセル"
-                Command="{Binding CancelCommand, RelativeSource={RelativeSource AncestorType={x:Type local:TaskControl}}}"
+                Command="{Binding State.CancelCommand, RelativeSource={RelativeSource AncestorType={x:Type local:TaskControl}}}"
                 IsCancel="True"
                 IsDefault="True"
                 />

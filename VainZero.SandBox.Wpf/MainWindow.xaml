@@ -11,8 +11,10 @@
     Height="350"
     >
     <DockPanel>
-        <local:TaskControl Task="{Binding Task}">
-            <DataGrid ItemsSource="{Binding Items}" />
+        <Button DockPanel.Dock="Top" Content="Refresh" Click="Button_Click" />
+
+        <local:TaskControl Task="{Binding Value}">
+            <ListBox ItemsSource="{Binding}" />
         </local:TaskControl>
     </DockPanel>
 </Window>
