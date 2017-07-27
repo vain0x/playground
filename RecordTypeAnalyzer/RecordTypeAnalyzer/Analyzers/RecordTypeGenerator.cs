@@ -202,18 +202,121 @@ namespace RecordTypeAnalyzer.Analyzers
     {
         sealed class AssignableVariableMember
         {
+            #region Escape
+            static ImmutableHashSet<string> KeywordStrings { get; } =
+                SyntaxFacts.GetContextualKeywordKinds()
+                .Concat(SyntaxFacts.GetKeywordKinds())
+                .Select(kind => SyntaxFactory.Token(kind).Text)
+                .ToImmutableHashSet();
+
+            static SyntaxToken EscapedIdentifier(string name)
+            {
+                if (KeywordStrings.Contains(name))
+                {
+                    return SyntaxFactory.VerbatimIdentifier(SyntaxTriviaList.Empty, name, name, SyntaxTriviaList.Empty);
+                }
+                return SyntaxFactory.Identifier(name);
+            }
+            #endregion
+
             VariableMember Member { get; }
 
             public string MemberName => Member.SymbolBase.Name;
 
-            public string ParameterName { get; }
+            public SyntaxToken ParameterIdentifier { get; }
 
             public ITypeSymbol TypeSymbol => Member.TypeSymbol;
 
             public AssignableVariableMember(VariableMember member)
             {
                 Member = member;
-                ParameterName = member.NameAsCamelCase();
+                ParameterIdentifier = EscapedIdentifier(member.NameAsCamelCase());
+            }
+        }
+
+        sealed class ConstructorGenerator
+        {
+            RecordTypeGenerator Parent { get; }
+
+            ImmutableArray<AssignableVariableMember> Assignables { get; }
+
+            TypeSyntax TypeSyntax(ISymbol symbol)
+            {
+                var name = symbol.ToDisplayString();
+                return SyntaxFactory.IdentifierName(name);
+            }
+
+            IEnumerable<StatementSyntax> ConstractStatements()
+            {
+                var aneType = Parent.SemanticModel.Compilation.GetTypeByMetadataName(typeof(ArgumentNullException).FullName);
+                if (aneType == null) yield break;
+
+                foreach (var a in Assignables)
+                {
+                    if (!a.TypeSymbol.IsReferenceType) continue;
+
+                    var condition =
+                        SyntaxFactory.BinaryExpression(
+                            SyntaxKind.EqualsExpression,
+                            SyntaxFactory.IdentifierName(a.ParameterIdentifier),
+                            SyntaxFactory.LiteralExpression(SyntaxKind.NullLiteralExpression)
+                        );
+                    var statement =
+                        SyntaxFactory.ThrowStatement(
+                            SyntaxFactory.ObjectCreationExpression(
+                                TypeSyntax(aneType)
+                                .WithAdditionalAnnotations(Simplifier.Annotation)
+                            )
+                            .WithArgumentList(
+                                SyntaxFactory.ArgumentList()
+                                .AddArguments(SyntaxFactory.Argument(Parent.NameOfSyntax(a.ParameterIdentifier)))
+                            ));
+
+                    yield return SyntaxFactory.IfStatement(condition, statement);
+                }
+            }
+
+            public ConstructorDeclarationSyntax Generate()
+            {
+                var parameterList =
+                    SyntaxFactory.ParameterList(
+                        SyntaxFactory.SeparatedList(
+                            Assignables.Select(a =>
+                                SyntaxFactory.Parameter(a.ParameterIdentifier)
+                                .WithType(TypeSyntax(a.TypeSymbol))
+                            )));
+
+                var constracts = ConstractStatements();
+
+                var assignments =
+                    Assignables.Select(a =>
+                        SyntaxFactory.ExpressionStatement(
+                            SyntaxFactory.AssignmentExpression(
+                                SyntaxKind.SimpleAssignmentExpression,
+                                SyntaxFactory.MemberAccessExpression(
+                                    SyntaxKind.SimpleMemberAccessExpression,
+                                    SyntaxFactory.ThisExpression(),
+                                    SyntaxFactory.IdentifierName(a.MemberName)
+                                ).WithAdditionalAnnotations(Simplifier.Annotation),
+                                SyntaxFactory.IdentifierName(a.ParameterIdentifier)
+                            )));
+
+                var body = SyntaxFactory.Block(constracts.Concat(assignments));
+
+                var typeName = Parent.TypeDecl.Identifier.Text;
+                return
+                    SyntaxFactory.ConstructorDeclaration(typeName)
+                    .WithModifiers(SyntaxTokenList.Create(SyntaxFactory.Token(SyntaxKind.PublicKeyword)))
+                    .WithParameterList(parameterList)
+                    .WithBody(body)
+                    .WithAdditionalAnnotations(Formatter.Annotation);
+            }
+
+            public ConstructorGenerator(RecordTypeGenerator parent,
+                        ImmutableArray<AssignableVariableMember> assignables)
+            {
+                Parent = parent;
+                Assignables = assignables;
             }
         }
 
@@ -228,19 +331,24 @@ namespace RecordTypeAnalyzer.Analyzers
         LanguageVersion? LanguageVersion =>
             (TypeDecl.SyntaxTree.Options as CSharpParseOptions).LanguageVersion;
 
-        TypeSyntax TypeSyntax(ITypeSymbol typeSymbol)
+        ExpressionSyntax NameOfSyntax(SyntaxToken identifier)
         {
-            var typeName = typeSymbol.ToDisplayString();
-            return SyntaxFactory.IdentifierName(typeName);
-        }
+            if (LanguageVersion?.SupportsNameOf() == true)
+            {
+                return
+                    SyntaxFactory.InvocationExpression(
+                        SyntaxFactory.IdentifierName("nameof"),
+                        SyntaxFactory.ArgumentList(
+                            SyntaxFactory.SingletonSeparatedList(
+                                SyntaxFactory.Argument(
+                                    SyntaxFactory.IdentifierName(identifier)
+                                ))));
+            }
 
-        MemberAccessExpressionSyntax ParameterNode(string parameterName)
-        {
             return
-                SyntaxFactory.MemberAccessExpression(
-                    SyntaxKind.SimpleMemberAccessExpression,
-                    SyntaxFactory.ThisExpression(),
-                    SyntaxFactory.IdentifierName(parameterName)
+                SyntaxFactory.LiteralExpression(
+                    SyntaxKind.StringLiteralExpression,
+                    SyntaxFactory.Literal(identifier.Text)
                 );
         }
 
@@ -254,54 +362,7 @@ namespace RecordTypeAnalyzer.Analyzers
                 .Select(m => new AssignableVariableMember(m))
                 .ToImmutableArray();
 
-            var parameterList =
-                SyntaxFactory.ParameterList(
-                    SyntaxFactory.SeparatedList(
-                        assignables.Select(a =>
-                            SyntaxFactory.Parameter(
-                                SyntaxFactory.Identifier(a.ParameterName)
-                            ).WithType(TypeSyntax(a.TypeSymbol))
-                        )));
-
-            var aneType = SemanticModel.Compilation.GetTypeByMetadataName(typeof(ArgumentNullException).FullName);
-
-            var contracts =
-                (aneType == null ? ImmutableArray<AssignableVariableMember>.Empty : assignables)
-                .Where(a => a.TypeSymbol.IsReferenceType)
-                .Select(a =>
-                    SyntaxFactory.IfStatement(
-                        SyntaxFactory.BinaryExpression(
-                            SyntaxKind.NotEqualsExpression,
-                            ParameterNode(a.ParameterName),
-                            SyntaxFactory.LiteralExpression(SyntaxKind.NullKeyword)
-                        ),
-                        SyntaxFactory.ThrowStatement(
-                            SyntaxFactory.ObjectCreationExpression(TypeSyntax(aneType))
-                        )));
-
-            var assignments =
-                assignables.Select(a =>
-                    SyntaxFactory.ExpressionStatement(
-                        SyntaxFactory.AssignmentExpression(
-                            SyntaxKind.SimpleAssignmentExpression,
-                            SyntaxFactory.MemberAccessExpression(
-                                SyntaxKind.SimpleMemberAccessExpression,
-                                SyntaxFactory.ThisExpression(),
-                                SyntaxFactory.IdentifierName(a.ParameterName)
-                            ),
-                            SyntaxFactory.IdentifierName(a.ParameterName)
-                        )));
-
-            var body = SyntaxFactory.Block(contracts.Concat<StatementSyntax>(assignments));
-
-            var typeName = TypeDecl.Identifier.Text;
-            return
-                SyntaxFactory.ConstructorDeclaration(typeName)
-                .WithModifiers(SyntaxTokenList.Create(SyntaxFactory.Token(SyntaxKind.PublicKeyword)))
-                .WithParameterList(parameterList)
-                .WithBody(body)
-                .WithAdditionalAnnotations(Formatter.Annotation)
-                .WithAdditionalAnnotations(Simplifier.Annotation);
+            return new ConstructorGenerator(this, assignables).Generate();
         }
 
         public async Task<Document> FixAsync(Document document)
@@ -352,7 +413,7 @@ namespace RecordTypeAnalyzer.Analyzers
 
             context.RegisterCodeFix(
                 CodeAction.Create(
-                    diagnostic.GetMessage(),
+                    diagnostic.Descriptor.Title.ToString(),
                     ct => new RecordTypeGenerator(semanticModel, typeDecl, typeSymbol, ct).FixAsync(document),
                     equivalenceKey: diagnostic.Id
                 ),

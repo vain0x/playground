@@ -38,6 +38,7 @@
     <Compile Include="Analyzers\RecordTypeGenerator.cs" />
     <Compile Include="CodeFixProvider.cs" />
     <Compile Include="DiagnosticAnalyzer.cs" />
+    <Compile Include="Helpers\LanguageVersionExtension.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="Resources.Designer.cs">
       <AutoGen>True</AutoGen>
