@@ -8,49 +8,44 @@
     mc:Ignorable="d" 
     d:DesignHeight="300" d:DesignWidth="300"
     >
-    <UserControl.Template>
-        <ControlTemplate TargetType="ContentControl">
-            <Grid Visibility="{TemplateBinding Visibility}">
-                <!-- Original Content -->
-                <ContentPresenter
-                    Content="{TemplateBinding Content}"
-                    ContentTemplate="{TemplateBinding ContentTemplate}"
-                    ContentTemplateSelector="{TemplateBinding ContentTemplateSelector}"
-                    DataContext="{RelativeSource ContentDataContext, Mode=FindAncestor, AncestorType={x:Type local:TaskContentControl}}"
-                    />
+    <Grid>
+        <ContentControl x:Name="childContainer" Content="{Binding Child, RelativeSource={RelativeSource AncestorType={x:Type local:TaskControl}}}" />
 
-                <!-- -->
-                <Border
-                    Visibility="{Binding IsBusy, RelativeSource={RelativeSource Mode=FindAncestor, AncestorType={x:Type local:TaskContentControl}}, Converter={StaticResource BooleanToVisibilityConverter}}"
-                    Background="{StaticResource TranslucentBlackBrush}"
-                    />
+        <!-- Error content. -->
 
-                <ProgressBar
-                    Visibility="{Binding IsBusy, RelativeSource={RelativeSource Mode=FindAncestor, AncestorType={x:Type local:TaskContentControl}}, Converter={StaticResource BooleanToVisibilityConverter}}"
-                    VerticalAlignment="Top"
-                    IsIndeterminate="True"
-                    Height="10"
-                    />
+        <Border
+            x:Name="maskBorder"
+            Visibility="{Binding State.MaskVisibility, RelativeSource={RelativeSource AncestorType={x:Type local:TaskControl}}}"
+            >
+            <Border.BorderBrush>
+                <SolidColorBrush Color="Black" Opacity="0.5" />
+            </Border.BorderBrush>
+        </Border>
 
-                <StackPanel
-                    VerticalAlignment="Center"
-                    Visibility="{Binding IsBusy, RelativeSource={RelativeSource Mode=FindAncestor, AncestorType={x:Type local:TaskContentControl}}, Converter={StaticResource BooleanToVisibilityConverter}}"
-                    >
-                    <TextBlock
-                        HorizontalAlignment="Center"
-                        Text="処理中..."
-                        Style="{StaticResource ParagraphTextBlockStyle}"
-                        />
+        <!-- Progress indicator. -->
+        <ProgressBar
+            Visibility="{Binding State.ProgressIndicatorVisibility, RelativeSource={RelativeSource AncestorType={x:Type local:TaskControl}}}"
+            VerticalAlignment="Top"
+            IsIndeterminate="True"
+            Height="10"
+            />
 
-                    <Button
-                        HorizontalAlignment="Center"
-                        Content="キャンセル"
-                        Command="{Binding CancelCommand, RelativeSource={RelativeSource Mode=FindAncestor, AncestorType={x:Type local:TaskContentControl}}}"
-                        IsCancel="True"
-                        IsDefault="True"
-                        />
-                </StackPanel>
-            </Grid>
-        </ControlTemplate>
-    </UserControl.Template>
+        <StackPanel
+            VerticalAlignment="Center"
+            Visibility="{Binding State.ProgressIndicatorVisibility, RelativeSource={RelativeSource AncestorType={x:Type local:TaskControl}}}"
+            >
+            <TextBlock
+                HorizontalAlignment="Center"
+                Text="処理中..."
+                />
+
+            <Button
+                HorizontalAlignment="Center"
+                Content="キャンセル"
+                Command="{Binding CancelCommand, RelativeSource={RelativeSource AncestorType={x:Type local:TaskControl}}}"
+                IsCancel="True"
+                IsDefault="True"
+                />
+        </StackPanel>
+    </Grid>
 </UserControl>

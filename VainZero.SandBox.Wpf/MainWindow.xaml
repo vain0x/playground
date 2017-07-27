@@ -11,5 +11,8 @@
     Height="350"
     >
     <DockPanel>
+        <local:TaskControl Task="{Binding Task}">
+            <DataGrid ItemsSource="{Binding Items}" />
+        </local:TaskControl>
     </DockPanel>
 </Window>
