@@ -125,6 +125,7 @@ namespace RecordTypeAnalyzer.Analyzers
                             {
                                 var symbol = SemanticModel.GetDeclaredSymbol(varDecl) as IFieldSymbol;
                                 if (symbol == null) continue;
+                                if (symbol.IsStatic) continue;
 
                                 varMembers.Add(new VariableMember.Field(symbol, fieldDecl, varDecl));
                             }
@@ -136,7 +137,7 @@ namespace RecordTypeAnalyzer.Analyzers
                             if (propertyDecl.AccessorList.Accessors.Any(a => a.Body != null)) continue;
 
                             var symbol = SemanticModel.GetDeclaredSymbol(propertyDecl) as IPropertySymbol;
-                            if (symbol == null || symbol.GetMethod == null) continue;
+                            if (symbol == null || symbol.IsStatic || symbol.GetMethod == null) continue;
 
                             varMembers.Add(new VariableMember.Property(symbol, propertyDecl));
                             break;
