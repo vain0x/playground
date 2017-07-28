@@ -96,16 +96,19 @@
     </Reference>
   </ItemGroup>
   <ItemGroup>
+    <None Include="DataSource\RecordTypeGeneratorTest\GenerateForClassCase\Expected0\RecordlikeClass.cs" />
+    <None Include="DataSource\RecordTypeGeneratorTest\GenerateForClassCase\Source\RecordlikeClass.cs" />
+    <Compile Include="Analyzers\RecordTypeGeneratorTest.cs" />
     <Compile Include="Verifiers\CodeFixVerifier.cs" />
     <Compile Include="Verifiers\ConventionCodeFixVerifier.cs" />
     <Compile Include="Verifiers\DiagnosticVerifier.cs" />
     <Compile Include="Helpers\CodeFixVerifier.Helper.cs" />
     <Compile Include="Helpers\DiagnosticResult.cs" />
     <Compile Include="Helpers\DiagnosticVerifier.Helper.cs" />
-    <Compile Include="UnitTests.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
   </ItemGroup>
   <ItemGroup>
+    <None Include="DataSource\RecordTypeGeneratorTest\GenerateForClassCase\Diagnostic\Results.json" />
     <None Include="packages.config" />
   </ItemGroup>
   <ItemGroup>
