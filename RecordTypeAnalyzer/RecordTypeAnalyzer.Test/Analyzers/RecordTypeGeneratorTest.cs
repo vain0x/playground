@@ -15,6 +15,9 @@ namespace RecordTypeAnalyzer.Test.Analyzers
         : ConventionCodeFixVerifier
     {
         [TestMethod]
+        public void NoDiagnosticCase() => VerifyCSharpByConvention();
+
+        [TestMethod]
         public void GenerateForClassCase() => VerifyCSharpByConvention();
 
         protected override DiagnosticAnalyzer GetCSharpDiagnosticAnalyzer() =>

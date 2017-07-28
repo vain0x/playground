@@ -99,6 +99,12 @@
     <None Include="DataSource\RecordTypeGeneratorTest\GenerateForClassCase\Expected0\RecordlikeClass.cs" />
     <None Include="DataSource\RecordTypeGeneratorTest\GenerateForClassCase\Source\RecordlikeClass.cs" />
     <Compile Include="Analyzers\RecordTypeGeneratorTest.cs" />
+    <None Include="DataSource\RecordTypeGeneratorTest\NoDiagnosticCase\Source\DerivedClass.cs" />
+    <None Include="DataSource\RecordTypeGeneratorTest\NoDiagnosticCase\Source\EmptyClass.cs" />
+    <None Include="DataSource\RecordTypeGeneratorTest\NoDiagnosticCase\Source\EmptyStruct.cs" />
+    <None Include="DataSource\RecordTypeGeneratorTest\NoDiagnosticCase\Source\IInterface.cs" />
+    <None Include="DataSource\RecordTypeGeneratorTest\NoDiagnosticCase\Source\MutableClasses.cs" />
+    <None Include="DataSource\RecordTypeGeneratorTest\NoDiagnosticCase\Source\NonsealedClass.cs" />
     <Compile Include="Verifiers\CodeFixVerifier.cs" />
     <Compile Include="Verifiers\ConventionCodeFixVerifier.cs" />
     <Compile Include="Verifiers\DiagnosticVerifier.cs" />
