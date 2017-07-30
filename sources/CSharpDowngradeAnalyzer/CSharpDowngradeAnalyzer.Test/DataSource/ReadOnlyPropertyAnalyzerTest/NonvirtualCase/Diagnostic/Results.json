@@ -1,0 +1,10 @@
+﻿[
+  {
+    "id": "CsdaRop",
+    "sevirity": "Warning",
+    "line": 3,
+    "column": 4,
+    "path": "Person.cs",
+    "message-args": []
+  }
+]
