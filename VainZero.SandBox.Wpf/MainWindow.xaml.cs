@@ -25,7 +25,7 @@ namespace VainZero.SandBox.Wpf
     /// </summary>
     public partial class MainWindow : Window
     {
-        readonly ProgressContentControlSample sample;
+        readonly BusyContentControlSample sample;
 
         private void successButton_Click(object sender, RoutedEventArgs e)
         {
@@ -40,7 +40,56 @@ namespace VainZero.SandBox.Wpf
         {
             InitializeComponent();
 
-            DataContext = sample = new ProgressContentControlSample();
+            DataContext = sample = new BusyContentControlSample();
+        }
+    }
+
+    public sealed class BusyContentControlSample
+    {
+        int count = 10;
+
+        public ReactiveProperty<int[]> Items { get; }
+
+        public ReactiveProperty<Task<int[]>> UpdateTask { get; }
+
+        public ReactiveProperty<bool> IsBusy { get; }
+
+        public void Restart()
+        {
+            count++;
+
+            UpdateTask.Value =
+                Task.Run(async () =>
+                {
+                    await Task.Delay(1000);
+                    return Enumerable.Range(0, count).ToArray();
+                });
+        }
+
+        public BusyContentControlSample()
+        {
+            var array = Enumerable.Range(0, 10).ToArray();
+            Items = new ReactiveProperty<int[]>(array);
+            UpdateTask = new ReactiveProperty<Task<int[]>>(Task.FromResult(array));
+            IsBusy = new ReactiveProperty<bool>(false);
+
+            UpdateTask.Subscribe(task =>
+            {
+                IsBusy.Value = true;
+
+                task.ContinueWith(_ =>
+                {
+                    switch (task.Status)
+                    {
+                        case TaskStatus.RanToCompletion:
+                            Items.Value = task.Result;
+                            break;
+                        default:
+                            break;
+                    }
+                    IsBusy.Value = false;
+                });
+            });
         }
     }
 

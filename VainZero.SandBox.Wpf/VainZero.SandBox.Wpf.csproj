@@ -86,12 +86,19 @@
       <Generator>MSBuild:Compile</Generator>
       <SubType>Designer</SubType>
     </ApplicationDefinition>
+    <Compile Include="BusyContentControl.xaml.cs">
+      <DependentUpon>BusyContentControl.xaml</DependentUpon>
+    </Compile>
     <Compile Include="ProgressContentControl.xaml.cs">
       <DependentUpon>ProgressContentControl.xaml</DependentUpon>
     </Compile>
     <Compile Include="TaskControl.xaml.cs">
       <DependentUpon>TaskControl.xaml</DependentUpon>
     </Compile>
+    <Page Include="BusyContentControl.xaml">
+      <SubType>Designer</SubType>
+      <Generator>MSBuild:Compile</Generator>
+    </Page>
     <Page Include="MainWindow.xaml">
       <Generator>MSBuild:Compile</Generator>
       <SubType>Designer</SubType>

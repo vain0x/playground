@@ -14,8 +14,8 @@
         <Button x:Name="successButton" DockPanel.Dock="Top" Content="Success" Click="successButton_Click" />
         <Button x:Name="failureButton" DockPanel.Dock="Top" Content="Failure" Click="failureButton_Click" />
 
-        <local:ProgressContentControl Task="{Binding ProgressTask.Value}">
-            <ListBox ItemsSource="{Binding Self}" Background="LightGreen" />
-        </local:ProgressContentControl>
+        <local:BusyContentControl IsBusy="{Binding IsBusy.Value}">
+            <ListBox ItemsSource="{Binding Items.Value}" Background="LightGreen" />
+        </local:BusyContentControl>
     </DockPanel>
 </Window>
