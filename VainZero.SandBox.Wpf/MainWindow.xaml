@@ -14,22 +14,8 @@
         <Button x:Name="successButton" DockPanel.Dock="Top" Content="Success" Click="successButton_Click" />
         <Button x:Name="failureButton" DockPanel.Dock="Top" Content="Failure" Click="failureButton_Click" />
 
-        <local:TaskControl Task="{Binding Value}">
-            <local:TaskControl.ErrorTemplate>
-                <DataTemplate>
-                    <Border BorderThickness="1" BorderBrush="Red">
-                        <TextBlock
-                            HorizontalAlignment="Center"
-                            VerticalAlignment="Center"
-                            Text="{Binding InnerException.Message}"
-                            FontWeight="Bold"
-                            Foreground="Red"
-                            />
-                    </Border>
-                </DataTemplate>
-            </local:TaskControl.ErrorTemplate>
-
-            <ListBox ItemsSource="{Binding}" />
-        </local:TaskControl>
+        <local:ProgressContentControl Task="{Binding ProgressTask.Value}">
+            <ListBox ItemsSource="{Binding Self}" Background="LightGreen" />
+        </local:ProgressContentControl>
     </DockPanel>
 </Window>

@@ -1,6 +1,9 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.ComponentModel;
+using System.Diagnostics;
 using System.Linq;
+using System.Runtime.CompilerServices;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
@@ -22,56 +25,100 @@ namespace VainZero.SandBox.Wpf
     /// </summary>
     public partial class MainWindow : Window
     {
-        ReactiveProperty<TaskControl.MyTask> taskHolder;
-
-        int count = 5;
-
-        void Run()
-        {
-            var cts = new CancellationTokenSource();
-            taskHolder.Value =
-                TaskControl.MyTask.Create(
-                    Task.Run(async () =>
-                    {
-                        await Task.Delay(1500);
-                        cts.Token.ThrowIfCancellationRequested();
-                        count++;
-                        return Enumerable.Range(0, count).ToArray();
-                    }),
-                    cts
-                );
-        }
+        readonly ProgressContentControlSample sample;
 
         private void successButton_Click(object sender, RoutedEventArgs e)
         {
-            Run();
+            sample.Restart();
         }
 
         private void failureButton_Click(object sender, RoutedEventArgs e)
         {
-            var cts = new CancellationTokenSource();
-            taskHolder.Value =
-                TaskControl.MyTask.Create(
-                    Task.Run(async () =>
-                    {
-                        await Task.Delay(1500);
-                        cts.Token.ThrowIfCancellationRequested();
-                        count++;
-                        throw new Exception("ERROR! Count = " + count);
-                    }),
-                    cts
-                );
         }
 
         public MainWindow()
         {
             InitializeComponent();
 
-            var task = TaskControl.MyTask.Create(Task.FromResult(new int[0]));
-            taskHolder = new ReactiveProperty<TaskControl.MyTask>(task);
-            DataContext = taskHolder;
+            DataContext = sample = new ProgressContentControlSample();
+        }
+    }
 
-            Run();
+    public sealed class ProgressContentControlSample
+    {
+        public ReactiveProperty<IProgressTask<IReadOnlyList<int>>> ProgressTask { get; }
+
+        int count = 10;
+
+        MyTask FetchAsync()
+        {
+            count++;
+            return new MyTask(pt =>
+                Task.Run(async () =>
+                {
+                    for (var i = 0; i < count; i++)
+                    {
+                        await Task.Delay(50).ConfigureAwait(false);
+                        pt.ProgressRate = (double)(i + 1) / count;
+                    }
+                    return (IReadOnlyList<int>)Enumerable.Range(0, count).ToArray();
+                }));
+        }
+
+        public void Restart()
+        {
+            ProgressTask.Value = FetchAsync();
+        }
+
+        public ProgressContentControlSample()
+        {
+            ProgressTask = new ReactiveProperty<IProgressTask<IReadOnlyList<int>>>(FetchAsync());
+        }
+
+        public sealed class MyTask
+            : IProgressTask<IReadOnlyList<int>>
+            , INotifyPropertyChanged
+        {
+            public event PropertyChangedEventHandler PropertyChanged;
+
+            void RaisePropertyChanged([CallerMemberName] string propertyName = null)
+            {
+                var h = PropertyChanged;
+                if (h != null) h(this, new PropertyChangedEventArgs(propertyName));
+            }
+
+            public Task<IReadOnlyList<int>> Task { get; private set; }
+
+            public bool IsIndeterminate
+            {
+                get { return false; }
+            }
+
+            double rate;
+            public double ProgressRate
+            {
+                get { return rate; }
+                set
+                {
+                    rate = value;
+                    RaisePropertyChanged();
+                }
+            }
+
+            Task IProgressTask.TaskNongeneric
+            {
+                get { return Task; }
+            }
+
+            object IProgressTask.ResultNongeneric
+            {
+                get { return Task.Result; }
+            }
+
+            public MyTask(Func<MyTask, Task<IReadOnlyList<int>>> factory)
+            {
+                Task = factory(this);
+            }
         }
     }
 }
