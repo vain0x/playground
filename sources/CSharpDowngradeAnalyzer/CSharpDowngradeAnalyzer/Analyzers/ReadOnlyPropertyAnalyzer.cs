@@ -117,11 +117,12 @@ namespace CSharpDowngradeAnalyzer.Analyzers
             Task<Document> FixAsync(Document document)
             {
                 var accessor =
-                    SyntaxFactory.AccessorDeclaration(SyntaxKind.SetKeyword)
+                    SyntaxFactory.AccessorDeclaration(SyntaxKind.SetAccessorDeclaration)
                     .WithModifiers(
                         SyntaxFactory.TokenList(
                             SyntaxFactory.Token(SyntaxKind.PrivateKeyword)
-                        ));
+                        ))
+                    .WithSemicolonToken(SyntaxFactory.Token(SyntaxKind.SemicolonToken));
                 return
                     Task.FromResult(
                         document.WithSyntaxRoot(

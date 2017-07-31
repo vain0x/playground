@@ -34,17 +34,17 @@ namespace TestHelper
             return File.ReadAllText(path);
         }
 
-        protected void VerifyCSharpByConvention([CallerMemberName]string testName = null)
+        protected void VerifyCSharpByConvention([CallerMemberName]string testName = null, ParseOptions parseOptions = null)
         {
             var sourcePath = Path.Combine(DataSourcePath, testName, "Source");
 
             if (Directory.Exists(sourcePath))
             {
-                VerifyCSharpByConventionV2(testName);
+                VerifyCSharpByConventionV2(testName, parseOptions);
             }
             else
             {
-                VerifyCSharpByConventionV1(testName);
+                VerifyCSharpByConventionV1(testName, parseOptions);
             }
         }
 
@@ -55,7 +55,7 @@ namespace TestHelper
         /// Load test data from Source.cs, Rsults.json, and NewSource.cs.
         /// </summary>
         /// <param name="testName"></param>
-        private void VerifyCSharpByConventionV1(string testName)
+        private void VerifyCSharpByConventionV1(string testName, ParseOptions parseOptions)
         {
             var sources = new Dictionary<string, string>();
             var sourcePath = Path.Combine(DataSourcePath, testName, "Source.cs");
@@ -68,19 +68,19 @@ namespace TestHelper
             var expectedSourcePath = Path.Combine(DataSourcePath, testName, "NewSource.cs");
             if (File.Exists(expectedSourcePath)) { expectedSources.Add(Path.GetFileName(sourcePath), File.ReadAllText(expectedSourcePath)); }
 
-            VerifyCSharp(sources, expectedResults, new FixResult(0, expectedSources));
+            VerifyCSharp(sources, parseOptions, expectedResults, new FixResult(0, expectedSources));
         }
 
         #endregion
         #region Ver. 2
 
-        private void VerifyCSharpByConventionV2(string testName)
+        private void VerifyCSharpByConventionV2(string testName, ParseOptions parseOptions)
         {
             var sources = ReadSources(testName);
             var expectedResults = ReadDiagnosticResultsFromFolder(testName);
             var expectedSources = ReadExpectedSources(testName);
 
-            VerifyCSharp(sources, expectedResults.ToArray(), expectedSources.ToArray());
+            VerifyCSharp(sources, parseOptions, expectedResults.ToArray(), expectedSources.ToArray());
         }
 
         private IEnumerable<DiagnosticResult> ReadDiagnosticResultsFromFolder(string testName)
@@ -165,12 +165,12 @@ namespace TestHelper
             }
         }
 
-        private void VerifyCSharp(Dictionary<string, string> sources, DiagnosticResult[] expectedResults, params FixResult[] fixResults)
+        private void VerifyCSharp(Dictionary<string, string> sources, ParseOptions parseOptions, DiagnosticResult[] expectedResults, params FixResult[] fixResults)
         {
             var analyzer = GetCSharpDiagnosticAnalyzer();
             var fix = GetCSharpCodeFixProvider();
 
-            var originalProject = CreateProject(sources);
+            var originalProject = CreateProject(sources, parseOptions);
 
             var diagnostics = GetDiagnostics(originalProject, analyzer);
             VerifyDiagnosticResults(diagnostics, analyzer, expectedResults);
@@ -265,7 +265,7 @@ namespace TestHelper
 
         protected virtual CSharpCompilationOptions CompilationOptions => new CSharpCompilationOptions(OutputKind.DynamicallyLinkedLibrary);
 
-        protected Project CreateProject(Dictionary<string, string> sources)
+        protected Project CreateProject(Dictionary<string, string> sources, ParseOptions parseOptions)
         {
             string fileNamePrefix = DefaultFilePathPrefix;
             string fileExt = CSharpDefaultFileExt;
@@ -291,6 +291,7 @@ namespace TestHelper
             }
 
             var project = solution.GetProject(projectId)
+                .WithParseOptions(parseOptions)
                 .WithCompilationOptions(CompilationOptions);
             return project;
         }
