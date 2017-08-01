@@ -26,7 +26,7 @@ public sealed class RecordlikeClass
     /// Read-only field.
     /// The name is a contextural keyword.
     /// </summary>
-    readonly System.Collections.Generic.IEnumerable<int> var;
+    readonly IEnumerable<int> var;
 
     readonly int fieldWithInitializer = 1;
 

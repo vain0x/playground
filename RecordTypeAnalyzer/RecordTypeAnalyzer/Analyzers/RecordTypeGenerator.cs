@@ -207,127 +207,9 @@ namespace RecordTypeAnalyzer.Analyzers
         }
     }
 
+
     public sealed class RecordTypeGenerator
     {
-        sealed class AssignableVariableMember
-        {
-            #region Escape
-            static ImmutableHashSet<string> KeywordStrings { get; } =
-                SyntaxFacts.GetContextualKeywordKinds()
-                .Concat(SyntaxFacts.GetKeywordKinds())
-                .Select(kind => SyntaxFactory.Token(kind).Text)
-                .ToImmutableHashSet();
-
-            static SyntaxToken EscapedIdentifier(string name)
-            {
-                if (KeywordStrings.Contains(name))
-                {
-                    return SyntaxFactory.VerbatimIdentifier(SyntaxTriviaList.Empty, name, name, SyntaxTriviaList.Empty);
-                }
-                return SyntaxFactory.Identifier(name);
-            }
-            #endregion
-
-            VariableMember Member { get; }
-
-            public string MemberName => Member.SymbolBase.Name;
-
-            public SyntaxToken ParameterIdentifier { get; }
-
-            public ITypeSymbol TypeSymbol => Member.TypeSymbol;
-
-            public AssignableVariableMember(VariableMember member)
-            {
-                Member = member;
-                ParameterIdentifier = EscapedIdentifier(member.NameAsCamelCase());
-            }
-        }
-
-        sealed class ConstructorGenerator
-        {
-            RecordTypeGenerator Parent { get; }
-
-            ImmutableArray<AssignableVariableMember> Assignables { get; }
-
-            TypeSyntax TypeSyntax(ISymbol symbol)
-            {
-                var name = symbol.ToDisplayString();
-                return SyntaxFactory.IdentifierName(name);
-            }
-
-            IEnumerable<StatementSyntax> ConstractStatements()
-            {
-                var aneType = Parent.SemanticModel.Compilation.GetTypeByMetadataName(typeof(ArgumentNullException).FullName);
-                if (aneType == null) yield break;
-
-                foreach (var a in Assignables)
-                {
-                    if (!a.TypeSymbol.IsReferenceType) continue;
-
-                    var condition =
-                        SyntaxFactory.BinaryExpression(
-                            SyntaxKind.EqualsExpression,
-                            SyntaxFactory.IdentifierName(a.ParameterIdentifier),
-                            SyntaxFactory.LiteralExpression(SyntaxKind.NullLiteralExpression)
-                        );
-                    var statement =
-                        SyntaxFactory.ThrowStatement(
-                            SyntaxFactory.ObjectCreationExpression(TypeSyntax(aneType))
-                            .WithArgumentList(
-                                SyntaxFactory.ArgumentList(
-                                    SyntaxFactory.SingletonSeparatedList(
-                                        SyntaxFactory.Argument(
-                                            Parent.NameOfSyntax(a.ParameterIdentifier)
-                                        )))));
-
-                    yield return SyntaxFactory.IfStatement(condition, statement);
-                }
-            }
-
-            public ConstructorDeclarationSyntax Generate()
-            {
-                var parameterList =
-                    SyntaxFactory.ParameterList(
-                        SyntaxFactory.SeparatedList(
-                            Assignables.Select(a =>
-                                SyntaxFactory.Parameter(a.ParameterIdentifier)
-                                .WithType(TypeSyntax(a.TypeSymbol))
-                            )));
-
-                var constracts = ConstractStatements();
-
-                var assignments =
-                    Assignables.Select(a =>
-                        SyntaxFactory.ExpressionStatement(
-                            SyntaxFactory.AssignmentExpression(
-                                SyntaxKind.SimpleAssignmentExpression,
-                                SyntaxFactory.MemberAccessExpression(
-                                    SyntaxKind.SimpleMemberAccessExpression,
-                                    SyntaxFactory.ThisExpression(),
-                                    SyntaxFactory.IdentifierName(a.MemberName)
-                                ).WithAdditionalAnnotations(Simplifier.Annotation),
-                                SyntaxFactory.IdentifierName(a.ParameterIdentifier)
-                            )));
-
-                var body = SyntaxFactory.Block(constracts.Concat(assignments));
-
-                var typeName = Parent.TypeDecl.Identifier.Text;
-                return
-                    SyntaxFactory.ConstructorDeclaration(typeName)
-                    .WithModifiers(SyntaxTokenList.Create(SyntaxFactory.Token(SyntaxKind.PublicKeyword)))
-                    .WithParameterList(parameterList)
-                    .WithBody(body)
-                    .WithAdditionalAnnotations(Formatter.Annotation);
-            }
-
-            public ConstructorGenerator(RecordTypeGenerator parent,
-                        ImmutableArray<AssignableVariableMember> assignables)
-            {
-                Parent = parent;
-                Assignables = assignables;
-            }
-        }
-
         SemanticModel SemanticModel { get; }
 
         TypeDeclarationSyntax TypeDecl { get; }
@@ -336,53 +218,31 @@ namespace RecordTypeAnalyzer.Analyzers
 
         CancellationToken CancellationToken { get; }
 
-        LanguageVersion? LanguageVersion =>
-            (TypeDecl.SyntaxTree.Options as CSharpParseOptions).LanguageVersion;
-
-        ExpressionSyntax NameOfSyntax(SyntaxToken identifier)
-        {
-            if (LanguageVersion?.SupportsNameOf() == true)
-            {
-                return
-                    SyntaxFactory.InvocationExpression(
-                        SyntaxFactory.IdentifierName("nameof"),
-                        SyntaxFactory.ArgumentList(
-                            SyntaxFactory.SingletonSeparatedList(
-                                SyntaxFactory.Argument(
-                                    SyntaxFactory.IdentifierName(identifier)
-                                ))));
-            }
-
-            return
-                SyntaxFactory.LiteralExpression(
-                    SyntaxKind.StringLiteralExpression,
-                    SyntaxFactory.Literal(identifier.Text)
-                );
-        }
-
-        ConstructorDeclarationSyntax GenerateRecordConstructor()
-        {
-            var varMembers = new VariableMemberCollector(SemanticModel).Collect(TypeDecl);
-
-            var assignables =
-                varMembers
-                .Where(m => !m.HasInitializer)
-                .Select(m => new AssignableVariableMember(m))
-                .ToImmutableArray();
-
-            return new ConstructorGenerator(this, assignables).Generate();
-        }
+        LanguageVersion LanguageVersion =>
+            (TypeDecl.SyntaxTree.Options as CSharpParseOptions)?.LanguageVersion
+            ?? LanguageVersion.CSharp6;
 
         public async Task<Document> FixAsync(Document document)
         {
             var tree = await document.GetSyntaxTreeAsync(CancellationToken).ConfigureAwait(false);
             var root = await tree.GetRootAsync(CancellationToken);
 
-            var constructorDecl = GenerateRecordConstructor();
+            var factory = new RecordlikeImplFactory(LanguageVersion);
+            var varMembers = new VariableMemberCollector(SemanticModel).Collect(TypeDecl);
 
-            var newTypeDecl = TypeDecl.AddMembers(constructorDecl);
+            var members =
+                factory.Members(
+                    SemanticModel,
+                    TypeDecl,
+                    varMembers
+                );
 
-            return document.WithSyntaxRoot(root.ReplaceNode(TypeDecl, newTypeDecl));
+            return
+                document.WithSyntaxRoot(
+                    root.ReplaceNode(
+                        TypeDecl,
+                        TypeDecl.AddMembers(members)
+                    ));
         }
 
         public RecordTypeGenerator(
@@ -432,6 +292,21 @@ namespace RecordTypeAnalyzer.Analyzers
 
     public static class SyntaxNodeExtension
     {
+        public static TypeDeclarationSyntax WithMembers(this TypeDeclarationSyntax typeDecl, SyntaxList<MemberDeclarationSyntax> members)
+        {
+            switch (typeDecl)
+            {
+                case ClassDeclarationSyntax classDecl:
+                    return classDecl.WithMembers(members);
+                case StructDeclarationSyntax structDecl:
+                    return structDecl.WithMembers(members);
+                case InterfaceDeclarationSyntax interfaceDecl:
+                    return interfaceDecl.WithMembers(members);
+                default:
+                    throw new InvalidOperationException();
+            }
+        }
+
         public static TypeDeclarationSyntax AddMembers(this TypeDeclarationSyntax typeDecl, params MemberDeclarationSyntax[] members)
         {
             switch (typeDecl)

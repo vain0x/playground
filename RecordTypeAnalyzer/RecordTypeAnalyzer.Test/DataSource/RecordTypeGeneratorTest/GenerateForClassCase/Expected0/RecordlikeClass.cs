@@ -26,12 +26,13 @@ public sealed class RecordlikeClass
     /// Read-only field.
     /// The name is a contextural keyword.
     /// </summary>
-    readonly System.Collections.Generic.IEnumerable<int> var;
+    readonly IEnumerable<int> var;
 
     readonly int fieldWithInitializer = 1;
 
     public int PropertyWithInitializer { get; } = 1;
 
+    #region Record-like Implementation v1.0.0
     public RecordlikeClass(string @string, System.TimeSpan timeSpan, System.ComponentModel.Container propertyWithPrivateSetter, System.Collections.Generic.IEnumerable<int> var)
     {
         if (@string == null)
@@ -45,4 +46,5 @@ public sealed class RecordlikeClass
         PropertyWithPrivateSetter = propertyWithPrivateSetter;
         this.var = var;
     }
+    #endregion
 }
