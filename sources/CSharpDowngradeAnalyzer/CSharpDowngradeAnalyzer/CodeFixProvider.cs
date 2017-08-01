@@ -20,7 +20,7 @@ namespace CSharpDowngradeAnalyzer
     public class CSharpDowngradeAnalyzerCodeFixProvider : CodeFixProvider
     {
         public sealed override ImmutableArray<string> FixableDiagnosticIds =>
-            ImmutableArray.Create(ReadOnlyPropertyAnalyzer.Rule.Id);
+            ImmutableArray.Create(ReadOnlyPropertyAnalyzer.PropertyRule.Id);
 
         public sealed override FixAllProvider GetFixAllProvider()
         {

@@ -19,7 +19,10 @@ namespace CSharpDowngradeAnalyzer.Test.Analyzers
             new CSharpParseOptions(LanguageVersion.CSharp5);
 
         [TestMethod]
-        public void NonvirtualCase() => VerifyCSharpByConvention(parseOptions: CSharp5);
+        public void AutoPropertyCase() => VerifyCSharpByConvention(parseOptions: CSharp5);
+
+        [TestMethod]
+        public void ExpressionBodiedCase() => VerifyCSharpByConvention(parseOptions: CSharp5);
 
         protected override DiagnosticAnalyzer GetCSharpDiagnosticAnalyzer()
         {

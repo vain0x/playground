@@ -16,7 +16,7 @@ namespace CSharpDowngradeAnalyzer
         : DiagnosticAnalyzer
     {
         public override ImmutableArray<DiagnosticDescriptor> SupportedDiagnostics =>
-            ImmutableArray.Create(ReadOnlyPropertyAnalyzer.Rule);
+            ImmutableArray.Create(ReadOnlyPropertyAnalyzer.PropertyRule);
 
         public override void Initialize(AnalysisContext context)
         {

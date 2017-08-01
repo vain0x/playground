@@ -1,0 +1,18 @@
+﻿[
+  {
+    "id": "CsdaProperty",
+    "sevirity": "Warning",
+    "line": 5,
+    "column": 5,
+    "path": "Person.cs",
+    "message-args": []
+  },
+  {
+    "id": "CsdaProperty",
+    "sevirity": "Warning",
+    "line": 13,
+    "column": 5,
+    "path": "Person.cs",
+    "message-args": []
+  }
+]
