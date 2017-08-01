@@ -115,33 +115,41 @@ namespace RecordTypeAnalyzer.Analyzers
         {
             var varMembers = ImmutableArray.CreateBuilder<VariableMember>();
 
+            void OnFieldDecl(FieldDeclarationSyntax fieldDecl)
+            {
+                foreach (var varDecl in fieldDecl.Declaration.Variables)
+                {
+                    var symbol = SemanticModel.GetDeclaredSymbol(varDecl) as IFieldSymbol;
+                    if (symbol == null) continue;
+                    if (symbol.IsStatic) continue;
+
+                    varMembers.Add(new VariableMember.Field(symbol, fieldDecl, varDecl));
+                }
+            }
+
+            void OnPropertyDecl(PropertyDeclarationSyntax propertyDecl)
+            {
+                if (propertyDecl.AccessorList == null) return;
+                if (propertyDecl.AccessorList.Accessors.Any(a => a.Body != null)) return;
+
+                var symbol = SemanticModel.GetDeclaredSymbol(propertyDecl) as IPropertySymbol;
+                if (symbol == null || symbol.IsStatic || symbol.GetMethod == null) return;
+
+                varMembers.Add(new VariableMember.Property(symbol, propertyDecl));
+            }
+
             foreach (var member in typeDecl.Members)
             {
                 switch (member)
                 {
                     case FieldDeclarationSyntax fieldDecl:
-                        {
-                            foreach (var varDecl in fieldDecl.Declaration.Variables)
-                            {
-                                var symbol = SemanticModel.GetDeclaredSymbol(varDecl) as IFieldSymbol;
-                                if (symbol == null) continue;
-                                if (symbol.IsStatic) continue;
-
-                                varMembers.Add(new VariableMember.Field(symbol, fieldDecl, varDecl));
-                            }
-                            break;
-                        }
+                        OnFieldDecl(fieldDecl);
+                        break;
                     case PropertyDeclarationSyntax propertyDecl:
-                        {
-                            if (propertyDecl.AccessorList == null) continue;
-                            if (propertyDecl.AccessorList.Accessors.Any(a => a.Body != null)) continue;
-
-                            var symbol = SemanticModel.GetDeclaredSymbol(propertyDecl) as IPropertySymbol;
-                            if (symbol == null || symbol.IsStatic || symbol.GetMethod == null) continue;
-
-                            varMembers.Add(new VariableMember.Property(symbol, propertyDecl));
-                            break;
-                        }
+                        OnPropertyDecl(propertyDecl);
+                        break;
+                    default:
+                        break;
                 }
             }
 
@@ -264,14 +272,13 @@ namespace RecordTypeAnalyzer.Analyzers
                         );
                     var statement =
                         SyntaxFactory.ThrowStatement(
-                            SyntaxFactory.ObjectCreationExpression(
-                                TypeSyntax(aneType)
-                                .WithAdditionalAnnotations(Simplifier.Annotation)
-                            )
+                            SyntaxFactory.ObjectCreationExpression(TypeSyntax(aneType))
                             .WithArgumentList(
-                                SyntaxFactory.ArgumentList()
-                                .AddArguments(SyntaxFactory.Argument(Parent.NameOfSyntax(a.ParameterIdentifier)))
-                            ));
+                                SyntaxFactory.ArgumentList(
+                                    SyntaxFactory.SingletonSeparatedList(
+                                        SyntaxFactory.Argument(
+                                            Parent.NameOfSyntax(a.ParameterIdentifier)
+                                        )))));
 
                     yield return SyntaxFactory.IfStatement(condition, statement);
                 }
@@ -433,6 +440,8 @@ namespace RecordTypeAnalyzer.Analyzers
                     return classDecl.AddMembers(members);
                 case StructDeclarationSyntax structDecl:
                     return structDecl.AddMembers(members);
+                case InterfaceDeclarationSyntax interfaceDecl:
+                    return interfaceDecl.AddMembers(members);
                 default:
                     throw new InvalidOperationException();
             }
