@@ -147,7 +147,7 @@ namespace RecordTypeAnalyzer.Analyzers
                                 SyntaxKind.SimpleMemberAccessExpression,
                                 ThisExpression(),
                                 IdentifierName(a.MemberName)
-                            ).WithAdditionalAnnotations(Simplifier.Annotation),
+                            ),
                             IdentifierName(a.ParameterIdentifier)
                         )));
 
@@ -161,8 +161,7 @@ namespace RecordTypeAnalyzer.Analyzers
                         Token(SyntaxKind.PublicKeyword)
                     ))
                 .WithParameterList(parameterList)
-                .WithBody(body)
-                .WithAdditionalAnnotations(Formatter.Annotation);
+                .WithBody(body);
         }
 
         RegionDirectiveTriviaSyntax RegionDirective()
@@ -212,7 +211,14 @@ namespace RecordTypeAnalyzer.Analyzers
                             }));
             }
 
-            return members.ToArray();
+            return
+                members
+                .Select(m =>
+                    m.WithAdditionalAnnotations(
+                        Formatter.Annotation,
+                        Simplifier.Annotation
+                    ))
+                .ToArray();
         }
     }
 }
