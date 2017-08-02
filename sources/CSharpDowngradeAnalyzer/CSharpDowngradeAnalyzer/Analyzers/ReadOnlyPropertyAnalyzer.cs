@@ -64,17 +64,14 @@ namespace CSharpDowngradeAnalyzer.Analyzers
 
         public sealed class Analyzer
         {
-            SyntaxNodeAnalysisContext AnalysisContext { get; }
-
-            SemanticModel SemanticModel => AnalysisContext.SemanticModel;
-
             TypeDeclarationSyntax TypeDecl { get; }
 
-            public Analyzer(SyntaxNodeAnalysisContext analysisContext,
-                        TypeDeclarationSyntax typeDecl)
+            SemanticModel SemanticModel { get; }
+
+            public Analyzer(TypeDeclarationSyntax typeDecl, SemanticModel semanticModel)
             {
-                AnalysisContext = analysisContext;
                 TypeDecl = typeDecl;
+                SemanticModel = semanticModel;
             }
 
             bool IsReadOnlyAuto(PropertyDeclarationSyntax propertyDecl)
@@ -94,7 +91,7 @@ namespace CSharpDowngradeAnalyzer.Analyzers
                     && !symbol.IsAbstract;
             }
 
-            public void Analyze()
+            public IEnumerable<PropertyDeclarationSyntax> FixablePropertyDecls()
             {
                 foreach (var member in TypeDecl.Members)
                 {
@@ -106,23 +103,32 @@ namespace CSharpDowngradeAnalyzer.Analyzers
                                 || propertyDecl.Initializer != null
                                 )
                             {
-                                AnalysisContext.ReportDiagnostic(
-                                    Diagnostic.Create(PropertyRule, propertyDecl.GetLocation())
-                                );
+                                yield return propertyDecl;
                             }
                             break;
                     }
                 }
             }
 
-            static void AnalyzeTypeDecl(SyntaxNodeAnalysisContext context)
+            public void Analyze(SyntaxNodeAnalysisContext analysisContext)
             {
-                var options = context.SemanticModel.SyntaxTree.Options as CSharpParseOptions;
+                foreach (var propertyDecl in FixablePropertyDecls())
+                {
+                    analysisContext.ReportDiagnostic(
+                        Diagnostic.Create(PropertyRule, propertyDecl.GetLocation())
+                    );
+                }
+            }
+
+            static void AnalyzeTypeDecl(SyntaxNodeAnalysisContext analysisContext)
+            {
+                var typeDecl = (TypeDeclarationSyntax)analysisContext.Node;
+
+                var options = typeDecl.SyntaxTree.Options as CSharpParseOptions;
                 if (options == null) return;
                 if (!options.LanguageVersion.IsCSharp5OrEarlier()) return;
 
-                var typeDecl = (TypeDeclarationSyntax)context.Node;
-                new Analyzer(context, typeDecl).Analyze();
+                new Analyzer(typeDecl, analysisContext.SemanticModel).Analyze(analysisContext);
             }
 
             public static void Initialize(AnalysisContext context)
@@ -137,6 +143,9 @@ namespace CSharpDowngradeAnalyzer.Analyzers
             SyntaxNode Root { get; }
 
             PropertyDeclarationSyntax PropertyDecl { get; }
+
+            TypeDeclarationSyntax TypeDecl =>
+                (TypeDeclarationSyntax)PropertyDecl.Parent;
 
             IPropertySymbol PropertySymbol { get; }
 
@@ -170,18 +179,12 @@ namespace CSharpDowngradeAnalyzer.Analyzers
 
             static SyntaxTriviaList WhitespaceTriviaList()
             {
-                return
-                    SyntaxFactory.TriviaList(
-                        SyntaxFactory.SyntaxTrivia(SyntaxKind.WhitespaceTrivia, " ")
-                    );
+                return SyntaxFactory.TriviaList(SyntaxFactory.Whitespace(" "));
             }
 
             static SyntaxTriviaList EndOfLineTriviaList()
             {
-                return
-                    SyntaxFactory.TriviaList(
-                        SyntaxFactory.SyntaxTrivia(SyntaxKind.EndOfLineTrivia, Environment.NewLine)
-                    );
+                return SyntaxFactory.TriviaList(SyntaxFactory.EndOfLine(Environment.NewLine));
             }
 
             bool IsMultiline(SyntaxNode node)
@@ -197,17 +200,17 @@ namespace CSharpDowngradeAnalyzer.Analyzers
                     var isMultiline = IsMultiline(expression);
 
                     var returnStatement =
-                        SyntaxFactory.ReturnStatement(expression)
-                        .WithReturnKeyword(
+                        SyntaxFactory.ReturnStatement(
                             SyntaxFactory.Token(SyntaxKind.ReturnKeyword)
                             .WithTrailingTrivia(
                                 isMultiline ? EndOfLineTriviaList() : WhitespaceTriviaList()
-                            ))
-                        .WithSemicolonToken(
+                            ),
+                            expression,
                             SyntaxFactory.Token(SyntaxKind.SemicolonToken)
                         )
-                        .WithLeadingTrivia(WhitespaceTriviaList())
-                        .WithTrailingTrivia(WhitespaceTriviaList());
+                        //.WithLeadingTrivia(WhitespaceTriviaList())
+                        //.WithTrailingTrivia(WhitespaceTriviaList())
+                        ;
                     var accessorList =
                         SyntaxFactory.AccessorList(
                             SyntaxFactory.List<AccessorDeclarationSyntax>().Add(
@@ -220,11 +223,14 @@ namespace CSharpDowngradeAnalyzer.Analyzers
                             PropertyDecl,
                             PropertyDecl
                             .WithExpressionBody(null)
+                            .WithSemicolonToken(SyntaxFactory.Token(SyntaxKind.None))
                             .WithAccessorList(accessorList)
-                            .WithIdentifier(
-                                PropertyDecl.Identifier
-                                .WithTrailingTrivia(EndOfLineTriviaList())
-                            ));
+                            //.WithIdentifier(
+                            //    PropertyDecl.Identifier
+                            //    .WithTrailingTrivia(EndOfLineTriviaList())
+                            //)
+                            .WithAdditionalAnnotations(Formatter.Annotation)
+                        );
                     return true;
                 }
 
@@ -234,8 +240,12 @@ namespace CSharpDowngradeAnalyzer.Analyzers
 
             bool TryAddPrivateSetter(out SyntaxNode newRoot)
             {
-                if (PropertySymbol.DeclaredAccessibility != Accessibility.Private
-                    && IsReadOnlyAuto(PropertyDecl, PropertySymbol))
+                if (TypeDecl.IsKind(SyntaxKind.ClassDeclaration)
+                    && PropertySymbol.DeclaredAccessibility != Accessibility.Private
+                    && !PropertySymbol.IsOverride
+                    && PropertyDecl.Initializer == null
+                    && IsReadOnlyAuto(PropertyDecl, PropertySymbol)
+                    )
                 {
                     var accessor =
                         SyntaxFactory.AccessorDeclaration(SyntaxKind.SetAccessorDeclaration)
@@ -245,7 +255,11 @@ namespace CSharpDowngradeAnalyzer.Analyzers
                             ))
                         .WithSemicolonToken(SyntaxFactory.Token(SyntaxKind.SemicolonToken));
                     newRoot =
-                        Root.ReplaceNode(PropertyDecl, PropertyDecl.AddAccessorListAccessors(accessor));
+                        Root.ReplaceNode(
+                            PropertyDecl,
+                            PropertyDecl
+                            .AddAccessorListAccessors(accessor)
+                        );
                     return true;
                 }
 
@@ -257,17 +271,15 @@ namespace CSharpDowngradeAnalyzer.Analyzers
             {
                 if (IsReadOnlyAuto(PropertyDecl, PropertySymbol))
                 {
-                    var initializer = PropertyDecl.Initializer;
                     var typeDecl = PropertyDecl.Parent as TypeDeclarationSyntax;
                     if (typeDecl != null)
                     {
                         var propertyDeclIndex = typeDecl.Members.IndexOf(PropertyDecl);
                         if (propertyDeclIndex >= 0)
                         {
-                            var varDecl =
-                                SyntaxFactory.VariableDeclarator(
-                                    FieldIdentifierFromPropertyName(PropertySymbol.Name)
-                                );
+                            var fieldIdentifier = FieldIdentifierFromPropertyName(PropertySymbol.Name);
+
+                            var varDecl = SyntaxFactory.VariableDeclarator(fieldIdentifier);
                             if (PropertyDecl.Initializer != null)
                             {
                                 varDecl = varDecl.WithInitializer(PropertyDecl.Initializer);
@@ -278,7 +290,7 @@ namespace CSharpDowngradeAnalyzer.Analyzers
                                     SyntaxFactory.VariableDeclaration(
                                         PropertyDecl.Type,
                                         SyntaxFactory.SingletonSeparatedList(varDecl)
-                                        ));
+                                    ));
                             if (PropertySymbol.SetMethod == null)
                             {
                                 fieldDecl =
@@ -288,15 +300,39 @@ namespace CSharpDowngradeAnalyzer.Analyzers
                                         ));
                             }
 
+                            var returnStatement =
+                                SyntaxFactory.ReturnStatement(
+                                    SyntaxFactory.Token(SyntaxKind.ReturnKeyword),
+                                    SyntaxFactory.IdentifierName(fieldIdentifier),
+                                    SyntaxFactory.Token(SyntaxKind.SemicolonToken)
+                                );
+                            var accessorList =
+                                SyntaxFactory.AccessorList(
+                                    SyntaxFactory.List<AccessorDeclarationSyntax>().Add(
+                                        SyntaxFactory.AccessorDeclaration(
+                                            SyntaxKind.GetAccessorDeclaration,
+                                                SyntaxFactory.Block(returnStatement)
+                                            )));
+
+                            var members =
+                                typeDecl.Members
+                                .Replace(
+                                    PropertyDecl,
+                                    PropertyDecl
+                                    .WithInitializer(null)
+                                    .WithAccessorList(accessorList)
+                                    .WithAdditionalAnnotations(Formatter.Annotation)
+                                )
+                                .Insert(
+                                    propertyDeclIndex,
+                                    fieldDecl
+                                    .WithAdditionalAnnotations(Formatter.Annotation)
+                                );
+
                             newRoot =
                                 Root.ReplaceNode(
                                     typeDecl,
-                                    typeDecl
-                                    .WithMembers(
-                                        typeDecl.Members.Insert(
-                                            propertyDeclIndex,
-                                            fieldDecl
-                                        ))
+                                    typeDecl.WithMembers(members)
                                 );
                             return true;
                         }
@@ -331,24 +367,29 @@ namespace CSharpDowngradeAnalyzer.Analyzers
                 var diagnostic = context.Diagnostics.First();
                 var diagnosticSpan = diagnostic.Location.SourceSpan;
 
-                var propertyDecl = root.FindToken(diagnosticSpan.Start).Parent.AncestorsAndSelf().OfType<PropertyDeclarationSyntax>().FirstOrDefault();
-                if (propertyDecl == null) return;
+                var typeDecl = root.FindToken(diagnosticSpan.Start).Parent.AncestorsAndSelf().OfType<TypeDeclarationSyntax>().FirstOrDefault();
+                if (typeDecl == null) return;
 
                 if (!document.SupportsSemanticModel) return;
                 var semanticModel = await document.GetSemanticModelAsync(context.CancellationToken);
                 if (semanticModel == null) return;
 
-                var propertySymbol = semanticModel.GetDeclaredSymbol(propertyDecl);
-                if (propertySymbol == null) return;
+                var analyzer = new Analyzer(typeDecl, semanticModel);
 
-                context.RegisterCodeFix(
-                    CodeAction.Create(
-                        PropertyRule.Title.ToString(),
-                        ct => new Fixer(root, propertyDecl, propertySymbol, ct).FixAsync(document),
-                        equivalenceKey: PropertyRule.Id
-                    ),
-                    diagnostic
-                );
+                foreach (var propertyDecl in analyzer.FixablePropertyDecls())
+                {
+                    var propertySymbol = semanticModel.GetDeclaredSymbol(propertyDecl);
+                    if (propertySymbol == null) return;
+
+                    context.RegisterCodeFix(
+                        CodeAction.Create(
+                            "Fix ",
+                            ct => new Fixer(root, propertyDecl, propertySymbol, ct).FixAsync(document),
+                            equivalenceKey: $"{PropertyRule.Id}_{propertySymbol.ToDisplayString()}"
+                        ),
+                        diagnostic
+                    );
+                }
             }
         }
     }

@@ -2,7 +2,7 @@
   {
     "id": "CsdaProperty",
     "sevirity": "Warning",
-    "line": 5,
+    "line": 8,
     "column": 5,
     "path": "Person.cs",
     "message-args": []

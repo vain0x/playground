@@ -236,10 +236,12 @@ namespace TestHelper
                 var solution = operations.OfType<ApplyChangesOperation>().Single().ChangedSolution;
                 project = solution.GetProject(project.Id);
 
-                fixableDiagnostics = GetDiagnostics(project, analyzer)
-                    .Where(d => fix.FixableDiagnosticIds.Contains(d.Id)).ToArray();
+                //fixableDiagnostics = GetDiagnostics(project, analyzer)
+                //    .Where(d => fix.FixableDiagnosticIds.Contains(d.Id)).ToArray();
 
-                if (!fixableDiagnostics.Any()) break;
+                //if (!fixableDiagnostics.Any()) break;
+
+                break;
             }
 
             return project;

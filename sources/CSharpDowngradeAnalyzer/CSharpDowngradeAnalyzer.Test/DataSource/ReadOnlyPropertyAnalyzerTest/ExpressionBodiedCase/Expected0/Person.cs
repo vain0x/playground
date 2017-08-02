@@ -7,7 +7,10 @@
     /// </summary>
     public string NameWithSan
     {
-        get { return Name + "-san"; }
+        get
+        {
+            return Name + "-san";
+        }
     }
 
     /// <summary>
