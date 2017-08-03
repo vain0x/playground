@@ -10,6 +10,10 @@
     Width="525"
     Height="350"
     >
-    <DockPanel>
-    </DockPanel>
+    <StackPanel>
+        <ComboBox
+            ItemsSource="{Binding Items.Value}"
+            SelectedValue="{Binding Selected.Value}"
+            />
+    </StackPanel>
 </Window>
