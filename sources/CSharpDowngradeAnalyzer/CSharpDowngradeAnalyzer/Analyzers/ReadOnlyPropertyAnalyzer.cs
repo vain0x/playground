@@ -95,17 +95,15 @@ namespace CSharpDowngradeAnalyzer.Analyzers
             {
                 foreach (var member in TypeDecl.Members)
                 {
-                    switch (member)
-                    {
-                        case PropertyDeclarationSyntax propertyDecl:
-                            if (IsReadOnlyAuto(propertyDecl)
-                                || propertyDecl.ExpressionBody != null
-                                || propertyDecl.Initializer != null
-                                )
-                            {
-                                yield return propertyDecl;
-                            }
-                            break;
+                    if (member is PropertyDeclarationSyntax propertyDecl)
+                    { 
+                        if (IsReadOnlyAuto(propertyDecl)
+                            || propertyDecl.ExpressionBody != null
+                            || propertyDecl.Initializer != null
+                            )
+                        {
+                            yield return propertyDecl;
+                        }
                     }
                 }
             }
@@ -163,7 +161,7 @@ namespace CSharpDowngradeAnalyzer.Analyzers
                 CancellationToken = cancellationToken;
             }
 
-            bool IsReadOnlyAuto(PropertyDeclarationSyntax propertyDecl, IPropertySymbol symbol)
+            bool IsAuto(PropertyDeclarationSyntax propertyDecl, IPropertySymbol symbol)
             {
                 if (propertyDecl.ExpressionBody != null) return false;
 
@@ -171,10 +169,7 @@ namespace CSharpDowngradeAnalyzer.Analyzers
                 if (accessorList == null) return false;
                 if (accessorList.Accessors.Any(a => a.Body != null)) return false;
 
-                return
-                    symbol.SetMethod == null
-                    && symbol.GetMethod != null
-                    && !symbol.IsAbstract;
+                return !symbol.IsAbstract;
             }
 
             static SyntaxTriviaList WhitespaceTriviaList()
@@ -198,19 +193,29 @@ namespace CSharpDowngradeAnalyzer.Analyzers
                 if (expression != null)
                 {
                     var isMultiline = IsMultiline(expression);
+                    var indent =
+                        expression
+                        .GetLeadingTrivia()
+                        .TakeLast1()
+                        .Where(t => t.IsKind(SyntaxKind.WhitespaceTrivia))
+                        .Select(t => t.ToString())
+                        .Intercalate("")
+                        .RemoveSuffix("    ");
 
                     var returnStatement =
                         SyntaxFactory.ReturnStatement(
                             SyntaxFactory.Token(SyntaxKind.ReturnKeyword)
+                            .WithLeadingTrivia(
+                                SyntaxFactory.TriviaList(
+                                    SyntaxFactory.EndOfLine(Environment.NewLine),
+                                    SyntaxFactory.Whitespace(indent)
+                                ))
                             .WithTrailingTrivia(
                                 isMultiline ? EndOfLineTriviaList() : WhitespaceTriviaList()
                             ),
                             expression,
                             SyntaxFactory.Token(SyntaxKind.SemicolonToken)
-                        )
-                        //.WithLeadingTrivia(WhitespaceTriviaList())
-                        //.WithTrailingTrivia(WhitespaceTriviaList())
-                        ;
+                        );
                     var accessorList =
                         SyntaxFactory.AccessorList(
                             SyntaxFactory.List<AccessorDeclarationSyntax>().Add(
@@ -225,10 +230,6 @@ namespace CSharpDowngradeAnalyzer.Analyzers
                             .WithExpressionBody(null)
                             .WithSemicolonToken(SyntaxFactory.Token(SyntaxKind.None))
                             .WithAccessorList(accessorList)
-                            //.WithIdentifier(
-                            //    PropertyDecl.Identifier
-                            //    .WithTrailingTrivia(EndOfLineTriviaList())
-                            //)
                             .WithAdditionalAnnotations(Formatter.Annotation)
                         );
                     return true;
@@ -243,8 +244,10 @@ namespace CSharpDowngradeAnalyzer.Analyzers
                 if (TypeDecl.IsKind(SyntaxKind.ClassDeclaration)
                     && PropertySymbol.DeclaredAccessibility != Accessibility.Private
                     && !PropertySymbol.IsOverride
+                    && PropertySymbol.GetMethod != null
+                    && PropertySymbol.SetMethod == null
                     && PropertyDecl.Initializer == null
-                    && IsReadOnlyAuto(PropertyDecl, PropertySymbol)
+                    && IsAuto(PropertyDecl, PropertySymbol)
                     )
                 {
                     var accessor =
@@ -269,7 +272,7 @@ namespace CSharpDowngradeAnalyzer.Analyzers
 
             bool TryAddBackingField(out SyntaxNode newRoot)
             {
-                if (IsReadOnlyAuto(PropertyDecl, PropertySymbol))
+                if (IsAuto(PropertyDecl, PropertySymbol))
                 {
                     var typeDecl = PropertyDecl.Parent as TypeDeclarationSyntax;
                     if (typeDecl != null)
@@ -300,19 +303,35 @@ namespace CSharpDowngradeAnalyzer.Analyzers
                                         ));
                             }
 
-                            var returnStatement =
-                                SyntaxFactory.ReturnStatement(
-                                    SyntaxFactory.Token(SyntaxKind.ReturnKeyword),
-                                    SyntaxFactory.IdentifierName(fieldIdentifier),
-                                    SyntaxFactory.Token(SyntaxKind.SemicolonToken)
-                                );
-                            var accessorList =
-                                SyntaxFactory.AccessorList(
-                                    SyntaxFactory.List<AccessorDeclarationSyntax>().Add(
-                                        SyntaxFactory.AccessorDeclaration(
-                                            SyntaxKind.GetAccessorDeclaration,
-                                                SyntaxFactory.Block(returnStatement)
+                            var getter =
+                                SyntaxFactory.AccessorDeclaration(
+                                    SyntaxKind.GetAccessorDeclaration,
+                                        SyntaxFactory.Block(
+                                            SyntaxFactory.ReturnStatement(
+                                                SyntaxFactory.Token(SyntaxKind.ReturnKeyword),
+                                                SyntaxFactory.IdentifierName(fieldIdentifier),
+                                                SyntaxFactory.Token(SyntaxKind.SemicolonToken)
                                             )));
+                            var accessors = new List<AccessorDeclarationSyntax>() { getter };
+
+                            if (PropertySymbol.SetMethod != null)
+                            {
+                                var setter =
+                                    SyntaxFactory.AccessorDeclaration(
+                                        SyntaxKind.SetAccessorDeclaration,
+                                            SyntaxFactory.Block(
+                                                SyntaxFactory.ExpressionStatement(
+                                                    SyntaxFactory.AssignmentExpression(
+                                                        SyntaxKind.SimpleAssignmentExpression,
+                                                        SyntaxFactory.IdentifierName(fieldIdentifier),
+                                                        SyntaxFactory.IdentifierName("value")
+                                                    ),
+                                                    SyntaxFactory.Token(SyntaxKind.SemicolonToken)
+                                                )));
+                                accessors.Add(setter);
+                            }
+                            var accessorList =
+                                SyntaxFactory.AccessorList(SyntaxFactory.List(accessors));
 
                             var members =
                                 typeDecl.Members
@@ -320,6 +339,7 @@ namespace CSharpDowngradeAnalyzer.Analyzers
                                     PropertyDecl,
                                     PropertyDecl
                                     .WithInitializer(null)
+                                    .WithSemicolonToken(SyntaxFactory.Token(SyntaxKind.None))
                                     .WithAccessorList(accessorList)
                                     .WithAdditionalAnnotations(Formatter.Annotation)
                                 )

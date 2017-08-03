@@ -37,7 +37,9 @@
     <Compile Include="Analyzers\ReadOnlyPropertyAnalyzer.cs" />
     <Compile Include="CodeFixProvider.cs" />
     <Compile Include="DiagnosticAnalyzer.cs" />
+    <Compile Include="Helpers\EnumerableExtension.cs" />
     <Compile Include="Helpers\LanguageVersionExtension.cs" />
+    <Compile Include="Helpers\StringExtension.cs" />
     <Compile Include="Helpers\SyntaxNodeExtension.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
   </ItemGroup>

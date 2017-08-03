@@ -3,7 +3,7 @@
 {
     public string ReadOnlyAutoProperty { get; private set; }
 
-    public string ReadOnlyAutoPropertyWithInitialilzer { get; } = "default";
+    public string ReadOnlyAutoPropertyWithInitializer { get; } = "default";
 
     public override string ReadOnlyAutoPropertyOverride { get; }
 
