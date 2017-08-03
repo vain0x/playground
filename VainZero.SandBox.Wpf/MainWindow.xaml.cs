@@ -6,6 +6,7 @@ using System.Linq;
 using System.Reactive.Concurrency;
 using System.Reactive.Disposables;
 using System.Reactive.Linq;
+using System.Reactive.Subjects;
 using System.Runtime.CompilerServices;
 using System.Text;
 using System.Threading;
@@ -33,20 +34,73 @@ namespace VainZero.SandBox.Wpf
         {
             InitializeComponent();
 
+            ReactivePropertyScheduler.SetDefault(DispatcherScheduler.Current);
+
             Items =
                 Observable.Timer(TimeSpan.FromSeconds(2), DispatcherScheduler.Current)
                 .Select(x =>
                 {
-                    return Enumerable.Range(1, 5).Select(i => x + i).ToArray();
+                    return new[] { "Japan", "America" };
                 })
-                .ToReadOnlyReactiveProperty(new[] { -1L });
+                .ToRP(new[] { default(string) });
 
-            Selected = Items.Select(xs => xs.FirstOrDefault()).ToReactiveProperty();
+            Selected = Items.Select(xs => xs.FirstOrDefault()).ToRP();
 
             DataContext = this;
         }
 
-        public IReadOnlyReactiveProperty<IReadOnlyList<long>> Items { get; }
-        public ReactiveProperty<long> Selected { get; }
+        public MyRP<string[]> Items { get; }
+        public MyRP<string> Selected { get; }
+    }
+
+    public sealed class MyRP<X>
+        : IObservable<X>
+        , INotifyPropertyChanged
+    {
+        X current;
+        public X Value
+        {
+            get { return current; }
+            set
+            {
+                if (EqualityComparer<X>.Default.Equals(current, value)) return;
+
+                current = value;
+
+                // 先にUIの更新通知を発行してから
+                ReactivePropertyScheduler.Default.Schedule(() =>
+                {
+                    PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(nameof(Value)));
+                });
+
+                subject.OnNext(value);
+            }
+        }
+
+        Subject<X> subject = new Subject<X>();
+        SingleAssignmentDisposable subscription = new SingleAssignmentDisposable();
+
+        public event PropertyChangedEventHandler PropertyChanged;
+
+        public IDisposable Subscribe(IObserver<X> observer)
+        {
+            observer.OnNext(current);
+            return subject.Subscribe(observer);
+        }
+
+        public MyRP(X value, IObservable<X> source)
+        {
+            current = value;
+
+            subscription.Disposable = source.Subscribe(x => Value = x);
+        }
+    }
+
+    public static class MyRPExtension
+    {
+        public static MyRP<X> ToRP<X>(this IObservable<X> @this, X value = default(X))
+        {
+            return new MyRP<X>(value, @this);
+        }
     }
 }
