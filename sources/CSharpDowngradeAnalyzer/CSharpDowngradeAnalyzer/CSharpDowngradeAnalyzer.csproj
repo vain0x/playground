@@ -34,7 +34,7 @@
     <WarningLevel>4</WarningLevel>
   </PropertyGroup>
   <ItemGroup>
-    <Compile Include="Analyzers\ReadOnlyPropertyAnalyzer.cs" />
+    <Compile Include="Analyzers\PropertySyntaxAnalyzer.cs" />
     <Compile Include="CodeFixProvider.cs" />
     <Compile Include="DiagnosticAnalyzer.cs" />
     <Compile Include="Helpers\EnumerableExtension.cs" />

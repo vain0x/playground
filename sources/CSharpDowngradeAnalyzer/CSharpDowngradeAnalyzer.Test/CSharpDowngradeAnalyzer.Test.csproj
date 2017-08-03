@@ -93,17 +93,17 @@
     </Reference>
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="Analyzers\ReadOnlyPropertyAnalyzerTest.cs" />
-    <None Include="DataSource\ReadOnlyPropertyAnalyzerTest\ExpressionBodiedCase\Diagnostic\Results.json" />
-    <None Include="DataSource\ReadOnlyPropertyAnalyzerTest\AutoPropertyCase\Expected0\Person.cs" />
-    <None Include="DataSource\ReadOnlyPropertyAnalyzerTest\AutoPropertyCase\Source\Person.cs" />
-    <None Include="DataSource\ReadOnlyPropertyAnalyzerTest\ExpressionBodiedCase\Expected0\Person.cs" />
-    <None Include="DataSource\ReadOnlyPropertyAnalyzerTest\ExpressionBodiedCase\Source\Person.cs" />
-    <None Include="DataSource\ReadOnlyPropertyAnalyzerTest\AutoPropertyCase\Expected1\Person.cs" />
-    <None Include="DataSource\ReadOnlyPropertyAnalyzerTest\AutoPropertyCase\Expected2\Person.cs" />
-    <None Include="DataSource\ReadOnlyPropertyAnalyzerTest\AutoPropertyCase\Expected3\Person.cs" />
-    <None Include="DataSource\ReadOnlyPropertyAnalyzerTest\AutoPropertyCase\Expected4\Person.cs" />
-    <None Include="DataSource\ReadOnlyPropertyAnalyzerTest\ExpressionBodiedCase\Expected1\Person.cs" />
+    <Compile Include="Analyzers\PropertySyntaxAnalyzerTest.cs" />
+    <None Include="DataSource\PropertySyntaxAnalyzerTest\ExpressionBodiedCase\Diagnostic\Results.json" />
+    <None Include="DataSource\PropertySyntaxAnalyzerTest\AutoPropertyCase\Expected0\Person.cs" />
+    <None Include="DataSource\PropertySyntaxAnalyzerTest\AutoPropertyCase\Source\Person.cs" />
+    <None Include="DataSource\PropertySyntaxAnalyzerTest\ExpressionBodiedCase\Expected0\Person.cs" />
+    <None Include="DataSource\PropertySyntaxAnalyzerTest\ExpressionBodiedCase\Source\Person.cs" />
+    <None Include="DataSource\PropertySyntaxAnalyzerTest\AutoPropertyCase\Expected1\Person.cs" />
+    <None Include="DataSource\PropertySyntaxAnalyzerTest\AutoPropertyCase\Expected2\Person.cs" />
+    <None Include="DataSource\PropertySyntaxAnalyzerTest\AutoPropertyCase\Expected3\Person.cs" />
+    <None Include="DataSource\PropertySyntaxAnalyzerTest\AutoPropertyCase\Expected4\Person.cs" />
+    <None Include="DataSource\PropertySyntaxAnalyzerTest\ExpressionBodiedCase\Expected1\Person.cs" />
     <Compile Include="Verifiers\CodeFixVerifier.cs" />
     <Compile Include="Verifiers\ConventionCodeFixVerifier.cs" />
     <Compile Include="Verifiers\DiagnosticVerifier.cs" />
@@ -113,7 +113,7 @@
     <Compile Include="Properties\AssemblyInfo.cs" />
   </ItemGroup>
   <ItemGroup>
-    <None Include="DataSource\ReadOnlyPropertyAnalyzerTest\AutoPropertyCase\Diagnostic\Results.json" />
+    <None Include="DataSource\PropertySyntaxAnalyzerTest\AutoPropertyCase\Diagnostic\Results.json" />
     <None Include="DataSource\result-schema-v1.json" />
     <None Include="DataSource\result-schema-v2.json" />
     <None Include="packages.config" />

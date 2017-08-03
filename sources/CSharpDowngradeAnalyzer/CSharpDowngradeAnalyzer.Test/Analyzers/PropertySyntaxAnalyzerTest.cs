@@ -12,7 +12,7 @@ using TestHelper;
 namespace CSharpDowngradeAnalyzer.Test.Analyzers
 {
     [TestClass]
-    public sealed class ReadOnlyPropertyAnalyzerTest
+    public sealed class PropertySyntaxAnalyzerTest
         : ConventionCodeFixVerifier
     {
         CSharpParseOptions CSharp5 { get; } =

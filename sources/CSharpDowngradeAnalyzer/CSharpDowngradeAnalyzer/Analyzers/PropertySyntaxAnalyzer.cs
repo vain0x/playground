@@ -18,7 +18,7 @@ using Microsoft.CodeAnalysis.Formatting;
 
 namespace CSharpDowngradeAnalyzer.Analyzers
 {
-    public static class ReadOnlyPropertyAnalyzer
+    public static class PropertySyntaxAnalyzer
     {
         public static DiagnosticDescriptor PropertyRule { get; } =
             new DiagnosticDescriptor(
