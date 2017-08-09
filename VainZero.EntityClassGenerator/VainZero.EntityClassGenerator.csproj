@@ -53,6 +53,9 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="EntityClassGenerator\AppArgument.cs" />
+    <Compile Include="EntityClassGenerator\CSharpWriters\ContextClass.cs" />
+    <Compile Include="EntityClassGenerator\CSharpWriters\ITextWritable.cs" />
+    <Compile Include="EntityClassGenerator\CSharpWriters\CSharpWriter.cs" />
     <Compile Include="EntityClassGenerator\CSharpWriters\CSharpIdentifier.cs" />
     <Compile Include="EntityClassGenerator\CSharpWriters\EntityClass.cs" />
     <Compile Include="EntityClassGenerator\CSharpWriters\EntityClassCollection.cs" />

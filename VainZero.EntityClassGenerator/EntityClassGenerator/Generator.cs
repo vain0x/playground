@@ -24,13 +24,51 @@ namespace VainZero.EntityClassGenerator
             }
         }
 
+        static void Clear(DirectoryInfo directory)
+        {
+            var retryCount = 5;
+
+            while (true)
+            {
+                try
+                {
+                    if (!Directory.Exists(directory.FullName))
+                    {
+                        directory.Create();
+                    }
+
+                    foreach (var file in directory.GetFiles("*.cs"))
+                    {
+                        file.Delete();
+                    }
+
+                    break;
+                }
+                catch (IOException)
+                {
+                    if (retryCount > 0)
+                    {
+                        retryCount--;
+                        continue;
+                    }
+                    throw;
+                }
+            }
+        }
+
         public void Generate()
         {
-            var style = new CSharpStyle(Argument.Namespace);
+            var style = new CSharpStyle(Argument.Namespace, Argument.ContextName);
             var provider = Provider();
             var schema = provider.GetSchema();
+            var contextClass = new ContextClass(schema, style);
             var collection = new EntityClassCollection(style, provider.TypeNameMapper, schema);
+
             var outputDirectory = new DirectoryInfo(Argument.OutputDirectoryPath);
+            Clear(outputDirectory);
+            contextClass.WriteToFile(
+                new FileInfo(Path.Combine(outputDirectory.FullName, style.ContextName + ".cs"))
+            );
             collection.WriteToDirectory(outputDirectory);
         }
 

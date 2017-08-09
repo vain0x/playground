@@ -11,81 +11,14 @@ using VainZero.Misc.Disposables;
 namespace VainZero.EntityClassGenerator.CSharpWriters
 {
     public sealed class EntityClass
+        : ITextWritable
     {
         sealed class EntityClassWriter
+            : CSharpWriter
         {
-            sealed class Indentation
-                : IDisposable
-            {
-                EntityClassWriter Parent { get; }
-
-                public Indentation(EntityClassWriter parent)
-                {
-                    Parent = parent;
-
-                    Parent.indentLevel++;
-                }
-
-                public void Dispose()
-                {
-                    Parent.indentLevel--;
-                }
-            }
-
             EntityClass Parent { get; }
-            TextWriter Writer { get; }
 
             DbTable Table => Parent.Table;
-
-            int indentLevel;
-
-            static IDisposable Defer(Action action)
-            {
-                return new AnonymousDisposable(action);
-            }
-
-            Indentation AddIndent()
-            {
-                return new Indentation(this);
-            }
-
-            void WriteIndent()
-            {
-                for (var i = 0; i < indentLevel * 4; i++)
-                {
-                    Writer.Write(' ');
-                }
-            }
-
-            void WriteLine(string line)
-            {
-                if (string.IsNullOrWhiteSpace(line))
-                {
-                    Writer.WriteLine();
-                    return;
-                }
-
-                WriteIndent();
-                Writer.WriteLine(line);
-            }
-
-            IDisposable WriteBlock()
-            {
-                WriteLine("{");
-                var indentation = AddIndent();
-                return
-                    Defer(() =>
-                    {
-                        indentation.Dispose();
-                        WriteLine("}");
-                    });
-            }
-
-            IDisposable WriteNamespaceBlock()
-            {
-                WriteLine($"namespace {Parent.Style.Namespace}");
-                return WriteBlock();
-            }
 
             static readonly string[] usingDirectives =
                 new[]
@@ -97,17 +30,12 @@ namespace VainZero.EntityClassGenerator.CSharpWriters
                 .Select(namespaceName => $"using {namespaceName};")
                 .ToArray();
 
-            void WriteUsings()
+            public void WriteUsings()
             {
                 foreach (var directive in usingDirectives)
                 {
                     WriteLine(directive);
                 }
-            }
-
-            static string EscapeIdentifier(string name)
-            {
-                return new CSharpIdentifier(name).Name;
             }
 
             IDisposable WriteClassBlock()
@@ -165,16 +93,16 @@ namespace VainZero.EntityClassGenerator.CSharpWriters
                 WriteUsings();
                 WriteLine("");
 
-                using (WriteNamespaceBlock())
+                using (WriteNamespaceBlock(Parent.Style.Namespace))
                 {
                     WriteClass();
                 }
             }
 
             public EntityClassWriter(EntityClass parent, TextWriter writer)
+                : base(writer)
             {
                 Parent = parent;
-                Writer = writer;
             }
         }
 
@@ -192,25 +120,6 @@ namespace VainZero.EntityClassGenerator.CSharpWriters
         public void Write(TextWriter writer)
         {
             new EntityClassWriter(this, writer).WriteFile();
-        }
-
-        public void WriteToFile(FileInfo file)
-        {
-            using (var stream = file.OpenWrite())
-            using (var writer = new StreamWriter(stream))
-            {
-                stream.SetLength(0);
-                Write(writer);
-            }
-        }
-
-        public string GetString()
-        {
-            using (var writer = new StringWriter())
-            {
-                Write(writer);
-                return writer.ToString();
-            }
         }
 
         public EntityClass(CSharpStyle style, ITypeNameMapper typeNameMapper, DbTable table)
