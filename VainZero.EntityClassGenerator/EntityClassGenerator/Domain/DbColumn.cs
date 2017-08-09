@@ -14,11 +14,12 @@ namespace VainZero.EntityClassGenerator.Domain
         public int? MaxLength { get; }
         public int? NumericPrecision { get; }
         public int? NumericScale { get; }
+        public string Default { get; }
         public bool IsPrimaryKey { get; }
         public bool IsAutoIncrement { get; }
         public int Priority { get; }
 
-        public DbColumn(string tableName, string name, bool isNullable, string typeName, int? maxLength, int? numericPrecision, int? numericScale, bool isPrimaryKey, bool isAutoIncrement, int priority)
+        public DbColumn(string tableName, string name, bool isNullable, string typeName, int? maxLength, int? numericPrecision, int? numericScale, string @default, bool isPrimaryKey, bool isAutoIncrement, int priority)
         {
             TableName = tableName;
             Name = name;
@@ -27,6 +28,7 @@ namespace VainZero.EntityClassGenerator.Domain
             MaxLength = maxLength;
             NumericPrecision = numericPrecision;
             NumericScale = numericScale;
+            Default = @default;
             IsPrimaryKey = isPrimaryKey;
             IsAutoIncrement = isAutoIncrement;
             Priority = priority;
