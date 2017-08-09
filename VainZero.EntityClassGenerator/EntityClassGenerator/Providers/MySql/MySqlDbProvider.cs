@@ -50,6 +50,7 @@ namespace VainZero.EntityClassGenerator.Providers
                             (int?)row.Field<ulong?>("CHARACTER_MAXIMUM_LENGTH"),
                             (int?)row.Field<ulong?>("NUMERIC_PRECISION"),
                             (int?)row.Field<ulong?>("NUMERIC_SCALE"),
+                            row.Field<string>("COLUMN_DEFAULT"),
                             row.Field<string>("COLUMN_KEY") == "PRI",
                             row.Field<string>("EXTRA") == "auto_increment",
                             (int)row.Field<ulong>("ORDINAL_POSITION")

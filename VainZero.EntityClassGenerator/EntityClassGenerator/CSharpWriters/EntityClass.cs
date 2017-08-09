@@ -140,6 +140,11 @@ namespace VainZero.EntityClassGenerator.CSharpWriters
                     WriteLine($"[StringLength({column.MaxLength.Value})]");
                 }
 
+                if (!string.IsNullOrEmpty(column.Default))
+                {
+                    WriteLine("[DatabaseGenerated(DatabaseGeneratedOption.Computed)]");
+                }
+
                 WriteLine($"public {typeName} {EscapeIdentifier(column.Name)} {{ get; set; }}");
             }
 
