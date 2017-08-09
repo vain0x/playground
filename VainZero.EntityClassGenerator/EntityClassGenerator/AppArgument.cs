@@ -21,5 +21,8 @@ namespace VainZero.EntityClassGenerator
 
         [Option("namespace", Required = true, HelpText = "The namespace to locate classes")]
         public string Namespace { get; set; }
+
+        [Option("context-name", Default = "MyDbContext")]
+        public string ContextName { get; set; }
     }
 }

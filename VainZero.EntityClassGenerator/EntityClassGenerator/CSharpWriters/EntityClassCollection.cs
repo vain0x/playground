@@ -24,16 +24,6 @@ namespace VainZero.EntityClassGenerator.CSharpWriters
 
         public void WriteToDirectory(DirectoryInfo directory)
         {
-            if (!Directory.Exists(directory.FullName))
-            {
-                directory.Create();
-            }
-
-            foreach (var file in directory.GetFiles("*.cs"))
-            {
-                file.Delete();
-            }
-
             foreach (var entityClass in EntityClasses())
             {
                 var file = new FileInfo(Path.Combine(directory.FullName, entityClass.ClassName + ".cs"));
