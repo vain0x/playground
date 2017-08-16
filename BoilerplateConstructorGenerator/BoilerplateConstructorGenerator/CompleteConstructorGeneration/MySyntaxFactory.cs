@@ -70,7 +70,7 @@ namespace BoilerplateConstructorGenerator.CompleteConstructorGeneration
             return IdentifierName(name);
         }
 
-        sealed class AssignableVariableMember
+        public sealed class AssignableVariableMember
         {
             VariableMember Member { get; }
 
@@ -87,54 +87,58 @@ namespace BoilerplateConstructorGenerator.CompleteConstructorGeneration
             }
         }
 
-        ConstructorDeclarationSyntax Constructor(SemanticModel semanticModel, TypeDeclarationSyntax typeDecl, ImmutableArray<VariableMember> varMembers)
+        public ImmutableArray<AssignableVariableMember> Assignables(ImmutableArray<VariableMember> varMembers)
         {
-            var assignables =
+            return
                 varMembers
                 .Where(m => !m.HasInitializer)
                 .Select(m => new AssignableVariableMember(m))
                 .ToImmutableArray();
+        }
 
-            IEnumerable<StatementSyntax> ContractStatements()
-            {
-                var aneType = semanticModel.Compilation.GetTypeByMetadataName(typeof(ArgumentNullException).FullName);
-                if (aneType == null) yield break;
-
-                foreach (var a in assignables)
-                {
-                    if (!a.TypeSymbol.IsReferenceType) continue;
-
-                    var condition =
-                        BinaryExpression(
-                            SyntaxKind.EqualsExpression,
-                            IdentifierName(a.ParameterIdentifier),
-                            LiteralExpression(SyntaxKind.NullLiteralExpression)
-                        );
-                    var statement =
-                        ThrowStatement(
-                            ObjectCreationExpression(TypeSyntax(aneType))
-                            .WithArgumentList(
-                                ArgumentList(
-                                    SingletonSeparatedList(
-                                        Argument(
-                                            NameOfSyntax(a.ParameterIdentifier)
-                                        )))));
-
-                    yield return IfStatement(condition, statement);
-                }
-            }
-
-            var parameterList =
-                ParameterList(
+        public ParameterListSyntax ParameterList(ImmutableArray<AssignableVariableMember> assignables)
+        {
+            return
+                SyntaxFactory.ParameterList(
                     SeparatedList(
                         assignables.Select(a =>
                             Parameter(a.ParameterIdentifier)
                             .WithType(TypeSyntax(a.TypeSymbol))
                         )));
+        }
 
-            var contractStatements = ContractStatements();
+        public IEnumerable<StatementSyntax> ContractStatements(SemanticModel semanticModel, ImmutableArray<AssignableVariableMember> assignables)
+        {
+            var aneType = semanticModel.Compilation.GetTypeByMetadataName(typeof(ArgumentNullException).FullName);
+            if (aneType == null) yield break;
 
-            var assignments =
+            foreach (var a in assignables)
+            {
+                if (!a.TypeSymbol.IsReferenceType) continue;
+
+                var condition =
+                    BinaryExpression(
+                        SyntaxKind.EqualsExpression,
+                        IdentifierName(a.ParameterIdentifier),
+                        LiteralExpression(SyntaxKind.NullLiteralExpression)
+                    );
+                var statement =
+                    ThrowStatement(
+                        ObjectCreationExpression(TypeSyntax(aneType))
+                        .WithArgumentList(
+                            ArgumentList(
+                                SingletonSeparatedList(
+                                    Argument(
+                                        NameOfSyntax(a.ParameterIdentifier)
+                                    )))));
+
+                yield return IfStatement(condition, statement);
+            }
+        }
+
+        IEnumerable<ExpressionStatementSyntax> AssignmentStatements(ImmutableArray<AssignableVariableMember> assignables)
+        {
+            return
                 assignables.Select(a =>
                     ExpressionStatement(
                         AssignmentExpression(
@@ -146,9 +150,15 @@ namespace BoilerplateConstructorGenerator.CompleteConstructorGeneration
                             ),
                             IdentifierName(a.ParameterIdentifier)
                         )));
+        }
 
+        public ConstructorDeclarationSyntax CompleteConstructor(SemanticModel semanticModel, TypeDeclarationSyntax typeDecl, ImmutableArray<VariableMember> varMembers)
+        {
+            var assignables = Assignables(varMembers);
+            var parameterList = ParameterList(assignables);
+            var contractStatements = ContractStatements(semanticModel, assignables);
+            var assignments = AssignmentStatements(assignables);
             var body = Block(contractStatements.Concat(assignments));
-
             var typeName = typeDecl.Identifier.Text;
             return
                 ConstructorDeclaration(typeName)
@@ -157,24 +167,11 @@ namespace BoilerplateConstructorGenerator.CompleteConstructorGeneration
                         Token(SyntaxKind.PublicKeyword)
                     ))
                 .WithParameterList(parameterList)
-                .WithBody(body);
-        }
-
-        public MemberDeclarationSyntax[] Members(SemanticModel semanticModel, TypeDeclarationSyntax typeDecl, ImmutableArray<VariableMember> varMembers)
-        {
-            var members = new List<MemberDeclarationSyntax>
-            {
-                Constructor(semanticModel, typeDecl, varMembers),
-            };
-
-            return
-                members
-                .Select(m =>
-                    m.WithAdditionalAnnotations(
-                        Formatter.Annotation,
-                        Simplifier.Annotation
-                    ))
-                .ToArray();
+                .WithBody(body)
+                .WithAdditionalAnnotations(
+                    Formatter.Annotation,
+                    Simplifier.Annotation
+                );
         }
     }
 }

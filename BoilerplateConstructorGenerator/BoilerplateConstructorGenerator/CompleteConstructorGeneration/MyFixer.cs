@@ -38,8 +38,8 @@ namespace BoilerplateConstructorGenerator.CompleteConstructorGeneration
             var factory = new MySyntaxFactory(LanguageVersion);
             var varMembers = new VariableMemberCollector(SemanticModel).Collect(TypeDecl);
 
-            var members =
-                factory.Members(
+            var constructor =
+                factory.CompleteConstructor(
                     SemanticModel,
                     TypeDecl,
                     varMembers
@@ -49,7 +49,7 @@ namespace BoilerplateConstructorGenerator.CompleteConstructorGeneration
                 document.WithSyntaxRoot(
                     root.ReplaceNode(
                         TypeDecl,
-                        TypeDecl.AddMembers(members)
+                        TypeDecl.AddMembers(constructor)
                     ));
         }
 
