@@ -93,10 +93,10 @@
     </Reference>
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="CompleteConstructorGenerationMyFixerTest.cs" />
-    <None Include="DataSource\CompleteConstructorGenerationMyFixerTest\GenerationCase\Expected0\Sample.cs" />
-    <None Include="DataSource\CompleteConstructorGenerationMyFixerTest\GenerationCase\Source\Sample.cs" />
-    <None Include="DataSource\CompleteConstructorGenerationMyFixerTest\NoReportCase\Source\Sample.cs" />
+    <Compile Include="CompleteConstructorGeneratorTest.cs" />
+    <None Include="DataSource\CompleteConstructorGeneratorTest\GenerationCase\Expected0\Sample.cs" />
+    <None Include="DataSource\CompleteConstructorGeneratorTest\GenerationCase\Source\Sample.cs" />
+    <None Include="DataSource\CompleteConstructorGeneratorTest\NoReportCase\Source\Sample.cs" />
     <Compile Include="Verifiers\CodeFixVerifier.cs" />
     <Compile Include="Verifiers\ConventionCodeFixVerifier.cs" />
     <Compile Include="Verifiers\DiagnosticVerifier.cs" />
@@ -104,10 +104,10 @@
     <Compile Include="Helpers\DiagnosticResult.cs" />
     <Compile Include="Helpers\DiagnosticVerifier.Helper.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
-    <None Include="DataSource\CompleteConstructorGenerationMyFixerTest\NoReportCase\Diagnostic\Results.json" />
+    <None Include="DataSource\CompleteConstructorGeneratorTest\NoReportCase\Diagnostic\Results.json" />
   </ItemGroup>
   <ItemGroup>
-    <None Include="DataSource\CompleteConstructorGenerationMyFixerTest\GenerationCase\Diagnostic\Results.json" />
+    <None Include="DataSource\CompleteConstructorGeneratorTest\GenerationCase\Diagnostic\Results.json" />
     <None Include="DataSource\result-schema-v1.json" />
     <None Include="DataSource\result-schema-v2.json" />
     <None Include="packages.config" />

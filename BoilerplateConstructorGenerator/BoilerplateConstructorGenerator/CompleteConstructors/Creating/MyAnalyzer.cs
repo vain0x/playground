@@ -14,7 +14,7 @@ using Microsoft.CodeAnalysis.Diagnostics;
 using Microsoft.CodeAnalysis.Formatting;
 using Microsoft.CodeAnalysis.Simplification;
 
-namespace BoilerplateConstructorGenerator.CompleteConstructorGeneration
+namespace BoilerplateConstructorGenerator.CompleteConstructors.Creating
 {
     public sealed class MyAnalyzer
     {

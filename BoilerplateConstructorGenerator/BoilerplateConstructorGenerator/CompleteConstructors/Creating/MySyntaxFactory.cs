@@ -15,7 +15,7 @@ using Microsoft.CodeAnalysis.Formatting;
 using Microsoft.CodeAnalysis.Simplification;
 using static Microsoft.CodeAnalysis.CSharp.SyntaxFactory;
 
-namespace BoilerplateConstructorGenerator.CompleteConstructorGeneration
+namespace BoilerplateConstructorGenerator.CompleteConstructors.Creating
 {
     public sealed class MySyntaxFactory
     {

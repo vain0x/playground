@@ -31,7 +31,7 @@ namespace BoilerplateConstructorGenerator
 
         public sealed override Task RegisterCodeFixesAsync(CodeFixContext context)
         {
-            return CompleteConstructorGeneration.MyFixer.Register(context);
+            return CompleteConstructors.Creating.MyFixer.Register(context);
         }
     }
 }

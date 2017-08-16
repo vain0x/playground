@@ -25,7 +25,7 @@ namespace BoilerplateConstructorGenerator
         static void AnalyzeTypeToGenerateCompleteConstructor(SyntaxNodeAnalysisContext context)
         {
             var typeDecl = (TypeDeclarationSyntax)context.Node;
-            new CompleteConstructorGeneration.MyAnalyzer(context, typeDecl).Analyze();
+            new CompleteConstructors.Creating.MyAnalyzer(context, typeDecl).Analyze();
         }
     }
 }

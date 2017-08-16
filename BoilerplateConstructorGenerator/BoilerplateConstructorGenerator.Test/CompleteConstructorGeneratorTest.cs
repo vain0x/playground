@@ -11,7 +11,7 @@ using TestHelper;
 namespace BoilerplateConstructorGenerator.Test
 {
     [TestClass]
-    public sealed class CompleteConstructorGenerationMyFixerTest
+    public sealed class CompleteConstructorGeneratorTest
         : ConventionCodeFixVerifier
     {
         protected override DiagnosticAnalyzer GetCSharpDiagnosticAnalyzer()

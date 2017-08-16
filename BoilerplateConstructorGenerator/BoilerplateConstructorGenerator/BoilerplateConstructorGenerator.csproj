@@ -35,13 +35,13 @@
   </PropertyGroup>
   <ItemGroup>
     <Compile Include="CodeFixProvider.cs" />
-    <Compile Include="CompleteConstructorGeneration\MyAnalyzer.cs" />
+    <Compile Include="CompleteConstructors\Creating\MyAnalyzer.cs" />
     <Compile Include="Core\VariableMember.cs" />
     <Compile Include="Core\VariableMemberCollector.cs" />
     <Compile Include="DiagnosticAnalyzer.cs" />
     <Compile Include="DiagnosticProvider.cs" />
-    <Compile Include="CompleteConstructorGeneration\MySyntaxFactory.cs" />
-    <Compile Include="CompleteConstructorGeneration\MyFixer.cs" />
+    <Compile Include="CompleteConstructors\Creating\MySyntaxFactory.cs" />
+    <Compile Include="CompleteConstructors\Creating\MyFixer.cs" />
     <Compile Include="Helpers\LanguageVersionExtension.cs" />
     <Compile Include="Helpers\SyntaxNodeExtension.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
@@ -121,7 +121,9 @@
       <Private>False</Private>
     </Reference>
   </ItemGroup>
-  <ItemGroup />
+  <ItemGroup>
+    <Folder Include="CompleteConstructors\Editing\" />
+  </ItemGroup>
   <Import Project="$(MSBuildExtensionsPath32)\Microsoft\Portable\$(TargetFrameworkVersion)\Microsoft.Portable.CSharp.targets" />
   <Target Name="AfterBuild">
     <GetAssemblyIdentity AssemblyFiles="$(OutDir)\$(AssemblyName).dll">
