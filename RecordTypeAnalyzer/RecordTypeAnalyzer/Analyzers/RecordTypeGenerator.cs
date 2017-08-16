@@ -37,7 +37,7 @@ namespace RecordTypeAnalyzer.Analyzers
             var name = SymbolBase.Name;
             if (name.Length > 0 && char.IsUpper(name[0]))
             {
-                return char.ToLowerInvariant(name[0]) + name.Substring(1);
+                return char.ToLowerInvariant(name[0]).ToString() + name.Substring(1);
             }
             return name;
         }
@@ -206,7 +206,6 @@ namespace RecordTypeAnalyzer.Analyzers
             AnalysisContext.ReportDiagnostic(Diagnostic.Create(DiagnosticProvider.ImplGeneration, TypeDecl.GetLocation(), TypeDecl.Identifier.Text));
         }
     }
-
 
     public sealed class RecordTypeGenerator
     {
