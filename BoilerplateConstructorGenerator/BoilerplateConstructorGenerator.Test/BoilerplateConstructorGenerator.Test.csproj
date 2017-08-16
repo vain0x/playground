@@ -93,16 +93,21 @@
     </Reference>
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="CompleteConstructorGenerationMyFixerTest.cs" />
+    <None Include="DataSource\CompleteConstructorGenerationMyFixerTest\GenerationCase\Expected0\Sample.cs" />
+    <None Include="DataSource\CompleteConstructorGenerationMyFixerTest\GenerationCase\Source\Sample.cs" />
+    <None Include="DataSource\CompleteConstructorGenerationMyFixerTest\NoReportCase\Source\Sample.cs" />
     <Compile Include="Verifiers\CodeFixVerifier.cs" />
     <Compile Include="Verifiers\ConventionCodeFixVerifier.cs" />
     <Compile Include="Verifiers\DiagnosticVerifier.cs" />
     <Compile Include="Helpers\CodeFixVerifier.Helper.cs" />
     <Compile Include="Helpers\DiagnosticResult.cs" />
     <Compile Include="Helpers\DiagnosticVerifier.Helper.cs" />
-    <Compile Include="UnitTests.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
+    <None Include="DataSource\CompleteConstructorGenerationMyFixerTest\NoReportCase\Diagnostic\Results.json" />
   </ItemGroup>
   <ItemGroup>
+    <None Include="DataSource\CompleteConstructorGenerationMyFixerTest\GenerationCase\Diagnostic\Results.json" />
     <None Include="DataSource\result-schema-v1.json" />
     <None Include="DataSource\result-schema-v2.json" />
     <None Include="packages.config" />
@@ -112,6 +117,9 @@
       <Project>{A42A75E0-BAEA-492A-B6D4-28E43E3A81C4}</Project>
       <Name>BoilerplateConstructorGenerator</Name>
     </ProjectReference>
+  </ItemGroup>
+  <ItemGroup>
+    <Service Include="{82A7F48D-3B50-4B1E-B82E-3ADA8210C358}" />
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
 </Project>

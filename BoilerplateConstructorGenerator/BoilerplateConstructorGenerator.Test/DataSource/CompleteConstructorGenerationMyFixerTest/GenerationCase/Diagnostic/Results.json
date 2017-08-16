@@ -1,0 +1,10 @@
+﻿[
+  {
+    "id": "BcgCompleteConstructorGeneration",
+    "sevirity": "Info",
+    "line": 7,
+    "column": 14,
+    "path": "Sample.cs",
+    "message-args": [ "Sample" ]
+  }
+]
