@@ -35,7 +35,7 @@ namespace BoilerplateConstructorGenerator.CompleteConstructorGeneration
             var tree = await document.GetSyntaxTreeAsync(CancellationToken).ConfigureAwait(false);
             var root = await tree.GetRootAsync(CancellationToken);
 
-            var factory = new RecordlikeImplFactory(LanguageVersion);
+            var factory = new MySyntaxFactory(LanguageVersion);
             var varMembers = new VariableMemberCollector(SemanticModel).Collect(TypeDecl);
 
             var members =

@@ -34,8 +34,7 @@ namespace BoilerplateConstructorGenerator
                 foreach (var varDecl in fieldDecl.Declaration.Variables)
                 {
                     var symbol = SemanticModel.GetDeclaredSymbol(varDecl) as IFieldSymbol;
-                    if (symbol == null) continue;
-                    if (symbol.IsStatic) continue;
+                    if (symbol == null || symbol.IsStatic) continue;
 
                     varMembers.Add(new VariableMember.Field(symbol, fieldDecl, varDecl));
                 }

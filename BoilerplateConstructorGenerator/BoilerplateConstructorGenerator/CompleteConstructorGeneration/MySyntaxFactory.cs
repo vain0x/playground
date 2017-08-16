@@ -17,15 +17,11 @@ using static Microsoft.CodeAnalysis.CSharp.SyntaxFactory;
 
 namespace BoilerplateConstructorGenerator.CompleteConstructorGeneration
 {
-    public sealed class RecordlikeImplFactory
+    public sealed class MySyntaxFactory
     {
-        const string RegionHeader = RegionHeaderKeyword + " v" + Version;
-        const string RegionHeaderKeyword = "Complete Constructor";
-        const string Version = "1.0.0";
-
         LanguageVersion LanguageVersion { get; }
 
-        public RecordlikeImplFactory(LanguageVersion languageVersion)
+        public MySyntaxFactory(LanguageVersion languageVersion)
         {
             LanguageVersion = languageVersion;
         }
@@ -164,52 +160,12 @@ namespace BoilerplateConstructorGenerator.CompleteConstructorGeneration
                 .WithBody(body);
         }
 
-        RegionDirectiveTriviaSyntax RegionDirective()
-        {
-            return
-                RegionDirectiveTrivia(isActive: true)
-                .WithEndOfDirectiveToken(
-                    Token(
-                        TriviaList(
-                            Whitespace(" "),
-                            PreprocessingMessage(RegionHeader)
-                        ),
-                        SyntaxKind.EndOfDirectiveToken,
-                        TriviaList()
-                    ));
-        }
-
         public MemberDeclarationSyntax[] Members(SemanticModel semanticModel, TypeDeclarationSyntax typeDecl, ImmutableArray<VariableMember> varMembers)
         {
             var members = new List<MemberDeclarationSyntax>
             {
                 Constructor(semanticModel, typeDecl, varMembers),
             };
-
-            // Enclose with a region.
-            if (members.Count > 0)
-            {
-                var first = members[0];
-                members[0] =
-                    first.WithLeadingTrivia(
-                        first.GetLeadingTrivia().InsertRange(
-                            0,
-                            new[]
-                            {
-                                EndOfLine(Environment.NewLine),
-                                Trivia(RegionDirective()),
-                            }));
-
-                var last = members[members.Count - 1];
-                members[members.Count - 1] =
-                    last.WithTrailingTrivia(
-                        last.GetTrailingTrivia().AddRange(
-                            new[]
-                            {
-                                Trivia(EndRegionDirectiveTrivia(isActive: true)),
-                                EndOfLine(Environment.NewLine),
-                            }));
-            }
 
             return
                 members

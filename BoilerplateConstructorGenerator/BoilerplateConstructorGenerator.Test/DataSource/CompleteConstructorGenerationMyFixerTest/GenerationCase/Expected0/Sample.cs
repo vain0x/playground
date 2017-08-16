@@ -26,7 +26,6 @@ public class Sample
     /// </summary>
     readonly IEnumerable<int> async;
 
-    #region Complete Constructor v1.0.0
     public Sample(string @string, System.TimeSpan timeSpan, System.Collections.Generic.IEnumerable<int> @async)
     {
         if (@string == null)
@@ -37,5 +36,4 @@ public class Sample
         TimeSpan = timeSpan;
         this.async = @async;
     }
-    #endregion
 }

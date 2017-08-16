@@ -40,7 +40,7 @@
     <Compile Include="Core\VariableMemberCollector.cs" />
     <Compile Include="DiagnosticAnalyzer.cs" />
     <Compile Include="DiagnosticProvider.cs" />
-    <Compile Include="CompleteConstructorGeneration\ImplFactory.cs" />
+    <Compile Include="CompleteConstructorGeneration\MySyntaxFactory.cs" />
     <Compile Include="CompleteConstructorGeneration\MyFixer.cs" />
     <Compile Include="Helpers\LanguageVersionExtension.cs" />
     <Compile Include="Helpers\SyntaxNodeExtension.cs" />
