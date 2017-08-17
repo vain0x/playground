@@ -21,7 +21,7 @@ namespace BoilerplateConstructorGenerator.Test
 
         protected override CodeFixProvider GetCSharpCodeFixProvider()
         {
-            return new BoilerplateConstructorGeneratorCodeFixProvider();
+            return new CompleteConstructors.Creating.MyCodeFixProvider();
         }
 
         [TestMethod]

@@ -34,14 +34,14 @@
     <WarningLevel>4</WarningLevel>
   </PropertyGroup>
   <ItemGroup>
-    <Compile Include="CodeFixProvider.cs" />
     <Compile Include="CompleteConstructors\Creating\MyAnalyzer.cs" />
+    <Compile Include="CompleteConstructors\Creating\MyCodeFixProvider.cs" />
     <Compile Include="Core\VariableMember.cs" />
     <Compile Include="Core\VariableMemberCollector.cs" />
     <Compile Include="DiagnosticAnalyzer.cs" />
     <Compile Include="DiagnosticProvider.cs" />
     <Compile Include="CompleteConstructors\Creating\MySyntaxFactory.cs" />
-    <Compile Include="CompleteConstructors\Creating\MyFixer.cs" />
+    <Compile Include="CompleteConstructors\Creating\MyCodeFixer.cs" />
     <Compile Include="Helpers\LanguageVersionExtension.cs" />
     <Compile Include="Helpers\SyntaxNodeExtension.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />

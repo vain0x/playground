@@ -13,10 +13,10 @@ using Microsoft.CodeAnalysis.CSharp.Syntax;
 using Microsoft.CodeAnalysis.Rename;
 using Microsoft.CodeAnalysis.Text;
 
-namespace BoilerplateConstructorGenerator
+namespace BoilerplateConstructorGenerator.CompleteConstructors.Creating
 {
-    [ExportCodeFixProvider(LanguageNames.CSharp, Name = nameof(BoilerplateConstructorGeneratorCodeFixProvider)), Shared]
-    public class BoilerplateConstructorGeneratorCodeFixProvider : CodeFixProvider
+    [ExportCodeFixProvider(LanguageNames.CSharp, Name = nameof(MyCodeFixProvider)), Shared]
+    public class MyCodeFixProvider : CodeFixProvider
     {
         static readonly ImmutableArray<string> s_fixableDiagnosticIds =
             ImmutableArray.Create(DiagnosticProvider.CompleteConstructorGeneration.Id);
@@ -31,7 +31,7 @@ namespace BoilerplateConstructorGenerator
 
         public sealed override Task RegisterCodeFixesAsync(CodeFixContext context)
         {
-            return CompleteConstructors.Creating.MyFixer.Register(context);
+            return MyCodeFixer.Register(context);
         }
     }
 }

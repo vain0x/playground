@@ -16,7 +16,7 @@ using Microsoft.CodeAnalysis.Simplification;
 
 namespace BoilerplateConstructorGenerator.CompleteConstructors.Creating
 {
-    public sealed class MyFixer
+    public sealed class MyCodeFixer
     {
         SemanticModel SemanticModel { get; }
 
@@ -53,7 +53,7 @@ namespace BoilerplateConstructorGenerator.CompleteConstructors.Creating
                     ));
         }
 
-        public MyFixer(
+        public MyCodeFixer(
                 SemanticModel semanticModel,
                 TypeDeclarationSyntax typeDecl,
                 ITypeSymbol typeSymbol,
@@ -90,7 +90,7 @@ namespace BoilerplateConstructorGenerator.CompleteConstructors.Creating
             context.RegisterCodeFix(
                 CodeAction.Create(
                     diagnostic.Descriptor.Title.ToString(),
-                    ct => new MyFixer(semanticModel, typeDecl, typeSymbol, ct).FixAsync(document),
+                    ct => new MyCodeFixer(semanticModel, typeDecl, typeSymbol, ct).FixAsync(document),
                     equivalenceKey: diagnostic.Id
                 ),
                 diagnostic
