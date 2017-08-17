@@ -20,7 +20,14 @@ namespace BoilerplateConstructorGenerator
                 isEnabledByDefault: true
             );
 
-        public static ImmutableArray<DiagnosticDescriptor> SupportedDiagnostics { get; } =
-            ImmutableArray.Create(CompleteConstructorGeneration);
+        public static DiagnosticDescriptor CompleteConstructorFix { get; } =
+            new DiagnosticDescriptor(
+                "BcgCompleteConstructorFix",
+                "Fix Complete Constructor",
+                "Fix complete constructor of '{0}'.",
+                "Refactoring",
+                DiagnosticSeverity.Warning,
+                isEnabledByDefault: true
+            );
     }
 }

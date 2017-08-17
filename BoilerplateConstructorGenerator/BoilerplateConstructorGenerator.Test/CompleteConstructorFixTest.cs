@@ -11,23 +11,20 @@ using TestHelper;
 namespace BoilerplateConstructorGenerator.Test
 {
     [TestClass]
-    public sealed class CompleteConstructorGeneratorTest
+    public sealed class CompleteConstructorFixTest
         : ConventionCodeFixVerifier
     {
         protected override DiagnosticAnalyzer GetCSharpDiagnosticAnalyzer()
         {
-            return new CompleteConstructors.Creating.MyAnalyzerProvider();
+            return new CompleteConstructors.Editing.MyAnalyzerProvider();
         }
 
         protected override CodeFixProvider GetCSharpCodeFixProvider()
         {
-            return new CompleteConstructors.Creating.MyCodeFixProvider();
+            return new CompleteConstructors.Editing.MyCodeFixProvider();
         }
 
         [TestMethod]
-        public void GenerationCase() => VerifyCSharpByConvention();
-
-        [TestMethod]
-        public void NoReportCase() => VerifyCSharpByConvention();
+        public void FixCase() => VerifyCSharpByConvention();
     }
 }
