@@ -75,13 +75,12 @@ namespace BoilerplateConstructorGenerator.CompleteConstructors.Editing
                 context.RegisterCodeFix(
                     CodeAction.Create(
                         diagnostic.Descriptor.Title.ToString(),
-                        _ =>
-                            Task.FromResult(
-                                document.WithSyntaxRoot(
-                                    root.ReplaceNode(
-                                        constructorDecl,
-                                        fix()
-                                    ))),
+                        async _ =>
+                            document.WithSyntaxRoot(
+                                root.ReplaceNode(
+                                    constructorDecl,
+                                    fix()
+                                )),
                         equivalenceKey: diagnostic.Id
                     ),
                     diagnostic
