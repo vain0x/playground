@@ -43,12 +43,17 @@ namespace BoilerplateConstructorGenerator.CompleteConstructors.Editing
             var factory = new MySyntaxFactory(languageVersion);
             factory.FixCompleteConstructor(semanticModel, typeDecl, varMembers, out var constructorDecl, out var fix);
 
-            if (constructorDecl != null && fix != null)
+            if (
+                constructorDecl != null
+                && fix != null
+                && constructorDecl.Identifier != null
+                && typeDecl.Identifier != null
+                )
             {
                 context.ReportDiagnostic(
                     Diagnostic.Create(
                         DiagnosticProvider.CompleteConstructorFix,
-                        constructorDecl.GetLocation(),
+                        constructorDecl.Identifier.GetLocation(),
                         typeDecl.Identifier.Text
                     ));
             }

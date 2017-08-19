@@ -26,5 +26,8 @@ namespace BoilerplateConstructorGenerator.Test
 
         [TestMethod]
         public void FixCase() => VerifyCSharpByConvention();
+
+        [TestMethod]
+        public void NoReportCase() => VerifyCSharpByConvention();
     }
 }

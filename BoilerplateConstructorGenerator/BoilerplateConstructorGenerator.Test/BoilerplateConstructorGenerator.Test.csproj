@@ -96,11 +96,13 @@
     <Compile Include="CompleteConstructorFixTest.cs" />
     <Compile Include="CompleteConstructorGeneratorTest.cs" />
     <None Include="DataSource\CompleteConstructorFixTest\FixCase\Diagnostic\Results.json" />
+    <None Include="DataSource\CompleteConstructorFixTest\NoReportCase\Diagnostic\Results.json" />
     <None Include="DataSource\CompleteConstructorGeneratorTest\GenerationCase\Expected0\Sample.cs" />
     <None Include="DataSource\CompleteConstructorGeneratorTest\GenerationCase\Source\Sample.cs" />
     <None Include="DataSource\CompleteConstructorGeneratorTest\NoReportCase\Source\Sample.cs" />
     <None Include="DataSource\CompleteConstructorFixTest\FixCase\Expected0\Sample.cs" />
     <None Include="DataSource\CompleteConstructorFixTest\FixCase\Source\Sample.cs" />
+    <None Include="DataSource\CompleteConstructorFixTest\NoReportCase\Source\Sample.cs" />
     <Compile Include="Verifiers\CodeFixVerifier.cs" />
     <Compile Include="Verifiers\ConventionCodeFixVerifier.cs" />
     <Compile Include="Verifiers\DiagnosticVerifier.cs" />
