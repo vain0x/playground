@@ -43,8 +43,7 @@ namespace BoilerplateConstructorGenerator.CompleteConstructors.Editing
             var factory = new MySyntaxFactory(languageVersion);
             factory.FixCompleteConstructor(semanticModel, typeDecl, varMembers, out var constructorDecl, out var fix);
 
-            if (
-                constructorDecl != null
+            if (constructorDecl != null
                 && fix != null
                 && constructorDecl.Identifier != null
                 && typeDecl.Identifier != null

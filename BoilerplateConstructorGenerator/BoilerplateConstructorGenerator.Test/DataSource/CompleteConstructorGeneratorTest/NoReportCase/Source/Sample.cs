@@ -30,6 +30,22 @@ public class ClassWithIgnoredMembers
     }
 }
 
+public class ClassWithCompelteConstructor
+{
+    public string Name { get; }
+    public int Age { get; }
+
+    public ClassWithCompelteConstructor(string name, int age)
+    {
+        if (name == null)
+            throw new ArgumentNullException(nameof(name));
+        Name = name;
+        Age = age;
+
+        System.Diagnostics.Debug.WriteLine("Constructor.");
+    }
+}
+
 public static class StaticClass
 {
     public static int Property { get; }

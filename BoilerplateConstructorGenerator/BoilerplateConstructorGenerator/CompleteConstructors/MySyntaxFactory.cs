@@ -278,12 +278,12 @@ namespace BoilerplateConstructorGenerator.CompleteConstructors
                     var assignments =
                         AssignmentStatements(assignables).Select((statement, index) =>
                         {
+                            // Insert additional linebreaks. NOTE: Not affected?
                             if (index == 0 && generatedStatementCount < body.Statements.Count)
                             {
                                 return
                                     statement.WithTrailingTrivia(
                                         statement.GetTrailingTrivia()
-                                        .Add(CarriageReturnLineFeed)
                                         .Add(CarriageReturnLineFeed)
                                         .Insert(0, CarriageReturnLineFeed)
                                     );
@@ -310,6 +310,12 @@ namespace BoilerplateConstructorGenerator.CompleteConstructors
             originalDecl = default(ConstructorDeclarationSyntax);
             fix = default(Func<ConstructorDeclarationSyntax>);
             return;
+        }
+
+        public bool HasCompleteConstructor(SemanticModel semanticModel, TypeDeclarationSyntax typeDecl, ImmutableArray<VariableMember> varMembers)
+        {
+            FixCompleteConstructor(semanticModel, typeDecl, varMembers, out var constructorDecl, out var _);
+            return constructorDecl != null;
         }
     }
 }
