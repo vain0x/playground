@@ -44,7 +44,6 @@
     <Compile Include="CompleteConstructors\Creating\MyAnalyzerProvider.cs" />
     <Compile Include="DiagnosticProvider.cs" />
     <Compile Include="CompleteConstructors\MySyntaxFactory.cs" />
-    <Compile Include="CompleteConstructors\Creating\MyCodeFixer.cs" />
     <Compile Include="Helpers\LanguageVersionExtension.cs" />
     <Compile Include="Helpers\SyntaxNodeExtension.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
