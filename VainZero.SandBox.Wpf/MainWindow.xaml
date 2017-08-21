@@ -5,13 +5,13 @@
     xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
     xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
     xmlns:local="clr-namespace:VainZero.SandBox.Wpf"
-    xmlns:tc="clr-namespace:ThreadingComponent"
+    xmlns:swc="clr-namespace:DotNetKit.Windows.Controls"
     mc:Ignorable="d"
     Title="MainWindow"
     Width="525"
     Height="350"
     >
-    <Button Click="Button_Click">
-        <tc:CircularProgressBar x:Name="prog" Fill="DarkBlue" />
+    <Button Margin="60,30,60,30" Click="Button_Click">
+        <swc:SpinningWheelControl x:Name="prog" />
     </Button>
 </Window>

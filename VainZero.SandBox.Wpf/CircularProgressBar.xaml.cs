@@ -10,16 +10,16 @@ using System.Windows.Shapes;
 using System.Windows.Data;
 using System.Windows.Media;
 
-namespace ThreadingComponent
+namespace DotNetKit.Windows.Controls
 {
-    public partial class CircularProgressBar
+    public partial class SpinningWheelControl
     {
         #region Fill
         public static readonly DependencyProperty FillProperty =
             DependencyProperty.Register(
                 "Fill",
                 typeof(Brush),
-                typeof(CircularProgressBar),
+                typeof(SpinningWheelControl),
                 new PropertyMetadata(Brushes.Black)
             );
 
@@ -30,8 +30,8 @@ namespace ThreadingComponent
         }
         #endregion
 
-        const int CircleCount = 8;
-        const double CircleRadius = 10;
+        const int CircleCount = 10;
+        const double CircleRadius = 9;
         const double WheelRadius = 40;
         const double Step = Math.PI * 2 / CircleCount;
 
@@ -95,13 +95,11 @@ namespace ThreadingComponent
             var scale = l / CanvasSize;
             scaleTransform.ScaleX = scale;
             scaleTransform.ScaleY = scale;
-
-            base.MeasureOverride(new Size(CanvasSize, CanvasSize));
-            return new Size(l, l);
+            return base.MeasureOverride(constraint);
         }
         #endregion
 
-        public CircularProgressBar()
+        public SpinningWheelControl()
         {
             InitializeComponent();
 
@@ -116,10 +114,8 @@ namespace ThreadingComponent
                         Width = CircleRadius * 2,
                         Height = CircleRadius * 2,
                     };
-                circles[i] = c;
 
-                var s = (double)(i + 1) / CircleCount;
-                c.Opacity = Math.Pow(s, 1.618);
+                c.Opacity = Math.Pow((double)(i + 1) / CircleCount, 1.618);
 
                 c.SetValue(
                     Canvas.LeftProperty,
@@ -133,13 +129,14 @@ namespace ThreadingComponent
                 c.SetBinding(Shape.FillProperty, fillBinding);
 
                 canvas.Children.Add(c);
+                circles[i] = c;
             }
 
             canvas.Width = CanvasSize;
             canvas.Height = CanvasSize;
 
             timer = new DispatcherTimer(DispatcherPriority.Render, Dispatcher);
-            timer.Interval = new TimeSpan(0, 0, 0, 0, 17 * 6);
+            timer.Interval = new TimeSpan(0, 0, 0, 0, 17 * 8);
         }
     }
 }
