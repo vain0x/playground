@@ -30,10 +30,13 @@ namespace ThreadingComponent
         }
         #endregion
 
-        const int CircleCount = 9;
-        const double Step = Math.PI * 2 / 10;
+        const int CircleCount = 8;
+        const double CircleRadius = 10;
+        const double WheelRadius = 40;
+        const double Step = Math.PI * 2 / CircleCount;
 
-        static readonly double CanvasSize = 100;
+        const double CenterDistance = WheelRadius + CircleRadius;
+        const double CanvasSize = CenterDistance * 2;
 
         readonly DispatcherTimer timer;
         readonly Ellipse[] circles;
@@ -53,7 +56,7 @@ namespace ThreadingComponent
 
         void OnTick(object sender, EventArgs e)
         {
-            rotateTransform.Angle = (rotateTransform.Angle + 36) % 360;
+            rotateTransform.Angle = (rotateTransform.Angle + 360.0 / CircleCount) % 360;
         }
 
         void OnUnloaded(object sender, RoutedEventArgs e)
@@ -110,16 +113,22 @@ namespace ThreadingComponent
                 var c =
                     new Ellipse()
                     {
-                        Width = 20,
-                        Height = 20,
+                        Width = CircleRadius * 2,
+                        Height = CircleRadius * 2,
                     };
                 circles[i] = c;
 
-                var s = (i + 1) / (double)CircleCount;
+                var s = (double)(i + 1) / CircleCount;
                 c.Opacity = Math.Pow(s, 1.618);
 
-                c.SetValue(Canvas.LeftProperty, 40 + Math.Cos(i * Step) * 40.0);
-                c.SetValue(Canvas.TopProperty, 40 + Math.Sin(i * Step) * 40.0);
+                c.SetValue(
+                    Canvas.LeftProperty,
+                    CenterDistance + Math.Cos(i * Step) * WheelRadius - CircleRadius
+                );
+                c.SetValue(
+                    Canvas.TopProperty,
+                    CenterDistance + Math.Sin(i * Step) * WheelRadius - CircleRadius
+                );
 
                 c.SetBinding(Shape.FillProperty, fillBinding);
 
