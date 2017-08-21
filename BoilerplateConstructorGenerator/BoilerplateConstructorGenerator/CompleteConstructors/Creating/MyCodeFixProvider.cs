@@ -35,9 +35,9 @@ namespace BoilerplateConstructorGenerator.CompleteConstructors.Creating
             if (diagnostic == null) return;
 
             var document = context.Document;
-            var cancellationToken = context.CancellationToken;
+            var ct = context.CancellationToken;
 
-            var root = await document.GetSyntaxRootAsync(cancellationToken).ConfigureAwait(false);
+            var root = await document.GetSyntaxRootAsync(ct).ConfigureAwait(false);
             if (root == null) return;
 
             var typeDecl =
@@ -49,13 +49,13 @@ namespace BoilerplateConstructorGenerator.CompleteConstructors.Creating
                 .FirstOrDefault();
             if (typeDecl == null) return;
 
-            var semanticModel = await document.GetSemanticModelAsync(cancellationToken);
+            var semanticModel = await document.GetSemanticModelAsync(ct);
             if (semanticModel == null) return;
 
-            var typeSymbol = semanticModel.GetDeclaredSymbol(typeDecl, cancellationToken);
+            var typeSymbol = semanticModel.GetDeclaredSymbol(typeDecl, ct);
             if (typeSymbol == null) return;
 
-            async Task<Document> FixAsync(CancellationToken ct)
+            async Task<Document> FixAsync()
             {
                 var languageVersion =
                     (typeDecl.SyntaxTree.Options as CSharpParseOptions)?.LanguageVersion
@@ -78,7 +78,7 @@ namespace BoilerplateConstructorGenerator.CompleteConstructors.Creating
             context.RegisterCodeFix(
                 CodeAction.Create(
                     diagnostic.Descriptor.Title.ToString(),
-                    new Func<CancellationToken, Task<Document>>(FixAsync),
+                    _ => FixAsync(),
                     equivalenceKey: diagnostic.Id
                 ),
                 diagnostic

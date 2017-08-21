@@ -175,6 +175,14 @@ namespace BoilerplateConstructorGenerator.CompleteConstructors
                 .WithBody(body);
         }
 
+        static bool IsArgumentNullExceptionCreationExpression(ExpressionSyntax expression, SemanticModel semanticModel)
+        {
+            return
+                expression is ObjectCreationExpressionSyntax objectCreation
+                && semanticModel.GetSymbolInfo(objectCreation.Type).Symbol is ITypeSymbol typeSymbol
+                && typeSymbol.ToDisplayString() == "System.ArgumentNullException";
+        }
+
         /// <summary>
         /// Determines if a statement matches with
         /// <c>if (... == null) throw new ArgumentNullException(...)</c>.
@@ -187,23 +195,55 @@ namespace BoilerplateConstructorGenerator.CompleteConstructors
                 && condition.IsKind(SyntaxKind.EqualsExpression)
                 && condition.Right.IsKind(SyntaxKind.NullLiteralExpression)
                 && ifStatement.Statement is ThrowStatementSyntax body
-                && body.Expression is ObjectCreationExpressionSyntax objectCreation
-                && semanticModel.GetSymbolInfo(objectCreation.Type).Symbol is ITypeSymbol typeSymbol
-                && typeSymbol.ToDisplayString() == "System.ArgumentNullException";
+                && IsArgumentNullExceptionCreationExpression(body.Expression, semanticModel);
+        }
+
+        static bool IsParameterSymbol(ExpressionSyntax expression, ImmutableHashSet<ISymbol> parameterSet, SemanticModel semanticModel)
+        {
+            var parameterSymbol = semanticModel.GetSymbolInfo(expression).Symbol;
+            return parameterSymbol != null && parameterSet.Contains(parameterSymbol);
         }
 
         /// <summary>
         /// Determines if a statement matches with
         /// <c>M = p</c>, where <c>M</c> is a member and <c>p</c> is a parameter.
+        /// Note that <c>p ?? ...</c> is also acceptable on the right-hand side
+        /// because <c>p ?? throw new ...</c> is preferred in C# 7.
         /// </summary>
         static bool IsMemberAssignment(StatementSyntax statement, ImmutableHashSet<ISymbol> memberSet, ImmutableHashSet<ISymbol> parameterSet, SemanticModel semanticModel)
         {
-            return
-                statement is ExpressionStatementSyntax expressionStatement
-                && expressionStatement.Expression is AssignmentExpressionSyntax assignment
+            if (!(statement is ExpressionStatementSyntax expressionStatement)) return false;
+
+            if (!(expressionStatement.Expression is AssignmentExpressionSyntax assignment
                 && assignment.IsKind(SyntaxKind.SimpleAssignmentExpression)
-                && memberSet.Contains(semanticModel.GetSymbolInfo(assignment.Left).Symbol)
-                && parameterSet.Contains(semanticModel.GetSymbolInfo(assignment.Right).Symbol);
+                && assignment.Left != null
+                && assignment.Right != null
+                )) return false;
+
+            var memberSymbol = semanticModel.GetSymbolInfo(assignment.Left).Symbol;
+            if (!(memberSymbol != null && memberSet.Contains(memberSymbol))) return false;
+
+            if (assignment.Right.IsKind(SyntaxKind.CoalesceExpression)
+                && assignment.Right is BinaryExpressionSyntax coalesceExpression
+                && coalesceExpression.Left != null
+                )
+            {
+                // Try to match with ``... = p ?? ...``.
+                if (!IsParameterSymbol(coalesceExpression.Left, parameterSet, semanticModel))
+                {
+                    return false;
+                }
+            }
+            else
+            {
+                // Try to match with ``... = p;```.
+                if (!IsParameterSymbol(assignment.Right, parameterSet, semanticModel))
+                {
+                    return false;
+                }
+            }
+
+            return true;
         }
 
         /// <summary>
@@ -212,7 +252,14 @@ namespace BoilerplateConstructorGenerator.CompleteConstructors
         /// <paramref name="originalDecl"/> will be <c>null</c> if missing.
         /// <paramref name="fix"/> will be <c>null</c> if missing or no change.
         /// </summary>
-        public void FixCompleteConstructor(SemanticModel semanticModel, TypeDeclarationSyntax typeDecl, ImmutableArray<VariableMember> varMembers, out ConstructorDeclarationSyntax originalDecl, out Func<ConstructorDeclarationSyntax> fix)
+        public void
+            FixCompleteConstructor(
+                SemanticModel semanticModel,
+                TypeDeclarationSyntax typeDecl,
+                ImmutableArray<VariableMember> varMembers,
+                out ConstructorDeclarationSyntax originalDecl,
+                out Func<ConstructorDeclarationSyntax> fix
+            )
         {
             var constructorDecls =
                 typeDecl.Members
@@ -312,7 +359,12 @@ namespace BoilerplateConstructorGenerator.CompleteConstructors
             return;
         }
 
-        public bool HasCompleteConstructor(SemanticModel semanticModel, TypeDeclarationSyntax typeDecl, ImmutableArray<VariableMember> varMembers)
+        public bool
+            HasCompleteConstructor(
+                SemanticModel semanticModel,
+                TypeDeclarationSyntax typeDecl,
+                ImmutableArray<VariableMember> varMembers
+            )
         {
             FixCompleteConstructor(semanticModel, typeDecl, varMembers, out var constructorDecl, out var _);
             return constructorDecl != null;
