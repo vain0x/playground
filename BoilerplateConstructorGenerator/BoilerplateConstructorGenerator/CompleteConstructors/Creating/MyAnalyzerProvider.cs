@@ -36,15 +36,6 @@ namespace BoilerplateConstructorGenerator.CompleteConstructors.Creating
             var typeSymbol = semanticModel.GetDeclaredSymbol(typeDecl);
             if (typeSymbol == null || typeSymbol.IsAbstract || typeSymbol.IsStatic) return;
 
-            var varMembers = new VariableMemberCollector(semanticModel).Collect(typeDecl);
-            if (varMembers.All(v => v.HasInitializer)) return;
-
-            var languageVersion =
-                (typeDecl.SyntaxTree.Options as CSharpParseOptions)?.LanguageVersion
-                ?? LanguageVersion.CSharp6;
-            var factory = new MySyntaxFactory(languageVersion);
-            if (factory.HasCompleteConstructor(semanticModel, typeDecl, varMembers)) return;
-
             context.ReportDiagnostic(
                 Diagnostic.Create(
                     DiagnosticProvider.CompleteConstructorGeneration,

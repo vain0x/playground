@@ -52,21 +52,21 @@ namespace BoilerplateConstructorGenerator.CompleteConstructors.Creating
             var semanticModel = await document.GetSemanticModelAsync(ct);
             if (semanticModel == null) return;
 
-            var typeSymbol = semanticModel.GetDeclaredSymbol(typeDecl, ct);
-            if (typeSymbol == null) return;
+            // Check if complete constructor can be generated.
+
+            var varMembers = new VariableMemberCollector(semanticModel).Collect(typeDecl);
+            if (varMembers.All(m => m.HasInitializer)) return;
+
+            var languageVersion =
+                (typeDecl.SyntaxTree.Options as CSharpParseOptions)?.LanguageVersion
+                ?? LanguageVersion.CSharp6;
+            var factory = new MySyntaxFactory(languageVersion);
+
+            if (factory.HasCompleteConstructor(semanticModel, typeDecl, varMembers)) return;
 
             async Task<Document> FixAsync()
             {
-                var languageVersion =
-                    (typeDecl.SyntaxTree.Options as CSharpParseOptions)?.LanguageVersion
-                    ?? LanguageVersion.CSharp6;
-                var factory = new MySyntaxFactory(languageVersion);
-
-                var varMembers = new VariableMemberCollector(semanticModel).Collect(typeDecl);
-
-                var constructor =
-                    factory.CompleteConstructor(semanticModel, typeDecl, varMembers);
-
+                var constructor = factory.CompleteConstructor(semanticModel, typeDecl, varMembers);
                 return
                     document.WithSyntaxRoot(
                         root.ReplaceNode(

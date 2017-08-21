@@ -16,7 +16,7 @@ namespace BoilerplateConstructorGenerator
                 "Generate Complete Constructor",
                 "Generate complete constructor for '{0}'.",
                 "Refactoring",
-                DiagnosticSeverity.Info,
+                DiagnosticSeverity.Hidden,
                 isEnabledByDefault: true
             );
 

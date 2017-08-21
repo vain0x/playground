@@ -1,7 +1,7 @@
 ﻿[
   {
     "id": "BcgCompleteConstructorGeneration",
-    "sevirity": "Info",
+    "sevirity": "Hidden",
     "line": 7,
     "column": 14,
     "path": "Sample.cs",
