@@ -9,11 +9,14 @@ using System.Windows.Input;
 using System.Windows.Shapes;
 using System.Windows.Data;
 using System.Windows.Media;
+using System.Diagnostics;
 
 namespace DotNetKit.Windows.Controls
 {
     public partial class SpinningWheelControl
     {
+        const double Epsilon = 1e-8;
+
         #region Fill
         public static readonly DependencyProperty FillProperty =
             DependencyProperty.Register(
@@ -30,33 +33,137 @@ namespace DotNetKit.Windows.Controls
         }
         #endregion
 
-        const int CircleCount = 10;
-        const double CircleRadius = 9;
-        const double WheelRadius = 40;
-        const double Step = Math.PI * 2 / CircleCount;
+        #region DotCount
+        int dotCountCore = 10;
 
-        const double CenterDistance = WheelRadius + CircleRadius;
-        const double CanvasSize = CenterDistance * 2;
+        public int DotCount
+        {
+            get
+            {
+                return dotCountCore;
+            }
+            set
+            {
+                if (value < 1) throw new ArgumentOutOfRangeException("value");
+                dotCountCore = value;
+            }
+        }
+        #endregion
+
+        #region DotRadius
+        double dotRadiusCore = 9;
+
+        public double DotRadius
+        {
+            get
+            {
+                return dotRadiusCore;
+            }
+            set
+            {
+                if (value <= Epsilon) throw new ArgumentOutOfRangeException("value");
+                dotRadiusCore = value;
+            }
+        }
+        #endregion
+
+        #region WheelRadius
+        double wheelRadiusCore = 40;
+
+        public double WheelRadius
+        {
+            get
+            {
+                return wheelRadiusCore;
+            }
+            set
+            {
+                if (value <= Epsilon) throw new ArgumentOutOfRangeException("value");
+                wheelRadiusCore = 40;
+            }
+        }
+        #endregion
+
+        #region IntervalMilliseconds
+        double intervalMillisecondsCore = 17 * 8;
+
+        public double IntervalMilliseconds
+        {
+            get
+            {
+                return intervalMillisecondsCore;
+            }
+            set
+            {
+                if (value <= Epsilon) throw new ArgumentOutOfRangeException("value");
+                intervalMillisecondsCore = value;
+
+                timer.Interval = TimeSpan.FromMilliseconds(intervalMillisecondsCore);
+            }
+        }
+        #endregion
+
+        #region RotateIndex
+        int rotateIndexCore = 0;
+
+        int RotateIndex
+        {
+            get
+            {
+                return rotateIndexCore;
+            }
+            set
+            {
+                Debug.Assert(value >= 0);
+
+                rotateIndexCore = value % DotCount;
+                rotateTransform.Angle = rotateIndexCore * (360.0 / DotCount);
+            }
+        }
+        #endregion
+
+        double Step
+        {
+            get
+            {
+                return Math.PI * 2 / DotCount;
+            }
+        }
+
+        double CenterDistance
+        {
+            get
+            {
+                return WheelRadius + DotRadius;
+            }
+        }
+
+        double CanvasSize
+        {
+            get
+            {
+                return CenterDistance * 2;
+            }
+        }
 
         readonly DispatcherTimer timer;
-        readonly Ellipse[] circles;
+
+        void OnTick(object sender, EventArgs e)
+        {
+            RotateIndex++;
+        }
 
         void Start()
         {
+            RotateIndex = DotCount - 1;
             timer.Tick += OnTick;
             timer.Start();
-            rotateTransform.Angle = 0;
         }
 
         void Stop()
         {
             timer.Stop();
             timer.Tick -= OnTick;
-        }
-
-        void OnTick(object sender, EventArgs e)
-        {
-            rotateTransform.Angle = (rotateTransform.Angle + 360.0 / CircleCount) % 360;
         }
 
         void OnUnloaded(object sender, RoutedEventArgs e)
@@ -78,65 +185,62 @@ namespace DotNetKit.Windows.Controls
             }
         }
 
-        #region MeasureOverride
-        double Length(Size size)
-        {
-            if (double.IsInfinity(size.Width) || double.IsInfinity(size.Height))
-            {
-                return CanvasSize;
-            }
-
-            return Math.Min(size.Width, size.Height);
-        }
-
         protected override Size MeasureOverride(Size constraint)
         {
-            var l = Length(constraint);
+            var l =
+                double.IsInfinity(constraint.Width) || double.IsInfinity(constraint.Height)
+                    ? CanvasSize
+                    : Math.Min(constraint.Width, constraint.Height);
             var scale = l / CanvasSize;
             scaleTransform.ScaleX = scale;
             scaleTransform.ScaleY = scale;
             return base.MeasureOverride(constraint);
         }
-        #endregion
 
-        public SpinningWheelControl()
+        public override void OnApplyTemplate()
         {
-            InitializeComponent();
+            base.OnApplyTemplate();
 
+            canvas.Children.Clear();
+
+            var dotCount = DotCount;
             var fillBinding = new Binding("Fill") { Source = this };
 
-            circles = new Ellipse[CircleCount];
-            for (var i = 0; i < circles.Length; i++)
+            for (var i = 0; i < dotCount; i++)
             {
                 var c =
                     new Ellipse()
                     {
-                        Width = CircleRadius * 2,
-                        Height = CircleRadius * 2,
+                        Width = DotRadius * 2,
+                        Height = DotRadius * 2,
                     };
 
-                c.Opacity = Math.Pow((double)(i + 1) / CircleCount, 1.618);
+                c.Opacity = Math.Pow((double)(i + 1) / dotCount, 1.618);
 
                 c.SetValue(
                     Canvas.LeftProperty,
-                    CenterDistance + Math.Cos(i * Step) * WheelRadius - CircleRadius
+                    CenterDistance + Math.Cos(i * Step) * WheelRadius - DotRadius
                 );
                 c.SetValue(
                     Canvas.TopProperty,
-                    CenterDistance + Math.Sin(i * Step) * WheelRadius - CircleRadius
+                    CenterDistance + Math.Sin(i * Step) * WheelRadius - DotRadius
                 );
 
                 c.SetBinding(Shape.FillProperty, fillBinding);
 
                 canvas.Children.Add(c);
-                circles[i] = c;
             }
 
             canvas.Width = CanvasSize;
             canvas.Height = CanvasSize;
+        }
+
+        public SpinningWheelControl()
+        {
+            InitializeComponent();
 
             timer = new DispatcherTimer(DispatcherPriority.Render, Dispatcher);
-            timer.Interval = new TimeSpan(0, 0, 0, 0, 17 * 8);
+            timer.Interval = TimeSpan.FromMilliseconds(IntervalMilliseconds);
         }
     }
 }
