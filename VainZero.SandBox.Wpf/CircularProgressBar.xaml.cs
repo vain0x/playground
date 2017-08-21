@@ -34,115 +34,99 @@ namespace DotNetKit.Windows.Controls
         #endregion
 
         #region DotCount
-        int dotCountCore = 10;
+        int dotCountField = 10;
 
         public int DotCount
         {
             get
             {
-                return dotCountCore;
+                return dotCountField;
             }
             set
             {
                 if (value < 1) throw new ArgumentOutOfRangeException("value");
-                dotCountCore = value;
+                dotCountField = value;
             }
         }
         #endregion
 
         #region DotRadius
-        double dotRadiusCore = 9;
+        double dotRadiusField = 9;
 
         public double DotRadius
         {
             get
             {
-                return dotRadiusCore;
+                return dotRadiusField;
             }
             set
             {
                 if (value <= Epsilon) throw new ArgumentOutOfRangeException("value");
-                dotRadiusCore = value;
+                dotRadiusField = value;
             }
         }
         #endregion
 
         #region WheelRadius
-        double wheelRadiusCore = 40;
+        double wheelRadiusField = 40;
 
         public double WheelRadius
         {
             get
             {
-                return wheelRadiusCore;
+                return wheelRadiusField;
             }
             set
             {
                 if (value <= Epsilon) throw new ArgumentOutOfRangeException("value");
-                wheelRadiusCore = 40;
+                wheelRadiusField = 40;
             }
         }
         #endregion
 
         #region IntervalMilliseconds
-        double intervalMillisecondsCore = 17 * 8;
+        double intervalMillisecondsField = 17 * 8;
 
         public double IntervalMilliseconds
         {
             get
             {
-                return intervalMillisecondsCore;
+                return intervalMillisecondsField;
             }
             set
             {
                 if (value <= Epsilon) throw new ArgumentOutOfRangeException("value");
-                intervalMillisecondsCore = value;
+                intervalMillisecondsField = value;
 
-                timer.Interval = TimeSpan.FromMilliseconds(intervalMillisecondsCore);
+                timer.Interval = TimeSpan.FromMilliseconds(intervalMillisecondsField);
             }
         }
         #endregion
 
         #region RotateIndex
-        int rotateIndexCore = 0;
+        int rotateIndexField = 0;
 
         int RotateIndex
         {
             get
             {
-                return rotateIndexCore;
+                return rotateIndexField;
             }
             set
             {
                 Debug.Assert(value >= 0);
 
-                rotateIndexCore = value % DotCount;
-                rotateTransform.Angle = rotateIndexCore * (360.0 / DotCount);
+                rotateIndexField = value % DotCount;
+                rotateTransform.Angle = rotateIndexField * (360.0 / DotCount);
             }
         }
         #endregion
-
-        double Step
-        {
-            get
-            {
-                return Math.PI * 2 / DotCount;
-            }
-        }
-
-        double CenterDistance
-        {
-            get
-            {
-                return WheelRadius + DotRadius;
-            }
-        }
 
         double CanvasSize
         {
             get
             {
-                return CenterDistance * 2;
+                return (WheelRadius + DotRadius) * 2;
             }
         }
 
@@ -217,14 +201,9 @@ namespace DotNetKit.Windows.Controls
 
                 c.Opacity = Math.Pow((double)(i + 1) / dotCount, 1.618);
 
-                c.SetValue(
-                    Canvas.LeftProperty,
-                    CenterDistance + Math.Cos(i * Step) * WheelRadius - DotRadius
-                );
-                c.SetValue(
-                    Canvas.TopProperty,
-                    CenterDistance + Math.Sin(i * Step) * WheelRadius - DotRadius
-                );
+                var t = 2 * Math.PI * i / dotCount;
+                c.SetValue(Canvas.LeftProperty, (1 + Math.Cos(t)) * WheelRadius);
+                c.SetValue(Canvas.TopProperty, (1 + Math.Sin(t)) * WheelRadius);
 
                 c.SetBinding(Shape.FillProperty, fillBinding);
 
