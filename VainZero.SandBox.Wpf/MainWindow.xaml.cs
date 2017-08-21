@@ -32,5 +32,10 @@ namespace VainZero.SandBox.Wpf
         {
             InitializeComponent();
         }
+
+        private void Button_Click(object sender, RoutedEventArgs e)
+        {
+            prog.Visibility = prog.Visibility == Visibility.Visible ? Visibility.Hidden : Visibility.Visible;
+        }
     }
 }

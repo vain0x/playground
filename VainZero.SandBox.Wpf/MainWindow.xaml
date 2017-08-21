@@ -5,11 +5,13 @@
     xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
     xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
     xmlns:local="clr-namespace:VainZero.SandBox.Wpf"
+    xmlns:tc="clr-namespace:ThreadingComponent"
     mc:Ignorable="d"
     Title="MainWindow"
     Width="525"
     Height="350"
     >
-    <DockPanel>
-    </DockPanel>
+    <Button Click="Button_Click">
+        <tc:CircularProgressBar x:Name="prog" Fill="DarkBlue" />
+    </Button>
 </Window>
