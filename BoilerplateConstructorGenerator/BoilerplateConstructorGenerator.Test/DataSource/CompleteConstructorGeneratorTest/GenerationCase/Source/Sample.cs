@@ -16,13 +16,14 @@ public class Sample
     /// <summary>
     /// Read-only property.
     /// Value type.
-    /// Qualified type name.
+    /// Type name is redundantly qualified.
     /// </summary>
     public System.TimeSpan TimeSpan { get; }
 
     /// <summary>
     /// Field.
     /// The name is a contextural keyword.
+    /// The type name is necessarily qualified.
     /// </summary>
-    readonly IEnumerable<int> async;
+    readonly System.Collections.IEnumerable async;
 }

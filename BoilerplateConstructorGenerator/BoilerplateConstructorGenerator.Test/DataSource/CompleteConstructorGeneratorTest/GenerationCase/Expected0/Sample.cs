@@ -16,23 +16,24 @@ public class Sample
     /// <summary>
     /// Read-only property.
     /// Value type.
-    /// Qualified type name.
+    /// Type name is redundantly qualified.
     /// </summary>
     public System.TimeSpan TimeSpan { get; }
 
     /// <summary>
     /// Field.
     /// The name is a contextural keyword.
+    /// The type name is necessarily qualified.
     /// </summary>
-    readonly IEnumerable<int> async;
+    readonly System.Collections.IEnumerable async;
 
     // analyzer: complete-constructor
-    public Sample(string @string, System.TimeSpan timeSpan, System.Collections.Generic.IEnumerable<int> @async)
+    public Sample(string @string, TimeSpan timeSpan, System.Collections.IEnumerable @async)
     {
         if (@string == null)
-            throw new System.ArgumentNullException(nameof(@string));
+            throw new ArgumentNullException(nameof(@string));
         if (@async == null)
-            throw new System.ArgumentNullException(nameof(@async));
+            throw new ArgumentNullException(nameof(@async));
         String = @string;
         TimeSpan = timeSpan;
         this.async = @async;

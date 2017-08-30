@@ -19,7 +19,7 @@ public class Sample
     public Sample(string name, long age)
     {
         if (name == null)
-            throw new System.ArgumentNullException(nameof(name));
+            throw new ArgumentNullException(nameof(name));
         Name = name;
         Age = age;
         Debug.WriteLine("Beginning person initialization.");

@@ -19,7 +19,7 @@ public class Sample
     public Sample(int age, string name)
     {
         if (name == null)
-            throw new System.ArgumentNullException(nameof(name));
+            throw new ArgumentNullException(nameof(name));
         Age = age;
         Name = name;
     }

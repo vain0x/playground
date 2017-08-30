@@ -66,10 +66,13 @@ namespace BoilerplateConstructorGenerator.CompleteConstructors
         }
         #endregion
 
-        static TypeSyntax TypeSyntax(ISymbol symbol)
+        static Func<ISymbol, IdentifierNameSyntax> TypeSyntax(SemanticModel semanticModel, int position)
         {
-            var name = symbol.ToDisplayString();
-            return IdentifierName(name);
+            return symbol =>
+            {
+                var name = symbol.ToMinimalDisplayString(semanticModel, position);
+                return IdentifierName(name);
+            };
         }
 
         public sealed class AssignableVariableMember
@@ -98,19 +101,18 @@ namespace BoilerplateConstructorGenerator.CompleteConstructors
                 .ToImmutableArray();
         }
 
-        public ParameterListSyntax ParameterList(ImmutableArray<AssignableVariableMember> assignables)
+        public ParameterListSyntax ParameterList(ImmutableArray<AssignableVariableMember> assignables, Func<ISymbol, IdentifierNameSyntax> typeSyntax)
         {
             return
                 SyntaxFactory.ParameterList(
                     SeparatedList(
                         assignables.Select(a =>
                             Parameter(a.ParameterIdentifier)
-                            .WithType(TypeSyntax(a.TypeSymbol))
-                            .WithAdditionalAnnotations(Formatter.Annotation, Simplifier.Annotation)
+                            .WithType(typeSyntax(a.TypeSymbol))
                         )));
         }
 
-        public IEnumerable<StatementSyntax> ContractStatements(SemanticModel semanticModel, ImmutableArray<AssignableVariableMember> assignables)
+        public IEnumerable<StatementSyntax> ContractStatements(SemanticModel semanticModel, ImmutableArray<AssignableVariableMember> assignables, Func<ISymbol, IdentifierNameSyntax> typeSyntax)
         {
             var aneType = semanticModel.Compilation.GetTypeByMetadataName(typeof(ArgumentNullException).FullName);
             if (aneType == null) yield break;
@@ -127,7 +129,7 @@ namespace BoilerplateConstructorGenerator.CompleteConstructors
                     );
                 var statement =
                     ThrowStatement(
-                        ObjectCreationExpression(TypeSyntax(aneType))
+                        ObjectCreationExpression(typeSyntax(aneType))
                         .WithArgumentList(
                             ArgumentList(
                                 SingletonSeparatedList(
@@ -161,9 +163,10 @@ namespace BoilerplateConstructorGenerator.CompleteConstructors
 
         public ConstructorDeclarationSyntax CompleteConstructor(SemanticModel semanticModel, TypeDeclarationSyntax typeDecl, ImmutableArray<VariableMember> varMembers)
         {
+            var typeSyntax = TypeSyntax(semanticModel, typeDecl.SpanStart);
             var assignables = Assignables(varMembers);
-            var parameterList = ParameterList(assignables);
-            var contractStatements = ContractStatements(semanticModel, assignables);
+            var parameterList = ParameterList(assignables, typeSyntax);
+            var contractStatements = ContractStatements(semanticModel, assignables, typeSyntax);
             var assignments = AssignmentStatements(assignables);
             var body = Block(contractStatements.Concat(assignments));
             var typeName = typeDecl.Identifier.Text;
@@ -269,6 +272,8 @@ namespace BoilerplateConstructorGenerator.CompleteConstructors
                 out Func<ConstructorDeclarationSyntax> fix
             )
         {
+            var typeSyntax = TypeSyntax(semanticModel, typeDecl.SpanStart);
+
             var constructorDecls =
                 typeDecl.Members
                 .OfType<ConstructorDeclarationSyntax>()
@@ -351,11 +356,11 @@ namespace BoilerplateConstructorGenerator.CompleteConstructors
 
                     fix = () =>
                         constructorDecl
-                        .WithParameterList(ParameterList(assignables))
+                        .WithParameterList(ParameterList(assignables, typeSyntax))
                         .WithBody(
                             body.WithStatements(
                                 List(
-                                    ContractStatements(semanticModel, assignables)
+                                    ContractStatements(semanticModel, assignables, typeSyntax)
                                     .Concat(assignments)
                                     .Concat(body.Statements.Skip(generatedStatementCount))
                                 )));
