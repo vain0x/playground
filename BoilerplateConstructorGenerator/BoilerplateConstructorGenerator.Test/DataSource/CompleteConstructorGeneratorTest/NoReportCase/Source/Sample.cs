@@ -30,19 +30,13 @@ public class ClassWithIgnoredMembers
     }
 }
 
-public class ClassWithCompelteConstructor
+public class ClassWithConstructor
 {
     public string Name { get; }
     public int Age { get; }
 
-    public ClassWithCompelteConstructor(string name, int age)
+    public ClassWithConstructor()
     {
-        if (name == null)
-            throw new ArgumentNullException(nameof(name));
-        Name = name;
-        Age = age;
-
-        System.Diagnostics.Debug.WriteLine("Constructor.");
     }
 }
 

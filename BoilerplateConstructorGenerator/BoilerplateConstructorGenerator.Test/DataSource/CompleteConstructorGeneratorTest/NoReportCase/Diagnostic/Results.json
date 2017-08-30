@@ -29,6 +29,6 @@
     "line": 33,
     "column": 14,
     "path": "Sample.cs",
-    "message-args": [ "ClassWithCompelteConstructor" ]
+    "message-args": [ "ClassWithConstructor" ]
   }
 ]

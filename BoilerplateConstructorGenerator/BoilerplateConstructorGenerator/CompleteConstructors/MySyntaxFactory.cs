@@ -19,6 +19,8 @@ namespace BoilerplateConstructorGenerator.CompleteConstructors
 {
     public sealed class MySyntaxFactory
     {
+        const string MagicComment = "-*- complete-constructor -*-";
+
         LanguageVersion LanguageVersion { get; }
 
         public MySyntaxFactory(LanguageVersion languageVersion)
@@ -172,7 +174,13 @@ namespace BoilerplateConstructorGenerator.CompleteConstructors
                         Token(SyntaxKind.PublicKeyword)
                     ))
                 .WithParameterList(parameterList)
-                .WithBody(body);
+                .WithBody(body)
+                .WithLeadingTrivia(
+                    TriviaList(
+                        ElasticCarriageReturnLineFeed,
+                        Comment($"// {MagicComment}"),
+                        ElasticCarriageReturnLineFeed
+                    ));
         }
 
         static bool IsArgumentNullExceptionCreationExpression(ExpressionSyntax expression, SemanticModel semanticModel)
