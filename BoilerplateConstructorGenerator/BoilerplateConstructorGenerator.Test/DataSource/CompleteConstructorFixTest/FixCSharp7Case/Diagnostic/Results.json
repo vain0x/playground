@@ -2,7 +2,7 @@
   {
     "id": "BcgCompleteConstructorFix",
     "sevirity": "Warning",
-    "line": 18,
+    "line": 19,
     "column": 12,
     "path": "Sample.cs",
     "message-args": [ "Sample" ]

@@ -12,3 +12,17 @@ public class ClassWithoutCompleteConstructor
 {
     public int Value { get; }
 }
+
+public class ClassWithUnmarkedConstructor
+{
+    // The order is changed.
+
+    public int Age { get; }
+    public string Name { get; }
+
+    public ClassWithUnmarkedConstructor(string name, int age)
+    {
+        Name = name ?? "";
+        Age = age;
+    }
+}

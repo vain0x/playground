@@ -15,6 +15,7 @@ public class Sample
     /// <summary>
     /// My complete constructor.
     /// </summary>
+    // -*- complete-constructor -*-
     public Sample(string name, long age)
     {
         if (name == null)

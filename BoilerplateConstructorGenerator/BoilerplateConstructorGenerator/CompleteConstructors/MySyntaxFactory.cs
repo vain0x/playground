@@ -273,7 +273,10 @@ namespace BoilerplateConstructorGenerator.CompleteConstructors
                 typeDecl.Members
                 .OfType<ConstructorDeclarationSyntax>()
                 .Where(c =>
-                    c.Initializer == null
+                    c.GetLeadingTrivia().Any(t =>
+                        t.IsComment() && t.ToString().Contains(MagicComment)
+                    )
+                    && c.Initializer == null
                     && c.ParameterList != null
                     && c.ParameterList.Parameters.Count > 0
                     && c.Body != null
