@@ -36,6 +36,8 @@ namespace BoilerplateConstructorGenerator.CompleteConstructors.Creating
             var typeSymbol = semanticModel.GetDeclaredSymbol(typeDecl);
             if (typeSymbol == null || typeSymbol.IsAbstract || typeSymbol.IsStatic) return;
 
+            if (typeDecl.Members.Any(m => m.IsKind(SyntaxKind.ConstructorDeclaration))) return;
+
             context.ReportDiagnostic(
                 Diagnostic.Create(
                     DiagnosticProvider.CompleteConstructorGeneration,

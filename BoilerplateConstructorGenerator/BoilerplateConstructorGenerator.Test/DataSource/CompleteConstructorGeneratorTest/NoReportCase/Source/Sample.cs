@@ -30,13 +30,15 @@ public class ClassWithIgnoredMembers
     }
 }
 
-public class ClassWithConstructor
+public class ClassWithNotCompleteConstructor
 {
     public string Name { get; }
     public int Age { get; }
 
-    public ClassWithConstructor()
+    public ClassWithNotCompleteConstructor(int age)
     {
+        Name = "Person " + age;
+        Age = age;
     }
 }
 

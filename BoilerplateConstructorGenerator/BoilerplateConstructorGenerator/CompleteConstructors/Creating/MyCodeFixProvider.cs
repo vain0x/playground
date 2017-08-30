@@ -52,7 +52,7 @@ namespace BoilerplateConstructorGenerator.CompleteConstructors.Creating
             var semanticModel = await document.GetSemanticModelAsync(ct);
             if (semanticModel == null) return;
 
-            // Check if complete constructor can be generated.
+            // Generate fixing method.
 
             var varMembers = new VariableMemberCollector(semanticModel).Collect(typeDecl);
             if (varMembers.All(m => m.HasInitializer)) return;
@@ -61,8 +61,6 @@ namespace BoilerplateConstructorGenerator.CompleteConstructors.Creating
                 (typeDecl.SyntaxTree.Options as CSharpParseOptions)?.LanguageVersion
                 ?? LanguageVersion.CSharp6;
             var factory = new MySyntaxFactory(languageVersion);
-
-            if (factory.HasCompleteConstructor(semanticModel, typeDecl, varMembers)) return;
 
             async Task<Document> FixAsync()
             {
