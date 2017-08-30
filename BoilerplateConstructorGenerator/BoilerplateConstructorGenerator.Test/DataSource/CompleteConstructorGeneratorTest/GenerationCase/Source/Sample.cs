@@ -26,4 +26,11 @@ public class Sample
     /// The type name is necessarily qualified.
     /// </summary>
     readonly System.Collections.IEnumerable async;
+
+    /// <summary>
+    /// Field.
+    /// The name starts with an underscore.
+    /// There is an alias for the type name.
+    /// </summary>
+    readonly System.Object _underscore;
 }
