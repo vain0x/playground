@@ -36,7 +36,7 @@ namespace BoilerplateConstructorGenerator
 
         public abstract bool HasInitializer { get; }
 
-        public string NameAsCamelCase()
+        public string NameAsParameter()
         {
             var name = SymbolBase.Name;
             if (name.Length > 0 && char.IsUpper(name[0]))

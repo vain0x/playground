@@ -85,7 +85,7 @@ namespace BoilerplateConstructorGenerator.CompleteConstructors
             public AssignableVariableMember(VariableMember member)
             {
                 Member = member;
-                ParameterIdentifier = EscapedIdentifier(member.NameAsCamelCase());
+                ParameterIdentifier = EscapedIdentifier(member.NameAsParameter());
             }
         }
 
