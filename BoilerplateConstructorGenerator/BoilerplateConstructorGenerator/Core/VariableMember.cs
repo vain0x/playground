@@ -39,9 +39,13 @@ namespace BoilerplateConstructorGenerator
         public string NameAsParameter()
         {
             var name = SymbolBase.Name;
-            if (name.Length > 0 && char.IsUpper(name[0]))
+            if (name.Length >= 1 && char.IsUpper(name[0]))
             {
                 return char.ToLowerInvariant(name[0]).ToString() + name.Substring(1);
+            }
+            else if (name.Length >= 2 && name[0] == '_')
+            {
+                return name.Substring(1);
             }
             return name;
         }
