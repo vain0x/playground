@@ -92,13 +92,45 @@ namespace BoilerplateConstructorGenerator.CompleteConstructors
             }
         }
 
-        public ImmutableArray<AssignableVariableMember> Assignables(ImmutableArray<VariableMember> varMembers)
+        ImmutableArray<AssignableVariableMember> AssignablesCore(ImmutableArray<VariableMember> varMembers, ImmutableHashSet<ISymbol> initializedSymbols)
         {
             return
                 varMembers
-                .Where(m => !m.HasInitializer)
+                .Where(m => !m.HasInitializer && !initializedSymbols.Contains(m.SymbolBase))
                 .Select(m => new AssignableVariableMember(m))
                 .ToImmutableArray();
+        }
+
+        /// <summary>
+        /// Gets an array of assignable variable members.
+        /// A variable member is assignable if and only if
+        /// it doesn't have the initializer and can't be initialized in the specified statements.
+        /// </summary>
+        public ImmutableArray<AssignableVariableMember> Assignables(ImmutableArray<VariableMember> varMembers, IEnumerable<StatementSyntax> statements, SemanticModel semanticModel)
+        {
+            var initializedSymbols = ImmutableHashSet.CreateBuilder<ISymbol>();
+
+            foreach (var statement in statements)
+            {
+                if (
+                    statement is ExpressionStatementSyntax expressionStatement
+                    && expressionStatement.Expression is AssignmentExpressionSyntax assignment
+                    && assignment.IsKind(SyntaxKind.SimpleAssignmentExpression)
+                    && assignment.Left != null
+                    )
+                {
+                    var left = semanticModel.GetSymbolInfo(assignment.Left).Symbol;
+                    if (left == null) continue;
+                    initializedSymbols.Add(left);
+                }
+            }
+
+            return AssignablesCore(varMembers, initializedSymbols.ToImmutable());
+        }
+
+        public ImmutableArray<AssignableVariableMember> Assignables(ImmutableArray<VariableMember> varMembers)
+        {
+            return AssignablesCore(varMembers, ImmutableHashSet<ISymbol>.Empty);
         }
 
         public ParameterListSyntax ParameterList(ImmutableArray<AssignableVariableMember> assignables, Func<ISymbol, IdentifierNameSyntax> typeSyntax)
@@ -291,8 +323,6 @@ namespace BoilerplateConstructorGenerator.CompleteConstructors
 
             if (constructorDecls.Length > 0)
             {
-                var assignables = Assignables(varMembers);
-
                 var memberSet =
                     varMembers
                     .Select(vm => vm.SymbolBase)
@@ -316,16 +346,6 @@ namespace BoilerplateConstructorGenerator.CompleteConstructors
 
                     if (parameters.Any(p => p.symbol == null || p.typeSymbol == null)) continue;
 
-                    if (
-                        parameters.Select(a => new { name = a.symbol.Name, a.typeSymbol })
-                        .SequenceEqual(assignables.Select(a => new { name = a.ParameterIdentifier.Text, typeSymbol = a.TypeSymbol }))
-                        )
-                    {
-                        originalDecl = constructorDecl;
-                        fix = null;
-                        return;
-                    }
-
                     var parameterSet =
                         parameters.Select(a => a.symbol).ToImmutableHashSet<ISymbol>();
 
@@ -337,6 +357,23 @@ namespace BoilerplateConstructorGenerator.CompleteConstructors
                             )
                         .Count();
                     if (generatedStatementCount == 0) continue;
+
+                    var assignables =
+                        Assignables(
+                            varMembers,
+                            body.Statements.Skip(generatedStatementCount),
+                            semanticModel
+                        );
+
+                    if (
+                        parameters.Select(a => new { name = a.symbol.Name, a.typeSymbol })
+                        .SequenceEqual(assignables.Select(a => new { name = a.ParameterIdentifier.Text, typeSymbol = a.TypeSymbol }))
+                        )
+                    {
+                        originalDecl = constructorDecl;
+                        fix = null;
+                        return;
+                    }
 
                     var assignments =
                         AssignmentStatements(assignables).Select((statement, index) =>

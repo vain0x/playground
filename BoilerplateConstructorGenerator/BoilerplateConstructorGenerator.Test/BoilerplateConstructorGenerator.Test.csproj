@@ -95,6 +95,7 @@
   <ItemGroup>
     <Compile Include="CompleteConstructorFixTest.cs" />
     <Compile Include="CompleteConstructorGeneratorTest.cs" />
+    <None Include="DataSource\CompleteConstructorFixTest\ConstructorInitializationCase\Diagnostic\Results.json" />
     <None Include="DataSource\CompleteConstructorFixTest\FixCSharp7Case\Diagnostic\Results.json" />
     <None Include="DataSource\CompleteConstructorFixTest\FixCase\Diagnostic\Results.json" />
     <None Include="DataSource\CompleteConstructorFixTest\NoReportCase\Diagnostic\Results.json" />
@@ -106,6 +107,8 @@
     <None Include="DataSource\CompleteConstructorFixTest\NoReportCase\Source\Sample.cs" />
     <None Include="DataSource\CompleteConstructorFixTest\FixCSharp7Case\Expected0\Sample.cs" />
     <None Include="DataSource\CompleteConstructorFixTest\FixCSharp7Case\Source\Sample.cs" />
+    <None Include="DataSource\CompleteConstructorFixTest\ConstructorInitializationCase\Expected0\Sample.cs" />
+    <None Include="DataSource\CompleteConstructorFixTest\ConstructorInitializationCase\Source\Sample.cs" />
     <Compile Include="Verifiers\CodeFixVerifier.cs" />
     <Compile Include="Verifiers\ConventionCodeFixVerifier.cs" />
     <Compile Include="Verifiers\DiagnosticVerifier.cs" />
