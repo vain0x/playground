@@ -26,7 +26,7 @@ public class Sample
     /// </summary>
     readonly IEnumerable<int> async;
 
-    // -*- complete-constructor -*-
+    // analyzer: complete-constructor
     public Sample(string @string, System.TimeSpan timeSpan, System.Collections.Generic.IEnumerable<int> @async)
     {
         if (@string == null)

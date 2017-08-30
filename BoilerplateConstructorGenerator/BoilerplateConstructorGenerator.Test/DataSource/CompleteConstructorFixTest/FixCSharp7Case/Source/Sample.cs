@@ -12,7 +12,7 @@ public class Sample
     public int Age { get; }
     public string Name { get; }
 
-    // -*- complete-constructor -*-
+    // analyzer: complete-constructor
     /// <summary>
     /// My complete constructor.
     /// </summary>

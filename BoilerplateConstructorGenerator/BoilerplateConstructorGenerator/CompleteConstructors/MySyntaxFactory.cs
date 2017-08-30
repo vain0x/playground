@@ -19,7 +19,7 @@ namespace BoilerplateConstructorGenerator.CompleteConstructors
 {
     public sealed class MySyntaxFactory
     {
-        const string MagicComment = "-*- complete-constructor -*-";
+        const string MagicComment = "analyzer: complete-constructor";
 
         LanguageVersion LanguageVersion { get; }
 
