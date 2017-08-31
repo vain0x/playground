@@ -11,14 +11,14 @@ namespace VainZero.Sandbox
     {
         public void Run()
         {
-            Future.FromResult<int, Exception>(1)
-                .Map<int, double, Exception, ImmediateSuccessFuture<int, Exception>>(x =>
+            Future.FromResult(1)
+                .Map((int x) =>
                 {
                     var y = x * Math.PI;
                     Debug.WriteLine(y);
                     return y;
                 })
-                .Subscribe<MapFlow<int, double, Exception, ImmediateSuccessFuture<int, Exception>>, double, Exception>();
+                .Subscribe(default(double));
         }
 
         public static void Main(string[] args)
@@ -34,38 +34,38 @@ namespace VainZero.Sandbox
         bool IsDisposed { get; }
     }
 
-    public interface IFlowCallback<TItem, TError>
+    public interface IFlowCallback<TItem>
     {
         void OnItem(TItem item);
-        void OnError(TError error);
+        void OnError(Exception error);
         void OnCancelled();
         void OnCompleted();
     }
 
-    public interface IFlow<TItem, TError>
+    public interface IFlow<TItem>
     {
         void Subscribe<C>(C callback, ISubscription subscription)
-            where C : IFlowCallback<TItem, TError>;
+            where C : IFlowCallback<TItem>;
     }
 
-    public interface IOperatorFlow<TSource, TTarget, TError, TUpstream>
-        : IFlow<TTarget, TError>
-        where TUpstream : IFlow<TSource, TError>
+    public interface IOperatorFlow<TSource, TTarget, TUpstream>
+        : IFlow<TTarget>
+        where TUpstream : IFlow<TSource>
     {
     }
 
-    public interface IFuture<TItem, TError>
-        : IFlow<TItem, TError>
+    public interface IFuture<TItem>
+        : IFlow<TItem>
     {
     }
 
-    public struct ImmediateSuccessFuture<TItem, TError>
-        : IFuture<TItem, TError>
+    public struct ImmediateSuccessFuture<TItem>
+        : IFuture<TItem>
     {
         readonly TItem Item;
 
         public void Subscribe<C>(C callback, ISubscription subscription)
-            where C : IFlowCallback<TItem, TError>
+            where C : IFlowCallback<TItem>
         {
             callback.OnItem(Item);
             callback.OnCompleted();
@@ -77,13 +77,13 @@ namespace VainZero.Sandbox
         }
     }
 
-    public struct MapFlow<TSource, TTarget, TError, TUpstream>
-        : IOperatorFlow<TSource, TTarget, TError, TUpstream>
-        where TUpstream : IFlow<TSource, TError>
+    public struct MapFlow<TSource, TTarget, TUpstream>
+        : IOperatorFlow<TSource, TTarget, TUpstream>
+        where TUpstream : IFlow<TSource>
     {
         public struct Callback<TDownstream>
-            : IFlowCallback<TSource, TError>
-            where TDownstream : IFlowCallback<TTarget, TError>
+            : IFlowCallback<TSource>
+            where TDownstream : IFlowCallback<TTarget>
         {
             readonly Func<TSource, TTarget> Func;
             readonly TDownstream Downstream;
@@ -93,7 +93,7 @@ namespace VainZero.Sandbox
                 Downstream.OnItem(Func(item));
             }
 
-            public void OnError(TError error)
+            public void OnError(Exception error)
             {
                 Downstream.OnError(error);
             }
@@ -119,7 +119,7 @@ namespace VainZero.Sandbox
         readonly Func<TSource, TTarget> Func;
 
         public void Subscribe<C>(C callback, ISubscription subscription)
-            where C : IFlowCallback<TTarget, TError>
+            where C : IFlowCallback<TTarget>
         {
             var myCallback = new Callback<C>(callback, Func);
             Upstream.Subscribe(myCallback, subscription);
@@ -132,8 +132,8 @@ namespace VainZero.Sandbox
         }
     }
 
-    public struct EmptyFlowCallback<TItem, TError>
-        : IFlowCallback<TItem, TError>
+    public struct EmptyFlowCallback<TItem>
+        : IFlowCallback<TItem>
     {
         public void OnCancelled()
         {
@@ -143,7 +143,7 @@ namespace VainZero.Sandbox
         {
         }
 
-        public void OnError(TError error)
+        public void OnError(Exception error)
         {
         }
 
@@ -175,24 +175,24 @@ namespace VainZero.Sandbox
 
     public static class Future
     {
-        public static ImmediateSuccessFuture<X, E> FromResult<X, E>(X value)
+        public static ImmediateSuccessFuture<X> FromResult<X>(X value)
         {
-            return new ImmediateSuccessFuture<X, E>(value);
+            return new ImmediateSuccessFuture<X>(value);
         }
     }
 
     public static class FlowExtension
     {
-        public static void Subscribe<F, X, E>(this F @this)
-            where F : IFlow<X, E>
+        public static void Subscribe<F, X>(this F @this, X _)
+            where F : IFlow<X>
         {
-            @this.Subscribe(new EmptyFlowCallback<X, E>(), new Subscription());
+            @this.Subscribe(new EmptyFlowCallback<X>(), new Subscription());
         }
 
-        public static MapFlow<S, T, E, U> Map<S, T, E, U>(this U @this, Func<S, T> func)
-            where U : IFlow<S, E>
+        public static MapFlow<S, T, U> Map<S, T, U>(this U @this, Func<S, T> func)
+            where U : IFlow<S>
         {
-            return new MapFlow<S, T, E, U>(@this, func);
+            return new MapFlow<S, T, U>(@this, func);
         }
     }
 }
