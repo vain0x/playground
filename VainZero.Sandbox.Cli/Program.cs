@@ -12,13 +12,13 @@ namespace VainZero.Sandbox
         public void Run()
         {
             Future.FromResult(1)
-                .Map((int x) =>
+                .Map(x =>
                 {
                     var y = x * Math.PI;
                     Debug.WriteLine(y);
                     return y;
                 })
-                .Subscribe(default(double));
+                .Subscribe();
         }
 
         public static void Main(string[] args)
@@ -48,18 +48,12 @@ namespace VainZero.Sandbox
             where C : IFlowCallback<TItem>;
     }
 
-    public interface IOperatorFlow<TSource, TTarget, TUpstream>
-        : IFlow<TTarget>
-        where TUpstream : IFlow<TSource>
-    {
-    }
-
     public interface IFuture<TItem>
         : IFlow<TItem>
     {
     }
 
-    public struct ImmediateSuccessFuture<TItem>
+    sealed class ImmediateSuccessFuture<TItem>
         : IFuture<TItem>
     {
         readonly TItem Item;
@@ -77,14 +71,14 @@ namespace VainZero.Sandbox
         }
     }
 
-    public struct MapFlow<TSource, TTarget, TUpstream>
-        : IOperatorFlow<TSource, TTarget, TUpstream>
-        where TUpstream : IFlow<TSource>
+    sealed class MapFlow<TSource, TTarget>
+        : IFlow<TTarget>
     {
-        public struct Callback<TDownstream>
+        struct Callback<TDownstream>
             : IFlowCallback<TSource>
             where TDownstream : IFlowCallback<TTarget>
         {
+            readonly ISubscription Subscription;
             readonly Func<TSource, TTarget> Func;
             readonly TDownstream Downstream;
 
@@ -96,11 +90,13 @@ namespace VainZero.Sandbox
             public void OnError(Exception error)
             {
                 Downstream.OnError(error);
+                Subscription.Dispose();
             }
 
             public void OnCancelled()
             {
                 Downstream.OnCancelled();
+                Subscription.Dispose();
             }
 
             public void OnCompleted()
@@ -108,24 +104,25 @@ namespace VainZero.Sandbox
                 Downstream.OnCompleted();
             }
 
-            public Callback(TDownstream down, Func<TSource, TTarget> func)
+            public Callback(TDownstream down, ISubscription subscription, Func<TSource, TTarget> func)
             {
                 Downstream = down;
                 Func = func;
+                Subscription = subscription;
             }
         }
 
-        readonly TUpstream Upstream;
+        readonly IFlow<TSource> Upstream;
         readonly Func<TSource, TTarget> Func;
 
         public void Subscribe<C>(C callback, ISubscription subscription)
             where C : IFlowCallback<TTarget>
         {
-            var myCallback = new Callback<C>(callback, Func);
+            var myCallback = new Callback<C>(callback, subscription, Func);
             Upstream.Subscribe(myCallback, subscription);
         }
 
-        public MapFlow(TUpstream upstream, Func<TSource, TTarget> func)
+        public MapFlow(IFlow<TSource> upstream, Func<TSource, TTarget> func)
         {
             Upstream = upstream;
             Func = func;
@@ -175,7 +172,7 @@ namespace VainZero.Sandbox
 
     public static class Future
     {
-        public static ImmediateSuccessFuture<X> FromResult<X>(X value)
+        public static IFuture<X> FromResult<X>(X value)
         {
             return new ImmediateSuccessFuture<X>(value);
         }
@@ -183,16 +180,14 @@ namespace VainZero.Sandbox
 
     public static class FlowExtension
     {
-        public static void Subscribe<F, X>(this F @this, X _)
-            where F : IFlow<X>
+        public static void Subscribe<X>(this IFlow<X> @this)
         {
             @this.Subscribe(new EmptyFlowCallback<X>(), new Subscription());
         }
 
-        public static MapFlow<S, T, U> Map<S, T, U>(this U @this, Func<S, T> func)
-            where U : IFlow<S>
+        public static IFlow<T> Map<S, T>(this IFlow<S> @this, Func<S, T> func)
         {
-            return new MapFlow<S, T, U>(@this, func);
+            return new MapFlow<S, T>(@this, func);
         }
     }
 }
