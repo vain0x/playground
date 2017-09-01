@@ -20,6 +20,7 @@ using System.Windows.Media;
 using System.Windows.Media.Imaging;
 using System.Windows.Navigation;
 using System.Windows.Shapes;
+using DotNetKit.Reactive.Observables;
 using Reactive.Bindings;
 
 namespace VainZero.SandBox.Wpf
@@ -89,213 +90,26 @@ namespace VainZero.SandBox.Wpf
                                 innerObserver.OnNext(offset * 10 + j);
                                 await Task.Delay(j + 1).ConfigureAwait(false);
                             }
+
+                            Debug.WriteLine("OnCompleted(offset = " + offset + ")");
                             innerObserver.OnCompleted();
                         }));
 
                         await Task.Delay(10 * (i + 1)).ConfigureAwait(false);
                     }
 
+                    Debug.WriteLine("OnCompleted(outer)");
                     outerObserver.OnCompleted();
                 })
                 .Balk()
-                .Subscribe(x => Debug.WriteLine(x));
+                .Subscribe(
+                    x => Debug.WriteLine(x),
+                    _ => { },
+                    () => Debug.WriteLine("OnCompleted(sink)")
+                );
         }
     }
 
-    public sealed class BalkObservable<T>
-        : IObservable<T>
-    {
-        sealed class InnerObserver
-            : IObserver<T>
-        {
-            readonly OuterObserver outer;
-
-            public void OnNext(T value)
-            {
-                outer.OnNextInner(value);
-            }
-
-            public void OnError(Exception error)
-            {
-                outer.OnErrorInner(error);
-            }
-
-            public void OnCompleted()
-            {
-                outer.OnCompletedInner();
-            }
-
-            public InnerObserver(OuterObserver outer)
-            {
-                this.outer = outer;
-            }
-        }
-
-        sealed class OuterObserver
-            : IObserver<IObservable<T>>
-        {
-            readonly IObserver<T> downstream;
-
-            readonly SingleAssignmentDisposable subscription =
-                new SingleAssignmentDisposable();
-
-            readonly SerialDisposable innerSubscriptionContainer =
-                new SerialDisposable();
-
-            bool innerIsStopped = true;
-            Exception innerError = null;
-
-            bool outerIsStopped = false;
-            Exception outerError = null;
-
-            readonly InnerObserver innerObserver;
-
-            object Gate
-            {
-                get
-                {
-                    return innerObserver;
-                }
-            }
-
-            static Exception Combine(Exception nullable, Exception notNull)
-            {
-                return
-                    nullable == null
-                        ? notNull
-                        : new AggregateException(nullable, notNull);
-            }
-
-            public void OnNext(IObservable<T> value)
-            {
-                lock (Gate)
-                {
-                    if (!innerIsStopped)
-                    {
-                        Debug.WriteLine("Skipped.");
-                        return;
-                    }
-
-                    innerIsStopped = false;
-                }
-
-                Debug.WriteLine("Start.");
-                var s = new SingleAssignmentDisposable();
-                innerSubscriptionContainer.Disposable = s;
-                s.Disposable = value.Subscribe(innerObserver);
-            }
-
-            public void OnError(Exception error)
-            {
-                lock (Gate)
-                {
-                    outerIsStopped = true;
-                    outerError = error;
-
-                    if (innerIsStopped)
-                    {
-                        downstream.OnError(Combine(innerError, error));
-                        subscription.Dispose();
-                    }
-                }
-            }
-
-            public void OnCompleted()
-            {
-                lock (Gate)
-                {
-                    outerIsStopped = true;
-                    outerError = null;
-
-                    if (innerIsStopped)
-                    {
-                        if (innerError != null)
-                        {
-                            downstream.OnError(innerError);
-                        }
-                        else
-                        {
-                            downstream.OnCompleted();
-                        }
-
-                        subscription.Dispose();
-                    }
-                }
-            }
-
-            public void OnNextInner(T value)
-            {
-                downstream.OnNext(value);
-            }
-
-            public void OnErrorInner(Exception error)
-            {
-                lock (Gate)
-                {
-                    innerIsStopped = true;
-                    innerError = error;
-
-                    if (outerIsStopped)
-                    {
-                        downstream.OnError(Combine(outerError, innerError));
-                        subscription.Dispose();
-                    }
-                }
-            }
-
-            public void OnCompletedInner()
-            {
-                lock (Gate)
-                {
-                    Debug.WriteLine("Suspended.");
-                    innerIsStopped = true;
-                    innerError = null;
-
-                    if (outerIsStopped)
-                    {
-                        if (outerError != null)
-                        {
-                            downstream.OnError(outerError);
-                        }
-                        else
-                        {
-                            downstream.OnCompleted();
-                        }
-
-                        subscription.Dispose();
-                    }
-                }
-            }
-
-            public IDisposable Start(IObservable<IObservable<T>> upstream)
-            {
-                subscription.Disposable =
-                    StableCompositeDisposable.Create(
-                        innerSubscriptionContainer,
-                        upstream.Subscribe(this)
-                    );
-                return subscription;
-            }
-
-            public OuterObserver(IObserver<T> downstream)
-            {
-                this.downstream = downstream;
-                innerObserver = new InnerObserver(this);
-            }
-        }
-
-        IObservable<IObservable<T>> Upstream { get; }
-
-        public IDisposable Subscribe(IObserver<T> observer)
-        {
-            return new OuterObserver(observer).Start(Upstream);
-        }
-
-        public BalkObservable(IObservable<IObservable<T>> upstream)
-        {
-            Upstream = upstream;
-        }
-    }
 
 
     public sealed class SerialObservable<T>
