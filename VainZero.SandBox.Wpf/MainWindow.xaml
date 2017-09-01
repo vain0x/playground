@@ -10,6 +10,8 @@
     Width="525"
     Height="350"
     >
-    <DockPanel>
-    </DockPanel>
+    <StackPanel>
+        <TextBlock Text="{Binding Status.Value}" />
+        <Button Content="実行" Command="{Binding StartCommand}" />
+    </StackPanel>
 </Window>
