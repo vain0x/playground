@@ -37,20 +37,21 @@ namespace VainZero.SandBox.Wpf
 
             DataContext = this;
 
-            var count = 0;
-
             StartCommand
-                .Select(i =>
-                    Observable.FromAsync(async () =>
-                    {
-                        Status.Value = "実行中 (count = " + count + ")";
-                        count++;
-                        await Task.Delay(2000);
-                        Status.Value = "停止";
-                    }))
-                .Balk()
-                .Subscribe();
+                .DoBalking(async () =>
+                {
+                    Status.Value = "実行中";
+                    await Task.Delay(3000);
+                    Status.Value = "停止";
+                })
+                .Subscribe(_ =>
+                {
+                    Count.Value++;
+                });
         }
+
+        public ReactiveProperty<int> Count { get; } =
+            new ReactiveProperty<int>(0);
 
         public ReactiveProperty<string> Status { get; } =
             new ReactiveProperty<string>("停止");
@@ -61,15 +62,15 @@ namespace VainZero.SandBox.Wpf
 
     public static class ObservableExtension
     {
-        /// <summary>
-        /// Balking パターンを用いて、ストリームを平坦化する。
-        /// <para>
-        /// ストリーム s が流れてくるたび、他のストリームを購読していない場合、s を購読する。s が流す値は、後続に転送される。s が停止したら、購読を解除する。
-        /// </para>
-        /// </summary>
         public static IObservable<X> Balk<X>(this IObservable<IObservable<X>> @this)
         {
             return new BalkObservable<X>(@this);
+        }
+
+        public static IObservable<Unit> DoBalking<X>(this IObservable<X> @this, Func<Task> asyncFunc)
+        {
+            var observable = Observable.FromAsync(asyncFunc);
+            return @this.Select(_ => observable).Balk();
         }
     }
 }

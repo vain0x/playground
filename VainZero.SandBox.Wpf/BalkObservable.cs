@@ -39,7 +39,7 @@ namespace DotNetKit.Reactive.Observables
         sealed class OuterObserver
             : IObserver<IObservable<T>>
         {
-            readonly IObserver<T> downstream;
+            readonly IObserver<T> observer;
 
             readonly SingleAssignmentDisposable subscription =
                 new SingleAssignmentDisposable();
@@ -61,14 +61,6 @@ namespace DotNetKit.Reactive.Observables
                 {
                     return innerObserver;
                 }
-            }
-
-            static Exception Combine(Exception nullable, Exception notNull)
-            {
-                return
-                    nullable == null
-                        ? notNull
-                        : new AggregateException(nullable, notNull);
             }
 
             public void OnNext(IObservable<T> value)
@@ -105,7 +97,7 @@ namespace DotNetKit.Reactive.Observables
                     }
                     else
                     {
-                        downstream.OnError(error);
+                        observer.OnError(error);
                         subscription.Dispose();
                     }
                 }
@@ -130,7 +122,7 @@ namespace DotNetKit.Reactive.Observables
                     }
                     else
                     {
-                        downstream.OnCompleted();
+                        observer.OnCompleted();
                         subscription.Dispose();
                     }
                 }
@@ -138,7 +130,7 @@ namespace DotNetKit.Reactive.Observables
 
             public void OnNextInner(T value)
             {
-                downstream.OnNext(value);
+                observer.OnNext(value);
             }
 
             public void OnErrorInner(Exception error)
@@ -149,7 +141,13 @@ namespace DotNetKit.Reactive.Observables
                     innerError = error;
 
                     // Notify the error without waiting the outer stops.
-                    downstream.OnError(Combine(outerError, innerError));
+
+                    var combinedError =
+                        outerError == null
+                            ? error
+                            : new AggregateException(outerError, error);
+
+                    observer.OnError(combinedError);
                     subscription.Dispose();
                 }
             }
@@ -169,11 +167,11 @@ namespace DotNetKit.Reactive.Observables
                     {
                         if (outerError != null)
                         {
-                            downstream.OnError(outerError);
+                            observer.OnError(outerError);
                         }
                         else
                         {
-                            downstream.OnCompleted();
+                            observer.OnCompleted();
                         }
 
                         subscription.Dispose();
@@ -191,9 +189,9 @@ namespace DotNetKit.Reactive.Observables
                 return subscription;
             }
 
-            public OuterObserver(IObserver<T> downstream)
+            public OuterObserver(IObserver<T> observer)
             {
-                this.downstream = downstream;
+                this.observer = observer;
                 innerObserver = new InnerObserver(this);
             }
         }

@@ -11,6 +11,7 @@
     Height="350"
     >
     <StackPanel>
+        <TextBlock Text="{Binding Count.Value}" />
         <TextBlock Text="{Binding Status.Value}" />
         <Button Content="実行" Command="{Binding StartCommand}" />
     </StackPanel>
