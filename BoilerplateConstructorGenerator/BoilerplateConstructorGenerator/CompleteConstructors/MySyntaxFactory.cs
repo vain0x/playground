@@ -249,7 +249,7 @@ namespace BoilerplateConstructorGenerator.CompleteConstructors
 
         /// <summary>
         /// Determines if a statement matches with
-        /// <c>M = p</c>, where <c>M</c> is a member and <c>p</c> is a parameter.
+        /// <c>M = p</c>, where <c>M</c> is a member or error and <c>p</c> is a parameter.
         /// Note that <c>p ?? ...</c> is also acceptable on the right-hand side
         /// because <c>p ?? throw new ...</c> is preferred in C# 7.
         /// </summary>
@@ -263,8 +263,8 @@ namespace BoilerplateConstructorGenerator.CompleteConstructors
                 && assignment.Right != null
                 )) return false;
 
-            var memberSymbol = semanticModel.GetSymbolInfo(assignment.Left).Symbol;
-            if (!(memberSymbol != null && memberSet.Contains(memberSymbol))) return false;
+            var leftSymbol = semanticModel.GetSymbolInfo(assignment.Left).Symbol;
+            if (leftSymbol != null && !memberSet.Contains(leftSymbol)) return false;
 
             if (assignment.Right.IsKind(SyntaxKind.CoalesceExpression)
                 && assignment.Right is BinaryExpressionSyntax coalesceExpression

@@ -16,11 +16,12 @@ public class Sample
     /// My complete constructor.
     /// </summary>
     // analyzer: complete-constructor
-    public Sample(string name, int age)
+    public Sample(string name, string kana, int age)
     {
         if (name == null)
             throw new System.ArgumentNullException(nameof(name));
         Name = name;
+        Kana = kana;
         Age = age;
 
         Debug.WriteLine("Beginning person initialization.");
