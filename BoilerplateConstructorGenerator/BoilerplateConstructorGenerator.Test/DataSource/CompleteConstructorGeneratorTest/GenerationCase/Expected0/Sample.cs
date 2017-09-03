@@ -45,7 +45,7 @@ public class Sample
             throw new ArgumentNullException(nameof(underscore));
         String = @string;
         TimeSpan = timeSpan;
-        this.async = @async;
+        this.@async = @async;
         _underscore = underscore;
     }
 }

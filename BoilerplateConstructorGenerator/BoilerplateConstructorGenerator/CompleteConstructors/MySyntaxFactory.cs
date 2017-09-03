@@ -185,7 +185,7 @@ namespace BoilerplateConstructorGenerator.CompleteConstructors
                             MemberAccessExpression(
                                 SyntaxKind.SimpleMemberAccessExpression,
                                 ThisExpression(),
-                                IdentifierName(a.MemberName)
+                                IdentifierName(EscapedIdentifier(a.MemberName))
                             ),
                             IdentifierName(a.ParameterIdentifier)
                         ))
