@@ -87,211 +87,7 @@ namespace VainZero.SandBox.Wpf
         }
     }
 
-    public sealed class CollectionMergeObservable<TItem, TTarget>
-        : IObservable<KeyValuePair<TItem, Notification<TTarget>>>
-    {
-        public ObservableCollection<TItem> Collection { get; }
-        public Func<TItem, IObservable<TTarget>> Func { get; }
-
-        public IDisposable Subscribe(IObserver<KeyValuePair<TItem, Notification<TTarget>>> observer)
-        {
-            return new CollectionChangedHandler(this, observer).Subscribe();
-        }
-
-        sealed class Observer
-            : IObserver<TTarget>
-            , IDisposable
-        {
-            readonly CollectionChangedHandler parent;
-
-            readonly TItem item;
-
-            readonly SingleAssignmentDisposable subscription =
-                new SingleAssignmentDisposable();
-
-            public Observer(CollectionChangedHandler parent, TItem item)
-            {
-                this.parent = parent;
-                this.item = item;
-            }
-
-            KeyValuePair<TItem, Notification<TTarget>> Pair(Notification<TTarget> notification)
-            {
-                return new KeyValuePair<TItem, Notification<TTarget>>(item, notification);
-            }
-
-            bool isCompleted = false;
-
-            public void OnCompleted()
-            {
-                if (isCompleted) return;
-
-                parent.OnNext(Pair(Notification.CreateOnCompleted<TTarget>()));
-                isCompleted = true;
-            }
-
-            public void OnError(Exception error)
-            {
-                parent.OnError(error);
-            }
-
-            public void OnNext(TTarget value)
-            {
-                parent.OnNext(Pair(Notification.CreateOnNext(value)));
-            }
-
-            public void Dispose()
-            {
-                OnCompleted();
-            }
-
-            public Observer Subscribe(IObservable<TTarget> observable)
-            {
-                subscription.Disposable = observable.Subscribe(this);
-                return this;
-            }
-        }
-
-        sealed class CollectionChangedHandler
-        {
-            readonly CollectionMergeObservable<TItem, TTarget> parent;
-            readonly IObserver<KeyValuePair<TItem, Notification<TTarget>>> observer;
-
-            readonly SingleAssignmentDisposable subscription =
-                new SingleAssignmentDisposable();
-
-            readonly KeyedCompositeDisposable<TItem, Observer> subscriptions =
-                new KeyedCompositeDisposable<TItem, Observer>();
-
-            public CollectionChangedHandler(CollectionMergeObservable<TItem, TTarget> parent, IObserver<KeyValuePair<TItem, Notification<TTarget>>> observer)
-            {
-                this.parent = parent;
-                this.observer = observer;
-            }
-
-            void SubscribeItem(TItem item)
-            {
-                var observable = parent.Func(item);
-                subscriptions.Add(item, new Observer(this, item).Subscribe(observable));
-            }
-
-            void OnRemoved(TItem item)
-            {
-                var observer = default(Observer);
-                if (subscriptions.Remove(item, out observer))
-                {
-                }
-            }
-
-            void OnCollectionChanged(object sender, NotifyCollectionChangedEventArgs e)
-            {
-                if (e.Action == NotifyCollectionChangedAction.Add
-                    || e.Action == NotifyCollectionChangedAction.Replace
-                    )
-                {
-                    foreach (var obj in e.NewItems)
-                    {
-                        var item = (TItem)obj;
-                        SubscribeItem(item);
-                    }
-                }
-
-                if (e.Action == NotifyCollectionChangedAction.Replace
-                    || e.Action == NotifyCollectionChangedAction.Remove
-                    )
-                {
-                    foreach (var obj in e.OldItems)
-                    {
-                        var item = (TItem)obj;
-                        OnRemoved(item);
-                    }
-                }
-
-                if (e.Action == NotifyCollectionChangedAction.Reset)
-                {
-                    subscriptions.Clear();
-                }
-            }
-
-            public IDisposable Subscribe()
-            {
-                subscription.Disposable = Disposable.Create(() =>
-                {
-                    parent.Collection.CollectionChanged -= OnCollectionChanged;
-                    subscriptions.Dispose();
-                });
-
-                parent.Collection.CollectionChanged += OnCollectionChanged;
-                return subscription;
-            }
-
-            object Gate => subscription;
-
-            public void OnNext(KeyValuePair<TItem, Notification<TTarget>> value)
-            {
-                lock (Gate)
-                {
-                    if (subscription.IsDisposed) return;
-                    observer.OnNext(value);
-                }
-            }
-
-            public void OnError(Exception error)
-            {
-                lock (Gate)
-                {
-                    if (subscription.IsDisposed) return;
-                    observer.OnError(error);
-                    subscription.Dispose();
-                }
-            }
-        }
-
-        public CollectionMergeObservable(ObservableCollection<TItem> collection, Func<TItem, IObservable<TTarget>> func)
-        {
-            Collection = collection;
-            Func = func;
-        }
-    }
-
-    public enum ItemChangeKind
-    {
-        OnNext,
-        Added,
-        Removed,
-    }
-
-    public sealed class ItemNotification<T>
-    {
-        public ItemChangeKind Kind { get; }
-        public T Value { get; }
-
-        public ItemNotification(ItemChangeKind kind, T value)
-        {
-            Kind = kind;
-            Value = value;
-        }
-    }
-
-    public static class ItemChange
-    {
-        public static ItemNotification<X> CreateAdded<X>(X value)
-        {
-            return new ItemNotification<X>(ItemChangeKind.Added, value);
-        }
-
-        public static ItemNotification<X> CreateRemoved<X>(X value)
-        {
-            return new ItemNotification<X>(ItemChangeKind.Removed, value);
-        }
-
-        public static ItemNotification<X> CreateOnNext<X>(X value)
-        {
-            return new ItemNotification<X>(ItemChangeKind.OnNext, value);
-        }
-    }
-
-    public sealed class ForkObservable<TItem, TTarget>
+    public sealed class ObserveItemObservable<TItem, TTarget>
         : IObservable<IObservable<TTarget>>
     {
         public ObservableCollection<TItem> Collection { get; }
@@ -389,8 +185,9 @@ namespace VainZero.SandBox.Wpf
         }
 
         sealed class CollectionChangedHandler
+            : IDisposable
         {
-            readonly ForkObservable<TItem, TTarget> parent;
+            readonly ObserveItemObservable<TItem, TTarget> parent;
             readonly IObserver<IObservable<TTarget>> observer;
 
             readonly SingleAssignmentDisposable subscription =
@@ -446,20 +243,20 @@ namespace VainZero.SandBox.Wpf
                 }
             }
 
+            public void Dispose()
+            {
+                parent.Collection.CollectionChanged -= OnCollectionChanged;
+                substreams.Dispose();
+            }
+
             public IDisposable Subscribe()
             {
-                subscription.Disposable = Disposable.Create(() =>
-                {
-                    parent.Collection.CollectionChanged -= OnCollectionChanged;
-                    substreams.Dispose();
-                });
-
                 parent.Collection.CollectionChanged += OnCollectionChanged;
-                return subscription;
+                return this;
             }
 
             // analyzer: complete-constructor
-            public CollectionChangedHandler(ForkObservable<TItem, TTarget> parent, IObserver<IObservable<TTarget>> observer)
+            public CollectionChangedHandler(ObserveItemObservable<TItem, TTarget> parent, IObserver<IObservable<TTarget>> observer)
             {
                 if (parent == null)
                     throw new ArgumentNullException(nameof(parent));
@@ -470,7 +267,7 @@ namespace VainZero.SandBox.Wpf
             }
         }
 
-        public ForkObservable(ObservableCollection<TItem> collection, Func<TItem, IObservable<TTarget>> func)
+        public ObserveItemObservable(ObservableCollection<TItem> collection, Func<TItem, IObservable<TTarget>> func)
         {
             Collection = collection;
             Func = func;
@@ -479,17 +276,15 @@ namespace VainZero.SandBox.Wpf
 
     public static class ObservableCollectionExtension
     {
-        public static IObservable<IObservable<Y>> Fork<X, Y>(this ObservableCollection<X> @this, Func<X, IObservable<Y>> func)
+        public static IObservable<IObservable<Y>> ObserveItem<X, Y>(this ObservableCollection<X> @this, Func<X, IObservable<Y>> streamSelector)
         {
-            return new ForkObservable<X, Y>(@this, func);
+            return new ObserveItemObservable<X, Y>(@this, streamSelector);
         }
 
-        public static IObservable<KeyValuePair<X, Notification<Y>>> ObserveItem<X, Y>(this ObservableCollection<X> @this, Func<X, IObservable<Y>> func)
-        {
-            return new CollectionMergeObservable<X, Y>(@this, func);
-        }
-
-        public static IObservable<Tuple<X, bool, X, bool>> Pairwise2<X>(this IObservable<X> @this)
+        /// <summary>
+        /// [x, y] → [(None, Some(x)), (Some(x), Some(y)), (Some(y), None)]
+        /// </summary>
+        public static IObservable<Tuple<X, bool, X, bool>> OuterPairwise<X>(this IObservable<X> @this)
         {
             return Observable.Create<Tuple<X, bool, X, bool>>(observer =>
             {
@@ -526,27 +321,10 @@ namespace VainZero.SandBox.Wpf
 
             DataContext = this;
 
-            /*
             Total =
                 Items
-                .ObserveItem(item => item.IsChecked.Pairwise2())
-                .Scan(0, (count, pair) =>
-                {
-                    Notification<Tuple<bool, bool, bool, bool>> n = pair.Value;
-                    var t = pair.Value.Value;
-                    return
-                        count
-                        + (t.Item2 ? (t.Item1 ? -1 : 0) : 0)
-                        + (t.Item4 ? (t.Item3 ? 1 : 0) : 0);
-                })
-                .ToReactiveProperty(0);
-            */
-
-            Total =
-                Items
-                .Fork(item => item.IsChecked)
-                .Select(o => o.Pairwise2())
-                .Merge()
+                .ObserveItem(item => item.IsChecked)
+                .SelectMany(o => o.OuterPairwise())
                 .Scan(0, (count, t) =>
                     count
                     + (t.Item2 ? (t.Item1 ? -1 : 0) : 0)
