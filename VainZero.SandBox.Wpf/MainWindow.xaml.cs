@@ -59,13 +59,12 @@ namespace VainZero.SandBox.Wpf
             }
 
             value = stack.Pop();
+            value.Dispose();
 
             if (stack.Count == 0)
             {
                 dictionary.Remove(key);
             }
-
-            value.Dispose();
             return true;
         }
 
@@ -90,124 +89,32 @@ namespace VainZero.SandBox.Wpf
     public sealed class ObserveItemObservable<TItem, TTarget>
         : IObservable<IObservable<TTarget>>
     {
-        public ObservableCollection<TItem> Collection { get; }
-        public Func<TItem, IObservable<TTarget>> Func { get; }
-
-        public IDisposable Subscribe(IObserver<IObservable<TTarget>> observer)
-        {
-            return new CollectionChangedHandler(this, observer).Subscribe();
-        }
-
-        sealed class ItemObservable
-            : IObservable<TTarget>
-            , IDisposable
-        {
-            sealed class Observer
-                : IObserver<TTarget>
-            {
-                readonly ItemObservable parent;
-                readonly IObserver<TTarget> observer;
-                readonly SingleAssignmentDisposable subscription = new SingleAssignmentDisposable();
-
-                bool isStopped = false;
-
-                public void OnCompleted()
-                {
-                    if (isStopped) return;
-                    isStopped = true;
-
-                    observer.OnCompleted();
-                    subscription.Dispose();
-
-                    Debug.WriteLine("ItemObservable Completed");
-                }
-
-                public void OnError(Exception error)
-                {
-                    if (isStopped) return;
-                    isStopped = true;
-
-                    observer.OnError(error);
-                    subscription.Dispose();
-                }
-
-                public void OnNext(TTarget value)
-                {
-                    Debug.WriteLine("Value = " + value);
-                    observer.OnNext(value);
-                }
-
-                public IDisposable Subscribe(IObservable<TTarget> upstream)
-                {
-                    Debug.WriteLine("ItemObservable is being subscribed.");
-                    subscription.Disposable =
-                        StableCompositeDisposable.Create(
-                            parent.lifetime.Subscribe(this),
-                            upstream.Subscribe(this)
-                        );
-                    return subscription;
-                }
-
-                // analyzer: complete-constructor
-                public Observer(ItemObservable parent, IObserver<TTarget> observer)
-                {
-                    if (parent == null)
-                        throw new ArgumentNullException(nameof(parent));
-                    if (observer == null)
-                        throw new ArgumentNullException(nameof(observer));
-                    this.parent = parent;
-                    this.observer = observer;
-                }
-            }
-
-            readonly IObservable<TTarget> upstream;
-
-            readonly Subject<TTarget> lifetime = new Subject<TTarget>();
-
-            public void Dispose()
-            {
-                Debug.WriteLine("ItemObservable.Dispose");
-                lifetime.OnCompleted();
-            }
-
-            public IDisposable Subscribe(IObserver<TTarget> observer)
-            {
-                return new Observer(this, observer).Subscribe(upstream);
-            }
-
-            // analyzer: complete-constructor
-            public ItemObservable(IObservable<TTarget> upstream)
-            {
-                if (upstream == null)
-                    throw new ArgumentNullException(nameof(upstream));
-                this.upstream = upstream;
-            }
-        }
-
-        sealed class CollectionChangedHandler
+        sealed class Handler
             : IDisposable
         {
             readonly ObserveItemObservable<TItem, TTarget> parent;
             readonly IObserver<IObservable<TTarget>> observer;
 
-            readonly SingleAssignmentDisposable subscription =
-                new SingleAssignmentDisposable();
-
-            readonly KeyedCompositeDisposable<TItem, ItemObservable> substreams =
-                new KeyedCompositeDisposable<TItem, ItemObservable>();
+            readonly KeyedCompositeDisposable<TItem, IDisposable> substreams =
+                new KeyedCompositeDisposable<TItem, IDisposable>();
 
             void OnAdded(TItem item)
             {
-                var observable = new ItemObservable(parent.Func(item));
-                substreams.Add(item, observable);
+                var lifetime = new AsyncSubject<Unit>();
+                var observable = parent.func(item).TakeUntil(lifetime);
+                substreams.Add(item, Disposable.Create(() =>
+                {
+                    lifetime.OnNext(Unit.Default);
+                    lifetime.OnCompleted();
+                }));
                 Debug.WriteLine("Added.");
                 observer.OnNext(observable);
             }
 
             void OnRemoved(TItem item)
             {
-                var observable = default(ItemObservable);
-                if (substreams.Remove(item, out observable))
+                var disposable = default(IDisposable);
+                if (substreams.Remove(item, out disposable))
                 {
                     Debug.WriteLine("Removed.");
                 }
@@ -243,20 +150,19 @@ namespace VainZero.SandBox.Wpf
                 }
             }
 
+            public void Subscribe()
+            {
+                parent.collection.CollectionChanged += OnCollectionChanged;
+            }
+
             public void Dispose()
             {
-                parent.Collection.CollectionChanged -= OnCollectionChanged;
+                parent.collection.CollectionChanged -= OnCollectionChanged;
                 substreams.Dispose();
             }
 
-            public IDisposable Subscribe()
-            {
-                parent.Collection.CollectionChanged += OnCollectionChanged;
-                return this;
-            }
-
             // analyzer: complete-constructor
-            public CollectionChangedHandler(ObserveItemObservable<TItem, TTarget> parent, IObserver<IObservable<TTarget>> observer)
+            public Handler(ObserveItemObservable<TItem, TTarget> parent, IObserver<IObservable<TTarget>> observer)
             {
                 if (parent == null)
                     throw new ArgumentNullException(nameof(parent));
@@ -267,10 +173,20 @@ namespace VainZero.SandBox.Wpf
             }
         }
 
+        readonly ObservableCollection<TItem> collection;
+        readonly Func<TItem, IObservable<TTarget>> func;
+
+        public IDisposable Subscribe(IObserver<IObservable<TTarget>> observer)
+        {
+            var h = new Handler(this, observer);
+            h.Subscribe();
+            return h;
+        }
+
         public ObserveItemObservable(ObservableCollection<TItem> collection, Func<TItem, IObservable<TTarget>> func)
         {
-            Collection = collection;
-            Func = func;
+            this.collection = collection;
+            this.func = func;
         }
     }
 
@@ -284,29 +200,44 @@ namespace VainZero.SandBox.Wpf
         /// <summary>
         /// [x, y] → [(None, Some(x)), (Some(x), Some(y)), (Some(y), None)]
         /// </summary>
-        public static IObservable<Tuple<X, bool, X, bool>> OuterPairwise<X>(this IObservable<X> @this)
+        public static IObservable<Tuple<X, bool, X, bool>> PairwiseWithSentinel<X>(this IObservable<X> @this)
         {
             return Observable.Create<Tuple<X, bool, X, bool>>(observer =>
             {
                 var previous = default(X);
                 var previousExists = false;
-                return @this.Subscribe(
-                    value =>
-                    {
-                        observer.OnNext(Tuple.Create(previous, previousExists, value, true));
-                        previous = value;
-                        previousExists = true;
-                    },
-                    observer.OnError,
-                    () =>
-                    {
-                        if (previousExists)
+                return
+                    @this.Subscribe(
+                        value =>
+                        {
+                            observer.OnNext(Tuple.Create(previous, previousExists, value, true));
+                            previous = value;
+                            previousExists = true;
+                        },
+                        observer.OnError,
+                        () =>
                         {
                             observer.OnNext(Tuple.Create(previous, previousExists, default(X), false));
-                        }
-                        observer.OnCompleted();
-                    });
+                            observer.OnCompleted();
+                        });
             });
+        }
+
+        public static IObservable<X> Scan<X>(this IObservable<X> @this, X unit, Func<X, X, X> multiply, Func<X, X, X> divide)
+        {
+            return
+                @this.PairwiseWithSentinel().Scan(unit, (accumulate, pair) =>
+                {
+                    if (pair.Item2)
+                    {
+                        accumulate = divide(accumulate, pair.Item1);
+                    }
+                    if (pair.Item4)
+                    {
+                        accumulate = multiply(accumulate, pair.Item3); 
+                    }
+                    return accumulate;
+                });
         }
     }
 
@@ -324,12 +255,9 @@ namespace VainZero.SandBox.Wpf
             Total =
                 Items
                 .ObserveItem(item => item.IsChecked)
-                .SelectMany(o => o.OuterPairwise())
-                .Scan(0, (count, t) =>
-                    count
-                    + (t.Item2 ? (t.Item1 ? -1 : 0) : 0)
-                    + (t.Item4 ? (t.Item3 ? 1 : 0) : 0)
-                )
+                .Merge()
+                .Select(isChecked => isChecked ? 1 : 0)
+                .Scan(0, (x, y) => x + y, (x, y) => x - y)
                 .ToReactiveProperty(0);
 
             Items
