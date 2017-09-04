@@ -11,5 +11,20 @@
     Height="350"
     >
     <DockPanel>
+        <Button DockPanel.Dock="Top" Content="Add" Command="{Binding AddCommand}" />
+        <TextBlock
+            DockPanel.Dock="Top"
+            Text="{Binding Total.Value}" />
+
+        <ListBox ItemsSource="{Binding Items}">
+            <ListBox.ItemTemplate>
+                <DataTemplate>
+                    <StackPanel Orientation="Horizontal">
+                        <Button Content="Remove" Command="{Binding RemoveCommand}" CommandParameter="{Binding}" />
+                        <CheckBox IsChecked="{Binding IsChecked.Value}" Content="Check" />
+                    </StackPanel>
+                </DataTemplate>
+            </ListBox.ItemTemplate>
+        </ListBox>
     </DockPanel>
 </Window>
