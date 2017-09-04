@@ -254,8 +254,236 @@ namespace VainZero.SandBox.Wpf
         }
     }
 
+    public enum ItemChangeKind
+    {
+        OnNext,
+        Added,
+        Removed,
+    }
+
+    public sealed class ItemNotification<T>
+    {
+        public ItemChangeKind Kind { get; }
+        public T Value { get; }
+
+        public ItemNotification(ItemChangeKind kind, T value)
+        {
+            Kind = kind;
+            Value = value;
+        }
+    }
+
+    public static class ItemChange
+    {
+        public static ItemNotification<X> CreateAdded<X>(X value)
+        {
+            return new ItemNotification<X>(ItemChangeKind.Added, value);
+        }
+
+        public static ItemNotification<X> CreateRemoved<X>(X value)
+        {
+            return new ItemNotification<X>(ItemChangeKind.Removed, value);
+        }
+
+        public static ItemNotification<X> CreateOnNext<X>(X value)
+        {
+            return new ItemNotification<X>(ItemChangeKind.OnNext, value);
+        }
+    }
+
+    public sealed class ForkObservable<TItem, TTarget>
+        : IObservable<IObservable<TTarget>>
+    {
+        public ObservableCollection<TItem> Collection { get; }
+        public Func<TItem, IObservable<TTarget>> Func { get; }
+
+        public IDisposable Subscribe(IObserver<IObservable<TTarget>> observer)
+        {
+            return new CollectionChangedHandler(this, observer).Subscribe();
+        }
+
+        sealed class ItemObservable
+            : IObservable<TTarget>
+            , IDisposable
+        {
+            sealed class Observer
+                : IObserver<TTarget>
+            {
+                readonly ItemObservable parent;
+                readonly IObserver<TTarget> observer;
+                readonly SingleAssignmentDisposable subscription = new SingleAssignmentDisposable();
+
+                bool isStopped = false;
+
+                public void OnCompleted()
+                {
+                    if (isStopped) return;
+                    isStopped = true;
+
+                    observer.OnCompleted();
+                    subscription.Dispose();
+
+                    Debug.WriteLine("ItemObservable Completed");
+                }
+
+                public void OnError(Exception error)
+                {
+                    if (isStopped) return;
+                    isStopped = true;
+
+                    observer.OnError(error);
+                    subscription.Dispose();
+                }
+
+                public void OnNext(TTarget value)
+                {
+                    Debug.WriteLine("Value = " + value);
+                    observer.OnNext(value);
+                }
+
+                public IDisposable Subscribe(IObservable<TTarget> upstream)
+                {
+                    Debug.WriteLine("ItemObservable is being subscribed.");
+                    subscription.Disposable =
+                        StableCompositeDisposable.Create(
+                            parent.lifetime.Subscribe(this),
+                            upstream.Subscribe(this)
+                        );
+                    return subscription;
+                }
+
+                // analyzer: complete-constructor
+                public Observer(ItemObservable parent, IObserver<TTarget> observer)
+                {
+                    if (parent == null)
+                        throw new ArgumentNullException(nameof(parent));
+                    if (observer == null)
+                        throw new ArgumentNullException(nameof(observer));
+                    this.parent = parent;
+                    this.observer = observer;
+                }
+            }
+
+            readonly IObservable<TTarget> upstream;
+
+            readonly Subject<TTarget> lifetime = new Subject<TTarget>();
+
+            public void Dispose()
+            {
+                Debug.WriteLine("ItemObservable.Dispose");
+                lifetime.OnCompleted();
+            }
+
+            public IDisposable Subscribe(IObserver<TTarget> observer)
+            {
+                return new Observer(this, observer).Subscribe(upstream);
+            }
+
+            // analyzer: complete-constructor
+            public ItemObservable(IObservable<TTarget> upstream)
+            {
+                if (upstream == null)
+                    throw new ArgumentNullException(nameof(upstream));
+                this.upstream = upstream;
+            }
+        }
+
+        sealed class CollectionChangedHandler
+        {
+            readonly ForkObservable<TItem, TTarget> parent;
+            readonly IObserver<IObservable<TTarget>> observer;
+
+            readonly SingleAssignmentDisposable subscription =
+                new SingleAssignmentDisposable();
+
+            readonly KeyedCompositeDisposable<TItem, ItemObservable> substreams =
+                new KeyedCompositeDisposable<TItem, ItemObservable>();
+
+            void OnAdded(TItem item)
+            {
+                var observable = new ItemObservable(parent.Func(item));
+                substreams.Add(item, observable);
+                Debug.WriteLine("Added.");
+                observer.OnNext(observable);
+            }
+
+            void OnRemoved(TItem item)
+            {
+                var observable = default(ItemObservable);
+                if (substreams.Remove(item, out observable))
+                {
+                    Debug.WriteLine("Removed.");
+                }
+            }
+
+            void OnCollectionChanged(object sender, NotifyCollectionChangedEventArgs e)
+            {
+                if (e.Action == NotifyCollectionChangedAction.Add
+                    || e.Action == NotifyCollectionChangedAction.Replace
+                    )
+                {
+                    foreach (var obj in e.NewItems)
+                    {
+                        var item = (TItem)obj;
+                        OnAdded(item);
+                    }
+                }
+
+                if (e.Action == NotifyCollectionChangedAction.Replace
+                    || e.Action == NotifyCollectionChangedAction.Remove
+                    )
+                {
+                    foreach (var obj in e.OldItems)
+                    {
+                        var item = (TItem)obj;
+                        OnRemoved(item);
+                    }
+                }
+
+                if (e.Action == NotifyCollectionChangedAction.Reset)
+                {
+                    substreams.Clear();
+                }
+            }
+
+            public IDisposable Subscribe()
+            {
+                subscription.Disposable = Disposable.Create(() =>
+                {
+                    parent.Collection.CollectionChanged -= OnCollectionChanged;
+                    substreams.Dispose();
+                });
+
+                parent.Collection.CollectionChanged += OnCollectionChanged;
+                return subscription;
+            }
+
+            // analyzer: complete-constructor
+            public CollectionChangedHandler(ForkObservable<TItem, TTarget> parent, IObserver<IObservable<TTarget>> observer)
+            {
+                if (parent == null)
+                    throw new ArgumentNullException(nameof(parent));
+                if (observer == null)
+                    throw new ArgumentNullException(nameof(observer));
+                this.parent = parent;
+                this.observer = observer;
+            }
+        }
+
+        public ForkObservable(ObservableCollection<TItem> collection, Func<TItem, IObservable<TTarget>> func)
+        {
+            Collection = collection;
+            Func = func;
+        }
+    }
+
     public static class ObservableCollectionExtension
     {
+        public static IObservable<IObservable<Y>> Fork<X, Y>(this ObservableCollection<X> @this, Func<X, IObservable<Y>> func)
+        {
+            return new ForkObservable<X, Y>(@this, func);
+        }
+
         public static IObservable<KeyValuePair<X, Notification<Y>>> ObserveItem<X, Y>(this ObservableCollection<X> @this, Func<X, IObservable<Y>> func)
         {
             return new CollectionMergeObservable<X, Y>(@this, func);
@@ -298,6 +526,7 @@ namespace VainZero.SandBox.Wpf
 
             DataContext = this;
 
+            /*
             Total =
                 Items
                 .ObserveItem(item => item.IsChecked.Pairwise2())
@@ -310,6 +539,19 @@ namespace VainZero.SandBox.Wpf
                         + (t.Item2 ? (t.Item1 ? -1 : 0) : 0)
                         + (t.Item4 ? (t.Item3 ? 1 : 0) : 0);
                 })
+                .ToReactiveProperty(0);
+            */
+
+            Total =
+                Items
+                .Fork(item => item.IsChecked)
+                .Select(o => o.Pairwise2())
+                .Merge()
+                .Scan(0, (count, t) =>
+                    count
+                    + (t.Item2 ? (t.Item1 ? -1 : 0) : 0)
+                    + (t.Item4 ? (t.Item3 ? 1 : 0) : 0)
+                )
                 .ToReactiveProperty(0);
 
             Items
