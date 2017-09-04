@@ -27,43 +27,45 @@ using Reactive.Bindings.Extensions;
 
 namespace VainZero.SandBox.Wpf
 {
-    public sealed class KeyedCompositeDisposable<TKey>
+    public sealed class KeyedCompositeDisposable<TKey, TValue>
         : IDisposable
+        where TValue : IDisposable
     {
-        readonly Dictionary<TKey, Stack<IDisposable>> dictionary =
-            new Dictionary<TKey, Stack<IDisposable>>();
+        readonly Dictionary<TKey, Stack<TValue>> dictionary =
+            new Dictionary<TKey, Stack<TValue>>();
 
-        public void Add(TKey key, IDisposable disposable)
+        public void Add(TKey key, TValue value)
         {
-            var stack = default(Stack<IDisposable>);
+            var stack = default(Stack<TValue>);
             if (dictionary.TryGetValue(key, out stack))
             {
-                stack.Push(disposable);
+                stack.Push(value);
             }
             else
             {
-                stack = new Stack<IDisposable>();
-                stack.Push(disposable);
+                stack = new Stack<TValue>();
+                stack.Push(value);
                 dictionary.Add(key, stack);
             }
         }
 
-        public bool Remove(TKey key, out IDisposable disposable)
+        public bool Remove(TKey key, out TValue value)
         {
-            var stack = default(Stack<IDisposable>);
+            var stack = default(Stack<TValue>);
             if (!dictionary.TryGetValue(key, out stack))
             {
-                disposable = default(IDisposable);
+                value = default(TValue);
                 return false;
             }
 
-            disposable = stack.Pop();
+            value = stack.Pop();
 
             if (stack.Count == 0)
             {
                 dictionary.Remove(key);
             }
 
+            value.Dispose();
             return true;
         }
 
@@ -104,6 +106,9 @@ namespace VainZero.SandBox.Wpf
 
             readonly TItem item;
 
+            readonly SingleAssignmentDisposable subscription =
+                new SingleAssignmentDisposable();
+
             public Observer(CollectionChangedHandler parent, TItem item)
             {
                 this.parent = parent;
@@ -115,7 +120,7 @@ namespace VainZero.SandBox.Wpf
                 return new KeyValuePair<TItem, Notification<TTarget>>(item, notification);
             }
 
-            bool isCompleted;
+            bool isCompleted = false;
 
             public void OnCompleted()
             {
@@ -137,17 +142,26 @@ namespace VainZero.SandBox.Wpf
 
             public void Dispose()
             {
-                parent.UnsubscribeItem(item);
+                OnCompleted();
+            }
+
+            public Observer Subscribe(IObservable<TTarget> observable)
+            {
+                subscription.Disposable = observable.Subscribe(this);
+                return this;
             }
         }
 
         sealed class CollectionChangedHandler
         {
-            private CollectionMergeObservable<TItem, TTarget> parent;
-            private IObserver<KeyValuePair<TItem, Notification<TTarget>>> observer;
-            readonly SingleAssignmentDisposable subscription = new SingleAssignmentDisposable();
-            readonly KeyedCompositeDisposable<TItem> subscriptions =
-                new KeyedCompositeDisposable<TItem>();
+            readonly CollectionMergeObservable<TItem, TTarget> parent;
+            readonly IObserver<KeyValuePair<TItem, Notification<TTarget>>> observer;
+
+            readonly SingleAssignmentDisposable subscription =
+                new SingleAssignmentDisposable();
+
+            readonly KeyedCompositeDisposable<TItem, Observer> subscriptions =
+                new KeyedCompositeDisposable<TItem, Observer>();
 
             public CollectionChangedHandler(CollectionMergeObservable<TItem, TTarget> parent, IObserver<KeyValuePair<TItem, Notification<TTarget>>> observer)
             {
@@ -158,15 +172,14 @@ namespace VainZero.SandBox.Wpf
             void SubscribeItem(TItem item)
             {
                 var observable = parent.Func(item);
-                subscriptions.Add(item, observable.Subscribe(new Observer(this, item)));
+                subscriptions.Add(item, new Observer(this, item).Subscribe(observable));
             }
 
-            public void UnsubscribeItem(TItem item)
+            void OnRemoved(TItem item)
             {
-                var observer = default(IDisposable);
+                var observer = default(Observer);
                 if (subscriptions.Remove(item, out observer))
                 {
-                    ((Observer)observer).OnCompleted();
                 }
             }
 
@@ -190,7 +203,7 @@ namespace VainZero.SandBox.Wpf
                     foreach (var obj in e.OldItems)
                     {
                         var item = (TItem)obj;
-                        UnsubscribeItem(item);
+                        OnRemoved(item);
                     }
                 }
 
@@ -288,7 +301,6 @@ namespace VainZero.SandBox.Wpf
             Total =
                 Items
                 .ObserveItem(item => item.IsChecked.Pairwise2())
-                .Where(pair => pair.Value.Kind == NotificationKind.OnNext)
                 .Scan(0, (count, pair) =>
                 {
                     Notification<Tuple<bool, bool, bool, bool>> n = pair.Value;
