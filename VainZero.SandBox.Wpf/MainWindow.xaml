@@ -5,11 +5,36 @@
     xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
     xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
     xmlns:local="clr-namespace:VainZero.SandBox.Wpf"
+    xmlns:imm="clr-namespace:VainZero.SandBox.Wpf"
     mc:Ignorable="d"
+    x:Name="window"
     Title="MainWindow"
     Width="525"
     Height="350"
     >
     <DockPanel>
+        <Button
+            DockPanel.Dock="Top"
+            Content="Add"
+            Command="{Binding Value.AddCommand}"
+            />
+
+        <ListBox imm:ImmutableContext.ItemsSource="{Binding Value.Items}">
+            <ListBox.ItemTemplate>
+                <DataTemplate>
+                    <StackPanel Orientation="Horizontal">
+                        <Button
+                            Content="Remove"
+                            Command="{Binding RemoveCommand}"
+                            CommandParameter="{Binding}"
+                            />
+
+                        <TextBox
+                            Text="{Binding Text}"
+                            />
+                    </StackPanel>
+                </DataTemplate>
+            </ListBox.ItemTemplate>
+        </ListBox>
     </DockPanel>
 </Window>
