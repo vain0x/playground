@@ -14,7 +14,13 @@
     <DockPanel>
         <Button DockPanel.Dock="Top" Content="CaptureAsync" Click="Button_Click" />
 
+        <Button DockPanel.Dock="Top" Content="Print barcode" Click="Button_Click_1" />
+
         <ListBox DockPanel.Dock="Top" Height="120" ItemsSource="{Binding Messages}" />
+
+        <TextBlock DockPanel.Dock="Top">
+            Read: <Run Text="{Binding ReadText.Value, Mode=OneWay}" />
+        </TextBlock>
 
         <Image x:Name="image" />
     </DockPanel>

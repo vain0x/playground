@@ -1,6 +1,9 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Diagnostics;
+using System.Drawing;
+using System.Drawing.Imaging;
+using System.IO;
 using System.Linq;
 using System.Reactive.Concurrency;
 using System.Reactive.Disposables;
@@ -22,6 +25,8 @@ using System.Windows.Shapes;
 using OpenCvSharp;
 using OpenCvSharp.Extensions;
 using Reactive.Bindings;
+using ZXing;
+using ZXing.Common;
 
 namespace VainZero.SandBox.Wpf
 {
@@ -36,7 +41,12 @@ namespace VainZero.SandBox.Wpf
 
             DataContext = this;
 
-            Loaded += (sender, e) => CaptureAsync();
+            Task.Run(() =>
+            {
+                //PrintBarcode();
+            });
+
+            //Loaded += (sender, e) => CaptureAsync();
         }
 
         public ReactiveCollection<string> Messages { get; } = new ReactiveCollection<string>();
@@ -45,6 +55,8 @@ namespace VainZero.SandBox.Wpf
         {
             Messages.Add(message);
         }
+
+        public ReactiveProperty<string> ReadText { get; } = new ReactiveProperty<string>();
 
         async Task CaptureAsync()
         {
@@ -75,6 +87,9 @@ namespace VainZero.SandBox.Wpf
                             image.Source = bitmapImage;
                         }
 
+                        var data = default(string);
+                        ReadText.Value = TryRecognize(mat, out data) ? data : "?";
+
                         const double fps = 60;
                         await Task.Delay(TimeSpan.FromSeconds(1 / fps));
                     }
@@ -91,5 +106,71 @@ namespace VainZero.SandBox.Wpf
         {
             CaptureAsync();
         }
+
+
+        #region バーコード認識
+        bool TryRecognize(Mat imageMat, out string value)
+        {
+            using (var matG = imageMat.CvtColor(ColorConversionCodes.BGR2GRAY))
+            using (var matB = matG.Threshold(0, 255, ThresholdTypes.Otsu))
+            using (var image = matB.ToBitmap())
+            {
+                var reader = new BarcodeReader();
+                reader.Options = new DecodingOptions()
+                {
+                    TryHarder = true,
+                    PossibleFormats = new[] { BarcodeFormat.EAN_13 },
+                };
+
+                var results = reader.DecodeMultiple(image);
+                if (results == null || results.Length == 0)
+                {
+                    value = default(string);
+                    return false;
+                }
+
+                value = results.Select(x => x.Text).FirstOrDefault();
+                return value != null;
+            }
+        }
+        #endregion
+
+
+
+        #region バーコード印刷
+        private const BarcodeFormat DEFAULT_BARCODE_FORMAT = BarcodeFormat.EAN_13;
+        private static readonly ImageFormat DEFAULT_IMAGE_FORMAT = ImageFormat.Bmp;
+        private const String DEFAULT_OUTPUT_FILE = "out";
+        private const int DEFAULT_WIDTH = 300;
+        private const int DEFAULT_HEIGHT = 80;
+
+        void PrintBarcode()
+        {
+            var barcodeFormat = DEFAULT_BARCODE_FORMAT;
+            var imageFormat = DEFAULT_IMAGE_FORMAT;
+            var outFileString = DEFAULT_OUTPUT_FILE;
+            var width = DEFAULT_WIDTH;
+            var height = DEFAULT_HEIGHT;
+            var clipboard = false;
+
+            var barcodeWriter = new BarcodeWriter
+            {
+                Format = barcodeFormat,
+                Options = new EncodingOptions
+                {
+                    Height = height,
+                    Width = width
+                }
+            };
+
+            var bitmap = barcodeWriter.Write("000123456789");
+            bitmap.Save("out.bmp", imageFormat);
+        }
+
+        private void Button_Click_1(object sender, RoutedEventArgs e)
+        {
+            PrintBarcode();
+        }
+        #endregion
     }
 }
