@@ -51,7 +51,7 @@ namespace VainZero.SandBox.Wpf
             try
             {
                 var capture = new VideoCapture(0);
-                using (var win = new OpenCvSharp.Window("capture"))
+                //using (var win = new OpenCvSharp.Window("capture"))
                 using (var mat = new Mat())
                 {
                     while (true)
@@ -63,8 +63,20 @@ namespace VainZero.SandBox.Wpf
                             break;
                         }
 
-                        win.ShowImage(mat);
-                        await Task.Delay(100);
+                        //win.ShowImage(mat);
+
+                        var stream = mat.ToMemoryStream(ext: ".bmp");
+                        {
+                            var bitmapImage = new BitmapImage();
+                            bitmapImage.BeginInit();
+                            bitmapImage.StreamSource = stream;
+                            bitmapImage.EndInit();
+                            bitmapImage.Freeze();
+                            image.Source = bitmapImage;
+                        }
+
+                        const double fps = 60;
+                        await Task.Delay(TimeSpan.FromSeconds(1 / fps));
                     }
                 }
             }
