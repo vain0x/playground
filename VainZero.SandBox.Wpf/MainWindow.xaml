@@ -22,6 +22,22 @@
             Read: <Run Text="{Binding ReadText.Value, Mode=OneWay}" />
         </TextBlock>
 
-        <Image x:Name="image" />
+        <Image DockPanel.Dock="Left" x:Name="previewImage" />
+
+        <ScrollViewer PanningMode="Both">
+            <ItemsControl ItemsSource="{Binding Images}">
+                <ItemsControl.ItemsPanel>
+                    <ItemsPanelTemplate>
+                        <WrapPanel />
+                    </ItemsPanelTemplate>
+                </ItemsControl.ItemsPanel>
+
+                <ItemsControl.ItemTemplate>
+                    <DataTemplate>
+                        <Image Source="{Binding}" MaxWidth="200" MinWidth="200" />
+                    </DataTemplate>
+                </ItemsControl.ItemTemplate>
+            </ItemsControl>
+        </ScrollViewer>
     </DockPanel>
 </Window>
