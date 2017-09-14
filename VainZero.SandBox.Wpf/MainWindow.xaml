@@ -7,9 +7,15 @@
     xmlns:local="clr-namespace:VainZero.SandBox.Wpf"
     mc:Ignorable="d"
     Title="MainWindow"
-    Width="525"
+    Width="512"
     Height="350"
+    WindowState="Maximized"
     >
     <DockPanel>
+        <Button DockPanel.Dock="Top" Content="CaptureAsync" Click="Button_Click" />
+
+        <ListBox DockPanel.Dock="Top" Height="120" ItemsSource="{Binding Messages}" />
+
+        <Image x:Name="image" />
     </DockPanel>
 </Window>

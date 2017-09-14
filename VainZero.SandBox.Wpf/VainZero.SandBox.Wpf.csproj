@@ -153,6 +153,10 @@
     </PropertyGroup>
     <Error Condition="!Exists('..\packages\OpenCvSharp3-AnyCPU.3.2.0.20170911\build\OpenCvSharp3-AnyCPU.props')" Text="$([System.String]::Format('$(ErrorText)', '..\packages\OpenCvSharp3-AnyCPU.3.2.0.20170911\build\OpenCvSharp3-AnyCPU.props'))" />
   </Target>
+  <PropertyGroup>
+    <PostBuildEvent>$(TargetDir)\..\post-build-Debug.bat
+</PostBuildEvent>
+  </PropertyGroup>
   <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 
        Other similar extension points exist, see Microsoft.Common.targets.
   <Target Name="BeforeBuild">
