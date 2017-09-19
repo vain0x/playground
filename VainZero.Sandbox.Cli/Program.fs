@@ -92,15 +92,16 @@ module EffectSample =
   [<AutoOpen>]
   module Sample =
     // type signature of this computation reveals effect dependencies of the workflow
-    let combinedEffects() = eff {
+    let combinedEffects<'c when 'c :> State.IState<int> and 'c :> Logger.ILogger and 'c :> DateTime.IDateTime> (): Eff<'c, string> = eff {
         let! date = DateTime.now()
-        do! Logger.logf "Current time is: %O" date
+        do! Logger.logf "Current time (+ 10 y) is: %O" date
         do! Logger.log "Reading the variable"
         let! x = State.get()
         do! Logger.log "Incrementing the variable"
         do! State.set (x + 1)
         do! Logger.log "Reading the variable again"
-        return! State.get()
+        let! y = State.get()
+        return (string y) + "!"
     }
 
     let run1 () =
@@ -114,7 +115,7 @@ module EffectSample =
     let run3 () =
       let result =
         run (MyHandler(init = 41)) (combinedEffects())
-      printfn "result = %d" result
+      printfn "result = %s" result
 
     let runX () =
       // uncomment for type errors
