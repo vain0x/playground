@@ -15,6 +15,7 @@ using System.Text.RegularExpressions;
 using System.Threading;
 using System.Threading.Tasks;
 using System.Web;
+using Effort;
 
 namespace VainZero.Sandbox
 {
@@ -22,6 +23,30 @@ namespace VainZero.Sandbox
     {
         public void Run()
         {
+            using (var connection = DbConnectionFactory.CreateTransient())
+            {
+                using (var context = new MyDbContext(connection))
+                {
+                    for (var i = 0; i < 10; i++)
+                    {
+                        context.codes.Add(new codes()
+                        {
+                            value_name = "a",
+                            value = i,
+                        });
+                    }
+
+                    context.SaveChanges();
+                }
+
+                using (var context = new MyDbContext(connection))
+                {
+                    foreach (var code in context.codes)
+                    {
+                        Console.WriteLine($"{code.value_name} = {code.value}");
+                    }
+                }
+            }
         }
 
         public static void Main(string[] args)
