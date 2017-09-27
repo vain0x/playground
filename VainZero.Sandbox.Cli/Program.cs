@@ -23,22 +23,20 @@ namespace VainZero.Sandbox
     {
         public void Run()
         {
-            using (var connection = DbConnectionFactory.CreateTransient())
+            var data = new Effort.Extra.ObjectData(Effort.Extra.TableNamingStrategy.EntityName);
+            for (var i = 0; i < 10; i++)
             {
-                using (var context = new MyDbContext(connection))
+                data.Table<codes>("codes").Add(new codes()
                 {
-                    for (var i = 0; i < 10; i++)
-                    {
-                        context.codes.Add(new codes()
-                        {
-                            value_name = "a",
-                            value = i,
-                        });
-                    }
+                    value_name = "a",
+                    value = i,
+                });
+                data.Table<codes>();
+            }
+            var loader = new Effort.Extra.ObjectDataLoader(data);
 
-                    context.SaveChanges();
-                }
-
+            using (var connection = DbConnectionFactory.CreateTransient(loader))
+            {
                 using (var context = new MyDbContext(connection))
                 {
                     foreach (var code in context.codes)
