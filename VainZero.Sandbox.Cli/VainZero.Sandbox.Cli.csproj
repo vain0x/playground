@@ -37,6 +37,10 @@
       <HintPath>..\packages\Effort.EF6.1.3.0\lib\net45\Effort.dll</HintPath>
       <Private>True</Private>
     </Reference>
+    <Reference Include="Effort.Extra, Version=1.4.0.0, Culture=neutral, processorArchitecture=MSIL">
+      <HintPath>..\packages\Effort.Extra.EF6.1.4.0\lib\net45\Effort.Extra.dll</HintPath>
+      <Private>True</Private>
+    </Reference>
     <Reference Include="EntityFramework, Version=6.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089, processorArchitecture=MSIL">
       <HintPath>..\packages\EntityFramework.6.1.3\lib\net45\EntityFramework.dll</HintPath>
       <Private>True</Private>
