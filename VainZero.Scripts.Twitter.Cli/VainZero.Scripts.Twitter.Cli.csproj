@@ -15,6 +15,10 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <PackageReference Include="TweetinviAPI" Version="2.0.0" />
+  </ItemGroup>
+
+  <ItemGroup>
     <ProjectReference Include="..\VainZero.Scripts.Twitter.Core\VainZero.Scripts.Twitter.Core.csproj" />
   </ItemGroup>
 
