@@ -1,13 +1,19 @@
 ﻿using System;
+using System.Diagnostics;
 using System.Threading.Tasks;
+using Tweetinvi;
+using Tweetinvi.Models;
+using VainZero.Scripts.Twitter.Authentication;
 
 namespace VainZero.Scripts.Twitter
 {
     sealed class Program
     {
-        public Task RunAsync()
+        ITwitterCredentials me;
+
+        public async Task RunAsync()
         {
-            return Task.CompletedTask;
+            me = new Authenticator().LoginAsVain0x();
         }
 
         static Task Main(string[] args)
