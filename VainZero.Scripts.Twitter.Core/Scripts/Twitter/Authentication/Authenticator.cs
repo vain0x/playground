@@ -39,7 +39,9 @@ namespace VainZero.Scripts.Twitter.Authentication
         {
             var accessToken = "122279728-5N7sWcWZXzAGANMKaSm9iaHkBdKBW4tpHHqUBLbz";
             var accessTokenSecret = "onUWpMXgiXJsY1DWI4zVvJ9gtCACMF0wRgMQZpoyxo9ks";
-            return new TwitterCredentials(ConsumerKey, ConsumerSecret, accessToken, accessTokenSecret);
+            var cred = new TwitterCredentials(ConsumerKey, ConsumerSecret, accessToken, accessTokenSecret);
+            Auth.SetCredentials(cred);
+            return cred;
         }
     }
 }

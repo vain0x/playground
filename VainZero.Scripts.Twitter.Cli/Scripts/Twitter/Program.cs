@@ -9,16 +9,55 @@ namespace VainZero.Scripts.Twitter
 {
     sealed class Program
     {
-        ITwitterCredentials me;
+        ITwitterCredentials cred;
+
+        public async Task AddListFromUserFriends()
+        {
+            //var userId = "rkgk_mochi_112";
+            foreach (var targetName in new[] { "zombie_haruna", "zombie_you" })
+            {
+
+                var me = User.GetAuthenticatedUser(cred);
+                var listName = $"home-{targetName}";
+                var twitterList = TwitterList.CreateList(listName, PrivacyMode.Private, "Just for test of my application.");
+
+                var target = User.GetUserFromScreenName(targetName);
+
+                if (targetName.Contains("haruna"))
+                {
+                    var users = User.GetFriendIds(target, maxFriendsToRetrieve: 100);
+
+                    foreach (var userId in users)
+                    {
+                        var result = twitterList.AddMember(userId);
+                        Debug.WriteLine(result);
+                    }
+                }
+                else
+                {
+                    continue;
+                }
+            }
+        }
 
         public async Task RunAsync()
         {
-            me = new Authenticator().LoginAsVain0x();
+            try
+            {
+                cred = new Authenticator().LoginAsVain0x();
+
+                await AddListFromUserFriends();
+            }
+            catch (Exception ex)
+            {
+                Debug.WriteLine(ex);
+                throw;
+            }
         }
 
-        static Task Main(string[] args)
+        static void Main(string[] args)
         {
-            return new Program().RunAsync();
+            new Program().RunAsync().GetAwaiter().GetResult();
         }
     }
 }
