@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Diagnostics;
+using System.IO;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
@@ -18,11 +19,29 @@ namespace VainZero.Scripts.Twitter.SelfManagement
             this.cred = cred ?? throw new ArgumentNullException(nameof(cred));
         }
 
+        IEnumerable<long> TweetIds()
+        {
+            const string Path = @"D:\repo\vain0-storage\doc\tweets\vain0x\tweets.csv";
+
+            var dueDate = new DateTime(2011, 1, 1);
+
+            return
+                File.ReadAllLines(Path)
+                .Skip(1)
+                .Select(line =>
+                {
+                    var i = line.IndexOf(',');
+                    if (i < 0) return null;
+                    return long.TryParse(line.Substring(0, i).Trim('"'), out var id) ? new long?(id) : null;
+                })
+                .Where(id => id.HasValue)
+                .Select(id => id.Value);
+
+        }
+
         public async Task RemoveOldTweetsAsync()
         {
             RateLimit.RateLimitTrackerMode = RateLimitTrackerMode.TrackAndAwait;
-
-            var dueDate = new DateTime(2011, 1, 1);
 
             /*
             var maxTweetSearch = Search.SearchTweets(new Tweetinvi.Parameters.SearchTweetsParameters("from:vain0x")
@@ -42,9 +61,10 @@ namespace VainZero.Scripts.Twitter.SelfManagement
             var parameter = new Tweetinvi.Parameters.UserTimelineParameters()
             {
                 MaxId = maxTweetId,
+                SinceId = 10359214514L,
             };
             var me = await UserAsync.GetAuthenticatedUser(cred);
-            var tweets = await me.GetUserTimelineAsync(parameter);
+            var tweets = me.GetUserTimeline(parameter);
 
 
 
