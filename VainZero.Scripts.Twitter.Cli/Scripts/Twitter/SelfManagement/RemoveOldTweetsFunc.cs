@@ -23,82 +23,69 @@ namespace VainZero.Scripts.Twitter.SelfManagement
         {
             const string Path = @"D:\repo\vain0-storage\doc\tweets\vain0x\tweets.csv";
 
-            var dueDate = new DateTime(2011, 1, 1);
+            var firstDate = new DateTime(2011, 7, 1);
+            var endDate = new DateTime(2011, 10, 1);
 
-            return
-                File.ReadAllLines(Path)
-                .Skip(1)
-                .Select(line =>
+            var csv = new Chilkat.Csv();
+            csv.HasColumnNames = true;
+            csv.LoadFile(Path);
+
+            for (var i = 0; i < csv.NumRows; i++)
+            {
+                var id = long.Parse(csv.GetCellByName(i, "tweet_id"));
+                var timestamp = DateTime.Parse(csv.GetCellByName(i, "timestamp"));
+
+                if (firstDate <= timestamp && timestamp < endDate)
                 {
-                    var i = line.IndexOf(',');
-                    if (i < 0) return null;
-                    return long.TryParse(line.Substring(0, i).Trim('"'), out var id) ? new long?(id) : null;
-                })
-                .Where(id => id.HasValue)
-                .Select(id => id.Value);
+                    yield return id;
+                }
+            }
+        }
 
+        static async Task<X[]> Collect<X>(IEnumerable<Task<X>> tasks)
+        {
+            var xs = new List<X>();
+            foreach (var task in tasks)
+            {
+                var x = await task;
+                xs.Add(x);
+            }
+            return xs.ToArray();
         }
 
         public async Task RemoveOldTweetsAsync()
         {
             RateLimit.RateLimitTrackerMode = RateLimitTrackerMode.TrackAndAwait;
 
-            /*
-            var maxTweetSearch = Search.SearchTweets(new Tweetinvi.Parameters.SearchTweetsParameters("from:vain0x")
-            {
-                TweetSearchType = Tweetinvi.Parameters.TweetSearchType.OriginalTweetsOnly,
-                Since = dueDate.AddDays(-3),
-                Until = dueDate,
-            });
-            var maxTweetId =
-                maxTweetSearch
-                .Select(tweet => Tuple.Create(tweet.CreatedAt, tweet.Id))
-                .Max()
-                .Item2;
-            */
-            var maxTweetId = 20537533599326208L;
-
-            var parameter = new Tweetinvi.Parameters.UserTimelineParameters()
-            {
-                MaxId = maxTweetId,
-                SinceId = 10359214514L,
-            };
-            var me = await UserAsync.GetAuthenticatedUser(cred);
-            var tweets = me.GetUserTimeline(parameter);
 
 
+            var tweetIds = TweetIds().ToArray();
+            Console.WriteLine("Count = " + tweetIds.Length);
 
-            foreach (var tweet in tweets)
-            {
-                if (tweet.CreatedAt >= dueDate)
-                {
-                    Debug.Assert(false);
-                }
 
-                Debug.WriteLine(tweet.Text.Substring(40));
-            }
+            var tweets =
+                Tweet.GetTweets(tweetIds)
+                .Where(tweet => tweet != null)
+                .ToArray();
+            Console.WriteLine("Active Count = " + tweets.Length);
 
+
+            Console.WriteLine("OK? (Y/n)");
             if (Console.ReadLine() == "Y")
             {
                 foreach (var tweet in tweets)
                 {
                     try
                     {
-                        if (tweet.CreatedBy != me)
-                        {
-                            Debug.WriteLine("Not mine: " + tweet.Url);
-                            continue;
-                        }
-
                         if (tweet.IsTweetDestroyed)
                         {
                             Debug.WriteLine("DESTROYED: " + tweet.Url);
                             continue;
                         }
 
-                        if (tweet.Media?.Count > 0)
+                        if (tweet.Media != null && tweet.Media.Count > 0)
                         {
-                            Debug.WriteLine("has-media: " + tweet.Url);
+                            Debug.WriteLine("MEDIA: " + tweet.Url);
                             continue;
                         }
 
@@ -108,7 +95,7 @@ namespace VainZero.Scripts.Twitter.SelfManagement
                         }
                         else
                         {
-                            await tweet.DestroyAsync();
+                            tweet.Destroy();
                         }
                     }
                     catch (Exception ex)
