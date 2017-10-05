@@ -23,6 +23,8 @@ using Prism.Commands;
 using Prism.Mvvm;
 using Reactive.Bindings;
 
+using DotNetKit.Reactive.Observables;
+
 namespace VainZero.Sandbox.Wpf
 {
     /// <summary>
@@ -33,6 +35,47 @@ namespace VainZero.Sandbox.Wpf
         public MainWindow()
         {
             InitializeComponent();
+        }
+
+        int count;
+        ICancelable cancelable;
+
+        private void startButton_Click(object sender, RoutedEventArgs e)
+        {
+            var id = count++;
+            cancelable = new SingleAssignmentDisposable();
+
+            (
+                from _1 in Future.Start(() =>
+                {
+                    Debug.WriteLine($"{id} Subscribed.");
+                    return id;
+                })
+                from _2 in Future.Delay(TimeSpan.FromSeconds(1), TaskPoolScheduler.Default)
+                select id
+            )
+                .Subscribe(value =>
+                {
+                    if (cancelable.IsDisposed)
+                    {
+                        Debug.WriteLine($"{id} Canceled.");
+                        return;
+                    }
+                    Debug.WriteLine($"{id} Result = " + value);
+                },
+                error =>
+                {
+                    Debug.WriteLine($"{id} Error = " + error.Message);
+                },
+                () =>
+                {
+                    Debug.WriteLine($"{id} Completed.");
+                });
+        }
+
+        private void cancelButton_Click(object sender, RoutedEventArgs e)
+        {
+            cancelable?.Dispose();
         }
     }
 }

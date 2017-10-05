@@ -13,6 +13,8 @@
     <DockPanel>
         <StackPanel>
             <StackPanel Orientation="Horizontal">
+                <Button x:Name="startButton" Content="Start" Click="startButton_Click" />
+                <Button x:Name="cancelButton" Content="Cancel" Click="cancelButton_Click" />
             </StackPanel>
         </StackPanel>
     </DockPanel>
