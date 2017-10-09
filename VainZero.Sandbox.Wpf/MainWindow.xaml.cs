@@ -35,34 +35,26 @@ namespace VainZero.Sandbox.Wpf
             InitializeComponent();
 
             var command = new ReactiveCommand();
-            var activatable =
-                new ActivatableSubscription<int>(
-                    command
-                    .Scan(0, (k, _) => k + 1)
-                    .Do(k =>
-                    {
-                        Debug.WriteLine("Fire: " + k);
-                    }));
+            var isActiveActivatable = new ReactivePropertyActivatable();
 
-            var isActive = new ReactiveProperty<bool>(false);
-            isActive.Skip(1).Subscribe(isActiveLocal =>
-            {
-                if (isActiveLocal)
+            command
+                .Where(_ => isActiveActivatable.IsActive.Value)
+                .Scan(0, (k, _) => k + 1)
+                .Do(k =>
                 {
-                    activatable.Activate();
-                }
-                else
-                {
-                    activatable.Inactivate();
-                }
-            });
+                    Debug.WriteLine("Fire: " + k);
+                })
+                .Subscribe();
 
-            var message = isActive.Select(x => x ? "停止" : "開始").ToReactiveProperty();
+            var message =
+                isActiveActivatable.IsActive
+                .Select(x => x ? "停止" : "開始")
+                .ToReactiveProperty();
 
             DataContext =
                 new
                 {
-                    IsActive = isActive,
+                    IsActive = isActiveActivatable.IsActive,
                     Message = message,
                     Command = command,
                 };
@@ -73,6 +65,38 @@ namespace VainZero.Sandbox.Wpf
     {
         void Activate();
         void Inactivate();
+    }
+
+    public sealed class ReactivePropertyActivatable
+        : IActivatable
+    {
+        public ReactiveProperty<bool> IsActive { get; } = new ReactiveProperty<bool>(false);
+
+        public void Activate()
+        {
+            IsActive.Value = true;
+        }
+
+        public void Inactivate()
+        {
+            IsActive.Value = false;
+        }
+    }
+
+    public sealed class BooleanActivatable
+        : IActivatable
+    {
+        public bool IsActive { get; private set; } = false;
+
+        public void Activate()
+        {
+            IsActive = true;
+        }
+
+        public void Inactivate()
+        {
+            IsActive = false;
+        }
     }
 
     public sealed class ActivatableSubscription<T>
