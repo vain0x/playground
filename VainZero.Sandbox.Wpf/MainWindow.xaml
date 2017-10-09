@@ -13,6 +13,8 @@
     <DockPanel>
         <StackPanel>
             <StackPanel Orientation="Horizontal">
+                <CheckBox IsChecked="{Binding IsActive.Value}" />
+                <Button Content="Fire!" Command="{Binding Command}" />
             </StackPanel>
         </StackPanel>
     </DockPanel>
