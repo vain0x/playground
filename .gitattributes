@@ -1,0 +1,21 @@
+#=================================================
+# Text files
+#=================================================
+# Normalize line endings to LF for all text files.
+*               text=auto
+
+*.gitignore     text eol=lf
+*.gitattributes text eol=lf
+
+*.sh            text eol=lf
+*.bat           text eol=crlf
+
+#================================================
+# Visual Studio
+#================================================
+*.sln           text merge=union
+*.csproj        text merge=union
+*.vbproj        text merge=union
+*.vcproj        text merge=union
+*.vcxproj       text merge=union
+*.xproj         text merge=union
