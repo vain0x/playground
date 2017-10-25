@@ -13,6 +13,9 @@ namespace ZelgaAnc.Pages
     {
         private readonly AppDbContext _db;
 
+        [TempData]
+        public string Message { get; set; }
+
         [BindProperty]
         public Customer Customer { get; set; }
 
@@ -34,15 +37,20 @@ namespace ZelgaAnc.Pages
 
             _db.Attach(Customer).State = EntityState.Modified;
 
+            int changeCount;
             try
             {
-                await _db.SaveChangesAsync();
+                changeCount = await _db.SaveChangesAsync();
             }
             catch (DbUpdateConcurrencyException)
             {
                 throw new InvalidOperationException($"Customer {Customer.Id} not found!");
             }
 
+            Message =
+                changeCount == 0
+                    ? "Nothing to change."
+                    : $"Customer '{Customer.Name}' was updated successfully.";
             return RedirectToPage("/Index");
         }
 

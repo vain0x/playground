@@ -15,6 +15,9 @@ namespace ZelgaAnc.Pages
 
         public IReadOnlyList<Customer> Customers { get; set; }
 
+        [TempData]
+        public string Message { get; set; }
+
         public async Task OnGetAsync()
         {
             Customers = await _db.Customers.AsNoTracking().ToArrayAsync();
