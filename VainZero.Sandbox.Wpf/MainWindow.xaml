@@ -13,6 +13,7 @@
     <DockPanel>
         <StackPanel>
             <StackPanel Orientation="Horizontal">
+                <DataGrid ItemsSource="{Binding Items}" local:DataGridPaginationExtension.SortCommand="{Binding SortCommand}" />
             </StackPanel>
         </StackPanel>
     </DockPanel>
