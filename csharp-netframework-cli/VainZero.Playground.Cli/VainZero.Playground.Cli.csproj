@@ -6,7 +6,7 @@
     <Platform Condition=" '$(Platform)' == '' ">AnyCPU</Platform>
     <ProjectGuid>{910D9499-0EA8-4676-9EF9-D06244A247DC}</ProjectGuid>
     <OutputType>Exe</OutputType>
-    <RootNamespace>VainZero.Playground.Cli</RootNamespace>
+    <RootNamespace>VainZero</RootNamespace>
     <AssemblyName>VainZero.Playground.Cli</AssemblyName>
     <TargetFrameworkVersion>v4.7.1</TargetFrameworkVersion>
     <FileAlignment>512</FileAlignment>
@@ -42,7 +42,7 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="Program.cs" />
+    <Compile Include="Playground\Program.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
   </ItemGroup>
   <ItemGroup>
