@@ -1,7 +1,17 @@
-﻿// Learn more about F# at http://fsharp.org
-// See the 'F# Tutorial' project for more help.
+namespace VainZero.Playground
 
-[<EntryPoint>]
-let main argv = 
-    printfn "%A" argv
-    0 // return an integer exit code
+open System
+open System.Collections
+open System.Collections.Generic
+open System.Diagnostics
+open System.IO
+open System.Net
+open System.Reflection
+open System.Web
+open System.Text
+open System.Threading
+
+module Program =
+  [<EntryPoint>]
+  let main argv =
+    0
