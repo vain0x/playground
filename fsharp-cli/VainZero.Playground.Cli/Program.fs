@@ -1,8 +1,18 @@
-// Learn more about F# at http://fsharp.org
+namespace VainZero.Playground
 
 open System
+open System.Collections
+open System.Collections.Generic
+open System.Diagnostics
+open System.IO
+open System.Net
+open System.Reflection
+open System.Web
+open System.Text
+open System.Threading
 
-[<EntryPoint>]
-let main argv =
-    printfn "Hello World from F#!"
-    0 // return an integer exit code
+module Program =
+  [<EntryPoint>]
+  let main argv =
+
+    0
