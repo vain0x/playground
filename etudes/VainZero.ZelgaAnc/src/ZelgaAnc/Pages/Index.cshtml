@@ -1,0 +1,38 @@
+﻿@page
+@model IndexModel
+@addTagHelper *, Microsoft.AspNetCore.Mvc.TagHelpers
+@{
+    ViewData["Title"] = "Home page";
+}
+
+<h1>Contacts</h1>
+<div class="alert-success alert-dismissable">
+    @Model.Message
+</div>
+
+<form method="post">
+    <table class="table">
+        <thead>
+            <tr>
+                <th>Id</th>
+                <th>Name</th>
+            </tr>
+        </thead>
+        <tbody>
+            @foreach  (var contact in Model.Customers)
+            {
+                <tr>
+                    <td>@contact.Id</td>
+                    <td>@contact.Name</td>
+                    <td>
+                        <a asp-page="./Edit" asp-route-id="@contact.Id">Edit</a>
+                        <button type="submit" asp-page-handler="delete"
+                                asp-route-id="@contact.Id">Delete</button>
+                    </td>
+                </tr>
+            }
+        </tbody>
+    </table>
+
+    <a asp-page="./Create">Create</a>
+</form>
