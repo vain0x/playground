@@ -23,5 +23,11 @@
             <StackPanel Orientation="Horizontal">
             </StackPanel>
         </StackPanel>
+
+        <local:DialogHostSampleControl>
+            <local:DialogHostSampleControl.DataContext>
+                <local:DialogHostSample />
+            </local:DialogHostSampleControl.DataContext>
+        </local:DialogHostSampleControl>
     </DockPanel>
 </Window>

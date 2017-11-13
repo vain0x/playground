@@ -73,6 +73,10 @@
       <Generator>MSBuild:Compile</Generator>
       <SubType>Designer</SubType>
     </ApplicationDefinition>
+    <Page Include="Playground\DialogHostSampleControl.xaml">
+      <SubType>Designer</SubType>
+      <Generator>MSBuild:Compile</Generator>
+    </Page>
     <Page Include="Playground\MainWindow.xaml">
       <Generator>MSBuild:Compile</Generator>
       <SubType>Designer</SubType>
@@ -80,6 +84,10 @@
     <Compile Include="Playground\App.xaml.cs">
       <DependentUpon>App.xaml</DependentUpon>
       <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="Playground\DialogHostSample.cs" />
+    <Compile Include="Playground\DialogHostSampleControl.xaml.cs">
+      <DependentUpon>DialogHostSampleControl.xaml</DependentUpon>
     </Compile>
     <Compile Include="Playground\MainWindow.xaml.cs">
       <DependentUpon>MainWindow.xaml</DependentUpon>
