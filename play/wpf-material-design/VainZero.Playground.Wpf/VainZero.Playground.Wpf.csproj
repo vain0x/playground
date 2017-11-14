@@ -73,6 +73,24 @@
       <Generator>MSBuild:Compile</Generator>
       <SubType>Designer</SubType>
     </ApplicationDefinition>
+    <Compile Include="Reactive\Collections\ReactiveArray.cs" />
+    <Compile Include="Reactive\Commands\ICommand.cs" />
+    <Compile Include="Reactive\Commands\IRaisableCommand.cs" />
+    <Compile Include="Reactive\Commands\RaisableCommand.cs" />
+    <Compile Include="Reactive\Disposables\AnonymousCancelable.cs" />
+    <Compile Include="Reactive\Paginating\DataGridPagerControl.xaml.cs">
+      <DependentUpon>DataGridPagerControl.xaml</DependentUpon>
+    </Compile>
+    <Compile Include="Reactive\Paginating\DataGridPaginationExtension.cs" />
+    <Compile Include="Reactive\Paginating\IPaginationSearcher.cs" />
+    <Compile Include="Reactive\Paginating\PageNavigationRequest.cs" />
+    <Compile Include="Reactive\Paginating\Pager.cs" />
+    <Compile Include="Reactive\Paginating\PagerFactory.cs" />
+    <Compile Include="Reactive\Paginating\PaginationCondition.cs" />
+    <Compile Include="Reactive\Paginating\PaginationResult.cs" />
+    <Compile Include="Reactive\Paginating\Paginator.cs" />
+    <Compile Include="Reactive\Paginating\PropertySort.cs" />
+    <Compile Include="Reactive\Paginating\SearchResult.cs" />
     <Page Include="Playground\DialogHostSampleControl.xaml">
       <SubType>Designer</SubType>
       <Generator>MSBuild:Compile</Generator>
@@ -96,6 +114,10 @@
     <Page Include="Playground\MyControl.xaml">
       <SubType>Designer</SubType>
       <Generator>MSBuild:Compile</Generator>
+    </Page>
+    <Page Include="Reactive\Paginating\DataGridPagerControl.xaml">
+      <Generator>MSBuild:Compile</Generator>
+      <SubType>Designer</SubType>
     </Page>
   </ItemGroup>
   <ItemGroup>
@@ -121,5 +143,6 @@
       <LastGenOutput>Resource.Designer.cs</LastGenOutput>
     </EmbeddedResource>
   </ItemGroup>
+  <ItemGroup />
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
 </Project>

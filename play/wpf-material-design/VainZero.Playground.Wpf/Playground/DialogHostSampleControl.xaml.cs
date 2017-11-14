@@ -13,6 +13,7 @@ using System.Windows.Media;
 using System.Windows.Media.Imaging;
 using System.Windows.Navigation;
 using System.Windows.Shapes;
+using DotNetKit.Reactive.Disposables;
 using MaterialDesignThemes.Wpf;
 
 namespace VainZero.Playground
@@ -35,7 +36,6 @@ namespace VainZero.Playground
                 typeof(DialogHostSampleControl),
                 new FrameworkPropertyMetadata()
                 {
-                    BindsTwoWayByDefault = true,
                     PropertyChangedCallback = OnDialogPropertyChanged,
                 });
 
@@ -59,6 +59,28 @@ namespace VainZero.Playground
 
         private static void OnDialogClosing(object sender, DialogClosingEventArgs eventArgs)
         {
+            var host = (DialogHost)sender;
+            var dialog = GetDialog(host);
+            if (dialog == null) return;
+
+            if (eventArgs.IsCancelled) return;
+            var cancelable = new AnonymousCancelable(() => eventArgs.IsCancelled, eventArgs.Cancel);
+
+            var reason = (DialogCloseReason)eventArgs.Parameter;
+
+            // TODO: 抽象化
+            var frame = (MainSurfaceFrameViewModel)((FrameworkElement)host.Parent).DataContext;
+            var closeCommand = frame.CloseDialogCommand;
+            var closeRequest = new CloseDialogRequest(dialog, reason, cancelable);
+
+            if (!closeCommand.CanExecute(closeRequest))
+            {
+                cancelable.Dispose();
+                return;
+            }
+
+            closeCommand.Execute(closeRequest);
+
             var host = (DialogHost)sender;
             var dialog = GetDialog(host);
 
@@ -91,6 +113,7 @@ namespace VainZero.Playground
                 host.DialogClosing -= OnDialogClosing;
             }
 
+            /*
             if (oldDialog != null)
             {
                 const object Parameter = null;
@@ -98,6 +121,7 @@ namespace VainZero.Playground
 
                 oldDialog.OnClosed();
             }
+            */
 
             if (newDialog != null)
             {

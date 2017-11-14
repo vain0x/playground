@@ -1,0 +1,75 @@
+﻿<UserControl
+    x:Class="DotNetKit.Paginating.DataGridPagerControl"
+    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006" 
+    xmlns:d="http://schemas.microsoft.com/expression/blend/2008" 
+    xmlns:local="clr-namespace:DotNetKit.Paginating"
+    mc:Ignorable="d" 
+    d:DesignWidth="300"
+    d:DesignHeight="300"
+    >
+    <Grid>
+        <Grid.ColumnDefinitions>
+            <ColumnDefinition Width="Auto" />
+            <ColumnDefinition Width="*" />
+            <ColumnDefinition Width="Auto" />
+        </Grid.ColumnDefinitions>
+
+        <Button
+            Grid.Column="0"
+            Style="{Binding ButtonStyle, RelativeSource={RelativeSource AncestorType={x:Type local:DataGridPagerControl}}}"
+            Margin="10"
+            Content="←"
+            Command="{Binding Paginator.NavigateCommand, RelativeSource={RelativeSource AncestorType={x:Type local:DataGridPagerControl}}}"
+            CommandParameter="{Binding Paginator.Current.Pager.Previous, RelativeSource={RelativeSource AncestorType={x:Type local:DataGridPagerControl}}}"
+            />
+
+        <StackPanel
+            Grid.Column="1"
+            HorizontalAlignment="Center"
+            Orientation="Horizontal"
+            >
+            <ItemsControl
+                ItemsSource="{Binding Paginator.Current.Pager.NumberRequests, RelativeSource={RelativeSource AncestorType={x:Type local:DataGridPagerControl}}}"
+                >
+                <ItemsControl.ItemsPanel>
+                    <ItemsPanelTemplate>
+                        <StackPanel Orientation="Horizontal" />
+                    </ItemsPanelTemplate>
+                </ItemsControl.ItemsPanel>
+
+                <ItemsControl.ItemTemplate>
+                    <DataTemplate>
+                        <!-- DataContext: PageNavigationRequest -->
+                        <Button
+                            Style="{Binding ButtonStyle, RelativeSource={RelativeSource AncestorType={x:Type local:DataGridPagerControl}}}"
+                            Margin="5"
+                            Content="{Binding PageIndexPlus1}"
+                            Command="{Binding Paginator.NavigateCommand, RelativeSource={RelativeSource AncestorType={x:Type local:DataGridPagerControl}}}"
+                            CommandParameter="{Binding}"
+                            />
+                    </DataTemplate>
+                </ItemsControl.ItemTemplate>
+            </ItemsControl>
+
+            <!-- ページ数の表示 -->
+            <TextBlock
+                DataContext="{Binding Paginator.Current.Pager, RelativeSource={RelativeSource AncestorType={x:Type local:DataGridPagerControl}}}"
+                FontSize="16"
+                VerticalAlignment="Center"
+                >
+                (<Run Text="{Binding PageIndexPlus1, Mode=OneWay}" />/<Run Text="{Binding PageCount, Mode=OneWay}" />)
+            </TextBlock>
+        </StackPanel>
+
+        <Button
+            Grid.Column="2"
+            Style="{Binding ButtonStyle, RelativeSource={RelativeSource AncestorType={x:Type local:DataGridPagerControl}}}"
+            Margin="10"
+            Content="→"
+            Command="{Binding Paginator.NavigateCommand, RelativeSource={RelativeSource AncestorType={x:Type local:DataGridPagerControl}}}"
+            CommandParameter="{Binding Paginator.Current.Pager.Next, RelativeSource={RelativeSource AncestorType={x:Type local:DataGridPagerControl}}}"
+            />
+    </Grid>
+</UserControl>
