@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
@@ -16,23 +16,13 @@ using System.Windows.Shapes;
 namespace VainZero.Playground
 {
     /// <summary>
-    /// MainWindow.xaml の相互作用ロジック
+    /// Interaction logic for AuthenticationPageControl.xaml
     /// </summary>
-    public partial class MainWindow : Window
+    public partial class AuthenticationPageControl : UserControl
     {
-        public MainWindow()
+        public AuthenticationPageControl()
         {
             InitializeComponent();
-
-            var viewModel =
-                new MainSurfaceFrameViewModel(
-                    new AuthenticationPageViewModel(
-                        1L,
-                        "john_doe@example.com",
-                        "OK."
-                    ));
-
-            DataContext = viewModel.CreateMutable(null, null);
         }
     }
 }

@@ -10,10 +10,5 @@
     MinWidth="525"
     MinHeight="350"
     >
-    <DockPanel>
-        <StackPanel>
-            <StackPanel Orientation="Horizontal">
-            </StackPanel>
-        </StackPanel>
-    </DockPanel>
+    <local:MainSurfaceFrameControl />
 </Window>

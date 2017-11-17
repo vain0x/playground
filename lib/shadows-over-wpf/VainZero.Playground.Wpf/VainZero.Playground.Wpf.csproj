@@ -67,6 +67,14 @@
       <Generator>MSBuild:Compile</Generator>
       <SubType>Designer</SubType>
     </ApplicationDefinition>
+    <Page Include="Playground\AuthenticationPageControl.xaml">
+      <SubType>Designer</SubType>
+      <Generator>MSBuild:Compile</Generator>
+    </Page>
+    <Page Include="Playground\MainSurfaceFrameControl.xaml">
+      <SubType>Designer</SubType>
+      <Generator>MSBuild:Compile</Generator>
+    </Page>
     <Page Include="Playground\MainWindow.xaml">
       <Generator>MSBuild:Compile</Generator>
       <SubType>Designer</SubType>
@@ -74,6 +82,13 @@
     <Compile Include="Playground\App.xaml.cs">
       <DependentUpon>App.xaml</DependentUpon>
       <SubType>Code</SubType>
+    </Compile>
+    <Compile Include="Playground\AuthenticationPageViewModel.cs" />
+    <Compile Include="Playground\AuthenticationPageControl.xaml.cs">
+      <DependentUpon>AuthenticationPageControl.xaml</DependentUpon>
+    </Compile>
+    <Compile Include="Playground\MainSurfaceFrameControl.xaml.cs">
+      <DependentUpon>MainSurfaceFrameControl.xaml</DependentUpon>
     </Compile>
     <Compile Include="Playground\MainWindow.xaml.cs">
       <DependentUpon>MainWindow.xaml</DependentUpon>
@@ -85,6 +100,7 @@
     </Page>
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="Playground\Misc.cs" />
     <Compile Include="Playground\MyControl.xaml.cs">
       <DependentUpon>MyControl.xaml</DependentUpon>
     </Compile>

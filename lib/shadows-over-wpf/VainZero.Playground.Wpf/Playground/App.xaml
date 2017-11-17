@@ -4,4 +4,12 @@
     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
     xmlns:local="clr-namespace:VainZero.Playground"
     StartupUri="/Playground/MainWindow.xaml"
-    />
+    >
+    <Application.Resources>
+        <ResourceDictionary>
+            <DataTemplate DataType="{x:Type local:AuthenticationPageViewModelMutable}">
+                <local:AuthenticationPageControl />
+            </DataTemplate>
+        </ResourceDictionary>
+    </Application.Resources>
+</Application>
