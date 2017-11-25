@@ -6,4 +6,7 @@
   <ItemGroup>
     <Compile Include="Program.fs" />
   </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\VainZero.Temali.Syntax\VainZero.Temali.Syntax.fsproj" />
+  </ItemGroup>
 </Project>
