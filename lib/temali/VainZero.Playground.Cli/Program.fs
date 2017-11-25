@@ -11,8 +11,11 @@ open System.Web
 open System.Text
 open System.Threading
 
+open VainZero.Temali.Syntax
+
 module Program =
   [<EntryPoint>]
   let main argv =
-
+    let result = Parsing.tryParse " a " Parsing.inputParser
+    printfn "%A" result
     0
