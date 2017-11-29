@@ -23,8 +23,11 @@ namespace VainZero.Scripts.Twitter.SelfManagement
         {
             const string Path = @"D:\repo\vain0-storage\doc\tweets\vain0x\tweets.csv";
 
-            var firstDate = new DateTime(2011, 7, 1);
-            var endDate = new DateTime(2011, 10, 1);
+            var firstDate = new DateTime(2013, 7, 1);
+            var endDate = new DateTime(2014, 1, 1);
+
+            //var firstDate = new DateTime(2013, 1, 1);
+            //var endDate = new DateTime(2013, 7, 1);
 
             var csv = new Chilkat.Csv();
             csv.HasColumnNames = true;
@@ -85,8 +88,11 @@ namespace VainZero.Scripts.Twitter.SelfManagement
 
                         if (tweet.Media != null && tweet.Media.Count > 0)
                         {
-                            Debug.WriteLine("MEDIA: " + tweet.Url);
-                            continue;
+                            if (!tweet.IsRetweet)
+                            {
+                                Debug.WriteLine("MEDIA: " + tweet.Url);
+                                continue;
+                            }
                         }
 
                         if (tweet.IsRetweet)
