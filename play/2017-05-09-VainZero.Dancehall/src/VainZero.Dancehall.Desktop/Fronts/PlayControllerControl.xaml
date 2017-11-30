@@ -1,0 +1,53 @@
+﻿<UserControl
+    x:Class="VainZero.Dancehall.Fronts.PlayControllerControl"
+    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006" 
+    xmlns:d="http://schemas.microsoft.com/expression/blend/2008" 
+    xmlns:fronts="clr-namespace:VainZero.Dancehall.Fronts"
+    xmlns:converters="clr-namespace:VainZero.Dancehall.Windows.Converters"
+    mc:Ignorable="d" 
+    d:DesignWidth="300"
+    d:DesignHeight="300"
+    >
+    <Grid>
+        <Grid.ColumnDefinitions>
+            <ColumnDefinition Width="3*" />
+            <ColumnDefinition Width="8*" />
+            <ColumnDefinition Width="3*" />
+        </Grid.ColumnDefinitions>
+
+        <TextBlock Text="{Binding Current.Value.Title}" />
+
+        <Grid Grid.Column="1" DataContext="{Binding Slider.Value}">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="100" />
+                <ColumnDefinition Width="*" />
+                <ColumnDefinition Width="100" />
+            </Grid.ColumnDefinitions>
+
+            <TextBlock Text="{Binding ElapsedTime.Value, Converter={x:Static converters:TimeSpanToMinuteSecondStringConverter.Instance}}" />
+
+            <Slider
+                Grid.Column="1"
+                Minimum="0"
+                Maximum="{Binding TotalSeconds}"
+                SmallChange="0.1"
+                LargeChange="10"
+                Value="{Binding ElapsedSeconds.Value}"
+                />
+
+            <TextBlock
+                Grid.Column="2"
+                Text="{Binding Duration, Converter={x:Static converters:TimeSpanToMinuteSecondStringConverter.Instance}}"
+                />
+        </Grid>
+
+        <WrapPanel Grid.Column="2">
+            <Button
+                Content="Play"
+                Command="{Binding TogglePlayCommand}"
+                />
+        </WrapPanel>
+    </Grid>
+</UserControl>
