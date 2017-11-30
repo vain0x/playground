@@ -23,21 +23,18 @@
             Failure <| string err
 
     let internal one_line_comment =
-        let endp = skipNewline
-        between (skipString "//") endp (skipManyTill anyChar endp)
+        let endp = skipNewline <|> eof
+        skipString "//" >>. skipManyTill anyChar endp
 
     let internal nested_comment, nested_comment_ref = createParserForwardedToRef ()
     nested_comment_ref :=
         let (beg_str, end_str) = ("/+", "+/")
-        between (skipString beg_str) (skipString end_str) nested_comment
+        skipString beg_str >>. skipManyTill (nested_comment <|> skipAnyChar) (skipString end_str)
     ;
 
     let internal block_comment =
         let (beg_str, end_str) = ("/*", "*/")
-        between
-            (skipString beg_str)
-            (skipString end_str)
-            (skipManyTill anyChar (skipString end_str))
+        skipString beg_str >>. (skipManyTill anyChar <| skipString end_str)
 
     let internal comment: Parser<_> =
             one_line_comment
@@ -70,7 +67,7 @@
 
     let generalized_ident: Parser<_> =
         let double_backquotes = skipString "``"
-        between double_backquotes double_backquotes (many1CharsTill anyChar double_backquotes)
+        double_backquotes >>. (many1CharsTill anyChar double_backquotes)
 
     let ident = 
         (regular_ident <|> generalized_ident)
