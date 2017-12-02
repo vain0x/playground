@@ -1,6 +1,8 @@
 ; Top-most EditorConfig file
 root = true
 
+
+
 ; Global settings
 [*]
 trim_trailing_whitespace = true
@@ -16,21 +18,20 @@ indent_style = space
 indent_size = 2
 charset = utf-8
 
+
+
 ; Web
 [*.{html,htm,css,javascript}]
 indent_style = space
 indent_size = 2
 charset = utf-8
 
+
+
 ; .NET
 [*.{sln,xaml}]
 indent_style = space
 indent_size = 4
-charset = utf-8
-
-[*.nuspec]
-indent_style = space
-indent_size = 2
 charset = utf-8
 
 [{App.config,packages.config,project.json}]
@@ -67,8 +68,23 @@ indent_style = space
 indent_size = 2
 charset = utf-8-bom
 
+; NuGet
+[*.nuspec]
+indent_style = space
+indent_size = 2
+charset = utf-8
+
 ; Paket
 [*paket.*]
 indent_style = space
 indent_size = 2
 charset = utf-8
+
+
+
+; VSCode
+[{launch.json,tasks.json}]
+indent_style = space
+indent_size = 4
+charset = utf-8
+insert_final_newline = false
