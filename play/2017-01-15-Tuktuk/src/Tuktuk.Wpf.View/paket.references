@@ -1,0 +1,9 @@
+System.Reactive
+System.Reactive.Interfaces
+DotNetKit.Core
+DotNetKit.FSharp
+ReactiveProperty
+
+group Wpf
+    MaterialDesignThemes
+    gong-wpf-dragdrop

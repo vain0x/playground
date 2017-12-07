@@ -1,0 +1,1 @@
+.\packages\unittest\Persimmon.Console\tools\Persimmon.Console.exe Tuktuk.Utility.UnitTest\bin\Debug\Tuktuk.Utility.UnitTest.dll Tuktuk.Core.UnitTest\bin\Debug\Tuktuk.Core.UnitTest.dll Tuktuk.Wpf.Model.UnitTest\bin\Debug\Tuktuk.Wpf.Model.UnitTest.dll
