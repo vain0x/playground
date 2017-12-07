@@ -1,0 +1,5 @@
+System.Reactive
+System.Reactive.Interfaces
+DotNetKit.Core
+DotNetKit.FSharp
+ReactiveProperty

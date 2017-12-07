@@ -1,0 +1,8 @@
+System.Reactive
+System.Reactive.Interfaces
+DotNetKit.Core
+DotNetKit.FSharp
+ReactiveProperty
+
+group UnitTest
+    Persimmon
