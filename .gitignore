@@ -1,2 +1,5 @@
 # Paket
 **/.paket/paket.exe
+
+# VSCode
+.vscode/
