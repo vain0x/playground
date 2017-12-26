@@ -1,0 +1,42 @@
+﻿[
+  {
+    "id": "CsdaProperty",
+    "sevirity": "Warning",
+    "line": 4,
+    "column": 5,
+    "path": "Person.cs",
+    "message-args": []
+  },
+  {
+    "id": "CsdaProperty",
+    "sevirity": "Warning",
+    "line": 6,
+    "column": 5,
+    "path": "Person.cs",
+    "message-args": []
+  },
+  {
+    "id": "CsdaProperty",
+    "sevirity": "Warning",
+    "line": 8,
+    "column": 5,
+    "path": "Person.cs",
+    "message-args": []
+  },
+  {
+    "id": "CsdaProperty",
+    "sevirity": "Warning",
+    "line": 10,
+    "column": 5,
+    "path": "Person.cs",
+    "message-args": []
+  },
+  {
+    "id": "CsdaProperty",
+    "sevirity": "Warning",
+    "line": 12,
+    "column": 5,
+    "path": "Person.cs",
+    "message-args": []
+  }
+]
