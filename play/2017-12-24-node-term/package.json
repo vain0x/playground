@@ -9,5 +9,8 @@
   "author": "vain0",
   "license": "MIT",
   "repository": "https://github.com/vain0/vain0-playground",
-  "private": true
+  "private": true,
+  "dependencies": {
+    "electron": "^1.7.10"
+  }
 }
