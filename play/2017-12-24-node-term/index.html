@@ -1,0 +1,83 @@
+<!doctype html>
+<html>
+
+<head>
+  <meta charset="utf-8">
+  <title>Node Term</title>
+
+  <link type="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/normalize/7.0.0/normalize.css">
+
+  <style type="text/css">
+    html {
+      height: 100%;
+    }
+
+    * {
+      height: inherit;
+    }
+
+    body {
+      margin: 0;
+      display: grid;
+      grid-template-rows: 8px 1fr 8px;
+    }
+
+    .term {
+      grid-row: 2;
+      margin: 0 auto;
+      max-width: 640px;
+      display: grid;
+      grid-template-rows: auto 1fr;
+      grid-row-gap: 8px;
+    }
+
+    .term .term-working-dorectory {
+      grid-row: 1;
+      font-family: monospace;
+    }
+
+    .term .term-form {
+      grid-row: 2;
+      display: grid;
+      grid-template-rows: 1fr auto auto;
+      grid-row-gap: 8px;
+    }
+
+    .term .term-form .term-output-textbox {
+      grid-row: 1;
+      font-family: monospace;
+    }
+
+    .term .term-form .term-command-textbox {
+      grid-row: 2;
+      font-family: monospace;
+    }
+
+    .term .term-form .term-submit-button {
+      grid-row: 3;
+      width: auto;
+    }
+  </style>
+</head>
+
+<body>
+  <div class="term">
+    <div>
+      Working Directory: <code class="term-working-directory"></code>
+    </div>
+
+    <form class="term-form">
+      <textarea class="term-output-textbox" placeholder="Output" readonly></textarea>
+
+      <textarea class="term-command-textbox" placeholder="Command" rows="4"></textarea>
+
+      <button class="term-submit-button" type="submit">Submit</button>
+    </form>
+  </div>
+
+  <script>
+    const term = require("./term.js");
+  </script>
+</body>
+
+</html>
