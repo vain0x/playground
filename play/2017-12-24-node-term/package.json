@@ -1,0 +1,13 @@
+{
+  "name": "node-term",
+  "version": "1.0.0",
+  "description": "GUI terminal",
+  "main": "main.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "author": "vain0",
+  "license": "MIT",
+  "repository": "https://github.com/vain0/vain0-playground",
+  "private": true
+}
