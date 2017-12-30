@@ -5,7 +5,8 @@
   </PropertyGroup>
   <ItemGroup>
     <Compile Include="Types.fs" />
-    <Compile Include="MediaRepository.fs" />
+    <Compile Include="Xspf.fs" />
+    <Compile Include="FileSystemDatabase.fs" />
     <Compile Include="Dumping.fs" />
     <Compile Include="Program.fs" />
   </ItemGroup>
