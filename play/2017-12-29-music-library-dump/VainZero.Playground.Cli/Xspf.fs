@@ -3,23 +3,40 @@ namespace VainZero.MusicLibrarian
 open System
 open System.Linq
 open System.Xml.Linq
+open VainZero.FSharpErrorHandling
 
-type Xspf() =
-  member this.Parse(source: string) =
-    let xname = XName.Get
+module Xspf =
+  let inline xname str = XName.Get(str)
 
-    let trackFromTrackElement (element: XElement) =
-      let title = element.Element(xname "title")
+  let tryElementByTagName tagName (xe: XElement) =
+    xe.Element(tagName) |> Option.ofObj
 
-      match element.Element(xname "location") with
-      | null ->
-        None
-      | element ->
-        element.Value |> Some
+  let parse (location: RelativeFilePath) (source: string) =
+    let parseTrack (element: XElement) =
+      Option.build' {
+        let text name =
+          match element.Element(xname name) with
+          | null -> None
+          | e -> e.Value |> Some
+        let! location =
+          text "location"
+        let title =
+          text "title"
+        let creators =
+          text "creators"
+          |> Option.defaultValue ""
+          |> fun s -> s.Split([|'/'|], StringSplitOptions.RemoveEmptyEntries)
+
+        return ()
+      }
 
     let xdoc = XDocument.Parse(source)
-    xdoc.Descendants()
-    |> Seq.filter (fun element -> element.Name = "track")
-    |> Seq.map trackFromTrackElement
-
+    let tracks =
+      xdoc.Descendants()
+      |> Seq.choose (fun xe -> if xe.Name = xname "track" then Some xe else None)
+      |> Seq.toArray
+    {
+      Location = location
+      Tracks = tracks
+    }
 
