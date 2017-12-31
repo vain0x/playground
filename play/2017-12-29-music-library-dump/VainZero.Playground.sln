@@ -5,6 +5,8 @@ VisualStudioVersion = 15.0.26124.0
 MinimumVisualStudioVersion = 15.0.26124.0
 Project("{F2A71F9B-5D33-465A-A702-920D77279786}") = "VainZero.Playground.Cli", "VainZero.Playground.Cli\VainZero.Playground.Cli.fsproj", "{3B425A0B-9F7A-4C3C-A6BC-F9AF4A711B26}"
 EndProject
+Project("{F2A71F9B-5D33-465A-A702-920D77279786}") = "VainZero.Playground.Cli.Tests", "VainZero.Playground.Cli.Tests\VainZero.Playground.Cli.Tests.fsproj", "{597CE7F3-68F2-43CF-82D1-956C7A1CF2D9}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -30,5 +32,17 @@ Global
 		{3B425A0B-9F7A-4C3C-A6BC-F9AF4A711B26}.Release|x64.Build.0 = Release|x64
 		{3B425A0B-9F7A-4C3C-A6BC-F9AF4A711B26}.Release|x86.ActiveCfg = Release|x86
 		{3B425A0B-9F7A-4C3C-A6BC-F9AF4A711B26}.Release|x86.Build.0 = Release|x86
+		{597CE7F3-68F2-43CF-82D1-956C7A1CF2D9}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{597CE7F3-68F2-43CF-82D1-956C7A1CF2D9}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{597CE7F3-68F2-43CF-82D1-956C7A1CF2D9}.Debug|x64.ActiveCfg = Debug|x64
+		{597CE7F3-68F2-43CF-82D1-956C7A1CF2D9}.Debug|x64.Build.0 = Debug|x64
+		{597CE7F3-68F2-43CF-82D1-956C7A1CF2D9}.Debug|x86.ActiveCfg = Debug|x86
+		{597CE7F3-68F2-43CF-82D1-956C7A1CF2D9}.Debug|x86.Build.0 = Debug|x86
+		{597CE7F3-68F2-43CF-82D1-956C7A1CF2D9}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{597CE7F3-68F2-43CF-82D1-956C7A1CF2D9}.Release|Any CPU.Build.0 = Release|Any CPU
+		{597CE7F3-68F2-43CF-82D1-956C7A1CF2D9}.Release|x64.ActiveCfg = Release|x64
+		{597CE7F3-68F2-43CF-82D1-956C7A1CF2D9}.Release|x64.Build.0 = Release|x64
+		{597CE7F3-68F2-43CF-82D1-956C7A1CF2D9}.Release|x86.ActiveCfg = Release|x86
+		{597CE7F3-68F2-43CF-82D1-956C7A1CF2D9}.Release|x86.Build.0 = Release|x86
 	EndGlobalSection
 EndGlobal
