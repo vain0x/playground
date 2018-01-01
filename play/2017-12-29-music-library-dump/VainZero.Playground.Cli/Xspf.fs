@@ -8,35 +8,40 @@ open VainZero.FSharpErrorHandling
 module Xspf =
   let inline xname str = XName.Get(str)
 
-  let tryElementByTagName tagName (xe: XElement) =
-    xe.Element(tagName) |> Option.ofObj
+  let parseTrack (element: XElement): option<MusicTrack> =
+    Option.build {
+      let text name =
+        element.Elements()
+        |> Seq.tryFind (fun xe -> xe.Name.LocalName = name)
+        |> Option.map (fun xe -> xe.Value)
+      let! location =
+        text "location"
+      let title =
+        text "title"
+        |> Option.defaultValue ""
+      let creator =
+        text "creator"
+        |> Option.defaultValue ""
+      let album =
+        text "album"
+        |> Option.defaultValue ""
+      return
+        {
+          Location = location
+          Title = title
+          Creator = creator
+          Album = album
+        }
+    }
 
-  let parse (location: RelativeFilePath) (source: string) =
-    let parseTrack (element: XElement) =
-      Option.build' {
-        let text name =
-          match element.Element(xname name) with
-          | null -> None
-          | e -> e.Value |> Some
-        let! location =
-          text "location"
-        let title =
-          text "title"
-        let creators =
-          text "creators"
-          |> Option.defaultValue ""
-          |> fun s -> s.Split([|'/'|], StringSplitOptions.RemoveEmptyEntries)
-
-        return ()
-      }
-
+  let parse (location: RelativeFilePath) (source: string): Playlist =
     let xdoc = XDocument.Parse(source)
     let tracks =
       xdoc.Descendants()
-      |> Seq.choose (fun xe -> if xe.Name = xname "track" then Some xe else None)
+      |> Seq.filter (fun xe -> xe.Name.LocalName = "track")
+      |> Seq.choose parseTrack
       |> Seq.toArray
     {
       Location = location
       Tracks = tracks
     }
-

@@ -109,20 +109,33 @@ module FileSystemDatabase =
     }
 
   let playlistRepository (mediaDirectory: string) =
+    let rootDirectory =
+      DirectoryInfo(Path.Combine(mediaDirectory, "playlists"))
+    let tryFindByPath (filePath: string) =
+      try
+        let source = File.ReadAllText(filePath)
+        source |> Xspf.parse filePath |> Some
+      with
+      | ex ->
+        eprintfn "Couldn't open playlist file %s" filePath
+        eprintfn "%O" ex
+        None
     let findAll () =
       let enumerator =
-        { new RecursiveFileEnumerator<Playlist> with
-            override this.RootDirectory =
+        { new RecursiveFileEnumerator<Playlist>() with
+            override __.RootDirectory =
               rootDirectory
-
-            override this.Choose(file) =
-              try
-                Xspf.Parse()
-              with
-              | ex ->
-                eprintfn "Couldn't open playlist file %s" file.FullName
-                eprintfn "%O" ex
+            override __.Choose(file) =
+              tryFindByPath file.FullName
         }
+      enumerator.Enumerate()
+    { new PlaylistRepository() with
+        override __.FindAll() =
+          findAll ()
+
+        override __.TryFindByPath(filePath: RelativeFilePath) =
+          tryFindByPath filePath
+    }
 
   let create (mediaDirectory: string) =
     {

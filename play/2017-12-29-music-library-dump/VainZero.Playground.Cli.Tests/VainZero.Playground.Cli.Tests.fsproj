@@ -1,9 +1,14 @@
-﻿<Project Sdk="Microsoft.NET.Sdk">
+<Project Sdk="Microsoft.NET.Sdk">
   <PropertyGroup>
     <OutputType>Exe</OutputType>
     <TargetFramework>netcoreapp2.0</TargetFramework>
   </PropertyGroup>
   <ItemGroup>
+    <ProjectReference Include="..\VainZero.Playground.Cli\VainZero.Playground.Cli.fsproj" />
+  </ItemGroup>
+  <ItemGroup>
+    <Compile Include="Operators.fs" />
+    <Compile Include="XspfTests.fs" />
     <Compile Include="Sample.fs" />
     <Compile Include="Main.fs" />
   </ItemGroup>
@@ -11,11 +16,6 @@
     <PackageReference Include="Expecto" Version="5.*" />
     <PackageReference Include="taglib-sharp-netstandard2.0" Version="2.1.0" />
     <PackageReference Include="Utf8Json" Version="1.3.4" />
-  </ItemGroup>
-  <ItemGroup>
     <DotNetCliToolReference Include="Microsoft.DotNet.Watcher.Tools" Version="1.0.0" />
-  </ItemGroup>
-  <ItemGroup>
-    <ProjectReference Include="..\VainZero.Playground.Cli\VainZero.Playground.Cli.fsproj" />
   </ItemGroup>
 </Project>

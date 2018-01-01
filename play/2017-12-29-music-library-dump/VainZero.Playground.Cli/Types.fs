@@ -30,18 +30,6 @@ namespace VainZero.MusicLibrarian
       Tracks: MusicTrack[]
     }
 
-  type MusicFile =
-    {
-      File: FileInfo
-      Metadata: MusicMetadata
-    }
-
-  type PlaylistFile =
-    {
-      File: FileInfo
-      Playlist: Playlist
-    }
-
   [<AbstractClass>]
   type MusicRepository() =
     abstract FindAll: unit -> MusicMetadata[]
@@ -49,7 +37,7 @@ namespace VainZero.MusicLibrarian
 
   [<AbstractClass>]
   type PlaylistRepository() =
-    abstract FindAll: unit -> PlaylistFile[]
+    abstract FindAll: unit -> Playlist[]
     abstract TryFindByPath: RelativeFilePath -> option<Playlist>
 
   type Database =

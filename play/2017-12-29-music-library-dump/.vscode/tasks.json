@@ -4,7 +4,7 @@
     "version": "2.0.0",
     "tasks": [
         {
-            "taskName": "build",
+            "label": "build",
             "command": "dotnet",
             "args": [
                 "build",
@@ -14,6 +14,35 @@
             "group": "build",
             "presentation": {
                 "reveal": "silent"
+            },
+            "problemMatcher": "$msCompile"
+        },
+        {
+            "label": "build tests",
+            "command": "dotnet",
+            "args": [
+                "build",
+                "${workspaceRoot}/VainZero.Playground.Cli.Tests/VainZero.Playground.Cli.Tests.fsproj"
+            ],
+            "type": "shell",
+            "group": "build",
+            "presentation": {
+                "reveal": "silent"
+            },
+            "problemMatcher": "$msCompile"
+        },
+        {
+            "label": "test",
+            "command": "dotnet",
+            "args": [
+                "run",
+                "--project",
+                "${workspaceRoot}/VainZero.Playground.Cli.Tests/VainZero.Playground.Cli.Tests.fsproj"
+            ],
+            "type": "shell",
+            "group": "test",
+            "presentation": {
+                "reveal": "always"
             },
             "problemMatcher": "$msCompile"
         }
