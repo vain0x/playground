@@ -18,13 +18,10 @@ module Xspf =
         text "location"
       let title =
         text "title"
-        |> Option.defaultValue ""
       let creator =
         text "creator"
-        |> Option.defaultValue ""
       let album =
         text "album"
-        |> Option.defaultValue ""
       return
         {
           Location = location

@@ -1,6 +1,5 @@
 namespace VainZero.MusicLibrarian
   open System
-  open System.IO
 
   // Relative path to the Media directory.
   type RelativeFilePath = string
@@ -19,9 +18,9 @@ namespace VainZero.MusicLibrarian
   type MusicTrack =
     {
       Location: RelativeFilePath
-      Title: string
-      Creator: string
-      Album: string
+      Title: option<string>
+      Creator: option<string>
+      Album: option<string>
     }
 
   type Playlist =
@@ -44,4 +43,36 @@ namespace VainZero.MusicLibrarian
     {
       MusicRepository: MusicRepository
       PlaylistRepository: PlaylistRepository
+    }
+
+namespace VainZero.MusicLibrarian.JsonSerialization
+  type MusicMetadataDto =
+    {
+      Location: string
+      Title: string
+      Performers: string[]
+      Composers: string[]
+      Album: option<string>
+      TrackNumber: option<int>
+      ReleaseYear: option<int>
+    }
+
+  type MusicTrackDto =
+    {
+      Location: string
+      Title: option<string>
+      Creator: option<string>
+      Album: option<string>
+    }
+
+  type PlaylistDto =
+    {
+      Location: string
+      Tracks: MusicTrackDto[]
+    }
+
+  type DatabaseDto =
+    {
+      MusicMetadatas: MusicMetadataDto[]
+      Playlists: PlaylistDto[]
     }

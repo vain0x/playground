@@ -18,7 +18,7 @@ module FileSystemDatabase =
     abstract RootDirectory: DirectoryInfo
     abstract Choose: FileInfo -> option<'T>
 
-    member private this.Recurses(dir: DirectoryInfo) =
+    member private __.Recurses(dir: DirectoryInfo) =
       let name = dir.Name
       name <> ".git" && name <> "_bak" && name <> "_nobak"
 
@@ -41,7 +41,7 @@ module FileSystemDatabase =
 
   let private musicMetadata mediaDirectoryPath (musicFile: TagLib.File) =
     let tag = musicFile.Tag
-    {
+    ({
       Title =
         tag.Title
       Performers =
@@ -57,7 +57,7 @@ module FileSystemDatabase =
         if 1000 <= year && year < 2100 then Some year else None
       FilePath =
         Path.GetRelativePath(musicFile.Name, mediaDirectoryPath)
-    }
+    }: MusicMetadata)
 
   let musicRepository (mediaDirectory: string) =
     let includedExtensions =
@@ -88,10 +88,10 @@ module FileSystemDatabase =
         DirectoryInfo(Path.Combine(mediaDirectory, "Music"))
       let enumerator =
         { new RecursiveFileEnumerator<MusicMetadata>() with
-            override this.RootDirectory =
+            override __.RootDirectory =
               musicDirectory
 
-            override this.Choose(file) =
+            override __.Choose(file) =
               let extension = Path.GetExtension(file.Name).ToLower()
               if includedExtensions |> Set.contains extension then
                 tryFindByPath file.FullName
@@ -139,7 +139,7 @@ module FileSystemDatabase =
 
   let create (mediaDirectory: string) =
     {
-      MusicRepository =
+      Database.MusicRepository =
         musicRepository mediaDirectory
       PlaylistRepository =
         playlistRepository mediaDirectory

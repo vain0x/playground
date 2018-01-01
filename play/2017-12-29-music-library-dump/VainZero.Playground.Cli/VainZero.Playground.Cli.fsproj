@@ -6,10 +6,11 @@
   <ItemGroup>
     <Compile Include="Option.fs" />
     <Compile Include="Result.fs" />
+    <Compile Include="FSharpFormatters.fs" />
     <Compile Include="Types.fs" />
     <Compile Include="Xspf.fs" />
-    <Compile Include="FileSystemDatabase.fs" />
     <Compile Include="Dumping.fs" />
+    <Compile Include="FileSystemDatabase.fs" />
     <Compile Include="Program.fs" />
   </ItemGroup>
   <ItemGroup>

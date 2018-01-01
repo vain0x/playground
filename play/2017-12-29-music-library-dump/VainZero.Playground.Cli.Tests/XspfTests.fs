@@ -31,16 +31,16 @@ module XspfTests =
           track1 |> is
             {
               Location = "../music/album-1/track-1.mp3"
-              Title = "track-1"
-              Creator = "creator-1"
-              Album = "album-1"
+              Title = Some "track-1"
+              Creator = Some "creator-1"
+              Album = Some "album-1"
             }
           track2 |> is
             {
               Location = "../music/album-2/track-2.m4a"
-              Title = ""
-              Creator = ""
-              Album = ""
+              Title = None
+              Creator = None
+              Album = None
             }
         | _ -> Should.never ()
     ]

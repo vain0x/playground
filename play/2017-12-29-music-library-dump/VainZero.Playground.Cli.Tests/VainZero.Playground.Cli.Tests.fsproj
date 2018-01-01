@@ -9,6 +9,7 @@
   <ItemGroup>
     <Compile Include="Operators.fs" />
     <Compile Include="XspfTests.fs" />
+    <Compile Include="DumpingTests.fs" />
     <Compile Include="Sample.fs" />
     <Compile Include="Main.fs" />
   </ItemGroup>
