@@ -11,6 +11,9 @@ module FileSystemDatabase =
   let private noneIfEmpty str =
     if String.IsNullOrWhiteSpace(str) then None else Some str
 
+  let private tryClamp value lowerBound upperBound =
+    if lowerBound <= value && value < upperBound then Some value else None
+
   let private tryParseInt32 (str: string) =
     match Int32.TryParse(str) with
     | (true, value) -> Some value
@@ -54,11 +57,9 @@ module FileSystemDatabase =
       Album =
         tag.Album |> noneIfEmpty
       TrackNumber =
-        let track = tag.Track |> int
-        if track > 0 then Some track else None
+        tag.Track |> int |> tryClamp 1 1000
       ReleaseYear =
-        let year = tag.Year |> int
-        if 1000 <= year && year < 2100 then Some year else None
+        tag.Year |> int |> tryClamp 1000 2100
       FilePath =
         Path.GetRelativePath(mediaDirectory.FullName, filePath)
     }
