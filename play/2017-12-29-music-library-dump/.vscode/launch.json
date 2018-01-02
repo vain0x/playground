@@ -1,0 +1,27 @@
+{
+    "version": "0.2.0",
+    "configurations": [
+        {
+            "name": "Debug Main",
+            "type": "coreclr",
+            "request": "launch",
+            "preLaunchTask": "build",
+            "program": "${workspaceRoot}/VainZero.Playground.Cli/bin/Debug/netcoreapp2.0/VainZero.Playground.Cli.dll",
+            "args": [],
+            "cwd": "${workspaceRoot}",
+            "stopAtEntry": false,
+            "console": "internalConsole"
+        },
+        {
+            "name": "Debug Tests",
+            "type": "coreclr",
+            "request": "launch",
+            "preLaunchTask": "build tests",
+            "program": "${workspaceRoot}/VainZero.Playground.Cli.Tests/bin/Debug/netcoreapp2.0/VainZero.Playground.Cli.Tests.dll",
+            "args": [],
+            "cwd": "${workspaceRoot}",
+            "stopAtEntry": false,
+            "console": "internalConsole"
+        }
+    ]
+}
