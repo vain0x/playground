@@ -31,12 +31,12 @@ namespace VainZero.MusicLibrarian
 
   [<AbstractClass>]
   type MusicRepository() =
-    abstract FindAll: unit -> MusicMetadata[]
+    abstract FindAll: unit -> Async<MusicMetadata[]>
     abstract TryFindByPath: RelativeFilePath -> option<MusicMetadata>
 
   [<AbstractClass>]
   type PlaylistRepository() =
-    abstract FindAll: unit -> Playlist[]
+    abstract FindAll: unit -> Async<Playlist[]>
     abstract TryFindByPath: RelativeFilePath -> option<Playlist>
 
   type Database =

@@ -28,21 +28,31 @@ module FileSystemDatabase =
       let name = dir.Name
       name <> ".git" && name <> "_bak" && name <> "_nobak"
 
-    member this.Enumerate() =
+    member this.EnumerateAsync(): Async<seq<'T>> =
       let rec go dir =
-        [|
-          for subdir in Directory.GetDirectories(dir) do
-            let path = Path.Combine(dir, subdir)
-            if this.Recurses(DirectoryInfo(path)) then
-              yield! go path
+        async {
+          let subdirs = Directory.GetDirectories(dir)
+          let subfiles = Directory.GetFiles(dir)
+          let! computations =
+            seq {
+              for subdir in subdirs do
+                let path = Path.Combine(dir, subdir)
+                if this.Recurses(DirectoryInfo(path)) then
+                  yield go path
+            }
+            |> fun computations -> Async.Parallel(computations)
+          return
+            seq {
+              yield! computations |> Seq.collect id
 
-          for fileName in Directory.GetFiles(dir) do
-            let path = Path.Combine(dir, fileName)
-            match this.Choose(FileInfo(path)) with
-            | Some value ->
-              yield value
-            | None -> ()
-        |]
+              for subfile in subfiles do
+                let path = Path.Combine(dir, subfile)
+                match this.Choose(FileInfo(path)) with
+                | Some value ->
+                  yield value
+                | None -> ()
+            }
+        }
       go this.RootDirectory.FullName
 
   let private musicMetadata (mediaDirectory: DirectoryInfo) filePath (musicFile: TagLib.File): MusicMetadata =
@@ -88,22 +98,25 @@ module FileSystemDatabase =
           eprintfn "%s" (ex |> string)
           None
 
-    let findAll () =
-      let musicDirectory =
-        DirectoryInfo(Path.Combine(mediaDirectory.FullName, "Music"))
-      let enumerator =
-        { new RecursiveFileEnumerator<MusicMetadata>() with
-            override __.RootDirectory =
-              musicDirectory
+    let findAll (): Async<MusicMetadata[]> =
+      async {
+        let musicDirectory =
+          DirectoryInfo(Path.Combine(mediaDirectory.FullName, "Music"))
+        let enumerator =
+          { new RecursiveFileEnumerator<MusicMetadata>() with
+              override __.RootDirectory =
+                musicDirectory
 
-            override __.Choose(file) =
-              let extension = Path.GetExtension(file.Name).ToLower()
-              if includedExtensions |> Set.contains extension then
-                tryFindByPath file.FullName
-              else
-                None
-        }
-      enumerator.Enumerate()
+              override __.Choose(file) =
+                let extension = Path.GetExtension(file.Name).ToLower()
+                if includedExtensions |> Set.contains extension then
+                  tryFindByPath file.FullName
+                else
+                  None
+          }
+        let! musicMetadatas = enumerator.EnumerateAsync()
+        return musicMetadatas |> Seq.toArray
+      }
 
     { new MusicRepository() with
         override __.FindAll() =
@@ -128,14 +141,17 @@ module FileSystemDatabase =
         None
 
     let findAll () =
-      let enumerator =
-        { new RecursiveFileEnumerator<Playlist>() with
-            override __.RootDirectory =
-              rootDirectory
-            override __.Choose(file) =
-              tryFindByPath file.FullName
-        }
-      enumerator.Enumerate()
+      async {
+        let enumerator =
+          { new RecursiveFileEnumerator<Playlist>() with
+              override __.RootDirectory =
+                rootDirectory
+              override __.Choose(file) =
+                tryFindByPath file.FullName
+          }
+        let! playlists = enumerator.EnumerateAsync()
+        return playlists |> Seq.toArray
+      }
 
     { new PlaylistRepository() with
         override __.FindAll() =

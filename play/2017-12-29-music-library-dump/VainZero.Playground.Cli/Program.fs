@@ -13,13 +13,21 @@ open System.Threading
 
 module Program =
   let dump () =
-    let mediaDirectory = DirectoryInfo(@"/media/owner/OS/repo/media/")
-    let outputFile = DirectoryInfo(@"/media/owner/OS/repo/vain0-notes/data/music-library/dump.json")
-    let database = FileSystemDatabase.create mediaDirectory
-    let jsonText = DatabaseJsonFormat().ToJson(database)
-    File.WriteAllText(outputFile.FullName, jsonText)
+    async {
+      let mediaDirectory = DirectoryInfo(@"/media/owner/OS/repo/media/")
+      let outputFile = FileInfo(@"/media/owner/OS/repo/vain0-notes/data/music-library/dump.json")
+
+      let database = FileSystemDatabase.create mediaDirectory
+
+      let! jsonText = DatabaseJsonFormat().ToJson(database)
+
+      use outputStream = outputFile.OpenWrite()
+      outputStream.SetLength(0L)
+      use writer = new StreamWriter(outputStream)
+      do! writer.WriteAsync(jsonText) |> Async.AwaitTask
+    }
 
   [<EntryPoint>]
   let main argv =
-    dump ()
+    dump () |> Async.RunSynchronously
     0

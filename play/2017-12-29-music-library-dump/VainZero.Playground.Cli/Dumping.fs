@@ -54,18 +54,28 @@ type DatabaseJsonFormat() =
         playlist.Tracks |> Array.map toMusicTrackDto
     }
 
-  let toDatabaseDto (database: Database): DatabaseDto =
-    {
-      MusicMetadatas =
+  let toDatabaseDto (database: Database): Async<DatabaseDto> =
+    async {
+      let! musicMetadatas =
         database.MusicRepository.FindAll()
-        |> Array.map toMusicMetadataDto
-      Playlists =
+      let! playlists =
         database.PlaylistRepository.FindAll()
-        |> Array.map toPlaylistDto
+      return
+        {
+          MusicMetadatas =
+            musicMetadatas
+            |> Array.map toMusicMetadataDto
+          Playlists =
+            playlists
+            |> Array.map toPlaylistDto
+        }
     }
 
   member this.ToJson(database: Database) =
-    this.DtoToJson(database |> toDatabaseDto)
+    async {
+      let! databaseDto = database |> toDatabaseDto
+      return this.DtoToJson(databaseDto)
+    }
 
   member __.DtoToJson(databaseDto: DatabaseDto) =
     jsonFormat.PrettyPrint(databaseDto)
