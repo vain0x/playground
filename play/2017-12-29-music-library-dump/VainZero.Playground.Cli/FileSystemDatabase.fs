@@ -5,6 +5,9 @@ open System.IO
 open VainZero.MusicLibrarian
 
 module FileSystemDatabase =
+  let private splitSlashed (str: string) =
+    str.Split([|'/'|], StringSplitOptions.RemoveEmptyEntries)
+
   let private noneIfEmpty str =
     if String.IsNullOrWhiteSpace(str) then None else Some str
 
@@ -39,27 +42,28 @@ module FileSystemDatabase =
         |]
       go this.RootDirectory.FullName
 
-  let private musicMetadata mediaDirectoryPath (musicFile: TagLib.File) =
+  let private musicMetadata (mediaDirectory: DirectoryInfo) filePath (musicFile: TagLib.File): MusicMetadata =
     let tag = musicFile.Tag
-    ({
+    {
       Title =
         tag.Title
       Performers =
-        tag.Performers
+        tag.Performers |> Array.collect splitSlashed
       Composers =
-        tag.Composers
+        tag.Composers |> Array.collect splitSlashed
       Album =
         tag.Album |> noneIfEmpty
       TrackNumber =
-        tag.Track |> int |> Some
+        let track = tag.Track |> int
+        if track > 0 then Some track else None
       ReleaseYear =
         let year = tag.Year |> int
         if 1000 <= year && year < 2100 then Some year else None
       FilePath =
-        Path.GetRelativePath(musicFile.Name, mediaDirectoryPath)
-    }: MusicMetadata)
+        Path.GetRelativePath(mediaDirectory.FullName, filePath)
+    }
 
-  let musicRepository (mediaDirectory: string) =
+  let musicRepository (mediaDirectory: DirectoryInfo) =
     let includedExtensions =
       [|
         ".mp3"
@@ -75,7 +79,7 @@ module FileSystemDatabase =
       else
         try
           use musicFile = TagLib.File.Create(filePath)
-          let musicMetadata = musicMetadata mediaDirectory musicFile
+          let musicMetadata = musicMetadata mediaDirectory filePath musicFile
           Some musicMetadata
         with
         | ex ->
@@ -85,7 +89,7 @@ module FileSystemDatabase =
 
     let findAll () =
       let musicDirectory =
-        DirectoryInfo(Path.Combine(mediaDirectory, "Music"))
+        DirectoryInfo(Path.Combine(mediaDirectory.FullName, "Music"))
       let enumerator =
         { new RecursiveFileEnumerator<MusicMetadata>() with
             override __.RootDirectory =
@@ -103,23 +107,25 @@ module FileSystemDatabase =
     { new MusicRepository() with
         override __.FindAll() =
           findAll ()
-
         override __.TryFindByPath(filePath: RelativeFilePath) =
           tryFindByPath filePath
     }
 
-  let playlistRepository (mediaDirectory: string) =
+  let playlistRepository (mediaDirectory: DirectoryInfo) =
     let rootDirectory =
-      DirectoryInfo(Path.Combine(mediaDirectory, "playlists"))
+      DirectoryInfo(Path.Combine(mediaDirectory.FullName, "playlists"))
+
     let tryFindByPath (filePath: string) =
       try
         let source = File.ReadAllText(filePath)
-        source |> Xspf.parse filePath |> Some
+        let location = Path.GetRelativePath(mediaDirectory.FullName, filePath)
+        source |> Xspf.parse location |> Some
       with
       | ex ->
         eprintfn "Couldn't open playlist file %s" filePath
         eprintfn "%O" ex
         None
+
     let findAll () =
       let enumerator =
         { new RecursiveFileEnumerator<Playlist>() with
@@ -129,15 +135,15 @@ module FileSystemDatabase =
               tryFindByPath file.FullName
         }
       enumerator.Enumerate()
+
     { new PlaylistRepository() with
         override __.FindAll() =
           findAll ()
-
         override __.TryFindByPath(filePath: RelativeFilePath) =
           tryFindByPath filePath
     }
 
-  let create (mediaDirectory: string) =
+  let create (mediaDirectory: DirectoryInfo) =
     {
       Database.MusicRepository =
         musicRepository mediaDirectory
