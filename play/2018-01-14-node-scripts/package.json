@@ -4,7 +4,12 @@
   "description": "Scripts for local work.",
   "main": "index.js",
   "scripts": {
-    "test": "npx jest"
+    "start": "node index.js",
+    "build": "npm run build-src",
+    "watch": "npm run watch-src",
+    "test": "npx jest",
+    "build-src": "npx tsc",
+    "watch-src": "npx tsc -w"
   },
   "repository": {
     "type": "git",
