@@ -1,0 +1,37 @@
+{
+  "name": "node-scripts",
+  "version": "1.0.0",
+  "description": "Scripts for local work.",
+  "main": "index.js",
+  "scripts": {
+    "start": "node index.js",
+    "build": "npm run build-src",
+    "watch": "npm run watch-src",
+    "test": "npx jest",
+    "build-src": "npx tsc",
+    "watch-src": "npx tsc -w"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/vain0/vain0-playground.git"
+  },
+  "author": "vain0",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/vain0/vain0-playground/issues"
+  },
+  "homepage": "https://github.com/vain0/vain0-playground#readme",
+  "dependencies": {
+    "chokidar": "^2.0.0",
+    "concurrently": "^3.5.1",
+    "shelljs": "^0.8.0"
+  },
+  "devDependencies": {
+    "@types/node": "^9.3.0",
+    "jest": "^22.0.6",
+    "supertest": "^3.0.0",
+    "ts-node": "^4.1.0",
+    "tslint": "^5.9.1",
+    "typescript": "^2.6.2"
+  }
+}
