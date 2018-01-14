@@ -1,0 +1,19 @@
+{
+  "name": "node-scripts",
+  "version": "1.0.0",
+  "description": "Scripts for local work.",
+  "main": "index.js",
+  "scripts": {
+    "test": "npx jest"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/vain0/vain0-playground.git"
+  },
+  "author": "vain0",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/vain0/vain0-playground/issues"
+  },
+  "homepage": "https://github.com/vain0/vain0-playground#readme"
+}
