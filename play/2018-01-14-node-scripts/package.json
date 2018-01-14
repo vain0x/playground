@@ -15,5 +15,10 @@
   "bugs": {
     "url": "https://github.com/vain0/vain0-playground/issues"
   },
-  "homepage": "https://github.com/vain0/vain0-playground#readme"
+  "homepage": "https://github.com/vain0/vain0-playground#readme",
+  "dependencies": {
+    "chokidar": "^2.0.0",
+    "concurrently": "^3.5.1",
+    "shelljs": "^0.8.0"
+  }
 }
