@@ -1,4 +1,5 @@
 import { BatchApp, BatchCommand } from "./batch-app-framework";
+import { regexpCommand } from "./commands/regexp-command";
 
 const commands: BatchCommand[] = [
   {
@@ -17,6 +18,7 @@ const commands: BatchCommand[] = [
       console.log("Hello, world!");
     },
   },
+  regexpCommand,
 ];
 
 export const main = async () => {

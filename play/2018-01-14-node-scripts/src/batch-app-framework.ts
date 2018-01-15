@@ -85,5 +85,7 @@ export class BatchApp {
       console.error(ex);
       process.exit(1);
     }
+
+    console.debug("End of main.");
   }
 }
