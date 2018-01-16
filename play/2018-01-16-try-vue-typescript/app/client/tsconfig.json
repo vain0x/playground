@@ -3,6 +3,7 @@
   "compilerOptions": {
     "baseUrl": ".",
     "moduleResolution": "classic",
+    "module": "es2015",
     "target": "es2015",
     "lib": [
       "dom",
