@@ -1,0 +1,14 @@
+{
+  "compilerOptions": {
+    "paths": {
+      "*": [
+        "./types/*"
+      ]
+    },
+    "sourceMap": true,
+    "strict": true,
+    "noImplicitAny": true,
+    "noImplicitReturns": true,
+    "noImplicitThis": true
+  }
+}
