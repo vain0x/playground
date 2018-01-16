@@ -1,5 +1,3 @@
-dist/
-
 # Created by https://www.gitignore.io/api/node
 
 ### Node ###
@@ -64,3 +62,10 @@ typings/
 
 
 # End of https://www.gitignore.io/api/node
+
+
+
+# Ignore typescript outputs.
+
+app/**/*.js
+app/**/*.js.map
