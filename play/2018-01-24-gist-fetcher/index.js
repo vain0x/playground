@@ -43,7 +43,7 @@ const sendRequest = (path, method, query, contentType, content) => new Promise((
       reject(error);
     });
     response.on("end", () => {
-      resolve(chunks);
+      resolve(chunks.join(""));
     });
   });
 
@@ -64,7 +64,14 @@ const sendPostRequest = (path, query, contentType, content) => {
 };
 
 (async () => {
-  const result = await sendGetRequest("/user", {}, "application/json", "");
+  const result = await sendPostRequest("/gists", {}, "application/json", JSON.stringify({
+    files: {
+      "file1.txt":  {
+        content: "Hello, world!",
+      },
+    },
+    description: "Automatically created via API."
+  }));
   console.log("completed");
   console.log(result);
 })();
