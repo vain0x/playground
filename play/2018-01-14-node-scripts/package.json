@@ -24,6 +24,7 @@
   "dependencies": {
     "chokidar": "^2.0.0",
     "concurrently": "^3.5.1",
+    "opn": "^5.2.0",
     "shelljs": "^0.8.0"
   },
   "devDependencies": {
