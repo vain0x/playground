@@ -4,7 +4,7 @@ root = true
 
 
 ; Global settings
-[*.{txt,md}]
+[*.md]
 indent_style = space
 indent_size = 4
 charset = utf-8
@@ -21,9 +21,17 @@ insert_final_newline = true
 
 
 ; Web
-[*.{html,htm,css,js,jsx,ts,tsx}]
+[*.{html,htm,pug,css,scss,js,jsx,ts,tsx}]
 indent_style = space
 indent_size = 2
+charset = utf-8
+trim_trailing_whitespace = true
+insert_final_newline = true
+
+; Node.js
+[{package.json,package-lock.json}]
+indent_style = space
+indent_size = 4
 charset = utf-8
 trim_trailing_whitespace = true
 insert_final_newline = true
