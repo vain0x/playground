@@ -1,0 +1,16 @@
+{
+  "name": "gist-fetcher",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "author": "vain0",
+  "license": "MIT",
+  "dependencies": {
+    "dotenv": "^4.0.0",
+    "passport": "^0.4.0",
+    "passport-oauth2": "^1.4.0"
+  }
+}
