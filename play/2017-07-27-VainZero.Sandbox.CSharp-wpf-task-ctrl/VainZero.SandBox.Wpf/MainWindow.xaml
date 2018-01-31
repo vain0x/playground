@@ -1,0 +1,21 @@
+﻿<Window
+    x:Class="VainZero.SandBox.Wpf.MainWindow"
+    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+    xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+    xmlns:local="clr-namespace:VainZero.SandBox.Wpf"
+    mc:Ignorable="d"
+    Title="MainWindow"
+    Width="525"
+    Height="350"
+    >
+    <DockPanel>
+        <Button x:Name="successButton" DockPanel.Dock="Top" Content="Success" Click="successButton_Click" />
+        <Button x:Name="failureButton" DockPanel.Dock="Top" Content="Failure" Click="failureButton_Click" />
+
+        <local:BusyContentControl IsBusy="{Binding IsBusy.Value}">
+            <ListBox ItemsSource="{Binding Items.Value}" Background="LightGreen" />
+        </local:BusyContentControl>
+    </DockPanel>
+</Window>

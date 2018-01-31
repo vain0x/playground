@@ -1,0 +1,34 @@
+﻿<Window
+    x:Class="VainZero.SandBox.Wpf.MainWindow"
+    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+    xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+    xmlns:local="clr-namespace:VainZero.SandBox.Wpf"
+    mc:Ignorable="d"
+    Title="MainWindow"
+    SizeToContent="WidthAndHeight"
+    >
+    <Grid>
+        <Grid>
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="*" />
+                <ColumnDefinition Width="*" />
+            </Grid.ColumnDefinitions>
+
+            <Border Grid.Column="0">
+                <TextBlock Text="Hello!" />
+            </Border>
+
+            <local:ScaleControl Grid.Column="1" x:Name="border" Margin="30" BorderBrush="Black" BorderThickness="1">
+                <TextBlock TextWrapping="Wrap">
+                    いろはにほへとちりぬるをわかよたれそつねならむうゐのおくやまけふこえてあさきゆめみしゑひもせす
+                    いろはにほへとちりぬるをわかよたれそつねならむうゐのおくやまけふこえてあさきゆめみしゑひもせす
+                    いろはにほへとちりぬるをわかよたれそつねならむうゐのおくやまけふこえてあさきゆめみしゑひもせす
+                    いろはにほへとちりぬるをわかよたれそつねならむうゐのおくやまけふこえてあさきゆめみしゑひもせす
+                    いろはにほへとちりぬるをわかよたれそつねならむうゐのおくやまけふこえてあさきゆめみしゑひもせす
+                </TextBlock>
+            </local:ScaleControl>
+        </Grid>
+    </Grid>
+</Window>

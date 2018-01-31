@@ -1,0 +1,55 @@
+# Normalize line endings to LF for all text files.
+* text=auto
+
+#=================================================
+# Text files
+#=================================================
+*.txt           text
+
+*.gitignore     text eol=lf
+*.gitattributes text eol=lf
+
+*.c             text diff=cpp
+*.h             text diff=cpp
+*.cc            text diff=cpp
+*.hpp           text diff=cpp
+*.cpp           text diff=cpp
+*.hxx           text diff=cpp
+*.cxx           text diff=cpp
+
+*.cs            text diff=csharp
+
+*.html          text diff=html
+*.htm           text diff=html
+
+*.java          text diff=java
+
+*.pl            text diff=perl
+*.php           text diff=php
+*.python        text diff=python
+*.ruby          text diff=ruby
+
+*.sh            text eol=lf
+*.bat           text eol=crlf
+
+*.tex           text diff=tex
+
+#================================================
+# Visual Studio
+#================================================
+*.sln           text
+*.csproj        text
+*.dbproj        text
+*.filters       text
+*.fsproj        text
+*.lsproj        text
+*.modelproj     text
+*.props         text
+*.sqlproj       text
+*.vbproj        text
+*.vcproj        text
+*.vcxitems      text
+*.vcxproj       text
+*.wixproj       text
+*.wmaproj       text
+*.xproj         text
