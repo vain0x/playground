@@ -21,13 +21,10 @@ namespace VainZero.Scripts.Twitter.SelfManagement
 
         IEnumerable<long> TweetIds()
         {
-            const string Path = @"D:\repo\vain0-storage\doc\tweets\vain0x\tweets.csv";
+            const string Path = @"./tweets.csv";
 
-            var firstDate = new DateTime(2013, 7, 1);
-            var endDate = new DateTime(2014, 1, 1);
-
-            //var firstDate = new DateTime(2013, 1, 1);
-            //var endDate = new DateTime(2013, 7, 1);
+            var firstDate = new DateTime(2014, 1, 1);
+            var endDate = new DateTime(2015, 1, 31);
 
             var csv = new Chilkat.Csv();
             csv.HasColumnNames = true;
@@ -62,9 +59,11 @@ namespace VainZero.Scripts.Twitter.SelfManagement
 
 
 
+            Console.WriteLine("Will actually update? (Y/n)");
+            var dryRun = Console.ReadLine() != "Y";
+
             var tweetIds = TweetIds().ToArray();
             Console.WriteLine("Count = " + tweetIds.Length);
-
 
             var tweets =
                 Tweet.GetTweets(tweetIds)
@@ -72,46 +71,47 @@ namespace VainZero.Scripts.Twitter.SelfManagement
                 .ToArray();
             Console.WriteLine("Active Count = " + tweets.Length);
 
-
             Console.WriteLine("OK? (Y/n)");
-            if (Console.ReadLine() == "Y")
+            if (Console.ReadLine() != "Y")
             {
-                foreach (var tweet in tweets)
+                Console.Error.WriteLine("Canceled.");
+                return;
+            }
+
+            foreach (var tweet in tweets)
+            {
+                try
                 {
-                    try
+                    if (tweet.IsTweetDestroyed)
                     {
-                        if (tweet.IsTweetDestroyed)
-                        {
-                            Debug.WriteLine("DESTROYED: " + tweet.Url);
-                            continue;
-                        }
-
-                        if (tweet.Media != null && tweet.Media.Count > 0)
-                        {
-                            if (!tweet.IsRetweet)
-                            {
-                                Debug.WriteLine("MEDIA: " + tweet.Url);
-                                continue;
-                            }
-                        }
-
-                        if (tweet.IsRetweet)
-                        {
-                            tweet.UnRetweet();
-                        }
-                        else
-                        {
-                            tweet.Destroy();
-                        }
+                        Console.Error.WriteLine("DESTROYED: " + tweet.Url);
+                        continue;
                     }
-                    catch (Exception ex)
+
+                    if (tweet.Media != null && tweet.Media.Count > 0 && !tweet.IsRetweet)
                     {
-                        Debug.WriteLine(ex);
-                        Debug.Assert(false);
-
-                        Console.WriteLine("Stop?");
-                        if (Console.ReadLine() == "N") return;
+                        Console.Error.WriteLine("MEDIA: " + tweet.Url);
+                        continue;
                     }
+
+                    if (dryRun) continue;
+
+                    if (tweet.IsRetweet)
+                    {
+                        tweet.UnRetweet();
+                    }
+                    else
+                    {
+                        tweet.Destroy();
+                    }
+                }
+                catch (Exception ex)
+                {
+                    Console.Error.WriteLine(ex);
+                    Debug.Assert(false);
+
+                    Console.WriteLine("Stop?");
+                    if (Console.ReadLine() == "N") return;
                 }
             }
         }
