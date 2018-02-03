@@ -1,26 +1,21 @@
 <Project Sdk="Microsoft.NET.Sdk">
-
   <PropertyGroup>
     <OutputType>Exe</OutputType>
     <TargetFramework>netcoreapp2.0</TargetFramework>
     <RootNamespace>VainZero</RootNamespace>
   </PropertyGroup>
-
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|AnyCPU'">
     <LangVersion>latest</LangVersion>
   </PropertyGroup>
-
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|AnyCPU'">
     <LangVersion>latest</LangVersion>
   </PropertyGroup>
-
   <ItemGroup>
     <PackageReference Include="ChilkatDnCore" Version="9.5.0.69" />
     <PackageReference Include="TweetinviAPI" Version="2.0.0" />
+    <PackageReference Include="Utf8Json" Version="1.3.7" />
   </ItemGroup>
-
   <ItemGroup>
     <ProjectReference Include="..\VainZero.Scripts.Twitter.Core\VainZero.Scripts.Twitter.Core.csproj" />
   </ItemGroup>
-
 </Project>
