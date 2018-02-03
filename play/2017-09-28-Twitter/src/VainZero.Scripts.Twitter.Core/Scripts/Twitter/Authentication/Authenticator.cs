@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Diagnostics;
+using System.IO;
 using System.Text;
 using System.Threading.Tasks;
 using Tweetinvi;
@@ -10,38 +11,70 @@ namespace VainZero.Scripts.Twitter.Authentication
 {
     public sealed class Authenticator
     {
-        const string ConsumerKey = "edYfoxeCY45CPJYRPvaGdXG5p";
-        const string ConsumerSecret = "g0XRRhQRSA5preS5dPHm1PEaCPwD7SwwuM4ydk32S60lRgwdwY";
-
         void OpenUrl(string url)
         {
             Process.Start(@"C:\Program Files (x86)\Google\Chrome\Application\chrome.exe", "-- " + url);
         }
 
-        public async Task<ITwitterCredentials> LoginAsync()
+        public async Task<ITwitterCredentials> AuthenticateAsync()
         {
-            var appCred = new TwitterCredentials(ConsumerKey, ConsumerSecret);
+            Console.WriteLine("Consumer Key?");
+            var consumerKey = Console.ReadLine();
+            Console.WriteLine("Consumer secret?");
+            var consumerSecret = Console.ReadLine();
+
+            var appCred = new TwitterCredentials(consumerKey, consumerSecret);
             var authContext = AuthFlow.InitAuthentication(appCred);
 
             OpenUrl(authContext.AuthorizationURL);
 
+            Console.WriteLine("Pin code?");
             var pinCode = await Console.In.ReadLineAsync();
             var userCred = AuthFlow.CreateCredentialsFromVerifierCode(pinCode, authContext);
-            Auth.SetCredentials(userCred);
-
-            Debug.WriteLine($"var accessToken = \"{userCred.AccessToken}\";");
-            Debug.WriteLine($"var accessTokenSecret = \"{userCred.AccessTokenSecret}\";");
 
             return userCred;
         }
 
-        public ITwitterCredentials LoginAsVain0x()
+        public async Task<ITwitterCredentials> AuthenticateWithCachingAsync()
         {
-            var accessToken = "122279728-5N7sWcWZXzAGANMKaSm9iaHkBdKBW4tpHHqUBLbz";
-            var accessTokenSecret = "onUWpMXgiXJsY1DWI4zVvJ9gtCACMF0wRgMQZpoyxo9ks";
-            var cred = new TwitterCredentials(ConsumerKey, ConsumerSecret, accessToken, accessTokenSecret);
-            Auth.SetCredentials(cred);
-            return cred;
+            var configRepo = new ConfigRepository();
+
+            var config = configRepo.LoadNullable();
+            if (config != null)
+            {
+                var t = config.TwitterAccessToken;
+                var userCred =
+                    new TwitterCredentials(
+                        t.ConsumerKey,
+                        t.ConsumerSecret,
+                        t.AccessTokenKey,
+                        t.AccessTokenSecret
+                    );
+                return userCred;
+            }
+            else
+            {
+                var userCred = await AuthenticateAsync();
+
+                var twitterAccessToken =
+                    new TwitterAccessToken(
+                        userCred.ConsumerKey,
+                        userCred.ConsumerSecret,
+                        userCred.AccessToken,
+                        userCred.AccessTokenSecret
+                    );
+                var newConfig = new Config(twitterAccessToken);
+
+                configRepo.Save(newConfig);
+                return userCred;
+            }
+        }
+
+        public async Task<ITwitterCredentials> LoginAsync()
+        {
+            var userCred = await AuthenticateWithCachingAsync();
+            Auth.SetCredentials(userCred);
+            return userCred;
         }
     }
 }

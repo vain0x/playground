@@ -14,7 +14,7 @@ namespace VainZero.Scripts.Twitter
         {
             try
             {
-                var cred = new Authenticator().LoginAsVain0x();
+                var cred = await new Authenticator().LoginAsync();
 
                 await new RemoveOldTweetsFunc(cred).RemoveOldTweetsAsync();
             }
