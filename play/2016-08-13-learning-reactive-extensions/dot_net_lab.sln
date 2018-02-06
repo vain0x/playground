@@ -1,0 +1,28 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio 14
+VisualStudioVersion = 14.0.25420.1
+MinimumVisualStudioVersion = 10.0.40219.1
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "DotNetLab.Cs.Wpf", "DotNetLab.Cs.Wpf\DotNetLab.Cs.Wpf.csproj", "{1C77AF92-C307-4B33-8937-8E1719FDC5C0}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "DotNetLab.Cs.Wpf.Test", "DotNetLab.Cs.Wpf.Test\DotNetLab.Cs.Wpf.Test.csproj", "{AE7F073F-112B-4C27-91E5-5ADEE24ED2C8}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Release|Any CPU = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{1C77AF92-C307-4B33-8937-8E1719FDC5C0}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{1C77AF92-C307-4B33-8937-8E1719FDC5C0}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{1C77AF92-C307-4B33-8937-8E1719FDC5C0}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{1C77AF92-C307-4B33-8937-8E1719FDC5C0}.Release|Any CPU.Build.0 = Release|Any CPU
+		{AE7F073F-112B-4C27-91E5-5ADEE24ED2C8}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{AE7F073F-112B-4C27-91E5-5ADEE24ED2C8}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{AE7F073F-112B-4C27-91E5-5ADEE24ED2C8}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{AE7F073F-112B-4C27-91E5-5ADEE24ED2C8}.Release|Any CPU.Build.0 = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+EndGlobal
