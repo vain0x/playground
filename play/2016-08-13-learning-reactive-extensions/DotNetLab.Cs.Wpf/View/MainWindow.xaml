@@ -1,0 +1,47 @@
+﻿<Window
+    x:Class="DotNetLab.Cs.Wpf.MainWindow"
+    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+    xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+    xmlns:local="clr-namespace:DotNetLab.Cs.Wpf"
+    mc:Ignorable="d"
+    Title="MainWindow"
+    Width="525"
+    Height="350"
+    >
+    <StackPanel
+        DataContext="{Binding UserRecommendationViewModel}"
+        Orientation="Vertical"
+        >
+        <ListBox
+            ItemsSource="{Binding Users}"
+            >
+            <ListBox.ItemTemplate>
+                <DataTemplate>
+                    <Grid>
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition />
+                            <ColumnDefinition Width="auto" />
+                        </Grid.ColumnDefinitions>
+                        <TextBlock>
+                            <Run Text="{Binding FullName, Mode=OneWay}" />
+                            <LineBreak />
+                            <Run Text="{Binding Bio, Mode=OneWay}" />
+                        </TextBlock>
+                        <Button
+                            Content="Show another"
+                            Command="{Binding ShowAnotherCommand}"
+                            HorizontalAlignment="Right"
+                            Grid.Column="1"
+                            />
+                    </Grid>
+                </DataTemplate>
+            </ListBox.ItemTemplate>
+        </ListBox>
+        <Button
+            Content="Refresh"
+            Command="{Binding RefreshCommand}"
+            />
+    </StackPanel>
+</Window>
