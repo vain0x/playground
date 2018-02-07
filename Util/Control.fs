@@ -7,7 +7,7 @@ open System.Collections.Generic
 module Operators =
   let inline empty< ^m when ^m: (static member Empty: unit -> ^m)> () =
     (^m: (static member Empty: unit -> ^m) ())
-  
+
   let inline append< ^m when ^m: (static member Append: ^m * ^m -> ^m)> l r =
     (^m: (static member Append: ^m * ^m -> ^m) (l, r))
 
@@ -128,7 +128,9 @@ module ContMonad =
 
 [<AutoOpen>]
 module UpdateMonad =
-  type Update<'s, 'u, 't> =
+  open Operators
+
+  type UpdateMonad<'s, 'u, 't> =
     | Update of ('s -> 'u * 't)
 
   [<RequireQualifiedAccess>]
@@ -152,41 +154,43 @@ module UpdateMonad =
       Update (fun _ -> (empty (), x))
 
   type UpdateBuilder internal () =
-    member inline this.Return(x: 't): Update<'s, 'u, 't> * FlowControl =
-      (Update.result x, Break)
+    member inline this.Return(x) =
+      Update.result x
 
-    member inline this.Bind
-        ( x       : Update<'s, 'u, 'x>
-        , f       : 'x -> Update<'s, 'u, 'y> * FlowControl
-        )         : Update<'s, 'u, 'y> * FlowControl
-      =
-      (Update.bind (f >> fst) x, Continue)
+    member inline this.Bind(x, f) =
+      Update.bind f x
 
     member inline this.Zero() =
       this.Return(())
 
-    member inline this.Run(f)     = f () |> fst
-    member inline this.Delay(f)   = f
+    member inline this.Run(f) = f ()
 
-    member inline this.Combine((x, flow), kont) =
-      match flow with
-      | Break -> (x, Break)
-      | Continue -> kont ()
+    member inline this.Delay(f) = f
 
-    member inline this.ReturnFrom(m) = (m, Break)
+    member inline this.Combine(c1, c2) =
+      this.Bind(c1, c2)
 
-    member inline this.Using(x: #IDisposable, f: _ -> _ * FlowControl) =
-      try f x
-      finally
-        match box x with
-        | null -> ()
-        | notNull -> x.Dispose()
+    member inline this.ReturnFrom(m) = m
+
+    member inline this.Using(r,f) =
+      Update (fun s ->
+        use rr = r
+        in Update.run (f rr) s
+        )
 
     member inline this.While(guard, f) =
-      Builders.while' this.Combine this.Zero (guard, f)
+      let rec loop () =
+        if guard ()
+        then this.Combine(f (), loop)
+        else this.Zero()
+      in loop ()
 
     member inline this.For(xs: #seq<_>, f) =
-      Builders.for' this.Using this.While (xs, f)
+      this.Using
+        ( xs.GetEnumerator()
+        , (fun (iter: IEnumerator<_>) ->
+            this.While(iter.MoveNext, (fun () -> f (iter.Current))))
+        )
 
   let update = UpdateBuilder()
 
@@ -231,15 +235,18 @@ module StateMonad =
   open Basis.Core
   open Util.Collections
 
-  type StateUpdate<'t> = 
-    | StateUpdate of option<'t>
+  type StateUpdate<'s> =
+    | StateUpdate of option<'s>
 
     static member Empty() = StateUpdate None
 
     static member Append(StateUpdate l, StateUpdate r) =
-      Option.union r l |> StateUpdate
+      match l, r with
+      | None, x
+      | x, None -> x |> StateUpdate
+      | Some _, Some s -> Some s |> StateUpdate
 
-    static member Update(s, StateUpdate u) = 
+    static member Update(s, StateUpdate u) =
       u |> Option.getOr s
 
   [<RequireQualifiedAccess>]
