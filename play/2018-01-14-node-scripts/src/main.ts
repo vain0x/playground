@@ -1,6 +1,7 @@
 import { BatchApp, BatchCommand } from "./batch-app-framework";
 import { googleCommand } from "./commands/google-command";
 import { regexpCommand } from "./commands/regexp-command";
+import { twitterCommand } from "./commands/twitter-command";
 
 const commands: BatchCommand[] = [
   {
@@ -21,6 +22,7 @@ const commands: BatchCommand[] = [
   },
   googleCommand,
   regexpCommand,
+  twitterCommand,
 ];
 
 export const main = async () => {

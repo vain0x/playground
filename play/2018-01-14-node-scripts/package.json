@@ -27,10 +27,12 @@
     "dotenv": "^5.0.0",
     "node-twitter-api": "^1.8.0",
     "opn": "^5.2.0",
-    "shelljs": "^0.8.0"
+    "shelljs": "^0.8.0",
+    "tmp": "0.0.33"
   },
   "devDependencies": {
     "@types/node": "^9.3.0",
+    "@types/tmp": "0.0.33",
     "jest": "^22.0.6",
     "supertest": "^3.0.0",
     "ts-node": "^4.1.0",
