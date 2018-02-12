@@ -9,8 +9,8 @@ const commands: BatchCommand[] = [
     help() {
       return ["Print usage."];
     },
-    async run(args, app) {
-      app.printUsage();
+    async run(args, context) {
+      context.printUsage();
     },
   },
   {
@@ -24,5 +24,5 @@ const commands: BatchCommand[] = [
 ];
 
 export const main = async () => {
-  return await new BatchApp(commands).main();
+  return await BatchApp.create(commands).main();
 };

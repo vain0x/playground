@@ -1,25 +1,43 @@
 import * as os from "os";
 import * as io from "./io";
 import "./collection";
+import {
+  ConfigRepository,
+  IConfigRepository,
+} from "./config-repository";
 
 const pair = <T1, T2>(x1: T1, x2: T2): [T1, T2] => [x1, x2];
+
+export interface IBatchContext {
+  configRepo: IConfigRepository;
+  printUsage(): void;
+}
 
 export type BatchCommand = {
   verb: string,
   alias?: string[] | undefined,
   help?: (() => string[]) | undefined,
-  run(args: string[], app: BatchApp): Promise<void>,
+  run(args: string[], context: IBatchContext): Promise<void>,
 };
 
 export class BatchApp {
-  private readonly commandFromVerb: Map<string, BatchCommand>;
+  constructor(
+    private readonly commands: BatchCommand[],
+    private readonly commandFromVerb: Map<string, BatchCommand>,
+    private readonly rootDir: string
+  ) {
+  }
 
-  constructor(private readonly commands: BatchCommand[]) {
+  static create(commands: BatchCommand[]): BatchApp {
     const entries =
       commands.flatMap(c =>
         [c.verb, ...c.alias || []].map(verb => pair(c.verb, c))
       );
-    this.commandFromVerb = new Map(entries);
+    const commandFromVerb = new Map(entries);
+
+    const rootDir = process.cwd();
+
+    return new BatchApp(commands, commandFromVerb, rootDir);
   }
 
   usage() {
@@ -75,7 +93,16 @@ export class BatchApp {
       return;
     }
 
-    await command.run(args, this);
+    const context = new class implements IBatchContext {
+      constructor(public readonly configRepo: IConfigRepository) {
+      }
+
+      printUsage(): void {
+        this.printUsage();
+      }
+    }(ConfigRepository.create(this.rootDir));
+
+    await command.run(args, context);
   }
 
   async main() {
