@@ -1,6 +1,7 @@
 import { BatchApp, BatchCommand } from "./batch-app-framework";
 import { googleCommand } from "./commands/google-command";
 import { regexpCommand } from "./commands/regexp-command";
+import { twitterCommand } from "./commands/twitter-command";
 
 const commands: BatchCommand[] = [
   {
@@ -9,8 +10,8 @@ const commands: BatchCommand[] = [
     help() {
       return ["Print usage."];
     },
-    async run(args, app) {
-      app.printUsage();
+    async run(args, context) {
+      context.printUsage();
     },
   },
   {
@@ -21,8 +22,9 @@ const commands: BatchCommand[] = [
   },
   googleCommand,
   regexpCommand,
+  twitterCommand,
 ];
 
 export const main = async () => {
-  return await new BatchApp(commands).main();
+  return await BatchApp.create(commands).main();
 };
