@@ -6,7 +6,7 @@ import * as tmp from "tmp";
 import * as child_process from "child_process";
 import { BatchCommand } from "../batch-app-framework";
 
-const TwitterAPI = require("node-twitter-api");
+import Twitter = require("node-twitter-api");
 
 interface TwitterConfig {
   consumer_key: string;
@@ -32,13 +32,13 @@ const createTwitterClient = (config: {
   consumer_key: string,
   consumer_secret: string,
 }) => {
-  return new TwitterAPI({
+  return new Twitter({
     consumerKey: config.consumer_key,
     consumerSecret: config.consumer_secret,
   });
 };
 
-const tweet = (status: string, twitterClient: any, config: TwitterConfig) => new Promise<void>((resolve, reject) => {
+const tweet = (status: string, twitterClient: Twitter, config: TwitterConfig) => new Promise<void>((resolve, reject) => {
   twitterClient.statuses("update", { status },
     config.access_token_key,
     config.access_token_secret,
