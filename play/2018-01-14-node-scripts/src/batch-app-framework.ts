@@ -1,4 +1,5 @@
 import * as os from "os";
+import * as path from "path";
 import * as io from "./io";
 import "./collection";
 import {
@@ -6,6 +7,7 @@ import {
   IConfigRepository,
 } from "./config-repository";
 
+const sourceDir = __dirname;
 const pair = <T1, T2>(x1: T1, x2: T2): [T1, T2] => [x1, x2];
 
 export interface IBatchContext {
@@ -35,7 +37,7 @@ export class BatchApp {
       );
     const commandFromVerb = new Map(entries);
 
-    const rootDir = process.cwd();
+    const rootDir = path.join(sourceDir, "..");
 
     return new BatchApp(commands, commandFromVerb, rootDir);
   }
