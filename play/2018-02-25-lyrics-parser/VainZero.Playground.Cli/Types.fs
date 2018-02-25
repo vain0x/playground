@@ -2,13 +2,15 @@ namespace VainZero.LyricsParser.Ast
 
   type Metadata =
     {
+      Title: string
       Writers: string[]
       Composers: string[]
       Performers: string[]
       TrackNumber: option<int>
       ReleaseYear: option<int>
-      Notes: option<string>
+      Note: string
       Tie: string[]
+      Entries: Map<string, string[]>
     }
 
   type Song =
@@ -18,13 +20,12 @@ namespace VainZero.LyricsParser.Ast
     }
 
   type Track =
-    | Song
+    | SongTrack
       of Song
-    | Album
+    | AlbumTrack
       of Metadata * Song[]
 
   type TrackList =
     {
-      Title: string
       Tracks: Track[]
     }
