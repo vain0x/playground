@@ -1,4 +1,4 @@
-namespace VainZero.Playground
+namespace VainZero.LyricsParser
 
 open System
 open System.Collections
@@ -14,5 +14,11 @@ open System.Threading
 module Program =
   [<EntryPoint>]
   let main argv =
-
-    0
+    match argv with
+    | [||] ->
+      let solutionDir = Path.GetDirectoryName(Environment.CurrentDirectory)
+      let sampleDir = Path.Combine(solutionDir, "samples")
+      let errorCount = Tests.run sampleDir
+      if errorCount = 0 then 0 else 1
+    | _ ->
+      0
