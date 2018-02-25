@@ -52,8 +52,9 @@ module Rendering =
     let out = StringBuilder()
 
     let fieldsFromMetadata (metadata: Metadata) =
-      let (-->) x y =
+      let (-->!) x y =
         y |> Option.map (fun y -> (x, y))
+      let (-->) x y = (tomlifyKey x) -->! y
       let ofString x =
         if x |> String.IsNullOrWhiteSpace then
           None
@@ -81,7 +82,7 @@ module Rendering =
         yield "tie" --> (metadata.Tie |> ofStringArray)
 
         for KeyValue (key, value) in metadata.Entries do
-          yield "-" + key --> (value |> ofStringArray)
+          yield tomlifyString ("-" + key) -->! (value |> ofStringArray)
 
         yield "note" --> (metadata.Note |> ofMultilineString)
       |]
@@ -89,7 +90,7 @@ module Rendering =
     let writeBlank () =
       out.AppendLine() |> ignore
 
-    let write key (TomlStr value) =
+    let write (TomlStr key) (TomlStr value) =
       out.AppendLine(sprintf "%s = %s" key value) |> ignore
 
     let writeString key (value: string) =
@@ -106,7 +107,7 @@ module Rendering =
     let writeLyrics (lyrics: string) =
       if lyrics |> String.IsNullOrWhiteSpace |> not then
           writeBlank ()
-          write "lyrics" (lyrics |> tomlifyMultilineString)
+          write (tomlifyKey "lyrics") (lyrics |> tomlifyMultilineString)
 
     for (i, track) in trackList.Tracks |> Seq.indexed do
       if i > 0 then writeBlank ()
