@@ -119,7 +119,7 @@ module Parsing =
       let value = line.Substring(1)
       Some (Metadata.update ("TrackNumber", [|value|], value))
     else if line.StartsWith("#") then
-      let value = line.Substring(1) |> trimStartSoft
+      let value = line
       Some (Metadata.update ("Note", [|value|], value))
     else if headerLength >= 0 then
       let heading = line.Substring(0, headerLength)
