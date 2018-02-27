@@ -139,7 +139,7 @@ module Parsing =
         match state with
         | SGround -> ()
         | SAlbum metadata ->
-          eprintfn "Unexpected end of album header at %d." (1 + lineIndex)
+          eprintfn "Album ends with no items at %d." (1 + lineIndex)
           let album = AlbumTrack (metadata, Array.empty)
           tracks.Add(album)
         | SSong (parent, songState) ->
