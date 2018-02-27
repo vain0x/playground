@@ -1,0 +1,102 @@
+[[entries]]
+title = "ぴよぴよインスト"
+composers = ["ぴよぴよミュージシャン"]
+writers = ["ぴよぴよミュージシャン"]
+
+lyrics = """\
+(Instrumental)
+"""
+
+[[entries]]
+title = "ぴよぴよ歌詞未登録"
+composers = ["ぴよぴよミュージシャン"]
+writers = ["ぴよぴよミュージシャン"]
+
+lyrics = """\
+<!unregistered>
+"""
+
+[[entries]]
+title = "ぴよぴよコラボソング"
+composers = ["ほげほげ作曲家", "ぴよぴよミュージシャン"]
+writers = ["ほげほげ作詞家", "ぴよぴよミュージシャン"]
+performers = ["ほげほげ歌手", "ぴよぴよミュージシャン"]
+
+lyrics = """\
+100 ほげほげ
+200 ぴよぴよ
+"""
+
+[[entries]]
+title = "ほげほげコメントつきソング"
+composers = ["ほげほげ作曲家"]
+writers = ["ほげほげ作詞家"]
+performers = ["ほげほげバンド"]
+track-number = 42
+release-year = 2991
+tie = ["映画「ほげほげ」主題歌", "CMソング"]
+"-コーラス" = ["ほげほげバンド"]
+"-調声" = ["ほげほげプロデューサー"]
+note = """\
+#	なんという すさまじさかな このポエム
+# 1行ポエムはハードタブで始まることになっている。
+"""
+
+lyrics = """\
+100 ほげ
+200 ふが
+300 ぴよ
+
+# 字幕で表示される文字はハードタブで始まることになっている。
+	字幕1
+	字幕2
+
+400 ほげ
+500 ふが
+
+# コメント
+"""
+
+[[entries]]
+type = "album"
+title = "ふがふがアルバム"
+composers = ["ふがふが作曲担当"]
+writers = ["ふがふが作詞担当"]
+performers = ["ふがふが歌担当"]
+release-year = 2992
+
+[[entries.tracks]]
+title = "ふがふがプレリュード"
+note = """\
+# インスト曲
+"""
+
+lyrics = """\
+(Instrumental)
+"""
+
+[[entries.tracks]]
+title = "ふがふがセカンドソング"
+
+lyrics = """\
+100 ふが
+200 ふが
+
+300 ふが
+400 ふが
+"""
+
+[[entries.tracks]]
+title = "ふがふがカバーソング"
+composers = ["ぴよぴよミュージシャン"]
+writers = ["ぴよぴよミュージシャン"]
+
+lyrics = """\
+100 ぴよ
+200 ぴよ
+
+
+
+300 ぴよ
+400 ぴよ
+"""
