@@ -15,14 +15,18 @@ interface TwitterConfig {
   access_token_secret: string;
 }
 
-const readByCode = () => new Promise<string>((resolve, reject) => {
+const readByCode = (content: string) => new Promise<string>((resolve, reject) => {
   tmp.file((err, temporaryFilePath) => {
-    child_process.exec(`code --wait ${temporaryFilePath}`, (err, stdout, stderr) => {
+    fs.writeFile(temporaryFilePath, content, err => {
       if (err) return reject(err);
 
-      fs.readFile(temporaryFilePath, (err, data) => {
+      child_process.exec(`code --wait ${temporaryFilePath}`, (err, stdout, stderr) => {
         if (err) return reject(err);
-        return resolve(data.toString());
+
+        fs.readFile(temporaryFilePath, (err, data) => {
+          if (err) return reject(err);
+          return resolve(data.toString());
+        });
       });
     });
   });
@@ -58,15 +62,28 @@ export const twitterCommand: BatchCommand = {
     const config = await context.configRepo.make<TwitterConfig>("twitter").load();
     if (config === undefined) throw new Error("Twitter config doesn't exist.");
 
-    const content = (await readByCode()).trimRight();
-    if (content === "") {
-      console.warn("Canceled due to empty content.");
-      return;
-    }
-
     const twitterClient = createTwitterClient(config);
 
-    await tweet(content, twitterClient, config);
+    let content = "";
+
+    while (true) {
+      content = (await readByCode(content)).trim();
+      if (content === "") {
+        console.warn("Canceled due to empty content.");
+        return;
+      }
+
+      try {
+        await tweet(content, twitterClient, config);
+      } catch (ex) {
+        console.warn("Error occured while submitting:");
+        console.warn(ex);
+        continue;
+      }
+
+      break;
+    }
+
     console.warn("OK.");
   }
 };
