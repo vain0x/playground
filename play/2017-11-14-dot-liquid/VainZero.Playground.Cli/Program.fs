@@ -15,6 +15,7 @@ open System.Runtime.InteropServices
 module LiquidExtension =
   open DotLiquid
 
+  (*
   type HtmlBlock() =
     inherit Block()
 
@@ -32,6 +33,7 @@ module LiquidExtension =
           var.Filters.Add(_escapeFilter)
         | _ -> ()
       base.Render(context, writer)
+  *)
 
   let render source kvs =
     let template = Template.Parse(source)
@@ -42,13 +44,14 @@ module Program =
   [<EntryPoint>]
   let main argv =
     let (-->) k v = (k, box v)
-    let dir = Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location)
-    let source = File.ReadAllText(Path.Combine(dir, "hello.liquid"))
+    // let dir = Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location)
+    // let source = File.ReadAllText(Path.Combine(dir, "hello.liquid"))
 
     // Enable automatic HTML encoding.
     DotLiquid.Template.RegisterValueTypeTransformer(typeof<string>, fun m -> WebUtility.HtmlEncode(m :?> string) |> box)
 
-    let model = ["name" --> "<script>vain0</script>"]
+    let source = File.ReadAllText("hello.liquid.html")
+    let model = ["Message" --> "<script>vain0</script>"]
     let target = LiquidExtension.render source model
     printfn "%s" target
     0
