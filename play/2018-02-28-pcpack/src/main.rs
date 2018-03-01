@@ -1,16 +1,23 @@
+extern crate regex;
 extern crate toml;
 
 use std::env;
 use std::*;
+use std::io::Write as IOWrite;
+use std::fmt::Write as FmtWrite;
 use std::collections::BTreeMap;
 use std::io::prelude::*;
 use std::io;
 use std::fs::{self, DirEntry};
 use std::path::Path;
+use std::path::PathBuf;
+use regex::Regex;
+use std::fs::File;
+use std::io::prelude::*;
 
 struct Module {
     name: String,
-    path: String,
+    path: PathBuf,
 }
 
 #[derive(Debug)]
@@ -34,11 +41,32 @@ impl convert::From<toml::de::Error> for MyError {
 fn read_all_text(path: &Path) -> Result<String, io::Error> {
     let mut file = try!(fs::File::open(path));
     let mut content = String::new();
-    file.read_to_string(&mut content);
+    try!(file.read_to_string(&mut content));
     return Ok(content);
 }
 
+fn write_all_text(path: &Path, content: &str) -> Result<(), io::Error> {
+    let mut file = try!(fs::File::create(path));
+    try!(file.write_all(content.as_bytes()));
+    return Ok(());
+}
+
+fn find_required_module_names(source: &str) -> Vec<String> {
+    let use_pattern = Regex::new("(?://|#|--) *pcpack *use ((?:,? *[\\w\\d_-]+)*)").unwrap();
+
+    let captures = use_pattern.captures_iter(source);
+
+    return captures.flat_map(|cap| {
+        let names = cap.get(1).unwrap().as_str();
+        return names.split(",").map(|word| word.trim().to_owned());
+    }).collect();
+}
+
 fn go() -> Result<(), MyError> {
+    let library_dir_name = "lib";
+    let package_file_path = "pcpack-packages.toml";
+    let target_file_name = "program.txt";
+
     // Move working directory into `workspace`.
     let mut work_dir = try!(env::current_dir());
     {
@@ -50,7 +78,6 @@ fn go() -> Result<(), MyError> {
     // Read the config file.
     let mut name_to_module: BTreeMap<String, Module> = BTreeMap::new();
     {
-        let package_file_path = "pcpack-packages.toml";
         let mut package_file = try!(fs::File::open(package_file_path));
         let mut package_toml = String::new();
         try!(package_file.read_to_string(&mut package_toml));
@@ -68,16 +95,54 @@ fn go() -> Result<(), MyError> {
         for module in modules {
             let module = module.as_table().unwrap();
             let name = module["name"].as_str().unwrap().to_owned();
-            let path = module["path"].as_str().unwrap().to_owned();
+            let path = module["path"].as_str().unwrap();
             eprintln!("Module '{}' in '{}'.", name, path);
-            name_to_module.insert(name.to_owned(), Module { name, path });
+
+            let mut path_buf = PathBuf::new();
+            path_buf.push(work_dir.as_path());
+            path_buf.push(library_dir_name);
+            path_buf.push(path);
+            name_to_module.insert(
+                name.to_owned(),
+                Module {
+                    name,
+                    path: path_buf.to_owned(),
+                },
+            );
+            let full_path = path_buf.to_str().unwrap();
+            let status = if path_buf.as_path().exists() {
+                format!("found at {}",full_path.to_owned())
+            } else {
+                format!("NOT FOUND at {}", full_path)
+            };
+            eprintln!(" --> {}", status);
         }
     }
 
     // Read the client file.
-    let target_file_name = "program.txt";
-    let target_content = try!(read_all_text(Path::new(target_file_name)));
-    eprintln!("\n> cat {}\n{}", target_file_name, target_content);
+    let source = try!(read_all_text(Path::new(target_file_name)));
+    eprintln!("\n> cat {}\n{}", target_file_name, source);
+
+    // Find `use` meta-statements.
+    let mut slot = String::new();
+
+    let required_module_names = find_required_module_names(&source);
+
+    for ref name in required_module_names {
+        match name_to_module.get(name) {
+            Some(ref module) => {
+                let content = try!(read_all_text(module.path.as_path()));
+                slot.write_str(&content).unwrap();
+            },
+            None => {
+                eprintln!("Unknown module '{}'.", name);
+            }
+        }
+    }
+
+    // Output.
+    let output_file_name = "program-output.txt";
+    try!(write_all_text(Path::new(output_file_name), &slot));
 
     return Ok(());
 }
@@ -99,4 +164,20 @@ fn toml_test() {
     let value = "foo = 'bar'".parse::<toml::Value>().unwrap();
 
     assert_eq!(value["foo"].as_str(), Some("bar"));
+}
+
+#[test]
+fn test_find_required_module_names() {
+    let source = r#"
+import something;
+
+// pcpack use ch
+
+# pcpack use hello-world, anti-gravity
+
+print("Hello, world!");
+"#;
+
+    let texts = find_required_module_names(source);
+    assert_eq!(texts, vec!["ch", "hello-world", "anti-gravity"]);
 }
