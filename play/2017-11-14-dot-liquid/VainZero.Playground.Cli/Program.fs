@@ -11,6 +11,7 @@ open System.Web
 open System.Text
 open System.Threading
 open System.Runtime.InteropServices
+open DotLiquid
 
 module LiquidExtension =
   open DotLiquid
@@ -35,11 +36,45 @@ module LiquidExtension =
       base.Render(context, writer)
   *)
 
-  let render source kvs =
+  let hasify =
+    let rec go (model: obj) =
+      match model with
+      | null
+      | :? string
+      | :? int
+      | :? int64
+      | :? float
+      | :? decimal ->
+        model
+      | _ ->
+        hasify model :> obj
+    and hasify model =
+      let dict =
+        Hash.FromAnonymousObject(model)
+        |> Seq.map (fun (KeyValue (key, value)) -> (key, go value))
+        |> dict
+      Hash.FromDictionary(dict)
+    hasify
+
+  let render source (model: Hash) =
     let template = Template.Parse(source)
-    template.Render(Hash.FromDictionary(dict kvs))
+    template.Render(model)
 
 module Program =
+
+  type Message =
+    {
+      Text: string
+    }
+  with
+    member this.Screem = this.Text.ToUpper() + "!"
+
+    member this.Silent = "(" + this.Text.ToLower() + ")"
+
+  type Model =
+    {
+      Message: Message
+    }
 
   [<EntryPoint>]
   let main argv =
@@ -51,7 +86,12 @@ module Program =
     DotLiquid.Template.RegisterValueTypeTransformer(typeof<string>, fun m -> WebUtility.HtmlEncode(m :?> string) |> box)
 
     let source = File.ReadAllText("hello.liquid.html")
-    let model = ["Message" --> "<script>vain0</script>"]
-    let target = LiquidExtension.render source model
+    let model = { Message = { Text = "<script>John Doe</script>" } }
+    // let model = new DotLiquid.Hash()
+    // let message = new DotLiquid.Hash()
+    // message.Add("Screem", "OK!")
+    // message.Add("Silent", "yes...")
+    // model.Add("Message", message)
+    let target = LiquidExtension.render source (model |> LiquidExtension.hasify)
     printfn "%s" target
     0
