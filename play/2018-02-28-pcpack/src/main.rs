@@ -31,39 +31,53 @@ impl convert::From<toml::de::Error> for MyError {
     }
 }
 
+fn read_all_text(path: &Path) -> Result<String, io::Error> {
+    let mut file = try!(fs::File::open(path));
+    let mut content = String::new();
+    file.read_to_string(&mut content);
+    return Ok(content);
+}
+
 fn go() -> Result<(), MyError> {
     // Move working directory into `workspace`.
     let mut work_dir = try!(env::current_dir());
-    work_dir.push("workspace");
-    try!(env::set_current_dir(&work_dir.as_path()));
-    let work_dir = work_dir.as_path();
-    eprintln!("Current dir = {}", work_dir.display());
+    {
+        work_dir.push("workspace");
+        try!(env::set_current_dir(&work_dir.as_path()));
+        eprintln!("Current dir = {}", work_dir.display());
+    }
 
     // Read the config file.
     let mut name_to_module: BTreeMap<String, Module> = BTreeMap::new();
-
-    let package_file_path = "pcpack-packages.toml";
-    let mut package_file = try!(fs::File::open(package_file_path));
-    let mut package_toml = String::new();
-    try!(package_file.read_to_string(&mut package_toml));
-    eprintln!("toml = {}", package_toml.to_owned());
-    let packages: toml::Value = try!(package_toml.parse());
-    eprintln!("{:?}", packages);
-    /* doc = {
+    {
+        let package_file_path = "pcpack-packages.toml";
+        let mut package_file = try!(fs::File::open(package_file_path));
+        let mut package_toml = String::new();
+        try!(package_file.read_to_string(&mut package_toml));
+        eprintln!("toml = {}", package_toml.to_owned());
+        let packages: toml::Value = try!(package_toml.parse());
+        eprintln!("{:?}", packages);
+        /* doc = {
         modules: [
             { name, path },
             ...
         ]
     } */
-    let doc = packages.as_table().unwrap();
-    let modules = doc.get("modules").unwrap().as_array().unwrap();
-    for module in modules {
-        let module = module.as_table().unwrap();
-        let name = module["name"].as_str().unwrap().to_owned();
-        let path = module["path"].as_str().unwrap().to_owned();
-        eprintln!("Module '{}' in '{}'.", name, path);
-        name_to_module.insert(name.to_owned(), Module { name, path });
+        let doc = packages.as_table().unwrap();
+        let modules = doc.get("modules").unwrap().as_array().unwrap();
+        for module in modules {
+            let module = module.as_table().unwrap();
+            let name = module["name"].as_str().unwrap().to_owned();
+            let path = module["path"].as_str().unwrap().to_owned();
+            eprintln!("Module '{}' in '{}'.", name, path);
+            name_to_module.insert(name.to_owned(), Module { name, path });
+        }
     }
+
+    // Read the client file.
+    let target_file_name = "program.txt";
+    let target_content = try!(read_all_text(Path::new(target_file_name)));
+    eprintln!("\n> cat {}\n{}", target_file_name, target_content);
 
     return Ok(());
 }
