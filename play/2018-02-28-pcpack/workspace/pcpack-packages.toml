@@ -1,0 +1,7 @@
+[[modules]]
+name = "par"
+path = "lib/parent.txt"
+
+[[modules]]
+name = "ch"
+path = "lib/child.txt"
