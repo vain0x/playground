@@ -1,2 +1,12 @@
+use something;
+
+// pcpack slot:begin
 
 This is child module. Depends on the parent module.
+// pcpack slot:end
+
+// pcpack use ch
+
+fn main() {
+    println!("Hello, world!");
+}

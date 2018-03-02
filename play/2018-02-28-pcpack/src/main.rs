@@ -3,6 +3,7 @@ extern crate toml;
 
 use std::env;
 use std::*;
+use std::ops::*;
 use std::io::Write as IOWrite;
 use std::fmt::Write as FmtWrite;
 use std::collections::BTreeMap;
@@ -51,6 +52,31 @@ fn write_all_text(path: &Path, content: &str) -> Result<(), io::Error> {
     return Ok(());
 }
 
+fn split_with_slot(source: &str) -> Option<(String, String)> {
+    let begin_pattern = Regex::new("(?m)^ *(?://|#|--) *pcpack *slot:begin.*(?:\r\n|\n)").unwrap();
+    let end_pattern = Regex::new("(?m)^ *(?://|#|--) *pcpack *slot:end").unwrap();
+
+    let begin_match = begin_pattern.find(source);
+    let end_match = end_pattern.find(source);
+    match (begin_match, end_match) {
+        (Some(ref begin_match), Some(ref end_match)) => {
+            let first = begin_match.end();
+            let end = end_match.start();
+            if first > end {
+                eprintln!("slot:begin (at {}) must be followed by slot:end (at {}).", first, end);
+                return None;
+            }
+
+            let first_half = source[0..first].to_owned();
+            let second_half = source[end..source.len()].to_owned();
+            return Some((first_half, second_half));
+        },
+        (_, _) => {
+            return None;
+        }
+    }
+}
+
 fn find_required_module_names(source: &str) -> Vec<String> {
     let use_pattern = Regex::new("(?://|#|--) *pcpack *use ((?:,? *[\\w\\d_-]+)*)").unwrap();
 
@@ -66,6 +92,7 @@ fn go() -> Result<(), MyError> {
     let library_dir_name = "lib";
     let package_file_path = "pcpack-packages.toml";
     let target_file_name = "program.txt";
+    let output_file_name = "program-output.txt";
 
     // Move working directory into `workspace`.
     let mut work_dir = try!(env::current_dir());
@@ -123,6 +150,9 @@ fn go() -> Result<(), MyError> {
     let source = try!(read_all_text(Path::new(target_file_name)));
     eprintln!("\n> cat {}\n{}", target_file_name, source);
 
+    // Find slot to embed code.
+    let (source_before_slot, source_after_slot) = split_with_slot(&source).expect("Missing slot:begin/slot:end pair.");
+
     // Find `use` meta-statements.
     let mut slot = String::new();
 
@@ -141,8 +171,11 @@ fn go() -> Result<(), MyError> {
     }
 
     // Output.
-    let output_file_name = "program-output.txt";
-    try!(write_all_text(Path::new(output_file_name), &slot));
+    let mut output = String::new();
+    output += &source_before_slot;
+    output += &slot;
+    output += &source_after_slot;
+    try!(write_all_text(Path::new(output_file_name), &output));
 
     return Ok(());
 }
@@ -164,6 +197,32 @@ fn toml_test() {
     let value = "foo = 'bar'".parse::<toml::Value>().unwrap();
 
     assert_eq!(value["foo"].as_str(), Some("bar"));
+}
+
+#[test]
+fn test_split_with_slot() {
+    let source = r#"
+import something;
+
+// pcpack slot:begin
+
+some code
+
+# pcpack slot:end
+
+print("Hello, world!");
+"#;
+
+    let (first, second) = split_with_slot(source).expect("It should find slot tags.");
+    assert_eq!(first, r#"
+import something;
+
+// pcpack slot:begin
+"#);
+    assert_eq!(second, r#"# pcpack slot:end
+
+print("Hello, world!");
+"#);
 }
 
 #[test]
