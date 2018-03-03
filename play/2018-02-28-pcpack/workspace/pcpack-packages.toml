@@ -5,3 +5,9 @@ path = "parent.txt"
 [[modules]]
 name = "ch"
 path = "child.txt"
+use = ["par"]
+
+[[modules]]
+name = "gch"
+path = "grandchild"
+use = ["par", "ch"]
