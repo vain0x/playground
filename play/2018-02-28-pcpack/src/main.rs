@@ -1,3 +1,5 @@
+#![allow(unused_imports)]
+
 extern crate regex;
 extern crate toml;
 
@@ -150,11 +152,11 @@ fn go() -> Result<(), MyError> {
         let packages: toml::Value = try!(package_toml.parse());
         eprintln!("{:?}", packages);
         /* doc = {
-        modules: [
-            { name, path },
-            ...
-        ]
-    } */
+            modules: [
+                { name, path },
+                ...
+            ]
+        } */
         let doc = packages.as_table().unwrap();
         let modules = doc.get("modules").unwrap().as_array().unwrap();
         for module in modules {
@@ -234,26 +236,22 @@ fn go() -> Result<(), MyError> {
 
 fn main() {
     go().unwrap();
-
-    // let mut f = File::open(filename).expect("file not found");
-
-    // let mut contents = String::new();
-    // f.read_to_string(&mut contents)
-    // .expect("something went wrong reading the file");
-    //
-    // println!("With text:\n{}", contents);
 }
 
-#[test]
-fn toml_test() {
-    let value = "foo = 'bar'".parse::<toml::Value>().unwrap();
+#[cfg(test)]
+mod tests {
+    use super::*;
 
-    assert_eq!(value["foo"].as_str(), Some("bar"));
-}
+    #[test]
+    fn toml_test() {
+        let value = "foo = 'bar'".parse::<toml::Value>().unwrap();
 
-#[test]
-fn test_split_with_slot() {
-    let source = r#"
+        assert_eq!(value["foo"].as_str(), Some("bar"));
+    }
+
+    #[test]
+    fn test_split_with_slot() {
+        let source = r#"
 import something;
 
 // pcpack slot:begin
@@ -265,26 +263,26 @@ some code
 print("Hello, world!");
 "#;
 
-    let (first, second) = split_with_slot(source).expect("It should find slot tags.");
-    assert_eq!(
-        first,
-        r#"
+        let (first, second) = split_with_slot(source).expect("It should find slot tags.");
+        assert_eq!(
+            first,
+            r#"
 import something;
 
 // pcpack slot:begin"#
-    );
-    assert_eq!(
-        second,
-        r#"# pcpack slot:end
+        );
+        assert_eq!(
+            second,
+            r#"# pcpack slot:end
 
 print("Hello, world!");
 "#
-    );
-}
+        );
+    }
 
-#[test]
-fn test_find_required_module_names() {
-    let source = r#"
+    #[test]
+    fn test_find_required_module_names() {
+        let source = r#"
 import something;
 
 // pcpack use ch
@@ -294,39 +292,42 @@ import something;
 print("Hello, world!");
 "#;
 
-    let texts = find_required_module_names(source);
-    assert_eq!(texts, vec!["ch", "hello-world", "anti-gravity"]);
-}
+        let texts = find_required_module_names(source);
+        assert_eq!(texts, vec!["ch", "hello-world", "anti-gravity"]);
+    }
 
-#[test]
-fn test_resolver() {
-    let modules = {
-        let mut modules = BTreeMap::new();
-        {
-        let mut add = |name: &str, parents: Vec<&str>| {
-            modules.insert(
-                name.to_owned(),
-                Module {
-                    name: name.to_owned(),
-                    path: PathBuf::from(name.to_owned() + ".txt"),
-                    parents: parents.into_iter().map(|name| name.to_owned()).collect(),
-                },
-            );
+    #[test]
+    fn test_resolver() {
+        let modules = {
+            let mut modules = BTreeMap::new();
+            {
+                let mut add = |name: &str, parents: Vec<&str>| {
+                    modules.insert(
+                        name.to_owned(),
+                        Module {
+                            name: name.to_owned(),
+                            path: PathBuf::from(name.to_owned() + ".txt"),
+                            parents: parents.into_iter().map(|name| name.to_owned()).collect(),
+                        },
+                    );
+                };
+                add("a1", vec![]);
+                add("a2", vec![]);
+                add("a3", vec![]);
+                add("b1", vec!["a1", "a2"]);
+                add("c1", vec!["b1", "a2"]);
+                add("d1", vec!["b1", "c1"]);
+            }
+            modules
         };
-        add("a1", vec![]);
-        add("a2", vec![]);
-        add("a3", vec![]);
-        add("b1", vec!["a1", "a2"]);
-        add("c1", vec!["b1", "a2"]);
-        add("d1", vec!["b1", "c1"]);
-        }
-        modules
-    };
 
-    let list = resolve(&modules, &vec!["d1"]);
+        let list = resolve(&modules, &vec!["d1"]);
 
-    assert_eq!(
-        list.into_iter().map(|m| m.name.as_str()).collect::<Vec<&str>>(),
-        vec!["a1", "a2", "b1", "c1", "d1"]
-    );
+        assert_eq!(
+            list.into_iter()
+                .map(|m| m.name.as_str())
+                .collect::<Vec<&str>>(),
+            vec!["a1", "a2", "b1", "c1", "d1"]
+        );
+    }
 }
