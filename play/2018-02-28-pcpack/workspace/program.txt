@@ -3,7 +3,7 @@ use something;
 // pcpack slot:begin
 // pcpack slot:end
 
-// pcpack use ch
+// pcpack use gch
 
 fn main() {
     println!("Hello, world!");

@@ -1,2 +1,1 @@
-
 This is child module. Depends on the parent module.

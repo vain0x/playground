@@ -9,5 +9,5 @@ use = ["par"]
 
 [[modules]]
 name = "gch"
-path = "grandchild"
+path = "grandchild.txt"
 use = ["par", "ch"]

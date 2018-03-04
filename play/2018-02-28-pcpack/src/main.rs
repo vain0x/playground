@@ -7,6 +7,7 @@ use std::ops::*;
 use std::io::Write as IOWrite;
 use std::fmt::Write as FmtWrite;
 use std::collections::BTreeMap;
+use std::collections::HashSet;
 use std::io::prelude::*;
 use std::io;
 use std::fs::{self, DirEntry};
@@ -15,10 +16,12 @@ use std::path::PathBuf;
 use regex::Regex;
 use std::fs::File;
 use std::io::prelude::*;
+use std::iter::*;
 
 struct Module {
     name: String,
     path: PathBuf,
+    parents: Vec<String>,
 }
 
 #[derive(Debug)]
@@ -53,7 +56,7 @@ fn write_all_text(path: &Path, content: &str) -> Result<(), io::Error> {
 }
 
 fn split_with_slot(source: &str) -> Option<(String, String)> {
-    let begin_pattern = Regex::new("(?m)^ *(?://|#|--) *pcpack *slot:begin.*(?:\r\n|\n)").unwrap();
+    let begin_pattern = Regex::new("(?m)^ *(?://|#|--) *pcpack *slot:begin.*$").unwrap();
     let end_pattern = Regex::new("(?m)^ *(?://|#|--) *pcpack *slot:end").unwrap();
 
     let begin_match = begin_pattern.find(source);
@@ -63,14 +66,17 @@ fn split_with_slot(source: &str) -> Option<(String, String)> {
             let first = begin_match.end();
             let end = end_match.start();
             if first > end {
-                eprintln!("slot:begin (at {}) must be followed by slot:end (at {}).", first, end);
+                eprintln!(
+                    "slot:begin (at {}) must be followed by slot:end (at {}).",
+                    first, end
+                );
                 return None;
             }
 
             let first_half = source[0..first].to_owned();
             let second_half = source[end..source.len()].to_owned();
             return Some((first_half, second_half));
-        },
+        }
         (_, _) => {
             return None;
         }
@@ -82,10 +88,42 @@ fn find_required_module_names(source: &str) -> Vec<String> {
 
     let captures = use_pattern.captures_iter(source);
 
-    return captures.flat_map(|cap| {
-        let names = cap.get(1).unwrap().as_str();
-        return names.split(",").map(|word| word.trim().to_owned());
-    }).collect();
+    return captures
+        .flat_map(|cap| {
+            let names = cap.get(1).unwrap().as_str();
+            return names.split(",").map(|word| word.trim().to_owned());
+        })
+        .collect();
+}
+
+fn resolve_core<'s>(
+    name: &str,
+    modules: &'s BTreeMap<String, Module>,
+    done: &mut HashSet<String>,
+    result: &mut Vec<&'s Module>,
+) {
+    if result.iter().any(|m| m.name == name) {
+        return;
+    }
+
+    let module = modules
+        .get(name)
+        .expect(&format!("Unknown module '{}'.", name));
+
+    for name in &module.parents {
+        resolve_core(name, modules, done, result);
+    }
+
+    result.push(module);
+}
+
+fn resolve<'s>(modules: &'s BTreeMap<String, Module>, names: &[&str]) -> Vec<&'s Module> {
+    let mut done = HashSet::new();
+    let mut result = Vec::new();
+    for ref name in names {
+        resolve_core(name, modules, &mut done, &mut result);
+    }
+    result
 }
 
 fn go() -> Result<(), MyError> {
@@ -125,6 +163,15 @@ fn go() -> Result<(), MyError> {
             let path = module["path"].as_str().unwrap();
             eprintln!("Module '{}' in '{}'.", name, path);
 
+            let parents = match module.get("use") {
+                Some(&toml::Value::Array(ref names)) => names
+                    .into_iter()
+                    .filter_map(|x| x.as_str())
+                    .map(|x| x.to_owned())
+                    .collect(),
+                _ => Vec::new(),
+            };
+
             let mut path_buf = PathBuf::new();
             path_buf.push(work_dir.as_path());
             path_buf.push(library_dir_name);
@@ -134,11 +181,12 @@ fn go() -> Result<(), MyError> {
                 Module {
                     name,
                     path: path_buf.to_owned(),
+                    parents,
                 },
             );
             let full_path = path_buf.to_str().unwrap();
             let status = if path_buf.as_path().exists() {
-                format!("found at {}",full_path.to_owned())
+                format!("found at {}", full_path.to_owned())
             } else {
                 format!("NOT FOUND at {}", full_path)
             };
@@ -151,23 +199,27 @@ fn go() -> Result<(), MyError> {
     eprintln!("\n> cat {}\n{}", target_file_name, source);
 
     // Find slot to embed code.
-    let (source_before_slot, source_after_slot) = split_with_slot(&source).expect("Missing slot:begin/slot:end pair.");
+    let (source_before_slot, source_after_slot) =
+        split_with_slot(&source).expect("Missing slot:begin/slot:end pair.");
 
     // Find `use` meta-statements.
     let mut slot = String::new();
 
     let required_module_names = find_required_module_names(&source);
+    let use_modules = resolve(
+        &name_to_module,
+        required_module_names
+            .iter()
+            .map(|name| name.as_str())
+            .collect::<Vec<_>>()
+            .as_slice(),
+    );
 
-    for ref name in required_module_names {
-        match name_to_module.get(name) {
-            Some(ref module) => {
-                let content = try!(read_all_text(module.path.as_path()));
-                slot.write_str(&content).unwrap();
-            },
-            None => {
-                eprintln!("Unknown module '{}'.", name);
-            }
-        }
+    for module in use_modules {
+        let content = try!(read_all_text(module.path.as_path()));
+        slot.write_str("\n").unwrap();
+        slot.write_str(&content).unwrap();
+        slot.write_str("\n").unwrap();
     }
 
     // Output.
@@ -214,15 +266,20 @@ print("Hello, world!");
 "#;
 
     let (first, second) = split_with_slot(source).expect("It should find slot tags.");
-    assert_eq!(first, r#"
+    assert_eq!(
+        first,
+        r#"
 import something;
 
-// pcpack slot:begin
-"#);
-    assert_eq!(second, r#"# pcpack slot:end
+// pcpack slot:begin"#
+    );
+    assert_eq!(
+        second,
+        r#"# pcpack slot:end
 
 print("Hello, world!");
-"#);
+"#
+    );
 }
 
 #[test]
@@ -239,4 +296,37 @@ print("Hello, world!");
 
     let texts = find_required_module_names(source);
     assert_eq!(texts, vec!["ch", "hello-world", "anti-gravity"]);
+}
+
+#[test]
+fn test_resolver() {
+    let modules = {
+        let mut modules = BTreeMap::new();
+        {
+        let mut add = |name: &str, parents: Vec<&str>| {
+            modules.insert(
+                name.to_owned(),
+                Module {
+                    name: name.to_owned(),
+                    path: PathBuf::from(name.to_owned() + ".txt"),
+                    parents: parents.into_iter().map(|name| name.to_owned()).collect(),
+                },
+            );
+        };
+        add("a1", vec![]);
+        add("a2", vec![]);
+        add("a3", vec![]);
+        add("b1", vec!["a1", "a2"]);
+        add("c1", vec!["b1", "a2"]);
+        add("d1", vec!["b1", "c1"]);
+        }
+        modules
+    };
+
+    let list = resolve(&modules, &vec!["d1"]);
+
+    assert_eq!(
+        list.into_iter().map(|m| m.name.as_str()).collect::<Vec<&str>>(),
+        vec!["a1", "a2", "b1", "c1", "d1"]
+    );
 }
