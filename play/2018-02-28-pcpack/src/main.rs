@@ -20,6 +20,14 @@ use std::fs::File;
 use std::io::prelude::*;
 use std::iter::*;
 
+struct Config {
+    /// A relative path from the config file to the file to be bundled (e.g., ``./main.rs``).
+    bundle_path: PathBuf,
+    /// A relative path from the config file to the root directory of library files.
+    lib_root: PathBuf,
+    modules: Vec<Module>,
+}
+
 struct Module {
     name: String,
     path: PathBuf,
@@ -55,6 +63,59 @@ fn write_all_text(path: &Path, content: &str) -> Result<(), io::Error> {
     let mut file = try!(fs::File::create(path));
     try!(file.write_all(content.as_bytes()));
     return Ok(());
+}
+
+fn read_config(config_path: &Path) -> Result<Config, MyError> {
+    let content = try!(read_all_text(config_path));
+    let toml = content.parse::<toml::Value>().expect(&format!(
+        "Coundn't parse config file '{}'.",
+        config_path.to_str().unwrap_or("?")
+    ));
+
+    let bundle_path = PathBuf::from(
+        toml.get("bundle_path")
+            .and_then(|t| t.as_str())
+            .unwrap_or("main.rs"),
+    );
+    let lib_root = PathBuf::from(
+        toml.get("lib_root")
+            .and_then(|t| t.as_str())
+            .unwrap_or("lib"),
+    );
+    let modules = toml.get("modules")
+        .and_then(|t| t.as_array())
+        .unwrap_or(&vec![])
+        .into_iter()
+        .map(|t| {
+            let m = t.as_table().unwrap();
+            let name = m["name"].as_str().unwrap().to_owned();
+            let path = PathBuf::from(
+                m["path"]
+                    .as_str()
+                    .map(|s| s.to_owned())
+                    .unwrap_or_else(|| format!("{}.rs", name)),
+            );
+            let parents = m.get("use")
+                .and_then(|t| t.as_array())
+                .unwrap_or(&vec![])
+                .into_iter()
+                .map(|t| t.as_str().unwrap().to_owned())
+                .collect::<Vec<_>>();
+            Module {
+                name,
+                path,
+                parents,
+            }
+        })
+        .collect::<Vec<_>>();
+
+    let config = Config {
+        bundle_path,
+        lib_root,
+        modules,
+    };
+
+    return Ok(config);
 }
 
 fn split_with_slot(source: &str) -> Option<(String, String)> {
@@ -129,9 +190,7 @@ fn resolve<'s>(modules: &'s BTreeMap<String, Module>, names: &[&str]) -> Vec<&'s
 }
 
 fn go() -> Result<(), MyError> {
-    let library_dir_name = "lib";
-    let package_file_path = "pcpack-packages.toml";
-    let target_file_name = "program.txt";
+    let config_path = PathBuf::from("pcpack-packages.toml");
     let output_file_name = "program-output.txt";
 
     // Move working directory into `workspace`.
@@ -143,49 +202,26 @@ fn go() -> Result<(), MyError> {
     }
 
     // Read the config file.
-    let mut name_to_module: BTreeMap<String, Module> = BTreeMap::new();
-    {
-        let mut package_file = try!(fs::File::open(package_file_path));
-        let mut package_toml = String::new();
-        try!(package_file.read_to_string(&mut package_toml));
-        eprintln!("toml = {}", package_toml.to_owned());
-        let packages: toml::Value = try!(package_toml.parse());
-        eprintln!("{:?}", packages);
-        /* doc = {
-            modules: [
-                { name, path },
-                ...
-            ]
-        } */
-        let doc = packages.as_table().unwrap();
-        let modules = doc.get("modules").unwrap().as_array().unwrap();
-        for module in modules {
-            let module = module.as_table().unwrap();
-            let name = module["name"].as_str().unwrap().to_owned();
-            let path = module["path"].as_str().unwrap();
-            eprintln!("Module '{}' in '{}'.", name, path);
+    let config = try!(read_config(config_path.as_path()));
 
-            let parents = match module.get("use") {
-                Some(&toml::Value::Array(ref names)) => names
-                    .into_iter()
-                    .filter_map(|x| x.as_str())
-                    .map(|x| x.to_owned())
-                    .collect(),
-                _ => Vec::new(),
-            };
+    let name_to_module = {
+        let mut name_to_module: BTreeMap<String, Module> = BTreeMap::new();
+        for module in &config.modules {
+            let name = &module.name;
+            let path = &module.path;
+            eprintln!("Module '{}' in '{}'.", name, path.display());
 
-            let mut path_buf = PathBuf::new();
-            path_buf.push(work_dir.as_path());
-            path_buf.push(library_dir_name);
-            path_buf.push(path);
+            let mut path_buf = PathBuf::from(&work_dir).join(&config.lib_root).join(path);
+
             name_to_module.insert(
                 name.to_owned(),
                 Module {
-                    name,
+                    name: name.to_owned(),
                     path: path_buf.to_owned(),
-                    parents,
+                    parents: module.parents.to_owned(),
                 },
             );
+
             let full_path = path_buf.to_str().unwrap();
             let status = if path_buf.as_path().exists() {
                 format!("found at {}", full_path.to_owned())
@@ -194,11 +230,12 @@ fn go() -> Result<(), MyError> {
             };
             eprintln!(" --> {}", status);
         }
-    }
+        name_to_module
+    };
 
     // Read the client file.
-    let source = try!(read_all_text(Path::new(target_file_name)));
-    eprintln!("\n> cat {}\n{}", target_file_name, source);
+    let source = try!(read_all_text(config.bundle_path.as_path()));
+    eprintln!("\n> cat {}\n{}", config.bundle_path.to_str().unwrap_or("?"), source);
 
     // Find slot to embed code.
     let (source_before_slot, source_after_slot) =

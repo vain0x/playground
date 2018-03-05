@@ -1,3 +1,6 @@
+bundle_path = "program.txt"
+lib_root = "lib"
+
 [[modules]]
 name = "par"
 path = "parent.txt"
