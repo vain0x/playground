@@ -190,7 +190,7 @@ fn resolve<'s>(modules: &'s BTreeMap<String, Module>, names: &[&str]) -> Vec<&'s
 }
 
 fn go() -> Result<(), MyError> {
-    let config_path = PathBuf::from("pcpack-packages.toml");
+    let config_path = PathBuf::from("pcpack-config.toml");
     let output_file_name = "program-output.txt";
 
     // Move working directory into `workspace`.
