@@ -235,7 +235,11 @@ fn go() -> Result<(), MyError> {
 
     // Read the client file.
     let source = try!(read_all_text(config.bundle_path.as_path()));
-    eprintln!("\n> cat {}\n{}", config.bundle_path.to_str().unwrap_or("?"), source);
+    eprintln!(
+        "\n> cat {}\n{}",
+        config.bundle_path.to_str().unwrap_or("?"),
+        source
+    );
 
     // Find slot to embed code.
     let (source_before_slot, source_after_slot) =
