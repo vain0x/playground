@@ -1,0 +1,16 @@
+bundle_path = "program.txt"
+lib_root = "lib"
+
+[[modules]]
+name = "par"
+path = "parent.txt"
+
+[[modules]]
+name = "ch"
+path = "child.txt"
+use = ["par"]
+
+[[modules]]
+name = "gch"
+path = "grandchild.txt"
+use = ["par", "ch"]

@@ -1,0 +1,18 @@
+use something;
+
+// pcpack slot:begin
+This is parent module.
+
+
+This is child module. Depends on the parent module.
+
+
+Grandchild.
+
+// pcpack slot:end
+
+// pcpack use gch
+
+fn main() {
+    println!("Hello, world!");
+}
