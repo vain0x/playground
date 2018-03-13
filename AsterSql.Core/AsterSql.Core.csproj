@@ -40,8 +40,6 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="Engine\Memory\EnvironmentStack.cs" />
-    <Compile Include="Engine\Memory\MemoryRelation.cs" />
     <Compile Include="TypedRecord\Table\Relation.cs" />
     <Compile Include="TypedRecord\Table\RelationExtension.cs" />
     <Compile Include="Data\DbTypeMap.cs" />
@@ -89,7 +87,6 @@
     <Compile Include="TypedRecord\Table\Table.cs" />
     <Compile Include="SqlSyntax\SqlPartExtension.cs" />
   </ItemGroup>
-  <ItemGroup />
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <!-- To modify your build process, add your task inside one of the targets below and uncomment it.
        Other similar extension points exist, see Microsoft.Common.targets.
