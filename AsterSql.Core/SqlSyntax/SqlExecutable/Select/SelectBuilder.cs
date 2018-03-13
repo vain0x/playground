@@ -1,7 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Data.Common;
-using Optional;
+using DotNetKit.ErrorHandling;
 
 namespace AsterSql.SqlSyntax
 {
@@ -35,7 +35,7 @@ namespace AsterSql.SqlSyntax
         FromlessSelectBuilder Combine(string combinator)
         {
             var combined = new CombinedSelectStatement(Statement, combinator);
-            return new FromlessSelectBuilder(Statement.SqlBuilder, combined.Some());
+            return new FromlessSelectBuilder(Statement.SqlBuilder, Option.Some(combined));
         }
 
         public FromlessSelectBuilder Union()

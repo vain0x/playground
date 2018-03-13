@@ -4,7 +4,7 @@ using System.Data;
 using System.Data.Common;
 using System.Linq;
 using System.Reflection;
-using Optional;
+using DotNetKit.ErrorHandling;
 using AsterSql.SqlSyntax;
 
 namespace AsterSql.TypedRecord

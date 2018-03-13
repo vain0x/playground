@@ -1,4 +1,4 @@
 source https://www.nuget.org/api/v2
-nuget Optional
+nuget DotNetKit.Core
 nuget xunit
 nuget xunit.runner.console
