@@ -1,4 +1,4 @@
-﻿namespace DotNetLab.Fs.Lib.Test.AssemblyInfo
+﻿namespace VainZero.Reading.Pfds.UnitTest.AssemblyInfo
 
 open System.Reflection
 open System.Runtime.CompilerServices
@@ -7,12 +7,12 @@ open System.Runtime.InteropServices
 // アセンブリに関する一般情報は、以下の属性セットによって
 // 制御されます。アセンブリに関連付けられている情報を変更するには、
 // これらの属性値を変更します。
-[<assembly: AssemblyTitle("DotNetLab.Fs.Lib.Test")>]
+[<assembly: AssemblyTitle("VainZero.Reading.Pfds.UnitTest")>]
 [<assembly: AssemblyDescription("")>]
 [<assembly: AssemblyConfiguration("")>]
 [<assembly: AssemblyCompany("")>]
-[<assembly: AssemblyProduct("DotNetLab.Fs.Lib.Test")>]
-[<assembly: AssemblyCopyright("Copyright ©  2016")>]
+[<assembly: AssemblyProduct("VainZero.Reading.Pfds.UnitTest")>]
+[<assembly: AssemblyCopyright("Copyright ©  2017")>]
 [<assembly: AssemblyTrademark("")>]
 [<assembly: AssemblyCulture("")>]
 
@@ -22,7 +22,7 @@ open System.Runtime.InteropServices
 [<assembly: ComVisible(false)>]
 
 // このプロジェクトが COM に公開される場合、次の GUID がタイプ ライブラリの ID になります
-[<assembly: Guid("7ee56824-1124-4ace-8046-6a52c53e7f7a")>]
+[<assembly: Guid("1cc495b2-f176-46da-b1a7-0e35238e23fd")>]
 
 // アセンブリのバージョン情報は、以下の 4 つの値で構成されます。:
 // 

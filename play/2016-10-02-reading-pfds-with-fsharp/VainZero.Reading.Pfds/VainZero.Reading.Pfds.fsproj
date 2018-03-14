@@ -5,14 +5,14 @@
     <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
     <Platform Condition=" '$(Platform)' == '' ">AnyCPU</Platform>
     <SchemaVersion>2.0</SchemaVersion>
-    <ProjectGuid>7ee56824-1124-4ace-8046-6a52c53e7f7a</ProjectGuid>
+    <ProjectGuid>ca01a859-b3c0-4fa9-982a-09b3edc3bc29</ProjectGuid>
     <OutputType>Library</OutputType>
-    <RootNamespace>DotNetLab.Fs.Lib.Test</RootNamespace>
-    <AssemblyName>DotNetLab.Fs.Lib.Test</AssemblyName>
+    <RootNamespace>VainZero.Reading.Pfds</RootNamespace>
+    <AssemblyName>VainZero.Reading.Pfds</AssemblyName>
     <TargetFrameworkVersion>v4.5.2</TargetFrameworkVersion>
     <TargetFSharpCoreVersion>4.4.0.0</TargetFSharpCoreVersion>
     <AutoGenerateBindingRedirects>true</AutoGenerateBindingRedirects>
-    <Name>DotNetLab.Fs.Lib.Test</Name>
+    <Name>VainZero.Reading.Pfds</Name>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
     <DebugSymbols>true</DebugSymbols>
@@ -22,7 +22,7 @@
     <OutputPath>bin\Debug\</OutputPath>
     <DefineConstants>DEBUG;TRACE</DefineConstants>
     <WarningLevel>3</WarningLevel>
-    <DocumentationFile>bin\Debug\DotNetLab.Fs.Lib.Test.XML</DocumentationFile>
+    <DocumentationFile>bin\Debug\VainZero.Reading.Pfds.XML</DocumentationFile>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|AnyCPU' ">
     <DebugType>pdbonly</DebugType>
@@ -31,7 +31,7 @@
     <OutputPath>bin\Release\</OutputPath>
     <DefineConstants>TRACE</DefineConstants>
     <WarningLevel>3</WarningLevel>
-    <DocumentationFile>bin\Release\DotNetLab.Fs.Lib.Test.XML</DocumentationFile>
+    <DocumentationFile>bin\Release\VainZero.Reading.Pfds.XML</DocumentationFile>
   </PropertyGroup>
   <ItemGroup>
     <Reference Include="mscorlib" />
@@ -44,15 +44,10 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="AssemblyInfo.fs" />
-    <Compile Include="Chapter02Test.fs" />
-    <Compile Include="Chapter03Test.fs" />
-  </ItemGroup>
-  <ItemGroup>
-    <ProjectReference Include="..\DotNetLab.Fs.Lib\DotNetLab.Fs.Lib.fsproj">
-      <Name>DotNetLab.Fs.Lib</Name>
-      <Project>{d700d1df-58fa-453e-9195-2af3e0afde5a}</Project>
-      <Private>True</Private>
-    </ProjectReference>
+    <Compile Include="Chapter02.fs" />
+    <Compile Include="Chapter0301.fs" />
+    <Compile Include="Chapter0302_BinomialHeap.fs" />
+    <Compile Include="Chapter0303_RedBlackTree.fs" />
   </ItemGroup>
   <PropertyGroup>
     <MinimumVisualStudioVersion Condition="'$(MinimumVisualStudioVersion)' == ''">11</MinimumVisualStudioVersion>
@@ -77,15 +72,4 @@
   <Target Name="AfterBuild">
   </Target>
   -->
-  <Choose>
-    <When Condition="$(TargetFrameworkIdentifier) == '.NETFramework' And ($(TargetFrameworkVersion) == 'v2.0' Or $(TargetFrameworkVersion) == 'v3.0' Or $(TargetFrameworkVersion) == 'v3.5' Or $(TargetFrameworkVersion) == 'v4.0' Or $(TargetFrameworkVersion) == 'v4.5' Or $(TargetFrameworkVersion) == 'v4.5.1' Or $(TargetFrameworkVersion) == 'v4.5.2' Or $(TargetFrameworkVersion) == 'v4.5.3' Or $(TargetFrameworkVersion) == 'v4.6' Or $(TargetFrameworkVersion) == 'v4.6.1' Or $(TargetFrameworkVersion) == 'v4.6.2' Or $(TargetFrameworkVersion) == 'v4.6.3')">
-      <ItemGroup>
-        <Reference Include="Persimmon">
-          <HintPath>..\packages\Persimmon\lib\net20\Persimmon.dll</HintPath>
-          <Private>True</Private>
-          <Paket>True</Paket>
-        </Reference>
-      </ItemGroup>
-    </When>
-  </Choose>
 </Project>

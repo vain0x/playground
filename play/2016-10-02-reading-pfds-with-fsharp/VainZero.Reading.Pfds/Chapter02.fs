@@ -1,4 +1,4 @@
-﻿namespace DotNetLab.Fs.Lib.PFDS
+﻿namespace VainZero.Reading.Pfds
 
 module Chapter02 =
   // Ex2.1

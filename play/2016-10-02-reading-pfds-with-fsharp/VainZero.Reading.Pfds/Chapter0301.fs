@@ -1,8 +1,8 @@
-﻿namespace DotNetLab.Fs.Lib.PFDS
+﻿namespace VainZero.Reading.Pfds
 
 open System.Collections.Generic
 
-module Chapter03 =
+module Chapter0301 =
   type HeapSignature<'x, 'h when 'x: comparison> =
     {
       Empty             : 'h
@@ -218,3 +218,23 @@ module Chapter03 =
         DeleteMin       = fun h -> h.DeleteMin()
         OfSeq           = fun xs -> LeftistHeap<_>.OfSeq(xs)
       }
+
+  (*
+  Ex 3.4
+
+  Weight-biased leftist heap:
+    leftist heap の leftist property を
+    weight-biased leftist property で置き換えて得られるデータ構造。
+
+  Weight-biased leftist property:
+    For any node n in the weight-biased leftist heap,
+    the size of its left child is at least as large as that of the right one.
+
+  (a)
+  Property.
+    The right spine of a weight-biased leftist heap
+    contains at most [log(n + 1)] elements.
+  Proof.
+    TODO
+  End Proof.
+  *)

@@ -1,17 +1,15 @@
-﻿namespace DotNetLab.Fs.Lib.PFDS
+﻿namespace VainZero.Reading.Pfds
 
 open System
 open Persimmon
 open Persimmon.Syntax.UseTestNameByReflection
-open DotNetLab.Fs.Lib.PFDS.Chapter03
+open VainZero.Reading.Pfds.Chapter0301
 
-module Chapter03Test =
+module Chapter0301Test =
   let testHeap (heapSig: HeapSignature<_, _>) =
     let empty = heapSig.Empty
     let ofList xs =
       heapSig.OfSeq(xs :> seq<_>)
-    let insertRange xs heap =
-      xs |> ofList |> heapSig.Merge heap
     let rec toList heap =
       [
         match heap |> heapSig.DeleteMin with
@@ -29,13 +27,25 @@ module Chapter03Test =
         }
       yield 
         test {
-          let heap = empty |> insertRange [3; 1; 2]
+          let heap = ofList [3; 1; 2]
           do! heap |> heapSig.FindMin |> assertEquals (Some 1)
         }
       yield
         test {
-          let heap = empty |> insertRange [3; 1; 2]
+          let xs = [5; 2; 1; 2; 3; 4; 5; 2]
+          let heap = ofList xs
+          do! heap |> heapSig.FindMin |> assertEquals (Some 1)
+        }
+      yield
+        test {
+          let heap = ofList [3; 1; 2]
           do! heap |> toList |> assertEquals [1; 2; 3]
+        }
+      yield
+        test {
+          let xs = [5; 2; 1; 2; 3; 4; 5; 2]
+          let heap = ofList xs
+          do! heap |> toList |> assertEquals (xs |> List.sort)
         }
       yield
         test {

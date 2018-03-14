@@ -1,9 +1,9 @@
-﻿namespace DotNetLab.Fs.Lib.PFDS
+﻿namespace VainZero.Reading.Pfds
 
 open System
 open Persimmon
 open Persimmon.Syntax.UseTestNameByReflection
-open DotNetLab.Fs.Lib.PFDS.Chapter02
+open VainZero.Reading.Pfds.Chapter02
 
 module Chapter02Test =
   let suffixTest =
