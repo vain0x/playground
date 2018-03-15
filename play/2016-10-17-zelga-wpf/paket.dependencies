@@ -1,0 +1,7 @@
+source https://www.nuget.org/api/v2
+nuget FsYaml
+nuget gong-wpf-dragdrop
+nuget Persimmon
+nuget Persimmon.Console
+nuget ReactiveProperty
+nuget System.Reactive
