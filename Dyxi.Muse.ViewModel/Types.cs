@@ -19,4 +19,10 @@ namespace Dyxi.Muse.ViewModel
         public string Extension     { get; set; }
         public int    MediaId       { get; set; }
     }
+
+    public class StackItem
+    {
+        public int MediaId { get; set; }
+        public string Name { get; set; }
+    }
 }
