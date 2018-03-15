@@ -16,6 +16,7 @@ namespace Dyxi.Muse.ViewModel
         public string Added         { get; set; }
         public string LastPlayed    { get; set; }
         public int    PlayCount     { get; set; }
+        public string Extension     { get; set; }
         public int    MediaId       { get; set; }
     }
 }
