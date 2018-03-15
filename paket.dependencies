@@ -1,6 +1,0 @@
-source https://www.nuget.org/api/v2
-
-nuget Basis.Core
-nuget NAudio
-nuget taglib
-github fsprojects/Chessie src/Chessie/ErrorHandling.fs
