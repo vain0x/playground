@@ -1,0 +1,324 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<edmx:Edmx Version="3.0" xmlns:edmx="http://schemas.microsoft.com/ado/2009/11/edmx">
+  <!-- EF Runtime content -->
+  <edmx:Runtime>
+    <!-- SSDL content -->
+    <edmx:StorageModels>
+    <Schema Namespace="dyxi_museModel.Store" Provider="MySql.Data.MySqlClient" ProviderManifestToken="5.5" Alias="Self" xmlns:store="http://schemas.microsoft.com/ado/2007/12/edm/EntityStoreSchemaGenerator" xmlns:customannotation="http://schemas.microsoft.com/ado/2013/11/edm/customannotation" xmlns="http://schemas.microsoft.com/ado/2009/11/edm/ssdl">
+        <EntityType Name="media_contents">
+          <Key>
+            <PropertyRef Name="media_id" />
+          </Key>
+          <Property Name="media_id" Type="int" Nullable="false" />
+          <Property Name="content" Type="longblob" Nullable="false" />
+        </EntityType>
+        <EntityType Name="media_performers">
+          <Key>
+            <PropertyRef Name="id" />
+          </Key>
+          <Property Name="id" Type="int" StoreGeneratedPattern="Identity" Nullable="false" />
+          <Property Name="media_id" Type="int" Nullable="false" />
+          <Property Name="people_id" Type="int" Nullable="false" />
+          <Property Name="role" Type="text" />
+        </EntityType>
+        <EntityType Name="medias">
+          <Key>
+            <PropertyRef Name="id" />
+          </Key>
+          <Property Name="id" Type="int" StoreGeneratedPattern="Identity" Nullable="false" />
+          <Property Name="work_id" Type="int" Nullable="false" />
+          <Property Name="name" Type="text" Nullable="false" />
+          <Property Name="extension" Type="varchar" MaxLength="64" Nullable="false" />
+          <Property Name="length" Type="bigint" Nullable="false" />
+          <Property Name="created" Type="date" />
+        </EntityType>
+        <EntityType Name="people_members">
+          <Key>
+            <PropertyRef Name="people_id" />
+            <PropertyRef Name="member_id" />
+          </Key>
+          <Property Name="people_id" Type="int" Nullable="false" />
+          <Property Name="member_id" Type="int" Nullable="false" />
+        </EntityType>
+        <EntityType Name="peoples">
+          <Key>
+            <PropertyRef Name="id" />
+          </Key>
+          <Property Name="id" Type="int" StoreGeneratedPattern="Identity" Nullable="false" />
+          <Property Name="name" Type="text" Nullable="false" />
+        </EntityType>
+        <EntityType Name="play_logs">
+          <Key>
+            <PropertyRef Name="id" />
+          </Key>
+          <Property Name="id" Type="int" StoreGeneratedPattern="Identity" Nullable="false" />
+          <Property Name="user_id" Type="int" Nullable="false" />
+          <Property Name="media_id" Type="int" Nullable="false" />
+          <Property Name="created" Type="datetime" Precision="0" Nullable="false" />
+        </EntityType>
+        <EntityType Name="users">
+          <Key>
+            <PropertyRef Name="id" />
+          </Key>
+          <Property Name="id" Type="int" StoreGeneratedPattern="Identity" Nullable="false" />
+          <Property Name="name" Type="text" Nullable="false" />
+          <Property Name="password" Type="text" Nullable="false" />
+          <Property Name="cache_dir" Type="text" Nullable="false" />
+        </EntityType>
+        <EntityType Name="work_composers">
+          <Key>
+            <PropertyRef Name="work_id" />
+            <PropertyRef Name="people_id" />
+          </Key>
+          <Property Name="work_id" Type="int" Nullable="false" />
+          <Property Name="people_id" Type="int" Nullable="false" />
+        </EntityType>
+        <EntityType Name="work_writers">
+          <Key>
+            <PropertyRef Name="work_id" />
+            <PropertyRef Name="people_id" />
+          </Key>
+          <Property Name="work_id" Type="int" Nullable="false" />
+          <Property Name="people_id" Type="int" Nullable="false" />
+        </EntityType>
+        <EntityType Name="works">
+          <Key>
+            <PropertyRef Name="id" />
+          </Key>
+          <Property Name="id" Type="int" StoreGeneratedPattern="Identity" Nullable="false" />
+          <Property Name="name" Type="text" Nullable="false" />
+          <Property Name="created" Type="date" />
+        </EntityType>
+        <EntityContainer Name="dyxi_museModelStoreContainer">
+          <EntitySet Name="media_contents" EntityType="Self.media_contents" Schema="dyxi_muse" store:Type="Tables" />
+          <EntitySet Name="media_performers" EntityType="Self.media_performers" Schema="dyxi_muse" store:Type="Tables" />
+          <EntitySet Name="medias" EntityType="Self.medias" Schema="dyxi_muse" store:Type="Tables" />
+          <EntitySet Name="people_members" EntityType="Self.people_members" Schema="dyxi_muse" store:Type="Tables" />
+          <EntitySet Name="peoples" EntityType="Self.peoples" Schema="dyxi_muse" store:Type="Tables" />
+          <EntitySet Name="play_logs" EntityType="Self.play_logs" Schema="dyxi_muse" store:Type="Tables" />
+          <EntitySet Name="users" EntityType="Self.users" Schema="dyxi_muse" store:Type="Tables" />
+          <EntitySet Name="work_composers" EntityType="Self.work_composers" Schema="dyxi_muse" store:Type="Tables" />
+          <EntitySet Name="work_writers" EntityType="Self.work_writers" Schema="dyxi_muse" store:Type="Tables" />
+          <EntitySet Name="works" EntityType="Self.works" Schema="dyxi_muse" store:Type="Tables" />
+        </EntityContainer>
+      </Schema></edmx:StorageModels>
+    <!-- CSDL content -->
+    <edmx:ConceptualModels>
+      <Schema Namespace="dyxi_museModel" Alias="Self" annotation:UseStrongSpatialTypes="false" xmlns:annotation="http://schemas.microsoft.com/ado/2009/02/edm/annotation" xmlns:customannotation="http://schemas.microsoft.com/ado/2013/11/edm/customannotation" xmlns="http://schemas.microsoft.com/ado/2009/11/edm">
+        <EntityContainer Name="dyxi_museEntities" annotation:LazyLoadingEnabled="true">
+          <EntitySet Name="media_contents" EntityType="dyxi_museModel.media_contents" />
+          <EntitySet Name="media_performers" EntityType="dyxi_museModel.media_performers" />
+          <EntitySet Name="medias" EntityType="dyxi_museModel.media" />
+          <EntitySet Name="people_members" EntityType="dyxi_museModel.people_members" />
+          <EntitySet Name="peoples" EntityType="dyxi_museModel.people" />
+          <EntitySet Name="play_logs" EntityType="dyxi_museModel.play_logs" />
+          <EntitySet Name="users" EntityType="dyxi_museModel.user" />
+          <EntitySet Name="work_composers" EntityType="dyxi_museModel.work_composers" />
+          <EntitySet Name="work_writers" EntityType="dyxi_museModel.work_writers" />
+          <EntitySet Name="works" EntityType="dyxi_museModel.work" />
+        </EntityContainer>
+        <EntityType Name="media_contents">
+          <Key>
+            <PropertyRef Name="media_id" />
+          </Key>
+          <Property Name="media_id" Type="Int32" Nullable="false" />
+          <Property Name="content" Type="Binary" Nullable="false" MaxLength="Max" FixedLength="false" />
+        </EntityType>
+        <EntityType Name="media_performers">
+          <Key>
+            <PropertyRef Name="id" />
+          </Key>
+          <Property Name="id" Type="Int32" Nullable="false" annotation:StoreGeneratedPattern="Identity" />
+          <Property Name="media_id" Type="Int32" Nullable="false" />
+          <Property Name="people_id" Type="Int32" Nullable="false" />
+          <Property Name="role" Type="String" MaxLength="65535" FixedLength="false" Unicode="false" />
+        </EntityType>
+        <EntityType Name="media">
+          <Key>
+            <PropertyRef Name="id" />
+          </Key>
+          <Property Name="id" Type="Int32" Nullable="false" annotation:StoreGeneratedPattern="Identity" />
+          <Property Name="work_id" Type="Int32" Nullable="false" />
+          <Property Name="name" Type="String" Nullable="false" MaxLength="65535" FixedLength="false" Unicode="false" />
+          <Property Name="extension" Type="String" Nullable="false" MaxLength="64" FixedLength="false" Unicode="false" />
+          <Property Name="length" Type="Int64" Nullable="false" />
+          <Property Name="created" Type="DateTime" />
+        </EntityType>
+        <EntityType Name="people_members">
+          <Key>
+            <PropertyRef Name="people_id" />
+            <PropertyRef Name="member_id" />
+          </Key>
+          <Property Name="people_id" Type="Int32" Nullable="false" />
+          <Property Name="member_id" Type="Int32" Nullable="false" />
+        </EntityType>
+        <EntityType Name="people">
+          <Key>
+            <PropertyRef Name="id" />
+          </Key>
+          <Property Name="id" Type="Int32" Nullable="false" annotation:StoreGeneratedPattern="Identity" />
+          <Property Name="name" Type="String" Nullable="false" MaxLength="65535" FixedLength="false" Unicode="false" />
+        </EntityType>
+        <EntityType Name="play_logs">
+          <Key>
+            <PropertyRef Name="id" />
+          </Key>
+          <Property Name="id" Type="Int32" Nullable="false" annotation:StoreGeneratedPattern="Identity" />
+          <Property Name="user_id" Type="Int32" Nullable="false" />
+          <Property Name="media_id" Type="Int32" Nullable="false" />
+          <Property Name="created" Type="DateTime" Nullable="false" />
+        </EntityType>
+        <EntityType Name="user">
+          <Key>
+            <PropertyRef Name="id" />
+          </Key>
+          <Property Name="id" Type="Int32" Nullable="false" annotation:StoreGeneratedPattern="Identity" />
+          <Property Name="name" Type="String" Nullable="false" MaxLength="65535" FixedLength="false" Unicode="false" />
+          <Property Name="password" Type="String" Nullable="false" MaxLength="65535" FixedLength="false" Unicode="false" />
+          <Property Name="cache_dir" Type="String" Nullable="false" MaxLength="65535" FixedLength="false" Unicode="false" />
+        </EntityType>
+        <EntityType Name="work_composers">
+          <Key>
+            <PropertyRef Name="work_id" />
+            <PropertyRef Name="people_id" />
+          </Key>
+          <Property Name="work_id" Type="Int32" Nullable="false" />
+          <Property Name="people_id" Type="Int32" Nullable="false" />
+        </EntityType>
+        <EntityType Name="work_writers">
+          <Key>
+            <PropertyRef Name="work_id" />
+            <PropertyRef Name="people_id" />
+          </Key>
+          <Property Name="work_id" Type="Int32" Nullable="false" />
+          <Property Name="people_id" Type="Int32" Nullable="false" />
+        </EntityType>
+        <EntityType Name="work">
+          <Key>
+            <PropertyRef Name="id" />
+          </Key>
+          <Property Name="id" Type="Int32" Nullable="false" annotation:StoreGeneratedPattern="Identity" />
+          <Property Name="name" Type="String" Nullable="false" MaxLength="65535" FixedLength="false" Unicode="false" />
+          <Property Name="created" Type="DateTime" />
+        </EntityType>
+      </Schema>
+    </edmx:ConceptualModels>
+    <!-- C-S mapping content -->
+    <edmx:Mappings>
+      <Mapping Space="C-S" xmlns="http://schemas.microsoft.com/ado/2009/11/mapping/cs">
+        <EntityContainerMapping StorageEntityContainer="dyxi_museModelStoreContainer" CdmEntityContainer="dyxi_museEntities">
+          <EntitySetMapping Name="media_contents">
+            <EntityTypeMapping TypeName="dyxi_museModel.media_contents">
+              <MappingFragment StoreEntitySet="media_contents">
+                <ScalarProperty Name="content" ColumnName="content" />
+                <ScalarProperty Name="media_id" ColumnName="media_id" />
+              </MappingFragment>
+            </EntityTypeMapping>
+          </EntitySetMapping>
+          <EntitySetMapping Name="media_performers">
+            <EntityTypeMapping TypeName="dyxi_museModel.media_performers">
+              <MappingFragment StoreEntitySet="media_performers">
+                <ScalarProperty Name="role" ColumnName="role" />
+                <ScalarProperty Name="people_id" ColumnName="people_id" />
+                <ScalarProperty Name="media_id" ColumnName="media_id" />
+                <ScalarProperty Name="id" ColumnName="id" />
+              </MappingFragment>
+            </EntityTypeMapping>
+          </EntitySetMapping>
+          <EntitySetMapping Name="medias">
+            <EntityTypeMapping TypeName="dyxi_museModel.media">
+              <MappingFragment StoreEntitySet="medias">
+                <ScalarProperty Name="created" ColumnName="created" />
+                <ScalarProperty Name="length" ColumnName="length" />
+                <ScalarProperty Name="extension" ColumnName="extension" />
+                <ScalarProperty Name="name" ColumnName="name" />
+                <ScalarProperty Name="work_id" ColumnName="work_id" />
+                <ScalarProperty Name="id" ColumnName="id" />
+              </MappingFragment>
+            </EntityTypeMapping>
+          </EntitySetMapping>
+          <EntitySetMapping Name="people_members">
+            <EntityTypeMapping TypeName="dyxi_museModel.people_members">
+              <MappingFragment StoreEntitySet="people_members">
+                <ScalarProperty Name="member_id" ColumnName="member_id" />
+                <ScalarProperty Name="people_id" ColumnName="people_id" />
+              </MappingFragment>
+            </EntityTypeMapping>
+          </EntitySetMapping>
+          <EntitySetMapping Name="peoples">
+            <EntityTypeMapping TypeName="dyxi_museModel.people">
+              <MappingFragment StoreEntitySet="peoples">
+                <ScalarProperty Name="name" ColumnName="name" />
+                <ScalarProperty Name="id" ColumnName="id" />
+              </MappingFragment>
+            </EntityTypeMapping>
+          </EntitySetMapping>
+          <EntitySetMapping Name="play_logs">
+            <EntityTypeMapping TypeName="dyxi_museModel.play_logs">
+              <MappingFragment StoreEntitySet="play_logs">
+                <ScalarProperty Name="created" ColumnName="created" />
+                <ScalarProperty Name="media_id" ColumnName="media_id" />
+                <ScalarProperty Name="user_id" ColumnName="user_id" />
+                <ScalarProperty Name="id" ColumnName="id" />
+              </MappingFragment>
+            </EntityTypeMapping>
+          </EntitySetMapping>
+          <EntitySetMapping Name="users">
+            <EntityTypeMapping TypeName="dyxi_museModel.user">
+              <MappingFragment StoreEntitySet="users">
+                <ScalarProperty Name="cache_dir" ColumnName="cache_dir" />
+                <ScalarProperty Name="password" ColumnName="password" />
+                <ScalarProperty Name="name" ColumnName="name" />
+                <ScalarProperty Name="id" ColumnName="id" />
+              </MappingFragment>
+            </EntityTypeMapping>
+          </EntitySetMapping>
+          <EntitySetMapping Name="work_composers">
+            <EntityTypeMapping TypeName="dyxi_museModel.work_composers">
+              <MappingFragment StoreEntitySet="work_composers">
+                <ScalarProperty Name="people_id" ColumnName="people_id" />
+                <ScalarProperty Name="work_id" ColumnName="work_id" />
+              </MappingFragment>
+            </EntityTypeMapping>
+          </EntitySetMapping>
+          <EntitySetMapping Name="work_writers">
+            <EntityTypeMapping TypeName="dyxi_museModel.work_writers">
+              <MappingFragment StoreEntitySet="work_writers">
+                <ScalarProperty Name="people_id" ColumnName="people_id" />
+                <ScalarProperty Name="work_id" ColumnName="work_id" />
+              </MappingFragment>
+            </EntityTypeMapping>
+          </EntitySetMapping>
+          <EntitySetMapping Name="works">
+            <EntityTypeMapping TypeName="dyxi_museModel.work">
+              <MappingFragment StoreEntitySet="works">
+                <ScalarProperty Name="created" ColumnName="created" />
+                <ScalarProperty Name="name" ColumnName="name" />
+                <ScalarProperty Name="id" ColumnName="id" />
+              </MappingFragment>
+            </EntityTypeMapping>
+          </EntitySetMapping>
+        </EntityContainerMapping>
+      </Mapping>
+    </edmx:Mappings>
+  </edmx:Runtime>
+  <!-- EF Designer content (DO NOT EDIT MANUALLY BELOW HERE) -->
+  <Designer xmlns="http://schemas.microsoft.com/ado/2009/11/edmx">
+    <Connection>
+      <DesignerInfoPropertySet>
+        <DesignerProperty Name="MetadataArtifactProcessing" Value="EmbedInOutputAssembly" />
+      </DesignerInfoPropertySet>
+    </Connection>
+    <Options>
+      <DesignerInfoPropertySet>
+        <DesignerProperty Name="ValidateOnBuild" Value="true" />
+        <DesignerProperty Name="EnablePluralization" Value="true" />
+        <DesignerProperty Name="IncludeForeignKeysInModel" Value="true" />
+        <DesignerProperty Name="UseLegacyProvider" Value="true" />
+        <DesignerProperty Name="CodeGenerationStrategy" Value="なし" />
+      </DesignerInfoPropertySet>
+    </Options>
+    <!-- Diagram content (shape and connector positions) -->
+    <Diagrams></Diagrams>
+  </Designer>
+</edmx:Edmx>
