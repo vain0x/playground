@@ -1,0 +1,46 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio 14
+VisualStudioVersion = 14.0.24720.0
+MinimumVisualStudioVersion = 10.0.40219.1
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Dyxi.Muse.Model", "Dyxi.Muse.Model\Dyxi.Muse.Model.csproj", "{C19AE902-8478-4ADB-8393-9D9EC5A47F29}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Dyxi.Muse.ViewModel", "Dyxi.Muse.ViewModel\Dyxi.Muse.ViewModel.csproj", "{B2D324B4-E333-4421-BC0E-32E0B05D5FB8}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Dyxi.Muse.View", "Dyxi.Muse.View\Dyxi.Muse.View.csproj", "{38A197DE-0B69-4117-AAFE-A5C8CA8EEB30}"
+EndProject
+Project("{F2A71F9B-5D33-465A-A702-920D77279786}") = "Dyxi.Muse.Cui", "Dyxi.Muse.Cui\Dyxi.Muse.Cui.fsproj", "{32290C41-EE04-4097-B1B8-0DC9532B2DE4}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Dyxi.CSharp.Util", "Dyxi.CSharp.Util\Dyxi.CSharp.Util.csproj", "{5FAA6811-4C69-4834-A4E9-C5D14E9C5D61}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Release|Any CPU = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{C19AE902-8478-4ADB-8393-9D9EC5A47F29}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{C19AE902-8478-4ADB-8393-9D9EC5A47F29}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{C19AE902-8478-4ADB-8393-9D9EC5A47F29}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{C19AE902-8478-4ADB-8393-9D9EC5A47F29}.Release|Any CPU.Build.0 = Release|Any CPU
+		{B2D324B4-E333-4421-BC0E-32E0B05D5FB8}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{B2D324B4-E333-4421-BC0E-32E0B05D5FB8}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{B2D324B4-E333-4421-BC0E-32E0B05D5FB8}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{B2D324B4-E333-4421-BC0E-32E0B05D5FB8}.Release|Any CPU.Build.0 = Release|Any CPU
+		{38A197DE-0B69-4117-AAFE-A5C8CA8EEB30}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{38A197DE-0B69-4117-AAFE-A5C8CA8EEB30}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{38A197DE-0B69-4117-AAFE-A5C8CA8EEB30}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{38A197DE-0B69-4117-AAFE-A5C8CA8EEB30}.Release|Any CPU.Build.0 = Release|Any CPU
+		{32290C41-EE04-4097-B1B8-0DC9532B2DE4}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{32290C41-EE04-4097-B1B8-0DC9532B2DE4}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{32290C41-EE04-4097-B1B8-0DC9532B2DE4}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{32290C41-EE04-4097-B1B8-0DC9532B2DE4}.Release|Any CPU.Build.0 = Release|Any CPU
+		{5FAA6811-4C69-4834-A4E9-C5D14E9C5D61}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{5FAA6811-4C69-4834-A4E9-C5D14E9C5D61}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{5FAA6811-4C69-4834-A4E9-C5D14E9C5D61}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{5FAA6811-4C69-4834-A4E9-C5D14E9C5D61}.Release|Any CPU.Build.0 = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+EndGlobal
