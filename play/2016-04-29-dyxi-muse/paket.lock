@@ -1,0 +1,5 @@
+NUGET
+  remote: https://www.nuget.org/api/v2
+  specs:
+    NAudio (1.7.3)
+    taglib (2.1)
