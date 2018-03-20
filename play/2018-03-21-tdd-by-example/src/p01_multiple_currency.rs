@@ -20,7 +20,7 @@ struct Dollar {
 
 impl Dollar {
     fn new(amount: i32) -> Dollar {
-        Dollar { amount: 10 } // ← 幼稚で視野が狭く、不快な臭いのする実装
+        Dollar { amount: 5 * 2 }
     }
 
     fn times(&mut self, other: i32) {}
@@ -34,6 +34,6 @@ pub mod tests {
     fn test_multiplication() {
         let mut five = Dollar::new(5);
         five.times(2);
-        assert_eq!(10, five.amount);
+        assert_eq!(5 * 2, five.amount);
     }
 }
