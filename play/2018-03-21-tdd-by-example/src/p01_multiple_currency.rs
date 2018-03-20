@@ -10,6 +10,21 @@
 //! TODO:
 //!     - [ ] $5 + 10 CHF = $10
 //!     - [ ] $5 * 2 = $10
+//!     - [ ] amount: private
+//!     - [ ] Dollar side-effects
+//!     - [ ] money round
+
+struct Dollar {
+    pub amount: i32,
+}
+
+impl Dollar {
+    fn new(amount: i32) -> Dollar {
+        Dollar { amount: 0 }
+    }
+
+    fn times(&mut self, other: i32) {}
+}
 
 #[cfg(test)]
 pub mod tests {
