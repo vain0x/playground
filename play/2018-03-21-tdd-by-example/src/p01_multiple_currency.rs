@@ -20,7 +20,7 @@ struct Dollar {
 
 impl Dollar {
     fn new(amount: i32) -> Dollar {
-        Dollar { amount: 0 }
+        Dollar { amount: 10 } // ← 幼稚で視野が狭く、不快な臭いのする実装
     }
 
     fn times(&mut self, other: i32) {}
