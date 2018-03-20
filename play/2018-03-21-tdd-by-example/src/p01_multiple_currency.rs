@@ -16,7 +16,7 @@
 
 #[derive(Debug, PartialEq, Eq, Clone)]
 struct Dollar {
-    pub amount: i32,
+    amount: i32,
 }
 
 impl Dollar {
@@ -37,9 +37,9 @@ pub mod tests {
     fn test_multiplication() {
         let mut five = Dollar::new(5);
         let mut product = five.times(2);
-        assert_eq!(5 * 2, product.amount);
+        assert_eq!(Dollar::new(5 * 2), product);
         product = five.times(3);
-        assert_eq!(5 * 3, product.amount);
+        assert_eq!(Dollar::new(5 * 3), product);
     }
 
     #[test]
