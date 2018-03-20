@@ -20,10 +20,12 @@ struct Dollar {
 
 impl Dollar {
     fn new(amount: i32) -> Dollar {
-        Dollar { amount: 5 * 2 }
+        Dollar { amount }
     }
 
-    fn times(&mut self, other: i32) {}
+    fn times(&mut self, mul: i32) {
+        self.amount = 5 * 2;
+    }
 }
 
 #[cfg(test)]
