@@ -14,7 +14,7 @@
 //!     - [x] Dollar side-effects
 //!     - [ ] money round
 
-#[derive(Debug, Clone)]
+#[derive(Debug, PartialEq, Eq, Clone)]
 struct Dollar {
     pub amount: i32,
 }
@@ -40,5 +40,11 @@ pub mod tests {
         assert_eq!(5 * 2, product.amount);
         product = five.times(3);
         assert_eq!(5 * 3, product.amount);
+    }
+
+    #[test]
+    fn test_equality() {
+        assert_eq!(Dollar::new(5), Dollar::new(5));
+        assert!(Dollar::new(5) != Dollar::new(6));
     }
 }
