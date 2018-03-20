@@ -15,6 +15,10 @@
 //!     - [ ] money round
 //!     - [ ] 5 CHF * 2 = 10 CHF
 
+use std::fmt::Debug;
+
+trait Money: Debug + Eq + Clone {}
+
 #[derive(Debug, PartialEq, Eq, Clone)]
 struct Dollar {
     amount: i32,
@@ -30,6 +34,8 @@ impl Dollar {
     }
 }
 
+impl Money for Dollar {}
+
 #[derive(Debug, PartialEq, Eq, Clone)]
 struct Franc {
     amount: i32,
@@ -44,6 +50,8 @@ impl Franc {
         Franc::new(self.amount * mul)
     }
 }
+
+impl Money for Franc {}
 
 #[cfg(test)]
 pub mod tests {
