@@ -10,7 +10,7 @@
 //! TODO:
 //!     - [ ] $5 + 10 CHF = $10
 //!     - [x] $5 * 2 = $10
-//!     - [ ] amount: private
+//!     - [x] amount: private
 //!     - [x] Dollar side-effects
 //!     - [ ] money round
 
@@ -36,10 +36,8 @@ pub mod tests {
     #[test]
     fn test_multiplication() {
         let mut five = Dollar::new(5);
-        let mut product = five.times(2);
-        assert_eq!(Dollar::new(5 * 2), product);
-        product = five.times(3);
-        assert_eq!(Dollar::new(5 * 3), product);
+        assert_eq!(Dollar::new(5 * 2), five.times(2));
+        assert_eq!(Dollar::new(5 * 3), five.times(3));
     }
 
     #[test]
