@@ -11,7 +11,7 @@
 //!     - [ ] $5 + 10 CHF = $10
 //!     - [x] $5 * 2 = $10
 //!     - [ ] amount: private
-//!     - [ ] Dollar side-effects
+//!     - [x] Dollar side-effects
 //!     - [ ] money round
 
 #[derive(Debug, Clone)]
@@ -25,8 +25,7 @@ impl Dollar {
     }
 
     fn times(&mut self, mul: i32) -> Dollar {
-        self.amount *= mul;
-        self.clone()
+        Dollar::new(self.amount * mul)
     }
 }
 
