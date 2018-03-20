@@ -14,6 +14,7 @@
 //!     - [ ] Dollar side-effects
 //!     - [ ] money round
 
+#[derive(Debug, Clone)]
 struct Dollar {
     pub amount: i32,
 }
@@ -23,8 +24,9 @@ impl Dollar {
         Dollar { amount }
     }
 
-    fn times(&mut self, mul: i32) {
+    fn times(&mut self, mul: i32) -> Dollar {
         self.amount *= mul;
+        self.clone()
     }
 }
 
@@ -35,9 +37,9 @@ pub mod tests {
     #[test]
     fn test_multiplication() {
         let mut five = Dollar::new(5);
-        five.times(2);
-        assert_eq!(5 * 2, five.amount);
-        five.times(3);
-        assert_eq!(5 * 3, five.amount);
+        let mut product = five.times(2);
+        assert_eq!(5 * 2, product.amount);
+        product = five.times(3);
+        assert_eq!(5 * 3, product.amount);
     }
 }
