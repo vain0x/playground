@@ -9,7 +9,7 @@
 //!
 //! TODO:
 //!     - [ ] $5 + 10 CHF = $10
-//!     - [ ] $5 * 2 = $10
+//!     - [x] $5 * 2 = $10
 //!     - [ ] amount: private
 //!     - [ ] Dollar side-effects
 //!     - [ ] money round
@@ -24,7 +24,7 @@ impl Dollar {
     }
 
     fn times(&mut self, mul: i32) {
-        self.amount = 5 * 2;
+        self.amount *= mul;
     }
 }
 
