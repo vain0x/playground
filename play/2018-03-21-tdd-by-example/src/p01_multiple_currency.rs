@@ -37,5 +37,7 @@ pub mod tests {
         let mut five = Dollar::new(5);
         five.times(2);
         assert_eq!(5 * 2, five.amount);
+        five.times(3);
+        assert_eq!(5 * 3, five.amount);
     }
 }
