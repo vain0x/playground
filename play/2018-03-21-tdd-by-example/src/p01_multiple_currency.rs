@@ -17,18 +17,20 @@
 
 use std::fmt::Debug;
 
-trait Money: Debug + Eq + Clone {
+trait Money: Debug + PartialEq + Clone {
+    fn tag(&self) -> &'static str;
     fn amount(&self) -> i32;
 }
 
-#[derive(Debug, PartialEq, Eq, Clone)]
+#[derive(Debug, Eq, Clone)]
 struct Dollar {
+    tag: &'static str,
     amount: i32,
 }
 
 impl Dollar {
     fn new(amount: i32) -> Dollar {
-        Dollar { amount }
+        Dollar { tag: "USD", amount }
     }
 
     fn times(&mut self, mul: i32) -> Dollar {
@@ -37,19 +39,30 @@ impl Dollar {
 }
 
 impl Money for Dollar {
+    fn tag(&self) -> &'static str {
+        self.tag
+    }
+
     fn amount(&self) -> i32 {
         self.amount
     }
 }
 
-#[derive(Debug, PartialEq, Eq, Clone)]
+impl<T: Money> PartialEq<T> for Dollar {
+    fn eq(&self, other: &T) -> bool {
+        self.tag() == other.tag() && self.amount() == other.amount()
+    }
+}
+
+#[derive(Debug, Eq, Clone)]
 struct Franc {
+    tag: &'static str,
     amount: i32,
 }
 
 impl Franc {
     fn new(amount: i32) -> Franc {
-        Franc { amount }
+        Franc { tag: "CHF", amount }
     }
 
     fn times(&mut self, mul: i32) -> Franc {
@@ -58,8 +71,18 @@ impl Franc {
 }
 
 impl Money for Franc {
+    fn tag(&self) -> &'static str {
+        self.tag
+    }
+
     fn amount(&self) -> i32 {
         self.amount
+    }
+}
+
+impl<T: Money> PartialEq<T> for Franc {
+    fn eq(&self, other: &T) -> bool {
+        self.tag() == other.tag() && self.amount() == other.amount()
     }
 }
 
@@ -78,6 +101,7 @@ pub mod tests {
     fn test_equality() {
         assert_eq!(Dollar::new(5), Dollar::new(5));
         assert!(Dollar::new(5) != Dollar::new(6));
+        assert!(Dollar::new(5) != Franc::new(5));
     }
 
     #[test]
