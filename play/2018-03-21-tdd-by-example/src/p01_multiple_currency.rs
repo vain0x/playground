@@ -68,6 +68,10 @@ pub mod tests {
         let mut five = dollar(5);
         assert_eq!(dollar(5 * 2), five.times(2));
         assert_eq!(dollar(5 * 3), five.times(3));
+
+        let mut five = franc(5);
+        assert_eq!(franc(5 * 2), five.times(2));
+        assert_eq!(franc(5 * 3), five.times(3));
     }
 
     #[test]
@@ -75,24 +79,13 @@ pub mod tests {
         assert_eq!(dollar(5), dollar(5));
         assert!(dollar(5) != dollar(6));
         assert!(dollar(5) != franc(5));
+        assert_eq!(franc(5), franc(5));
+        assert!(franc(5) != franc(6));
     }
 
     #[test]
     fn test_with_amount() {
         assert_eq!(dollar(8), dollar(1).with_amount(8));
         assert_eq!(franc(8), franc(1).with_amount(8));
-    }
-
-    #[test]
-    fn test_franc_multiplication() {
-        let mut five = franc(5);
-        assert_eq!(franc(5 * 2), five.times(2));
-        assert_eq!(franc(5 * 3), five.times(3));
-    }
-
-    #[test]
-    fn test_franc_equality() {
-        assert_eq!(franc(5), franc(5));
-        assert!(franc(5) != franc(6));
     }
 }
