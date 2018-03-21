@@ -45,7 +45,7 @@ struct Dollar {
 
 impl Dollar {
     fn times(&mut self, mul: i32) -> Dollar {
-        dollar(self.amount() * mul)
+        self.with_amount(self.amount() * mul)
     }
 }
 
@@ -77,7 +77,7 @@ struct Franc {
 
 impl Franc {
     fn times(&mut self, mul: i32) -> Franc {
-        franc(self.amount() * mul)
+        self.with_amount(self.amount() * mul)
     }
 }
 
