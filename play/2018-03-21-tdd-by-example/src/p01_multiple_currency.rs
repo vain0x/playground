@@ -17,7 +17,9 @@
 
 use std::fmt::Debug;
 
-trait Money: Debug + Eq + Clone {}
+trait Money: Debug + Eq + Clone {
+    fn amount(&self) -> i32;
+}
 
 #[derive(Debug, PartialEq, Eq, Clone)]
 struct Dollar {
@@ -30,11 +32,15 @@ impl Dollar {
     }
 
     fn times(&mut self, mul: i32) -> Dollar {
-        Dollar::new(self.amount * mul)
+        Dollar::new(self.amount() * mul)
     }
 }
 
-impl Money for Dollar {}
+impl Money for Dollar {
+    fn amount(&self) -> i32 {
+        self.amount
+    }
+}
 
 #[derive(Debug, PartialEq, Eq, Clone)]
 struct Franc {
@@ -47,11 +53,15 @@ impl Franc {
     }
 
     fn times(&mut self, mul: i32) -> Franc {
-        Franc::new(self.amount * mul)
+        Franc::new(self.amount() * mul)
     }
 }
 
-impl Money for Franc {}
+impl Money for Franc {
+    fn amount(&self) -> i32 {
+        self.amount
+    }
+}
 
 #[cfg(test)]
 pub mod tests {
