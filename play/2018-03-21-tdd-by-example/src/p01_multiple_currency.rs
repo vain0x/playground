@@ -15,81 +15,47 @@
 //!     - [ ] money round
 //!     - [ ] 5 CHF * 2 = 10 CHF
 
-use std::fmt::Debug;
+#[derive(Debug, PartialEq, Eq, Clone)]
+struct Money {
+    currency: &'static str,
+    amount: i32,
+}
 
-trait Money: Debug + PartialEq + Clone {
-    fn currency(&self) -> &'static str;
-    fn amount(&self) -> i32;
-    fn with_amount(&self, amount: i32) -> Self;
+impl Money {
+    fn currency(&self) -> &'static str {
+        self.currency
+    }
 
-    fn times(&mut self, mul: i32) -> Self {
-        self.with_amount(self.amount() * mul)
+    fn amount(&self) -> i32 {
+        self.amount
+    }
+
+    fn with_amount(&self, amount: i32) -> Money {
+        Money {
+            currency: self.currency,
+            amount,
+        }
+    }
+
+    fn times(&mut self, mul: i32) -> Money {
+        Money {
+            amount: self.amount() * mul,
+            ..(*self)
+        }
     }
 }
 
-fn dollar(amount: i32) -> Dollar {
-    Dollar {
+fn dollar(amount: i32) -> Money {
+    Money {
         currency: "USD",
         amount,
     }
 }
 
-fn franc(amount: i32) -> Franc {
-    Franc {
+fn franc(amount: i32) -> Money {
+    Money {
         currency: "CHF",
         amount,
-    }
-}
-
-#[derive(Debug, Eq, Clone)]
-struct Dollar {
-    currency: &'static str,
-    amount: i32,
-}
-
-impl Money for Dollar {
-    fn currency(&self) -> &'static str {
-        self.currency
-    }
-
-    fn amount(&self) -> i32 {
-        self.amount
-    }
-
-    fn with_amount(&self, amount: i32) -> Dollar {
-        dollar(amount)
-    }
-}
-
-impl<T: Money> PartialEq<T> for Dollar {
-    fn eq(&self, other: &T) -> bool {
-        self.currency() == other.currency() && self.amount() == other.amount()
-    }
-}
-
-#[derive(Debug, Eq, Clone)]
-struct Franc {
-    currency: &'static str,
-    amount: i32,
-}
-
-impl Money for Franc {
-    fn currency(&self) -> &'static str {
-        self.currency
-    }
-
-    fn amount(&self) -> i32 {
-        self.amount
-    }
-
-    fn with_amount(&self, amount: i32) -> Franc {
-        franc(amount)
-    }
-}
-
-impl<T: Money> PartialEq<T> for Franc {
-    fn eq(&self, other: &T) -> bool {
-        self.currency() == other.currency() && self.amount() == other.amount()
     }
 }
 
