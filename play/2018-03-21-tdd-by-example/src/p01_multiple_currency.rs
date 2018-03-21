@@ -20,6 +20,7 @@ use std::fmt::Debug;
 trait Money: Debug + PartialEq + Clone {
     fn currency(&self) -> &'static str;
     fn amount(&self) -> i32;
+    fn with_amount(&self, amount: i32) -> Self;
 }
 
 fn dollar(amount: i32) -> Dollar {
@@ -56,6 +57,10 @@ impl Money for Dollar {
     fn amount(&self) -> i32 {
         self.amount
     }
+
+    fn with_amount(&self, amount: i32) -> Dollar {
+        dollar(amount)
+    }
 }
 
 impl<T: Money> PartialEq<T> for Dollar {
@@ -84,6 +89,10 @@ impl Money for Franc {
     fn amount(&self) -> i32 {
         self.amount
     }
+
+    fn with_amount(&self, amount: i32) -> Franc {
+        franc(amount)
+    }
 }
 
 impl<T: Money> PartialEq<T> for Franc {
@@ -108,6 +117,12 @@ pub mod tests {
         assert_eq!(dollar(5), dollar(5));
         assert!(dollar(5) != dollar(6));
         assert!(dollar(5) != franc(5));
+    }
+
+    #[test]
+    fn test_with_amount() {
+        assert_eq!(dollar(8), dollar(1).with_amount(8));
+        assert_eq!(franc(8), franc(1).with_amount(8));
     }
 
     #[test]
