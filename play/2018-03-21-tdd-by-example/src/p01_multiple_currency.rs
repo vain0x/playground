@@ -37,7 +37,7 @@ impl Money {
         }
     }
 
-    fn times(&mut self, mul: i32) -> Money {
+    fn times(&self, mul: i32) -> Money {
         Money {
             amount: self.amount() * mul,
             ..(*self)
@@ -65,11 +65,11 @@ pub mod tests {
 
     #[test]
     fn test_multiplication() {
-        let mut five = dollar(5);
+        let five = dollar(5);
         assert_eq!(dollar(5 * 2), five.times(2));
         assert_eq!(dollar(5 * 3), five.times(3));
 
-        let mut five = franc(5);
+        let five = franc(5);
         assert_eq!(franc(5 * 2), five.times(2));
         assert_eq!(franc(5 * 3), five.times(3));
     }
