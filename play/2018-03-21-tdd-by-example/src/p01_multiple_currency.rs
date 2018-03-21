@@ -39,7 +39,7 @@ impl Money {
     }
 
     fn plus(&self, other: Money) -> Money {
-        dollar(6 + 4)
+        self.with_amount(self.amount() + other.amount())
     }
 
     fn times(&self, mul: i32) -> Money {
