@@ -22,6 +22,14 @@ trait Money: Debug + PartialEq + Clone {
     fn amount(&self) -> i32;
 }
 
+fn dollar(amount: i32) -> Dollar {
+    Dollar::new(amount)
+}
+
+fn franc(amount: i32) -> Franc {
+    Franc::new(amount)
+}
+
 #[derive(Debug, Eq, Clone)]
 struct Dollar {
     tag: &'static str,
@@ -34,7 +42,7 @@ impl Dollar {
     }
 
     fn times(&mut self, mul: i32) -> Dollar {
-        Dollar::new(self.amount() * mul)
+        dollar(self.amount() * mul)
     }
 }
 
@@ -66,7 +74,7 @@ impl Franc {
     }
 
     fn times(&mut self, mul: i32) -> Franc {
-        Franc::new(self.amount() * mul)
+        franc(self.amount() * mul)
     }
 }
 
@@ -92,28 +100,28 @@ pub mod tests {
 
     #[test]
     fn test_multiplication() {
-        let mut five = Dollar::new(5);
-        assert_eq!(Dollar::new(5 * 2), five.times(2));
-        assert_eq!(Dollar::new(5 * 3), five.times(3));
+        let mut five = dollar(5);
+        assert_eq!(dollar(5 * 2), five.times(2));
+        assert_eq!(dollar(5 * 3), five.times(3));
     }
 
     #[test]
     fn test_equality() {
-        assert_eq!(Dollar::new(5), Dollar::new(5));
-        assert!(Dollar::new(5) != Dollar::new(6));
-        assert!(Dollar::new(5) != Franc::new(5));
+        assert_eq!(dollar(5), dollar(5));
+        assert!(dollar(5) != dollar(6));
+        assert!(dollar(5) != franc(5));
     }
 
     #[test]
     fn test_franc_multiplication() {
-        let mut five = Franc::new(5);
-        assert_eq!(Franc::new(5 * 2), five.times(2));
-        assert_eq!(Franc::new(5 * 3), five.times(3));
+        let mut five = franc(5);
+        assert_eq!(franc(5 * 2), five.times(2));
+        assert_eq!(franc(5 * 3), five.times(3));
     }
 
     #[test]
     fn test_franc_equality() {
-        assert_eq!(Franc::new(5), Franc::new(5));
-        assert!(Franc::new(5) != Franc::new(6));
+        assert_eq!(franc(5), franc(5));
+        assert!(franc(5) != franc(6));
     }
 }
