@@ -21,6 +21,10 @@ trait Money: Debug + PartialEq + Clone {
     fn currency(&self) -> &'static str;
     fn amount(&self) -> i32;
     fn with_amount(&self, amount: i32) -> Self;
+
+    fn times(&mut self, mul: i32) -> Self {
+        self.with_amount(self.amount() * mul)
+    }
 }
 
 fn dollar(amount: i32) -> Dollar {
@@ -41,12 +45,6 @@ fn franc(amount: i32) -> Franc {
 struct Dollar {
     currency: &'static str,
     amount: i32,
-}
-
-impl Dollar {
-    fn times(&mut self, mul: i32) -> Dollar {
-        self.with_amount(self.amount() * mul)
-    }
 }
 
 impl Money for Dollar {
@@ -73,12 +71,6 @@ impl<T: Money> PartialEq<T> for Dollar {
 struct Franc {
     currency: &'static str,
     amount: i32,
-}
-
-impl Franc {
-    fn times(&mut self, mul: i32) -> Franc {
-        self.with_amount(self.amount() * mul)
-    }
 }
 
 impl Money for Franc {
