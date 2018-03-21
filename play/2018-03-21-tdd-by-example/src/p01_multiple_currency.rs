@@ -23,11 +23,11 @@ trait Money: Debug + PartialEq + Clone {
 }
 
 fn dollar(amount: i32) -> Dollar {
-    Dollar::new(amount)
+    Dollar { tag: "USD", amount }
 }
 
 fn franc(amount: i32) -> Franc {
-    Franc::new(amount)
+    Franc { tag: "CHF", amount }
 }
 
 #[derive(Debug, Eq, Clone)]
@@ -37,10 +37,6 @@ struct Dollar {
 }
 
 impl Dollar {
-    fn new(amount: i32) -> Dollar {
-        Dollar { tag: "USD", amount }
-    }
-
     fn times(&mut self, mul: i32) -> Dollar {
         dollar(self.amount() * mul)
     }
@@ -69,10 +65,6 @@ struct Franc {
 }
 
 impl Franc {
-    fn new(amount: i32) -> Franc {
-        Franc { tag: "CHF", amount }
-    }
-
     fn times(&mut self, mul: i32) -> Franc {
         franc(self.amount() * mul)
     }
