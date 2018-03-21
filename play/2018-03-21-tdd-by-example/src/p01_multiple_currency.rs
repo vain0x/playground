@@ -16,14 +16,16 @@
 //!     - [x] 5 CHF * 2 = 10 CHF
 //!     - [ ] $5 + $5 = $10
 
+type Currency = &'static str;
+
 #[derive(Debug, PartialEq, Eq, Clone)]
 struct Money {
-    currency: &'static str,
+    currency: Currency,
     amount: i32,
 }
 
 impl Money {
-    fn currency(&self) -> &'static str {
+    fn currency(&self) -> Currency {
         self.currency
     }
 
