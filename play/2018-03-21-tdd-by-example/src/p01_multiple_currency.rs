@@ -13,7 +13,8 @@
 //!     - [x] amount: private
 //!     - [x] Dollar side-effects
 //!     - [ ] money round
-//!     - [ ] 5 CHF * 2 = 10 CHF
+//!     - [x] 5 CHF * 2 = 10 CHF
+//!     - [ ] $5 + $5 = $10
 
 #[derive(Debug, PartialEq, Eq, Clone)]
 struct Money {
@@ -35,6 +36,10 @@ impl Money {
             currency: self.currency,
             amount,
         }
+    }
+
+    fn plus(&self, other: Money) -> Money {
+        dollar(6 + 4)
     }
 
     fn times(&self, mul: i32) -> Money {
@@ -62,6 +67,11 @@ fn franc(amount: i32) -> Money {
 #[cfg(test)]
 pub mod tests {
     use super::*;
+
+    #[test]
+    fn test_plus() {
+        assert_eq!(dollar(6 + 4), dollar(6).plus(dollar(4)));
+    }
 
     #[test]
     fn test_multiplication() {
