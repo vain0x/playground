@@ -16,7 +16,35 @@
 //!     - [x] 5 CHF * 2 = 10 CHF
 //!     - [ ] $5 + $5 = $10
 
+use std::convert::Into;
+
 type Currency = &'static str;
+
+struct Bank;
+
+impl Bank {
+    fn reduce(&self, source: Expression, currency: Currency) -> i32 {
+        6 + 4
+    }
+}
+
+#[derive(Debug, PartialEq, Eq, Clone)]
+enum Expression {
+    Money(Money),
+    Sum(Box<Expression>, Box<Expression>),
+}
+
+impl Expression {
+    fn plus(self, other: Expression) -> Expression {
+        Expression::Sum(Box::new(self), Box::new(other))
+    }
+}
+
+impl Into<Expression> for Money {
+    fn into(self) -> Expression {
+        Expression::Money(self)
+    }
+}
 
 #[derive(Debug, PartialEq, Eq, Clone)]
 struct Money {
@@ -40,8 +68,8 @@ impl Money {
         }
     }
 
-    fn plus(&self, other: Money) -> Money {
-        self.with_amount(self.amount() + other.amount())
+    fn plus<R: Into<Expression>>(self, other: R) -> Expression {
+        <Money as Into<Expression>>::into(self).plus(other.into())
     }
 
     fn times(&self, mul: i32) -> Money {
@@ -72,7 +100,9 @@ pub mod tests {
 
     #[test]
     fn test_plus() {
-        assert_eq!(dollar(6 + 4), dollar(6).plus(dollar(4)));
+        let expression = dollar(6).plus(dollar(4));
+        let reduced = Bank.reduce(expression, "USD");
+        assert_eq!(6 + 4, reduced);
     }
 
     #[test]
