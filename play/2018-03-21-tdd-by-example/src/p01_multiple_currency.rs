@@ -18,21 +18,27 @@
 use std::fmt::Debug;
 
 trait Money: Debug + PartialEq + Clone {
-    fn tag(&self) -> &'static str;
+    fn currency(&self) -> &'static str;
     fn amount(&self) -> i32;
 }
 
 fn dollar(amount: i32) -> Dollar {
-    Dollar { tag: "USD", amount }
+    Dollar {
+        currency: "USD",
+        amount,
+    }
 }
 
 fn franc(amount: i32) -> Franc {
-    Franc { tag: "CHF", amount }
+    Franc {
+        currency: "CHF",
+        amount,
+    }
 }
 
 #[derive(Debug, Eq, Clone)]
 struct Dollar {
-    tag: &'static str,
+    currency: &'static str,
     amount: i32,
 }
 
@@ -43,8 +49,8 @@ impl Dollar {
 }
 
 impl Money for Dollar {
-    fn tag(&self) -> &'static str {
-        self.tag
+    fn currency(&self) -> &'static str {
+        self.currency
     }
 
     fn amount(&self) -> i32 {
@@ -54,13 +60,13 @@ impl Money for Dollar {
 
 impl<T: Money> PartialEq<T> for Dollar {
     fn eq(&self, other: &T) -> bool {
-        self.tag() == other.tag() && self.amount() == other.amount()
+        self.currency() == other.currency() && self.amount() == other.amount()
     }
 }
 
 #[derive(Debug, Eq, Clone)]
 struct Franc {
-    tag: &'static str,
+    currency: &'static str,
     amount: i32,
 }
 
@@ -71,8 +77,8 @@ impl Franc {
 }
 
 impl Money for Franc {
-    fn tag(&self) -> &'static str {
-        self.tag
+    fn currency(&self) -> &'static str {
+        self.currency
     }
 
     fn amount(&self) -> i32 {
@@ -82,7 +88,7 @@ impl Money for Franc {
 
 impl<T: Money> PartialEq<T> for Franc {
     fn eq(&self, other: &T) -> bool {
-        self.tag() == other.tag() && self.amount() == other.amount()
+        self.currency() == other.currency() && self.amount() == other.amount()
     }
 }
 
