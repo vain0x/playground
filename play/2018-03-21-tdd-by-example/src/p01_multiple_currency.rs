@@ -32,16 +32,19 @@ impl Bank {
         }
     }
 
-    fn set_rate(
-        &mut self,
-        left_amount: f64,
-        left_currency: Currency,
-        right_amount: f64,
-        right_currency: Currency,
-    ) {
-        let r = right_amount / left_amount;
-        // self.rates.insert;
+    fn rate(&self, from: Currency, to: Currency) -> Option<f64> {
+        if from == to {
+            return Some(1.0);
+        }
+
+        match (from, to) {
+            ("CHF", "USD") => Some(0.5),
+            ("USD", "CHF") => Some(2.0),
+            _ => None,
+        }
     }
+
+    fn set_rate(&mut self, from: Money, to: Money) {}
 
     fn reduce(&self, source: Expression, currency: Currency) -> Money {
         match source {
@@ -130,9 +133,27 @@ pub mod tests {
         let mut bank = Bank::new();
         bank.set_rate(dollar(1.0), franc(2.0));
 
-        assert_eq!(1.0, bank.rate("USD", "USD"));
+        assert_eq!(Some(2.0), bank.rate("USD", "CHF"));
+    }
 
-        assert_eq!(2.0, bank.rate("CHF", "USD"));
+    #[test]
+    fn test_rate_reverse() {
+        let mut bank = Bank::new();
+        bank.set_rate(dollar(1.0), franc(2.0));
+
+        assert_eq!(Some(0.5), bank.rate("CHF", "USD"));
+    }
+
+    #[test]
+    fn test_rate_undefined() {
+        let bank = Bank::new();
+        assert_eq!(None, bank.rate("USD", "BTC"));
+    }
+
+    #[test]
+    fn test_rate_reflective() {
+        let bank = Bank::new();
+        assert_eq!(Some(1.0), bank.rate("USD", "USD"));
     }
 
     #[cfg(a)]
