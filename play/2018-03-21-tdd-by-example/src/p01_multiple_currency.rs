@@ -125,11 +125,10 @@ fn franc(amount: f64) -> Money {
 pub mod tests {
     use super::*;
 
-    #[cfg(a)]
     #[test]
     fn test_rate() {
         let mut bank = Bank::new();
-        bank.set_rate(1.0, "USD", 2.0, "CHF");
+        bank.set_rate(dollar(1.0), franc(2.0));
 
         assert_eq!(1.0, bank.rate("USD", "USD"));
 
