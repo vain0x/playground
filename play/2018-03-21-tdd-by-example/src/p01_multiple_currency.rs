@@ -172,6 +172,15 @@ pub mod tests {
         assert_eq!(Some(1.0), bank.rate("USD", "USD"));
     }
 
+    #[test]
+    #[should_panic]
+    fn test_set_rate_inconsistent() {
+        let mut bank = Bank::new();
+
+        // End the USA economics!!
+        bank.set_rate(dollar(1.0), dollar(2.0));
+    }
+
     #[cfg(a)]
     #[test]
     fn test_reduce_dollar_to_dollar() {
