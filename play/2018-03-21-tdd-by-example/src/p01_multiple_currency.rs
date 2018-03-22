@@ -22,7 +22,7 @@ use std::convert::Into;
 type Currency = &'static str;
 
 struct Bank {
-    rates: HashMap<(Currency, Currency), i32>,
+    rates: HashMap<(Currency, Currency), f64>,
 }
 
 impl Bank {
@@ -34,9 +34,9 @@ impl Bank {
 
     fn set_rate(
         &mut self,
-        left_amount: i32,
+        left_amount: f64,
         left_currency: Currency,
-        right_amount: i32,
+        right_amount: f64,
         right_currency: Currency,
     ) {
         let r = right_amount / left_amount;
@@ -46,12 +46,12 @@ impl Bank {
     fn reduce(&self, source: Expression, currency: Currency) -> Money {
         match source {
             Expression::Money(money) => money,
-            Expression::Sum(_, _) => dollar(6 + 4),
+            Expression::Sum(_, _) => dollar(6.0 + 4.0),
         }
     }
 }
 
-#[derive(Debug, PartialEq, Eq, Clone)]
+#[derive(Debug, PartialEq, Clone)]
 enum Expression {
     Money(Money),
     Sum(Box<Expression>, Box<Expression>),
@@ -69,10 +69,10 @@ impl Into<Expression> for Money {
     }
 }
 
-#[derive(Debug, PartialEq, Eq, Clone)]
+#[derive(Debug, PartialEq, Clone)]
 struct Money {
     currency: Currency,
-    amount: i32,
+    amount: f64,
 }
 
 impl Money {
@@ -80,11 +80,11 @@ impl Money {
         self.currency
     }
 
-    fn amount(&self) -> i32 {
+    fn amount(&self) -> f64 {
         self.amount
     }
 
-    fn with_amount(&self, amount: i32) -> Money {
+    fn with_amount(&self, amount: f64) -> Money {
         Money {
             currency: self.currency,
             amount,
@@ -95,7 +95,7 @@ impl Money {
         <Money as Into<Expression>>::into(self).plus(other.into())
     }
 
-    fn times(&self, mul: i32) -> Money {
+    fn times(&self, mul: f64) -> Money {
         Money {
             amount: self.amount() * mul,
             ..(*self)
@@ -107,14 +107,14 @@ impl Money {
     }
 }
 
-fn dollar(amount: i32) -> Money {
+fn dollar(amount: f64) -> Money {
     Money {
         currency: "USD",
         amount,
     }
 }
 
-fn franc(amount: i32) -> Money {
+fn franc(amount: f64) -> Money {
     Money {
         currency: "CHF",
         amount,
@@ -129,52 +129,52 @@ pub mod tests {
     #[test]
     fn test_rate() {
         let mut bank = Bank::new();
-        bank.set_rate(1, "USD", 2, "CHF");
+        bank.set_rate(1.0, "USD", 2.0, "CHF");
 
-        assert_eq!(1, bank.rate("USD", "USD"));
+        assert_eq!(1.0, bank.rate("USD", "USD"));
 
-        assert_eq!(2, bank.rate("CHF", "USD"));
+        assert_eq!(2.0, bank.rate("CHF", "USD"));
     }
 
     #[cfg(a)]
     #[test]
     fn test_reduce_dollar_to_dollar() {
-        let five = dollar(5).to_expr();
-        assert_eq!(dollar(5), Bank.reduce(five, "USD"));
+        let five = dollar(5.0).to_expr();
+        assert_eq!(dollar(5.0), Bank.reduce(five, "USD"));
     }
 
     #[cfg(a)]
     #[test]
     fn test_plus() {
-        let expression = dollar(6).plus(dollar(4));
+        let expression = dollar(6.0).plus(dollar(4.0));
         let reduced = Bank.reduce(expression, "USD");
-        assert_eq!(dollar(6 + 4), reduced);
+        assert_eq!(dollar(6.0 + 4.0), reduced);
     }
 
     #[test]
     fn test_multiplication() {
-        let five = dollar(5);
-        assert_eq!(dollar(5 * 2), five.times(2));
-        assert_eq!(dollar(5 * 3), five.times(3));
+        let five = dollar(5.0);
+        assert_eq!(dollar(5.0 * 2.0), five.times(2.0));
+        assert_eq!(dollar(5.0 * 3.0), five.times(3.0));
 
-        let five = franc(5);
-        assert_eq!(franc(5 * 2), five.times(2));
-        assert_eq!(franc(5 * 3), five.times(3));
+        let five = franc(5.0);
+        assert_eq!(franc(5.0 * 2.0), five.times(2.0));
+        assert_eq!(franc(5.0 * 3.0), five.times(3.0));
     }
 
     #[test]
     fn test_equality() {
-        assert_eq!(dollar(5), dollar(5));
-        assert!(dollar(5) != dollar(6));
-        assert!(dollar(5) != franc(5));
-        assert_eq!(franc(5), franc(5));
-        assert!(franc(5) != franc(6));
+        assert_eq!(dollar(5.0), dollar(5.0));
+        assert!(dollar(5.0) != dollar(6.0));
+        assert!(dollar(5.0) != franc(5.0));
+        assert_eq!(franc(5.0), franc(5.0));
+        assert!(franc(5.0) != franc(6.0));
     }
 
     #[test]
     fn test_with_amount() {
-        assert_eq!(dollar(8), dollar(1).with_amount(8));
-        assert_eq!(franc(8), franc(1).with_amount(8));
+        assert_eq!(dollar(8.0), dollar(1.0).with_amount(8.0));
+        assert_eq!(franc(8.0), franc(1.0).with_amount(8.0));
     }
 
     #[test]
