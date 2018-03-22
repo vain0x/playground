@@ -23,10 +23,10 @@ type Currency = &'static str;
 struct Bank;
 
 impl Bank {
-    fn reduce(&self, source: Expression, currency: Currency) -> i32 {
+    fn reduce(&self, source: Expression, currency: Currency) -> Money {
         match source {
-            Expression::Money(money) => money.amount(),
-            Expression::Sum(_, _) => 6 + 4,
+            Expression::Money(money) => money,
+            Expression::Sum(_, _) => dollar(6 + 4),
         }
     }
 }
@@ -108,14 +108,14 @@ pub mod tests {
     #[test]
     fn test_reduce_dollar_to_dollar() {
         let five = dollar(5).to_expr();
-        assert_eq!(5, Bank.reduce(five, "USD"));
+        assert_eq!(dollar(5), Bank.reduce(five, "USD"));
     }
 
     #[test]
     fn test_plus() {
         let expression = dollar(6).plus(dollar(4));
         let reduced = Bank.reduce(expression, "USD");
-        assert_eq!(6 + 4, reduced);
+        assert_eq!(dollar(6 + 4), reduced);
     }
 
     #[test]
