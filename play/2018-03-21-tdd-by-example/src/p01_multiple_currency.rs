@@ -24,7 +24,10 @@ struct Bank;
 
 impl Bank {
     fn reduce(&self, source: Expression, currency: Currency) -> i32 {
-        6 + 4
+        match source {
+            Expression::Money(money) => money.amount(),
+            Expression::Sum(_, _) => 6 + 4,
+        }
     }
 }
 
@@ -78,6 +81,10 @@ impl Money {
             ..(*self)
         }
     }
+
+    fn to_expr(&self) -> Expression {
+        self.clone().into()
+    }
 }
 
 fn dollar(amount: i32) -> Money {
@@ -97,6 +104,12 @@ fn franc(amount: i32) -> Money {
 #[cfg(test)]
 pub mod tests {
     use super::*;
+
+    #[test]
+    fn test_reduce_dollar_to_dollar() {
+        let five = dollar(5).to_expr();
+        assert_eq!(5, Bank.reduce(five, "USD"));
+    }
 
     #[test]
     fn test_plus() {
