@@ -37,14 +37,30 @@ impl Bank {
             return Some(1.0);
         }
 
-        match (from, to) {
-            ("CHF", "USD") => Some(0.5),
-            ("USD", "CHF") => Some(2.0),
-            _ => None,
+        if let Some(&r) = self.rates.get(&(from, to)) {
+            return Some(r);
         }
+
+        if let Some(&r) = self.rates.get(&(to, from)) {
+            return Some(1.0 / r);
+        }
+
+        None
     }
 
-    fn set_rate(&mut self, from: Money, to: Money) {}
+    fn set_rate(&mut self, from: Money, to: Money) {
+        if from.currency() == to.currency() {
+            if from.amount() != to.amount() {
+                panic!("Inconsistent.");
+            }
+            return;
+        }
+
+        self.rates.insert(
+            (from.currency(), to.currency()),
+            to.amount() / from.amount(),
+        );
+    }
 
     fn reduce(&self, source: Expression, currency: Currency) -> Money {
         match source {
