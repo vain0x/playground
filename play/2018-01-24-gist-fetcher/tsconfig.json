@@ -1,0 +1,14 @@
+{
+  "compilerOptions": {
+    "baseUrl": ".",
+    "target": "es5",
+    "moduleResolution": "node",
+    "module": "commonjs",
+    "lib": [
+      "es2015"
+    ],
+    "strict": true,
+    "esModuleInterop": true,
+    "allowJs": true
+  }
+}
