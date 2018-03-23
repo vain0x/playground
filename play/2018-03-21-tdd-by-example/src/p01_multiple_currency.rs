@@ -8,7 +8,6 @@
 //!     - Remove duplication.
 //!
 //! TODO:
-//!     - [ ] $5 + 10 CHF = $10
 //!     - [ ] money round
 //!     - [ ] reduce and undefined currency rate
 
@@ -71,7 +70,16 @@ impl Bank {
                     currency,
                 }
             }
-            Expression::Sum(_, _) => dollar(6.0 + 4.0),
+            Expression::Sum(left, right) => {
+                let left = self.reduce(*left, currency);
+                let right = self.reduce(*right, currency);
+                assert_eq!(left.currency(), right.currency());
+                assert_eq!(left.currency(), currency);
+                Money {
+                    amount: left.amount() + right.amount(),
+                    currency,
+                }
+            }
         }
     }
 }
@@ -201,12 +209,22 @@ pub mod tests {
         assert_eq!(franc(20.0), bank.reduce(dollar(10.0).to_expr(), "CHF"));
     }
 
-    #[cfg(a)]
     #[test]
-    fn test_plus() {
+    fn test_dollar_plus_dollar() {
+        let bank = Bank::new();
         let expression = dollar(6.0).plus(dollar(4.0));
-        let reduced = Bank.reduce(expression, "USD");
+        let reduced = bank.reduce(expression, "USD");
         assert_eq!(dollar(6.0 + 4.0), reduced);
+    }
+
+    #[test]
+    fn test_dollar_plus_franc() {
+        let mut bank = Bank::new();
+        bank.set_rate(dollar(1.0), franc(2.0));
+
+        let expression = dollar(5.0).plus(franc(10.0));
+        let reduced = bank.reduce(expression, "USD");
+        assert_eq!(dollar(5.0 + 10.0 / 2.0), reduced);
     }
 
     #[test]
