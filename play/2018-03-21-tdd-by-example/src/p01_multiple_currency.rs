@@ -9,12 +9,8 @@
 //!
 //! TODO:
 //!     - [ ] $5 + 10 CHF = $10
-//!     - [x] $5 * 2 = $10
-//!     - [x] amount: private
-//!     - [x] Dollar side-effects
 //!     - [ ] money round
-//!     - [x] 5 CHF * 2 = 10 CHF
-//!     - [ ] $5 + $5 = $10
+//!     - [ ] reduce and undefined currency rate
 
 use std::collections::HashMap;
 use std::convert::Into;
@@ -64,7 +60,17 @@ impl Bank {
 
     fn reduce(&self, source: Expression, currency: Currency) -> Money {
         match source {
-            Expression::Money(money) => money,
+            Expression::Money(money) => {
+                if money.currency() == currency {
+                    return money;
+                }
+
+                let rate = self.rate(money.currency(), currency).unwrap();
+                Money {
+                    amount: rate * money.amount(),
+                    currency,
+                }
+            }
             Expression::Sum(_, _) => dollar(6.0 + 4.0),
         }
     }
@@ -181,11 +187,18 @@ pub mod tests {
         bank.set_rate(dollar(1.0), dollar(2.0));
     }
 
-    #[cfg(a)]
     #[test]
     fn test_reduce_dollar_to_dollar() {
+        let bank = Bank::new();
         let five = dollar(5.0).to_expr();
-        assert_eq!(dollar(5.0), Bank.reduce(five, "USD"));
+        assert_eq!(dollar(5.0), bank.reduce(five, "USD"));
+    }
+
+    #[test]
+    fn test_reduce_dollar_to_franc() {
+        let mut bank = Bank::new();
+        bank.set_rate(dollar(1.0), franc(2.0));
+        assert_eq!(franc(20.0), bank.reduce(dollar(10.0).to_expr(), "CHF"));
     }
 
     #[cfg(a)]
