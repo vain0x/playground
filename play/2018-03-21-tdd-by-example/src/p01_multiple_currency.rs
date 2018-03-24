@@ -9,7 +9,6 @@
 //!
 //! TODO:
 //!     - [ ] money round
-//!     - [ ] reduce and undefined currency rate
 //!     - [ ] rename IntoExpression
 
 use std::collections::HashMap;
@@ -208,6 +207,13 @@ pub mod tests {
     fn test_reduce_dollar_to_franc() {
         let bank = default_bank();
         assert_eq!(franc(20.0), bank.reduce(&dollar(10.0), "CHF"));
+    }
+
+    #[test]
+    #[should_panic]
+    fn test_reduce_into_unknown_currency() {
+        let bank = Bank::new();
+        assert_eq!(Money::new(1.0, "BTC"), bank.reduce(&dollar(9000.0), "BTC"));
     }
 
     #[test]
