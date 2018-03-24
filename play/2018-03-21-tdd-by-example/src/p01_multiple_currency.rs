@@ -88,12 +88,6 @@ enum Expression {
     Sum(Box<Expression>, Box<Expression>),
 }
 
-impl Expression {
-    fn plus(self, other: Expression) -> Expression {
-        Expression::Sum(Box::new(self), Box::new(other))
-    }
-}
-
 impl Into<Expression> for Money {
     fn into(self) -> Expression {
         Expression::Money(self)
@@ -110,6 +104,10 @@ trait IntoExpression: Into<Expression> {
         Self: Clone,
     {
         self.clone().into_expr()
+    }
+
+    fn plus<R: Into<Expression>>(self, other: R) -> Expression {
+        Expression::Sum(Box::new(self.into_expr()), Box::new(other.into_expr()))
     }
 }
 
@@ -139,10 +137,6 @@ impl Money {
             currency: self.currency,
             amount,
         }
-    }
-
-    fn plus<R: Into<Expression>>(self, other: R) -> Expression {
-        self.to_expr().plus(other.into())
     }
 
     fn times(&self, mul: f64) -> Money {
