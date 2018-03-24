@@ -177,19 +177,21 @@ fn franc(amount: f64) -> Money {
 pub mod tests {
     use super::*;
 
-    #[test]
-    fn test_rate() {
+    fn default_bank() -> Bank {
         let mut bank = Bank::new();
         bank.set_rate(dollar(1.0), franc(2.0));
+        bank
+    }
 
+    #[test]
+    fn test_rate() {
+        let bank = default_bank();
         assert_eq!(Some(2.0), bank.rate("USD", "CHF"));
     }
 
     #[test]
     fn test_rate_reverse() {
-        let mut bank = Bank::new();
-        bank.set_rate(dollar(1.0), franc(2.0));
-
+        let bank = default_bank();
         assert_eq!(Some(0.5), bank.rate("CHF", "USD"));
     }
 
@@ -223,8 +225,7 @@ pub mod tests {
 
     #[test]
     fn test_reduce_dollar_to_franc() {
-        let mut bank = Bank::new();
-        bank.set_rate(dollar(1.0), franc(2.0));
+        let bank = default_bank();
         assert_eq!(franc(20.0), bank.reduce(dollar(10.0), "CHF"));
     }
 
@@ -238,9 +239,7 @@ pub mod tests {
 
     #[test]
     fn test_dollar_plus_franc() {
-        let mut bank = Bank::new();
-        bank.set_rate(dollar(1.0), franc(2.0));
-
+        let bank = default_bank();
         let expression = dollar(5.0).plus(franc(10.0));
         let reduced = bank.reduce(expression, "USD");
         assert_eq!(dollar(5.0 + 10.0 / 2.0), reduced);
@@ -259,9 +258,7 @@ pub mod tests {
 
     #[test]
     fn test_plus_and_times() {
-        let mut bank = Bank::new();
-        bank.set_rate(dollar(1.0), franc(2.0));
-
+        let bank = default_bank();
         let sum = dollar(5.0).plus(franc(10.0));
         let mul = sum.times(3.0);
         assert_eq!(dollar(30.0), bank.reduce(mul, "USD"));
