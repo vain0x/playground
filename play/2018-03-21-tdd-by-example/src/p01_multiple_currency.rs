@@ -66,6 +66,34 @@ impl Bank {
 }
 
 #[derive(Debug, PartialEq, Clone)]
+struct Money {
+    currency: Currency,
+    amount: f64,
+}
+
+impl Money {
+    fn new(amount: f64, currency: Currency) -> Money {
+        Money { amount, currency }
+    }
+
+    fn currency(&self) -> Currency {
+        self.currency
+    }
+
+    fn amount(&self) -> f64 {
+        self.amount
+    }
+}
+
+fn dollar(amount: f64) -> Money {
+    Money::new(amount, "USD")
+}
+
+fn franc(amount: f64) -> Money {
+    Money::new(amount, "CHF")
+}
+
+#[derive(Debug, PartialEq, Clone)]
 enum Expression {
     Money(Money),
     Sum(Box<Expression>, Box<Expression>),
@@ -125,34 +153,6 @@ impl IntoExpression for Expression {
             }
         }
     }
-}
-
-#[derive(Debug, PartialEq, Clone)]
-struct Money {
-    currency: Currency,
-    amount: f64,
-}
-
-impl Money {
-    fn new(amount: f64, currency: Currency) -> Money {
-        Money { amount, currency }
-    }
-
-    fn currency(&self) -> Currency {
-        self.currency
-    }
-
-    fn amount(&self) -> f64 {
-        self.amount
-    }
-}
-
-fn dollar(amount: f64) -> Money {
-    Money::new(amount, "USD")
-}
-
-fn franc(amount: f64) -> Money {
-    Money::new(amount, "CHF")
 }
 
 #[cfg(test)]
