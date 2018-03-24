@@ -63,12 +63,8 @@ impl Bank {
     /// Converts an expression of money into the specified currency.
     fn reduce<E: IntoExpression>(&self, source: E, currency: Currency) -> Money {
         fn reduce_money(bank: &Bank, money: &Money, currency: Currency) -> f64 {
-            if money.currency() == currency {
-                money.amount()
-            } else {
-                let rate = bank.rate(money.currency(), currency).unwrap();
-                rate * money.amount()
-            }
+            let rate = bank.rate(money.currency(), currency).unwrap();
+            rate * money.amount()
         }
 
         fn reduce_expr(bank: &Bank, source: &Expression, currency: Currency) -> f64 {
