@@ -11,7 +11,6 @@
 //!     - [ ] money round
 //!     - [ ] reduce and undefined currency rate
 //!     - [ ] rename IntoExpression
-//!     - [ ] Unnecessary moves
 
 use std::collections::HashMap;
 use std::convert::Into;
@@ -60,8 +59,8 @@ impl Bank {
     }
 
     /// Converts an expression of money into the specified currency.
-    fn reduce<E: IntoExpression>(&self, source: E, currency: Currency) -> Money {
-        source.into().reduce(&self, currency)
+    fn reduce<E: IntoExpression>(&self, source: &E, currency: Currency) -> Money {
+        source.reduce(&self, currency)
     }
 }
 
@@ -202,20 +201,20 @@ pub mod tests {
     fn test_reduce_dollar_to_dollar() {
         let bank = Bank::new();
         let five = dollar(5.0);
-        assert_eq!(dollar(5.0), bank.reduce(five, "USD"));
+        assert_eq!(dollar(5.0), bank.reduce(&five, "USD"));
     }
 
     #[test]
     fn test_reduce_dollar_to_franc() {
         let bank = default_bank();
-        assert_eq!(franc(20.0), bank.reduce(dollar(10.0), "CHF"));
+        assert_eq!(franc(20.0), bank.reduce(&dollar(10.0), "CHF"));
     }
 
     #[test]
     fn test_dollar_plus_dollar() {
         let bank = Bank::new();
         let expression = dollar(6.0).plus(dollar(4.0));
-        let reduced = bank.reduce(expression, "USD");
+        let reduced = bank.reduce(&expression, "USD");
         assert_eq!(dollar(6.0 + 4.0), reduced);
     }
 
@@ -223,7 +222,7 @@ pub mod tests {
     fn test_dollar_plus_franc() {
         let bank = default_bank();
         let expression = dollar(5.0).plus(franc(10.0));
-        let reduced = bank.reduce(expression, "USD");
+        let reduced = bank.reduce(&expression, "USD");
         assert_eq!(dollar(5.0 + 10.0 / 2.0), reduced);
     }
 
@@ -243,7 +242,7 @@ pub mod tests {
         let bank = default_bank();
         let sum = dollar(5.0).plus(franc(10.0));
         let mul = sum.times(3.0);
-        assert_eq!(dollar(30.0), bank.reduce(mul, "USD"));
+        assert_eq!(dollar(30.0), bank.reduce(&mul, "USD"));
     }
 
     #[test]
