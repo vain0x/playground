@@ -10,7 +10,6 @@
 //! TODO:
 //!     - [ ] money round
 //!     - [ ] reduce and undefined currency rate
-//!     - [ ] Bank::reduce knows about Money/Expression too much.
 //!     - [ ] rename IntoExpression
 //!     - [ ] Unnecessary moves
 
@@ -62,25 +61,7 @@ impl Bank {
 
     /// Converts an expression of money into the specified currency.
     fn reduce<E: IntoExpression>(&self, source: E, currency: Currency) -> Money {
-        fn reduce_money(bank: &Bank, money: &Money, currency: Currency) -> f64 {
-            let rate = bank.rate(money.currency(), currency).unwrap();
-            rate * money.amount()
-        }
-
-        fn reduce_expr(bank: &Bank, source: &Expression, currency: Currency) -> f64 {
-            match source {
-                &Expression::Money(ref money) => reduce_money(bank, money, currency),
-                &Expression::Sum(ref left, ref right) => {
-                    let left = reduce_expr(bank, left.as_ref(), currency);
-                    let right = reduce_expr(bank, right.as_ref(), currency);
-                    left + right
-                }
-            }
-        }
-
-        let expr = source.into();
-        let amount = reduce_expr(self, &expr, currency);
-        Money::new(amount, currency)
+        source.into().reduce(&self, currency)
     }
 }
 
@@ -102,11 +83,23 @@ trait IntoExpression: Into<Expression> {
     }
 
     fn times(&self, mul: f64) -> Self;
+
+    fn reduce_core(&self, bank: &Bank, currency: Currency) -> f64;
+
+    fn reduce(&self, bank: &Bank, currency: Currency) -> Money {
+        let amount = self.reduce_core(bank, currency);
+        Money::new(amount, currency)
+    }
 }
 
 impl IntoExpression for Money {
     fn times(&self, mul: f64) -> Money {
         Money::new(mul * self.amount(), self.currency())
+    }
+
+    fn reduce_core(&self, bank: &Bank, currency: Currency) -> f64 {
+        let rate = bank.rate(self.currency(), currency).unwrap();
+        rate * self.amount()
     }
 }
 
@@ -118,6 +111,17 @@ impl IntoExpression for Expression {
                 let l = (*left).times(mul);
                 let r = (*right).times(mul);
                 l.plus(r)
+            }
+        }
+    }
+
+    fn reduce_core(&self, bank: &Bank, currency: Currency) -> f64 {
+        match self {
+            &Expression::Money(ref money) => money.reduce_core(bank, currency),
+            &Expression::Sum(ref left, ref right) => {
+                let left = left.as_ref().reduce_core(bank, currency);
+                let right = right.as_ref().reduce_core(bank, currency);
+                left + right
             }
         }
     }
