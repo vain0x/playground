@@ -106,15 +106,34 @@ trait IntoExpression: Into<Expression> {
         self.clone().into_expr()
     }
 
-    fn plus<R: Into<Expression>>(self, other: R) -> Expression {
+    fn plus<R: IntoExpression>(self, other: R) -> Expression {
         Expression::Sum(Box::new(self.into_expr()), Box::new(other.into_expr()))
+    }
+
+    fn times(&self, mul: f64) -> Self;
+}
+
+impl IntoExpression for Money {
+    fn times(&self, mul: f64) -> Money {
+        let currency = self.currency();
+        Money {
+            amount: self.amount() * mul,
+            currency,
+        }
     }
 }
 
-impl<E> IntoExpression for E
-where
-    E: Into<Expression>,
-{
+impl IntoExpression for Expression {
+    fn times(&self, mul: f64) -> Expression {
+        match self {
+            &Expression::Money(ref money) => money.times(mul).into(),
+            &Expression::Sum(ref left, ref right) => {
+                let l = (*left).times(mul);
+                let r = (*right).times(mul);
+                l.plus(r)
+            }
+        }
+    }
 }
 
 #[derive(Debug, PartialEq, Clone)]
@@ -136,13 +155,6 @@ impl Money {
         Money {
             currency: self.currency,
             amount,
-        }
-    }
-
-    fn times(&self, mul: f64) -> Money {
-        Money {
-            amount: self.amount() * mul,
-            ..(*self)
         }
     }
 }
@@ -243,6 +255,16 @@ pub mod tests {
         let five = franc(5.0);
         assert_eq!(franc(5.0 * 2.0), five.times(2.0));
         assert_eq!(franc(5.0 * 3.0), five.times(3.0));
+    }
+
+    #[test]
+    fn test_plus_and_times() {
+        let mut bank = Bank::new();
+        bank.set_rate(dollar(1.0), franc(2.0));
+
+        let sum = dollar(5.0).plus(franc(10.0));
+        let mul = sum.times(3.0);
+        assert_eq!(dollar(30.0), bank.reduce(mul, "USD"));
     }
 
     #[test]
