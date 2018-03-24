@@ -100,6 +100,25 @@ impl Into<Expression> for Money {
     }
 }
 
+trait IntoExpression: Into<Expression> {
+    fn into_expr(self) -> Expression {
+        self.into()
+    }
+
+    fn to_expr(&self) -> Expression
+    where
+        Self: Clone,
+    {
+        self.clone().into_expr()
+    }
+}
+
+impl<E> IntoExpression for E
+where
+    E: Into<Expression>,
+{
+}
+
 #[derive(Debug, PartialEq, Clone)]
 struct Money {
     currency: Currency,
@@ -131,10 +150,6 @@ impl Money {
             amount: self.amount() * mul,
             ..(*self)
         }
-    }
-
-    fn to_expr(&self) -> Expression {
-        self.clone().into()
     }
 }
 
