@@ -10,6 +10,9 @@
 //! TODO:
 //!     - [ ] money round
 //!     - [ ] reduce and undefined currency rate
+//!     - [ ] Bank::reduce knows about Money/Expression too much.
+//!     - [ ] rename IntoExpression
+//!     - [ ] Unnecessary moves
 
 use std::collections::HashMap;
 use std::convert::Into;
