@@ -58,7 +58,7 @@ impl Bank {
     }
 
     /// Calculates amount of money that the specified expression represents, converting into the specified currency.
-    fn reduce(&self, source: Expression, currency: Currency) -> Money {
+    fn reduce<E: IntoExpression>(&self, source: E, currency: Currency) -> Money {
         fn reduce_core(bank: &Bank, source: Expression, currency: Currency) -> f64 {
             match source {
                 Expression::Money(money) => {
@@ -77,7 +77,7 @@ impl Bank {
             }
         }
 
-        let amount = reduce_core(self, source, currency);
+        let amount = reduce_core(self, source.into(), currency);
         Money { amount, currency }
     }
 }
@@ -205,7 +205,7 @@ pub mod tests {
     #[test]
     fn test_reduce_dollar_to_dollar() {
         let bank = Bank::new();
-        let five = dollar(5.0).to_expr();
+        let five = dollar(5.0);
         assert_eq!(dollar(5.0), bank.reduce(five, "USD"));
     }
 
@@ -213,7 +213,7 @@ pub mod tests {
     fn test_reduce_dollar_to_franc() {
         let mut bank = Bank::new();
         bank.set_rate(dollar(1.0), franc(2.0));
-        assert_eq!(franc(20.0), bank.reduce(dollar(10.0).to_expr(), "CHF"));
+        assert_eq!(franc(20.0), bank.reduce(dollar(10.0), "CHF"));
     }
 
     #[test]
@@ -259,6 +259,8 @@ pub mod tests {
         assert_eq!(dollar(8.0), dollar(1.0).with_amount(8.0));
         assert_eq!(franc(8.0), franc(1.0).with_amount(8.0));
     }
+
+    // Learning tests.
 
     #[test]
     fn test_hash_map_insert() {
