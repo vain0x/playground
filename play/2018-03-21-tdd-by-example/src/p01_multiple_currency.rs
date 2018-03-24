@@ -61,11 +61,8 @@ impl Bank {
     fn reduce<E: IntoExpression>(&self, source: E, currency: Currency) -> Money {
         fn reduce_core(bank: &Bank, source: Expression, currency: Currency) -> f64 {
             match source {
-                Expression::Money(money) => {
-                    if money.currency() == currency {
-                        return money.amount();
-                    }
-
+                Expression::Money(ref money) if money.currency() == currency => money.amount(),
+                Expression::Money(ref money) => {
                     let rate = bank.rate(money.currency(), currency).unwrap();
                     rate * money.amount()
                 }
