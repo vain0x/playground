@@ -60,24 +60,30 @@ impl Bank {
         );
     }
 
-    /// Calculates amount of money that the specified expression represents, converting into the specified currency.
+    /// Converts an expression of money into the specified currency.
     fn reduce<E: IntoExpression>(&self, source: E, currency: Currency) -> Money {
-        fn reduce_core(bank: &Bank, source: Expression, currency: Currency) -> f64 {
+        fn reduce_money(bank: &Bank, money: &Money, currency: Currency) -> f64 {
+            if money.currency() == currency {
+                money.amount()
+            } else {
+                let rate = bank.rate(money.currency(), currency).unwrap();
+                rate * money.amount()
+            }
+        }
+
+        fn reduce_expr(bank: &Bank, source: &Expression, currency: Currency) -> f64 {
             match source {
-                Expression::Money(ref money) if money.currency() == currency => money.amount(),
-                Expression::Money(ref money) => {
-                    let rate = bank.rate(money.currency(), currency).unwrap();
-                    rate * money.amount()
-                }
-                Expression::Sum(left, right) => {
-                    let left = reduce_core(bank, *left, currency);
-                    let right = reduce_core(bank, *right, currency);
+                &Expression::Money(ref money) => reduce_money(bank, money, currency),
+                &Expression::Sum(ref left, ref right) => {
+                    let left = reduce_expr(bank, left.as_ref(), currency);
+                    let right = reduce_expr(bank, right.as_ref(), currency);
                     left + right
                 }
             }
         }
 
-        let amount = reduce_core(self, source.into(), currency);
+        let expr = source.into();
+        let amount = reduce_expr(self, &expr, currency);
         Money::new(amount, currency)
     }
 }
