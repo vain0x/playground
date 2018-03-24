@@ -123,7 +123,7 @@ impl Money {
     }
 
     fn plus<R: Into<Expression>>(self, other: R) -> Expression {
-        <Money as Into<Expression>>::into(self).plus(other.into())
+        self.to_expr().plus(other.into())
     }
 
     fn times(&self, mul: f64) -> Money {
