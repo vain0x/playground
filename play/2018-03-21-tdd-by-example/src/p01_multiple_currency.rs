@@ -78,7 +78,7 @@ impl Bank {
         }
 
         let amount = reduce_core(self, source.into(), currency);
-        Money { amount, currency }
+        Money::new(amount, currency)
     }
 }
 
@@ -115,11 +115,7 @@ trait IntoExpression: Into<Expression> {
 
 impl IntoExpression for Money {
     fn times(&self, mul: f64) -> Money {
-        let currency = self.currency();
-        Money {
-            amount: self.amount() * mul,
-            currency,
-        }
+        Money::new(mul * self.amount(), self.currency())
     }
 }
 
@@ -143,6 +139,10 @@ struct Money {
 }
 
 impl Money {
+    fn new(amount: f64, currency: Currency) -> Money {
+        Money { amount, currency }
+    }
+
     fn currency(&self) -> Currency {
         self.currency
     }
@@ -150,27 +150,14 @@ impl Money {
     fn amount(&self) -> f64 {
         self.amount
     }
-
-    fn with_amount(&self, amount: f64) -> Money {
-        Money {
-            currency: self.currency,
-            amount,
-        }
-    }
 }
 
 fn dollar(amount: f64) -> Money {
-    Money {
-        currency: "USD",
-        amount,
-    }
+    Money::new(amount, "USD")
 }
 
 fn franc(amount: f64) -> Money {
-    Money {
-        currency: "CHF",
-        amount,
-    }
+    Money::new(amount, "CHF")
 }
 
 #[cfg(test)]
@@ -271,12 +258,6 @@ pub mod tests {
         assert!(dollar(5.0) != franc(5.0));
         assert_eq!(franc(5.0), franc(5.0));
         assert!(franc(5.0) != franc(6.0));
-    }
-
-    #[test]
-    fn test_with_amount() {
-        assert_eq!(dollar(8.0), dollar(1.0).with_amount(8.0));
-        assert_eq!(franc(8.0), franc(1.0).with_amount(8.0));
     }
 
     // Learning tests.
