@@ -95,19 +95,8 @@ impl Into<Expression> for Money {
 }
 
 trait IntoExpression: Into<Expression> {
-    fn into_expr(self) -> Expression {
-        self.into()
-    }
-
-    fn to_expr(&self) -> Expression
-    where
-        Self: Clone,
-    {
-        self.clone().into_expr()
-    }
-
     fn plus<R: IntoExpression>(self, other: R) -> Expression {
-        Expression::Sum(Box::new(self.into_expr()), Box::new(other.into_expr()))
+        Expression::Sum(Box::new(self.into()), Box::new(other.into()))
     }
 
     fn times(&self, mul: f64) -> Self;
