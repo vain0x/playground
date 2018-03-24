@@ -57,30 +57,28 @@ impl Bank {
         );
     }
 
+    /// Calculates amount of money that the specified expression represents, converting into the specified currency.
     fn reduce(&self, source: Expression, currency: Currency) -> Money {
-        match source {
-            Expression::Money(money) => {
-                if money.currency() == currency {
-                    return money;
-                }
+        fn reduce_core(bank: &Bank, source: Expression, currency: Currency) -> f64 {
+            match source {
+                Expression::Money(money) => {
+                    if money.currency() == currency {
+                        return money.amount();
+                    }
 
-                let rate = self.rate(money.currency(), currency).unwrap();
-                Money {
-                    amount: rate * money.amount(),
-                    currency,
+                    let rate = bank.rate(money.currency(), currency).unwrap();
+                    rate * money.amount()
                 }
-            }
-            Expression::Sum(left, right) => {
-                let left = self.reduce(*left, currency);
-                let right = self.reduce(*right, currency);
-                assert_eq!(left.currency(), right.currency());
-                assert_eq!(left.currency(), currency);
-                Money {
-                    amount: left.amount() + right.amount(),
-                    currency,
+                Expression::Sum(left, right) => {
+                    let left = reduce_core(bank, *left, currency);
+                    let right = reduce_core(bank, *right, currency);
+                    left + right
                 }
             }
         }
+
+        let amount = reduce_core(self, source, currency);
+        Money { amount, currency }
     }
 }
 
