@@ -92,9 +92,15 @@ fn franc(amount: f64) -> Money {
 }
 
 #[derive(Debug, PartialEq, Clone)]
+struct MoneySum {
+    left: Box<Expression>,
+    right: Box<Expression>,
+}
+
+#[derive(Debug, PartialEq, Clone)]
 enum Expression {
     Money(Money),
-    Sum(Box<Expression>, Box<Expression>),
+    Sum(MoneySum),
 }
 
 impl Into<Expression> for Money {
@@ -105,7 +111,10 @@ impl Into<Expression> for Money {
 
 trait IntoExpression: Into<Expression> {
     fn plus<R: IntoExpression>(self, other: R) -> Expression {
-        Expression::Sum(Box::new(self.into()), Box::new(other.into()))
+        Expression::Sum(MoneySum {
+            left: Box::new(self.into()),
+            right: Box::new(other.into()),
+        })
     }
 
     fn times(&self, mul: f64) -> Self;
@@ -133,9 +142,9 @@ impl IntoExpression for Expression {
     fn times(&self, mul: f64) -> Expression {
         match self {
             &Expression::Money(ref money) => money.times(mul).into(),
-            &Expression::Sum(ref left, ref right) => {
-                let l = (*left).times(mul);
-                let r = (*right).times(mul);
+            &Expression::Sum(ref sum) => {
+                let l = (*sum.left).times(mul);
+                let r = (*sum.right).times(mul);
                 l.plus(r)
             }
         }
@@ -144,9 +153,9 @@ impl IntoExpression for Expression {
     fn reduce_core(&self, bank: &Bank, currency: Currency) -> f64 {
         match self {
             &Expression::Money(ref money) => money.reduce_core(bank, currency),
-            &Expression::Sum(ref left, ref right) => {
-                let left = left.as_ref().reduce_core(bank, currency);
-                let right = right.as_ref().reduce_core(bank, currency);
+            &Expression::Sum(ref sum) => {
+                let left = sum.left.as_ref().reduce_core(bank, currency);
+                let right = sum.right.as_ref().reduce_core(bank, currency);
                 left + right
             }
         }
