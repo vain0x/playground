@@ -109,6 +109,12 @@ impl Into<Expression> for Money {
     }
 }
 
+impl Into<Expression> for MoneySum {
+    fn into(self) -> Expression {
+        Expression::Sum(self)
+    }
+}
+
 trait IntoExpression: Into<Expression> {
     fn plus<R: IntoExpression>(self, other: R) -> Expression {
         Expression::Sum(MoneySum {
@@ -138,26 +144,35 @@ impl IntoExpression for Money {
     }
 }
 
+impl MoneySum {
+    fn times(&self, mul: f64) -> MoneySum {
+        let l = (*self.left).times(mul);
+        let r = (*self.right).times(mul);
+        MoneySum {
+            left: Box::new(l),
+            right: Box::new(r),
+        }
+    }
+
+    fn reduce_core(&self, bank: &Bank, currency: Currency) -> f64 {
+        let left = self.left.as_ref().reduce_core(bank, currency);
+        let right = self.right.as_ref().reduce_core(bank, currency);
+        left + right
+    }
+}
+
 impl IntoExpression for Expression {
     fn times(&self, mul: f64) -> Expression {
         match self {
             &Expression::Money(ref money) => money.times(mul).into(),
-            &Expression::Sum(ref sum) => {
-                let l = (*sum.left).times(mul);
-                let r = (*sum.right).times(mul);
-                l.plus(r)
-            }
+            &Expression::Sum(ref sum) => sum.times(mul).into(),
         }
     }
 
     fn reduce_core(&self, bank: &Bank, currency: Currency) -> f64 {
         match self {
             &Expression::Money(ref money) => money.reduce_core(bank, currency),
-            &Expression::Sum(ref sum) => {
-                let left = sum.left.as_ref().reduce_core(bank, currency);
-                let right = sum.right.as_ref().reduce_core(bank, currency);
-                left + right
-            }
+            &Expression::Sum(ref sum) => sum.reduce_core(bank, currency),
         }
     }
 }
