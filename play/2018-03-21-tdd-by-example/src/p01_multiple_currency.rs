@@ -144,7 +144,7 @@ impl IntoExpression for Money {
     }
 }
 
-impl MoneySum {
+impl IntoExpression for MoneySum {
     fn times(&self, mul: f64) -> MoneySum {
         let l = (*self.left).times(mul);
         let r = (*self.right).times(mul);
