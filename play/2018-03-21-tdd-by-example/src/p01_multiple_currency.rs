@@ -103,15 +103,15 @@ enum Expression {
     Sum(MoneySum),
 }
 
-impl Into<Expression> for Money {
-    fn into(self) -> Expression {
-        Expression::Money(self)
+impl From<Money> for Expression {
+    fn from(value: Money) -> Expression {
+        Expression::Money(value)
     }
 }
 
-impl Into<Expression> for MoneySum {
-    fn into(self) -> Expression {
-        Expression::Sum(self)
+impl From<MoneySum> for Expression {
+    fn from(value: MoneySum) -> Expression {
+        Expression::Sum(value)
     }
 }
 
