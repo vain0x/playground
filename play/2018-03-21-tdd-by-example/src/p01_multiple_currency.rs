@@ -116,11 +116,11 @@ impl From<MoneySum> for Expression {
 }
 
 trait IntoExpression: Into<Expression> {
-    fn plus<R: IntoExpression>(self, other: R) -> Expression {
-        Expression::Sum(MoneySum {
+    fn plus<R: IntoExpression>(self, other: R) -> MoneySum {
+        MoneySum {
             left: Box::new(self.into()),
             right: Box::new(other.into()),
-        })
+        }
     }
 
     fn times(&self, mul: f64) -> Self;
@@ -148,10 +148,7 @@ impl IntoExpression for MoneySum {
     fn times(&self, mul: f64) -> MoneySum {
         let l = (*self.left).times(mul);
         let r = (*self.right).times(mul);
-        MoneySum {
-            left: Box::new(l),
-            right: Box::new(r),
-        }
+        l.plus(r)
     }
 
     fn reduce_core(&self, bank: &Bank, currency: Currency) -> f64 {
