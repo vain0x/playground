@@ -20,6 +20,7 @@ TODOs:
 
 use std::collections::BTreeMap;
 use std::cmp::Ordering;
+use std::iter::FromIterator;
 
 // static indent_width: i32 = 2;
 
@@ -81,6 +82,12 @@ impl PartialOrd for Array {
     }
 }
 
+impl<V: Into<Value>> FromIterator<V> for Array {
+    fn from_iter<T: IntoIterator<Item = V>>(iter: T) -> Array {
+        Array(iter.into_iter().map(|v| v.into()).collect())
+    }
+}
+
 #[derive(PartialEq, Clone, Debug)]
 pub struct Object(BTreeMap<String, Value>);
 
@@ -116,6 +123,14 @@ impl PartialOrd for Object {
         } else {
             None
         }
+    }
+}
+
+impl<K: ToString, V: Into<Value>> FromIterator<(K, V)> for Object {
+    fn from_iter<T: IntoIterator<Item = (K, V)>>(iter: T) -> Object {
+        Object(BTreeMap::from_iter(
+            iter.into_iter().map(|(k, v)| (k.to_string(), v.into())),
+        ))
     }
 }
 
