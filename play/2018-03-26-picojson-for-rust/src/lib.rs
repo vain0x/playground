@@ -203,6 +203,18 @@ impl_from_for_value!(Object, Value::Object);
 
 impl_from_for_value!(i32, |value: i32| Value::Number(value as f64));
 
+impl<V: Into<Value>> FromIterator<V> for Value {
+    fn from_iter<T: IntoIterator<Item = V>>(iter: T) -> Self {
+        Value::Array(<Array as FromIterator<V>>::from_iter(iter))
+    }
+}
+
+impl<K: ToString, V: Into<Value>> FromIterator<(K, V)> for Value {
+    fn from_iter<T: IntoIterator<Item = (K, V)>>(iter: T) -> Self {
+        Value::Object(<Object as FromIterator<(K, V)>>::from_iter(iter))
+    }
+}
+
 struct Input<'a> {
     chars: std::iter::Peekable<std::str::Chars<'a>>,
     end: bool,
