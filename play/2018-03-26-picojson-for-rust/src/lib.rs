@@ -9,6 +9,7 @@ TODOs:
 - [ ] serialize
 - [ ] input::cur, line
 - [ ] i64 support
+- [ ] support input stream
 - [ ] methods of Value
 - [ ] test codes from picojson
 - [ ] helper methods to build object
