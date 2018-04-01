@@ -9,7 +9,7 @@ TODOs:
 - [ ] serialize
 - [ ] input::cur, line
 - [ ] i64 support
-- [ ] support input stream
+- [ ] support file stream
 - [ ] methods of Value
 - [ ] test codes from picojson
 - [ ] helper methods to build object
@@ -34,6 +34,11 @@ pub enum Type {
     String,
     Array,
     Object,
+}
+
+pub enum SerializeStyle {
+    Minimum,
+    Pretty,
 }
 
 #[derive(PartialEq, Clone, Debug)]
@@ -145,8 +150,16 @@ pub enum Value {
 }
 
 impl Value {
-    fn null() -> Value {
+    pub fn null() -> Value {
         Value::Null
+    }
+
+    pub fn array() -> Value {
+        Value::Array(Array::new())
+    }
+
+    pub fn object() -> Value {
+        Value::Object(Object::new())
     }
 
     fn from<T>(value: T) -> Value
@@ -154,6 +167,27 @@ impl Value {
         Value: From<T>,
     {
         From::from(value)
+    }
+
+    pub fn as_bool(&self) -> Option<bool> {
+        match self {
+            &Value::Boolean(value) => Some(value),
+            _ => None,
+        }
+    }
+
+    pub fn as_number(&self) -> Option<f64> {
+        match self {
+            &Value::Number(number) => Some(number),
+            _ => None,
+        }
+    }
+
+    pub fn as_string(&self) -> Option<&str> {
+        match self {
+            &Value::String(ref s) => Some(s),
+            _ => None,
+        }
     }
 
     pub fn as_array(&self) -> Option<&Array> {
@@ -182,6 +216,26 @@ impl Value {
             &mut Value::Object(ref mut obj) => Some(obj),
             _ => None,
         }
+    }
+
+    pub fn serialize(&self, _mode: SerializeStyle) -> String {
+        "".to_string()
+    }
+
+    pub fn is_empty(&self) -> bool {
+        true
+    }
+
+    pub fn contains_key(&self, _index: i64) -> bool {
+        false
+    }
+
+    pub fn get<K>(&self, _key: &K) -> Option<&Value> {
+        None
+    }
+
+    pub fn get_mut<K, V>(&mut self, _key: &K) -> Option<&mut Value> {
+        None
     }
 }
 
@@ -733,5 +787,132 @@ mod tests {
 
         // Case sensitive.
         assert!(parse_string("TRUE").is_err());
+    }
+}
+
+#[cfg(test)]
+mod ported_tests {
+    use std;
+    use super::*;
+
+    // [ ] constructors
+    // [ ] parse
+    // [ ] array
+    // [ ] object
+    // [ ] equality
+    // [ ] swap
+    // [ ] serialize pretty print
+    // [ ] reject NaN/Inf
+
+    // [ ] unicode string
+
+    #[test]
+    #[ignore]
+    fn test_construtor() {
+        let table = vec![
+            (Value::from(true), "true"),
+            (Value::from(false), "false"),
+            (Value::from(42.0), "42"),
+            (Value::from("hello".to_string()), "\"hello\""),
+        ];
+        for (value, json) in table {
+            let actual = value.serialize(SerializeStyle::Minimum);
+            assert_eq!(actual, json);
+        }
+    }
+
+    #[test]
+    #[ignore]
+    fn test_double_reserialization() {
+        /// Serialize and deserialize a number.
+        fn f(r: f64) -> f64 {
+            let json = Value::from(r).serialize(SerializeStyle::Minimum);
+            let value = parse_string(&json).unwrap();
+            value.as_number().unwrap()
+        }
+
+        for n in 1..53 {
+            let x = (1_i64 << n) as f64;
+            assert_eq!(f(x), x);
+        }
+
+        for n in 53..1024 {
+            let x = 1_f64.powf(n as f64);
+            let y = f(x);
+            assert!((x - y).abs() / y <= 1e-8);
+        }
+    }
+
+    #[test]
+    #[cfg(not_impl)]
+    fn test_correct_output() {
+        fn test<T>(source: String, expected: T) {
+            let value = parse_string(source).unwrap();
+            // value: has type T
+            // parsed completely
+        }
+
+        test("false", false);
+        test("true", true);
+        test("90.5", 90.5_f64);
+        test("1.7976931348623157e+308", 1.7976931348623157e+308_f64);
+        test("\"hello\"", "hello".to_string());
+        test("\"\\\"\\\\\\/\\n\\r\\t\"", "\"\\/\n\r\t".to_string());
+    }
+
+    #[test]
+    #[cfg(not_impl)]
+    fn test_value_is_empty() {
+        assert!(parse_string("[]").expect("Parse success").is_empty());
+        assert!(parse_string("{}").expect("Parse success").is_empty());
+    }
+
+    #[test]
+    #[cfg(not_impl)]
+    fn test_value_array() {
+        let a = parse_string("[1,true,\"hello,\"]").expect("Should parse an array");
+
+        assert_eq!(a.as_array().unwrap().unwrap().len(), 3);
+
+        assert_eq!(a.contains_key(0), true, "First element should exist.");
+        assert_eq!(a.get(0).unwrap().as_number().unwrap(), 1.0);
+
+        assert_eq!(a.contains_key(1), true, "Second element should exist.");
+        assert_eq!(a.get(1).unwrap().as_bool().unwrap(), true);
+
+        assert_eq!(a.contains_key(2), true, "Third element should exist.");
+        assert_eq!(a.get(2).unwrap().as_string().unwrap(), "hello".to_string());
+
+        assert!(!a.contains_key(3));
+    }
+
+    #[test]
+    #[cfg(not_impl)]
+    fn test_value_object() {
+        let v = parse_string(r#"{"a": true }"#).expect("Should parse an object");
+
+        assert_eq!(v.as_object().unwrap().unwrap().len(), 1);
+        assert!(v.contains_key("a"), true, "Should has a as key.");
+        assert!(v.get("a").unwrap(), true);
+
+        assert!(!a.contains_key("z"));
+    }
+
+    #[test]
+    #[cfg(not_impl)]
+    fn test_value_object_modification() {
+        let v = Value::object();
+
+        *(v.get_mut("foo").unwrap()) = Value::from("bar".to_string());
+
+        v.insert("hoge", Value::array());
+        v.get_mut("hoge").unwrap().push(Value::from(42.0));
+
+        v.insert("baz", Value::object());
+        let v2 = v.get_mut("baz").unwrap();
+        v2.insert("piyo", Value::from(3.14));
+
+        let json = v.serialize(SerializeStyle::Minimum);
+        assert_eq!(json, r#"{"foo":"bar","hoge":[42],"baz":{"piyo":3.14}}"#);
     }
 }
