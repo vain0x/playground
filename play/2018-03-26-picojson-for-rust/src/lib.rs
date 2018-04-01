@@ -606,19 +606,18 @@ pub fn parse_string(s: &str) -> Result<Value, Error> {
 mod tests {
     use super::*;
 
+    fn array<V: Into<Value>, I: IntoIterator<Item = V>>(iter: I) -> Array {
+        iter.into_iter().collect()
+    }
+
+    fn obj<K: ToString, V: Into<Value>, I: IntoIterator<Item = (K, V)>>(iter: I) -> Object {
+        iter.into_iter().collect()
+    }
+
     #[test]
     fn test_object_comparison() {
-        let obj1 = {
-            let mut obj = Object::new();
-            obj.insert("a", 1);
-            obj
-        };
-
-        let obj2 = {
-            let mut obj = Object::new();
-            obj.insert("a", Value::null());
-            obj
-        };
+        let obj1 = obj(vec![("a", 1)]);
+        let obj2 = obj(vec![("a", Value::Null)]);
 
         assert_eq!(obj1, obj1);
         assert_eq!(obj1.partial_cmp(&obj2), None);
@@ -675,12 +674,7 @@ mod tests {
         assert_eq!(parse_string("[]"), Ok(Value::Array(Array::new())));
         assert_eq!(
             parse_string("[true, false, true]"),
-            Ok(Value::Array(Array(
-                vec![true, false, true]
-                    .into_iter()
-                    .map(|b| Value::Boolean(b))
-                    .collect::<Vec<_>>()
-            )))
+            Ok(Value::Array(array(vec![true, false, true])))
         );
     }
 
@@ -695,12 +689,10 @@ mod tests {
             "user_id": 42,
             "name": "John Doe"
         }"#;
-        let expected = {
-            let mut obj = Object::new();
-            obj.insert("user_id", Value::Number(42.0));
-            obj.insert("name", Value::String("John Doe".to_string()));
-            Value::Object(obj)
-        };
+        let expected = Value::from(obj(vec![
+            ("user_id", Value::from(42)),
+            ("name", Value::String("John Doe".to_string())),
+        ]));
         assert_eq!(parse_string(json), Ok(expected));
     }
 
@@ -710,19 +702,13 @@ mod tests {
             "array": [1, 2, 3],
             "object": { "foo": true }
         }"#;
-        let expected = {
-            let mut obj = Object::new();
-            obj.insert(
-                "array",
-                Value::Array(Array((1..4).map(From::from).collect::<Vec<_>>())),
-            );
-            obj.insert("object", {
-                let mut obj = Object::new();
-                obj.insert("foo", Value::Boolean(true));
-                Value::Object(obj)
-            });
-            Value::Object(obj)
-        };
+        let expected = Value::from(obj(vec![
+            ("array", Value::Array(array(vec![1, 2, 3]))),
+            (
+                "object",
+                Value::Object(obj(vec![("foo", Value::from(true))])),
+            ),
+        ]));
         assert_eq!(parse_string(json), Ok(expected));
     }
 
