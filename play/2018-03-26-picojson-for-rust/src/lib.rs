@@ -18,8 +18,8 @@ TODOs:
 
 */
 
-use std::collections::BTreeMap;
 use std::cmp::Ordering;
+use std::collections::BTreeMap;
 use std::iter::FromIterator;
 
 // static indent_width: i32 = 2;
@@ -240,7 +240,7 @@ impl Value {
 }
 
 macro_rules! impl_from_for_value {
-    ($t: ty, $f: expr) => {
+    ($t:ty, $f:expr) => {
         impl From<$t> for Value {
             fn from(value: $t) -> Self {
                 $f(value)
@@ -792,8 +792,8 @@ mod tests {
 
 #[cfg(test)]
 mod ported_tests {
-    use std;
     use super::*;
+    use std;
 
     // [ ] constructors
     // [ ] parse
@@ -914,5 +914,111 @@ mod ported_tests {
 
         let json = v.serialize(SerializeStyle::Minimum);
         assert_eq!(json, r#"{"foo":"bar","hoge":[42],"baz":{"piyo":3.14}}"#);
+    }
+
+    #[test]
+    #[cfg(not_impl)]
+    fn test_error_message() {
+        fn test(source: &str, line: i32, near: &str) {
+            let actual = parse_string(source).expect_err("Expected an error.");
+            let expected = format!("Syntax error at line {} near: {}", line, near);
+            assert!(actual, expected);
+        }
+
+        test("falsoa", 1, "oa");
+        test("{]", 1, "]");
+        test("\n\ttab", 2, "tab");
+        test("\"abc\nd\"", 1, "");
+    }
+
+    #[test]
+    fn test_deep_comparison_equal() {
+        let l = parse_string(r#"{ "b": true, "a": [1, 2, "three"], "d": 2 }"#);
+        let r = parse_string(r#"{ "d": 2.0, "b": true, "a": [1, 2, "three"] }"#);
+        assert_eq!(l, r);
+    }
+
+    #[test]
+    #[should_panic]
+    fn test_deep_comparison_not_equal_array() {
+        let l = parse_string(r#"{ "b": true, "a": [1, 2, "three"], "d": 2 }"#);
+        let r = parse_string(r#"{ "b": true, "a": [1,    "three"], "d": 2 }"#);
+        assert_eq!(l, r);
+    }
+
+    #[test]
+    #[should_panic]
+    fn test_deep_comparison_not_equal_boolean() {
+        let l = parse_string(r#"{ "b": true, "a": [1, 2, "three"], "d": 2 }"#);
+        let r = parse_string(r#"{ "b":false, "a": [1, 2, "three"], "d": 2 }"#);
+        assert_eq!(l, r);
+    }
+
+    #[test]
+    #[cfg(not_impl)]
+    fn test_erase() {
+        let obj = parse_string(r#"{ "b": true, "a": [1, 2, "three"], "d": 2 }"#).unwrap();
+        obj.erase("b");
+        let expected = parse_string(r#"{ a": [1, 2, "three"], "d": 2 }"#).unwrap();
+        assert_eq!(obj, expected);
+    }
+
+    #[test]
+    #[ignore]
+    fn test_serialize_integer() {
+        assert_eq!(Value::from(2.0).serialize(SerializeStyle::Minimum), "2.0");
+    }
+
+    fn serialization_sample() -> Value {
+        parse_string(
+            r#"{
+            "a": 1,
+            "b": [2, { "b1": "abc" }],
+            "c": {},
+            "d": []
+        }"#,
+        ).unwrap()
+    }
+
+    #[test]
+    #[ignore]
+    fn test_serialize_object_minimum() {
+        let actual = serialization_sample().serialize(SerializeStyle::Minimum);
+        assert_eq!(actual, r#"{"a":1,"b":[2,{"b1":"abc"}],"c":{},"d":[]}"#);
+    }
+
+    #[test]
+    #[ignore]
+    fn test_serialize_object_pretty() {
+        let actual = serialization_samlpe().serialize(SerializeStyle::Pretty);
+        let expected = r#"{
+  "a": 1,
+  "b": [
+    2,
+    {
+      "b1": "abc"
+    }
+  ],
+  "c": {},
+  "d": []
+  }"#;
+        assert_eq!(actual, expected);
+    }
+
+    #[test]
+    #[should_panic]
+    fn test_reject_nan() {
+        Value::from(f64::NAN);
+    }
+
+    #[test]
+    #[should_panic]
+    fn test_reject_infinity() {
+        Value::from(f64::INFINITY)
+    }
+
+    #[test]
+    fn test_cast() {
+        assert_eq!(Value::from(3.14).as_bool(), None);
     }
 }
