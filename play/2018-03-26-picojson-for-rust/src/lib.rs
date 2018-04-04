@@ -793,7 +793,7 @@ mod tests {
 #[cfg(test)]
 mod ported_tests {
     use super::*;
-    use std;
+    use std::*;
 
     // [ ] constructors
     // [ ] parse
@@ -990,7 +990,7 @@ mod ported_tests {
     #[test]
     #[ignore]
     fn test_serialize_object_pretty() {
-        let actual = serialization_samlpe().serialize(SerializeStyle::Pretty);
+        let actual = serialization_sample().serialize(SerializeStyle::Pretty);
         let expected = r#"{
   "a": 1,
   "b": [
@@ -1006,19 +1006,31 @@ mod ported_tests {
     }
 
     #[test]
+    #[ignore]
     #[should_panic]
     fn test_reject_nan() {
         Value::from(f64::NAN);
     }
 
     #[test]
+    #[ignore]
     #[should_panic]
     fn test_reject_infinity() {
-        Value::from(f64::INFINITY)
+        Value::from(f64::INFINITY);
     }
 
     #[test]
     fn test_cast() {
         assert_eq!(Value::from(3.14).as_bool(), None);
+    }
+
+    #[test]
+    #[cfg(not_impl)]
+    fn test_simple_api() {
+        let v = parse_string(r#"[ 1, "abc" ]"#).unwrap();
+        let a = v.as_array().unwrap();
+        assert_eq!(a.len(), 2);
+        assert_eq!(a[0].as_number().unwrap(), 1);
+        assert_eq!(a[1].as_string().unwrap(), "abc");
     }
 }
