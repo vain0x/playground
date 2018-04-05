@@ -80,11 +80,8 @@ impl Value {
         Value::Object(BTreeMap::new())
     }
 
-    fn from<T>(value: T) -> Value
-    where
-        Value: From<T>,
-    {
-        From::from(value)
+    fn from<T: ValueLike>(value: T) -> Value {
+        value.into_value()
     }
 
     fn try_from_number(value: f64) -> Result<Value, &'static str> {
@@ -99,22 +96,6 @@ impl Value {
 
     fn from_number(value: f64) -> Value {
         Value::try_from_number(value).unwrap()
-    }
-
-    fn from_i32(value: i32) -> Value {
-        Value::Number(value as f64)
-    }
-
-    fn from_iter_of_item<T, I>(iter: I) -> Value
-    where
-        T: ValueCollectionItem,
-        I: IntoIterator<Item = T>,
-    {
-        let mut c = T::Collection::new();
-        for item in iter {
-            item.add_to(&mut c)
-        }
-        c.into_value()
     }
 
     pub fn try_as<T: ValueKind>(&self) -> Option<&T> {
@@ -157,41 +138,6 @@ impl Value {
 
     pub fn get_mut<K, V>(&mut self, _key: &K) -> Option<&mut Value> {
         None
-    }
-}
-
-macro_rules! impl_from_for_value {
-    ($t:ty, $f:expr) => {
-        impl From<$t> for Value {
-            fn from(value: $t) -> Self {
-                $f(value)
-            }
-        }
-    };
-}
-
-impl_from_for_value!((), |_: ()| Value::Null);
-impl_from_for_value!(bool, Value::Boolean);
-impl_from_for_value!(f64, Value::from_number);
-impl_from_for_value!(String, Value::String);
-impl_from_for_value!(Array, Value::Array);
-impl_from_for_value!(Object, Value::Object);
-
-impl_from_for_value!(i32, Value::from_i32);
-
-impl<V: Into<Value>> FromIterator<V> for Value {
-    fn from_iter<T: IntoIterator<Item = V>>(iter: T) -> Self {
-        Value::Array(iter.into_iter().map(|v| v.into()).collect::<Array>())
-    }
-}
-
-impl<K: ToString, V: Into<Value>> FromIterator<(K, V)> for Value {
-    fn from_iter<T: IntoIterator<Item = (K, V)>>(iter: T) -> Self {
-        Value::Object(
-            iter.into_iter()
-                .map(|(k, v)| (k.to_string(), v.into()))
-                .collect::<BTreeMap<_, _>>(),
-        )
     }
 }
 
@@ -343,55 +289,48 @@ impl ValueLike for String {
     }
 }
 
-pub trait ValueCollection {
-    fn new() -> Self;
-    fn into_value(self) -> Value;
+fn array_from_iter<V, I>(iter: I) -> Array
+where
+    V: ValueLike,
+    I: IntoIterator<Item = V>,
+{
+    iter.into_iter().map(|v| v.into_value()).collect::<Array>()
 }
 
-impl ValueCollection for Array {
-    fn new() -> Self {
-        Vec::new()
-    }
-
-    fn into_value(self) -> Value {
-        Value::Array(self)
-    }
-}
-
-impl ValueCollection for Object {
-    fn new() -> Self {
-        BTreeMap::new()
-    }
-
-    fn into_value(self) -> Value {
-        Value::Object(self)
-    }
+fn object_from_iter<K, V, I>(iter: I) -> Object
+where
+    K: ToString,
+    V: ValueLike,
+    I: IntoIterator<Item = (K, V)>,
+{
+    iter.into_iter()
+        .map(|(k, v)| (k.to_string(), v.into_value()))
+        .collect::<BTreeMap<_, _>>()
 }
 
 pub trait ValueCollectionItem: Clone + std::fmt::Debug {
-    type Collection: ValueCollection;
-
-    fn add_to(self, collection: &mut Self::Collection);
+    fn collect<I: IntoIterator<Item = Self>>(iter: I) -> Value;
 }
 
 impl<V: ValueLike> ValueCollectionItem for V {
-    type Collection = Array;
-
-    fn add_to(self, collection: &mut Self::Collection) {
-        collection.push(self.into_value())
+    fn collect<I: IntoIterator<Item = V>>(iter: I) -> Value {
+        Value::Array(array_from_iter(iter))
     }
 }
 
 impl<K, V> ValueCollectionItem for (K, V)
 where
-    K: ToString + PartialOrd + Clone + std::fmt::Debug,
+    K: ToString + Clone + std::fmt::Debug,
     V: ValueLike,
 {
-    type Collection = Object;
+    fn collect<I: IntoIterator<Item = Self>>(iter: I) -> Value {
+        Value::Object(object_from_iter(iter))
+    }
+}
 
-    fn add_to(self, collection: &mut Self::Collection) {
-        let (key, value) = self;
-        collection.insert(key.to_string(), value.into_value());
+impl<'a> ValueLike for &'a str {
+    fn into_value(self) -> Value {
+        Value::String(self.to_string())
     }
 }
 
@@ -400,18 +339,23 @@ where
     T: Clone + std::fmt::Debug,
 {
     fn into_value(self) -> Value {
-        Value::from_iter_of_item(self)
+        <T as ValueCollectionItem>::collect(self)
     }
 }
 
 impl<K, V> ValueLike for BTreeMap<K, V>
 where
-    K: Clone + std::fmt::Debug,
+    K: ToString + Clone + std::fmt::Debug,
     V: ValueLike,
-    (K, V): ValueCollectionItem,
 {
     fn into_value(self) -> Value {
-        Value::from_iter_of_item(self)
+        Value::Object(object_from_iter(self))
+    }
+}
+
+impl<T: ValueCollectionItem> FromIterator<T> for Value {
+    fn from_iter<I: IntoIterator<Item = T>>(iter: I) -> Self {
+        T::collect(iter)
     }
 }
 
@@ -807,20 +751,10 @@ mod tests {
     use super::*;
     use std::cmp::Ordering;
 
-    fn array<V: Into<Value>, I: IntoIterator<Item = V>>(iter: I) -> Array {
-        iter.into_iter().map(|v| v.into()).collect()
-    }
-
-    fn obj<K: ToString, V: Into<Value>, I: IntoIterator<Item = (K, V)>>(iter: I) -> Object {
-        iter.into_iter()
-            .map(|(k, v)| (k.to_string(), v.into()))
-            .collect()
-    }
-
     #[test]
     fn test_object_comparison() {
-        let obj1 = obj(vec![("a", 1)]);
-        let obj2 = obj(vec![("a", Value::Null)]);
+        let obj1 = object_from_iter(vec![("a", 1)]);
+        let obj2 = object_from_iter(vec![("a", Value::Null)]);
 
         assert_eq!(obj1, obj1);
         assert_eq!(obj1.partial_cmp(&obj2), Some(Ordering::Greater));
@@ -874,16 +808,16 @@ mod tests {
 
     #[test]
     fn test_parse_string_as_array() {
-        assert_eq!(parse_string("[]"), Ok(Value::Array(Array::new())));
+        assert_eq!(parse_string("[]"), Ok(Value::array()));
         assert_eq!(
             parse_string("[true, false, true]"),
-            Ok(Value::Array(array(vec![true, false, true])))
+            Ok(Value::from(vec![true, false, true]))
         );
     }
 
     #[test]
     fn test_parse_object_empty() {
-        assert_eq!(parse_string("{}"), Ok(Value::Object(Object::new())));
+        assert_eq!(parse_string("{}"), Ok(Value::object()));
     }
 
     #[test]
@@ -892,10 +826,10 @@ mod tests {
             "user_id": 42,
             "name": "John Doe"
         }"#;
-        let expected = Value::from(obj(vec![
+        let expected = Value::from(vec![
             ("user_id", Value::from(42)),
-            ("name", Value::String("John Doe".to_string())),
-        ]));
+            ("name", Value::from("John Doe")),
+        ]);
         assert_eq!(parse_string(json), Ok(expected));
     }
 
@@ -905,13 +839,10 @@ mod tests {
             "array": [1, 2, 3],
             "object": { "foo": true }
         }"#;
-        let expected = Value::from(obj(vec![
-            ("array", Value::Array(array(vec![1, 2, 3]))),
-            (
-                "object",
-                Value::Object(obj(vec![("foo", Value::from(true))])),
-            ),
-        ]));
+        let expected = Value::from(vec![
+            ("array", Value::from(vec![1, 2, 3])),
+            ("object", Value::from(vec![("foo", true)])),
+        ]);
         assert_eq!(parse_string(json), Ok(expected));
     }
 
@@ -944,25 +875,14 @@ mod ported_tests {
     use super::*;
     use std::*;
 
-    // [ ] constructors
-    // [ ] parse
-    // [ ] array
-    // [ ] object
-    // [ ] equality
-    // [ ] swap
-    // [ ] serialize pretty print
-    // [ ] reject NaN/Inf
-
-    // [ ] unicode string
-
     #[test]
     #[ignore]
-    fn test_construtor() {
+    fn test_constructor() {
         let table = vec![
             (Value::from(true), "true"),
             (Value::from(false), "false"),
             (Value::from(42.0), "42"),
-            (Value::from("hello".to_string()), "\"hello\""),
+            (Value::from("hello"), "\"hello\""),
         ];
         for (value, json) in table {
             let actual = value.serialize(SerializeStyle::Minimum);
@@ -997,6 +917,7 @@ mod ported_tests {
     fn test_correct_output() {
         fn test<T>(source: String, expected: T) {
             let value = parse_string(source).unwrap();
+            assert!(value.is_of<T>())
             // value: has type T
             // parsed completely
         }
