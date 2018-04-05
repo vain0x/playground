@@ -2,6 +2,7 @@
 
 TODOs:
 
+- [ ] conversion from NaN/Inf f64, i64 or usize
 - [ ] parse string
     - [ ] \u+FFFF
     - [ ] \b, \f
@@ -18,13 +19,16 @@ TODOs:
 
 */
 
-use std::cmp::Ordering;
 use std::collections::BTreeMap;
 use std::iter::FromIterator;
 
 // static indent_width: i32 = 2;
 
 type Error = String;
+
+pub type Array = Vec<Value>;
+
+pub type Object = BTreeMap<String, Value>;
 
 #[derive(PartialEq, PartialOrd, Clone, Copy, Debug)]
 pub enum Type {
@@ -41,104 +45,6 @@ pub enum SerializeStyle {
     Pretty,
 }
 
-#[derive(PartialEq, Clone, Debug)]
-pub struct Array(Vec<Value>);
-
-impl Array {
-    pub fn new() -> Array {
-        Array(Vec::new())
-    }
-
-    pub fn unwrap(&self) -> &Vec<Value> {
-        &self.0
-    }
-
-    pub fn unwrap_mut(&mut self) -> &mut Vec<Value> {
-        &mut self.0
-    }
-}
-
-impl IntoIterator for Array {
-    type Item = Value;
-    type IntoIter = std::vec::IntoIter<Value>;
-
-    fn into_iter(self) -> std::vec::IntoIter<Value> {
-        let Array(vec) = self;
-        vec.into_iter()
-    }
-}
-
-impl PartialOrd for Array {
-    fn partial_cmp(&self, other: &Array) -> Option<Ordering> {
-        let (&Array(ref ls), &Array(ref rs)) = (self, other);
-
-        // Lexicographical ordering.
-        if let Some(ordering) = ls.len().partial_cmp(&rs.len()) {
-            return Some(ordering);
-        }
-
-        for (l, r) in ls.iter().zip(rs) {
-            if let Some(ordering) = l.partial_cmp(r) {
-                return Some(ordering);
-            }
-        }
-
-        Some(Ordering::Equal)
-    }
-}
-
-impl<V: Into<Value>> FromIterator<V> for Array {
-    fn from_iter<T: IntoIterator<Item = V>>(iter: T) -> Array {
-        Array(iter.into_iter().map(|v| v.into()).collect())
-    }
-}
-
-#[derive(PartialEq, Clone, Debug)]
-pub struct Object(BTreeMap<String, Value>);
-
-impl Object {
-    pub fn new() -> Object {
-        Object(BTreeMap::new())
-    }
-
-    // fn unwrap(&self) -> &BTreeMap<String, Value> {
-    //     &self.0
-    // }
-
-    fn unwrap_mut(&mut self) -> &mut BTreeMap<String, Value> {
-        &mut self.0
-    }
-
-    pub fn insert<K: ToString, V>(&mut self, key: K, value: V) -> Option<Value>
-    where
-        String: From<K>,
-        Value: From<V>,
-    {
-        self.unwrap_mut()
-            .insert(From::from(key), Value::from(value))
-    }
-}
-
-impl PartialOrd for Object {
-    fn partial_cmp(&self, other: &Object) -> Option<Ordering> {
-        let (&Object(ref lt), &Object(ref rt)) = (self, other);
-
-        if lt == rt {
-            Some(Ordering::Equal)
-        } else {
-            None
-        }
-    }
-}
-
-impl<K: ToString, V: Into<Value>> FromIterator<(K, V)> for Object {
-    fn from_iter<T: IntoIterator<Item = (K, V)>>(iter: T) -> Object {
-        Object(BTreeMap::from_iter(
-            iter.into_iter().map(|(k, v)| (k.to_string(), v.into())),
-        ))
-    }
-}
-
 #[derive(PartialEq, PartialOrd, Clone, Debug)]
 pub enum Value {
     Null,
@@ -149,17 +55,29 @@ pub enum Value {
     Object(Object),
 }
 
+macro_rules! impl_value_as {
+    ($n:ident, $m:ident, $t:ty) => {
+        pub fn $n(&self) -> Option<&$t> {
+            self.try_as::<$t>()
+        }
+
+        pub fn $m(&mut self) -> Option<&mut $t> {
+            self.try_as_mut::<$t>()
+        }
+    }
+}
+
 impl Value {
     pub fn null() -> Value {
         Value::Null
     }
 
     pub fn array() -> Value {
-        Value::Array(Array::new())
+        Value::Array(Vec::new())
     }
 
     pub fn object() -> Value {
-        Value::Object(Object::new())
+        Value::Object(BTreeMap::new())
     }
 
     fn from<T>(value: T) -> Value
@@ -169,54 +87,57 @@ impl Value {
         From::from(value)
     }
 
-    pub fn as_bool(&self) -> Option<bool> {
-        match self {
-            &Value::Boolean(value) => Some(value),
-            _ => None,
+    fn try_from_number(value: f64) -> Result<Value, &'static str> {
+        if value.is_nan() {
+            Err("NaN can't be a json value.")
+        } else if value.is_infinite() {
+            Err("Infinite value can't be a json value.")
+        } else {
+            Ok(Value::Number(value))
         }
     }
 
-    pub fn as_number(&self) -> Option<f64> {
-        match self {
-            &Value::Number(number) => Some(number),
-            _ => None,
-        }
+    fn from_number(value: f64) -> Value {
+        Value::try_from_number(value).unwrap()
     }
 
-    pub fn as_string(&self) -> Option<&str> {
-        match self {
-            &Value::String(ref s) => Some(s),
-            _ => None,
-        }
+    fn from_i32(value: i32) -> Value {
+        Value::Number(value as f64)
     }
 
-    pub fn as_array(&self) -> Option<&Array> {
-        match self {
-            &Value::Array(ref array) => Some(array),
-            _ => None,
+    fn from_iter_of_item<T, I>(iter: I) -> Value
+    where
+        T: ValueCollectionItem,
+        I: IntoIterator<Item = T>,
+    {
+        let mut c = T::Collection::new();
+        for item in iter {
+            item.add_to(&mut c)
         }
+        c.into_value()
     }
 
-    pub fn as_array_mut(&mut self) -> Option<&mut Array> {
-        match self {
-            &mut Value::Array(ref mut array) => Some(array),
-            _ => None,
-        }
+    pub fn try_as<T: ValueKind>(&self) -> Option<&T> {
+        T::try_borrow(self)
     }
 
-    pub fn as_object(&self) -> Option<&Object> {
-        match self {
-            &Value::Object(ref obj) => Some(obj),
-            _ => None,
-        }
+    pub fn try_as_mut<T: ValueKind>(&mut self) -> Option<&mut T> {
+        T::try_borrow_mut(self)
     }
 
-    pub fn as_object_mut(&mut self) -> Option<&mut Object> {
-        match self {
-            &mut Value::Object(ref mut obj) => Some(obj),
-            _ => None,
-        }
+    pub fn is_of<T: ValueKind>(&self) -> bool {
+        self.try_as::<T>().is_some()
     }
+
+    pub fn is_null(&self) -> bool {
+        self.is_of::<()>()
+    }
+
+    impl_value_as!(as_bool, as_bool_mut, bool);
+    impl_value_as!(as_number, as_number_mut, f64);
+    impl_value_as!(as_string, as_string_mut, String);
+    impl_value_as!(as_array, as_array_mut, Array);
+    impl_value_as!(as_object, as_object_mut, Object);
 
     pub fn serialize(&self, _mode: SerializeStyle) -> String {
         "".to_string()
@@ -249,23 +170,248 @@ macro_rules! impl_from_for_value {
     };
 }
 
+impl_from_for_value!((), |_: ()| Value::Null);
 impl_from_for_value!(bool, Value::Boolean);
-impl_from_for_value!(f64, Value::Number);
+impl_from_for_value!(f64, Value::from_number);
 impl_from_for_value!(String, Value::String);
 impl_from_for_value!(Array, Value::Array);
 impl_from_for_value!(Object, Value::Object);
 
-impl_from_for_value!(i32, |value: i32| Value::Number(value as f64));
+impl_from_for_value!(i32, Value::from_i32);
 
 impl<V: Into<Value>> FromIterator<V> for Value {
     fn from_iter<T: IntoIterator<Item = V>>(iter: T) -> Self {
-        Value::Array(<Array as FromIterator<V>>::from_iter(iter))
+        Value::Array(iter.into_iter().map(|v| v.into()).collect::<Array>())
     }
 }
 
 impl<K: ToString, V: Into<Value>> FromIterator<(K, V)> for Value {
     fn from_iter<T: IntoIterator<Item = (K, V)>>(iter: T) -> Self {
-        Value::Object(<Object as FromIterator<(K, V)>>::from_iter(iter))
+        Value::Object(
+            iter.into_iter()
+                .map(|(k, v)| (k.to_string(), v.into()))
+                .collect::<BTreeMap<_, _>>(),
+        )
+    }
+}
+
+pub trait ValueKind: Clone + std::fmt::Debug + ValueLike {
+    fn try_borrow(value: &Value) -> Option<&Self>;
+
+    fn try_borrow_mut(value: &mut Value) -> Option<&mut Self>;
+
+    fn into_value(self) -> Value {
+        <Self as ValueLike>::into_value(self)
+    }
+}
+
+impl ValueKind for () {
+    fn try_borrow(value: &Value) -> Option<&Self> {
+        match value {
+            &Value::Null => Some(&()),
+            _ => None,
+        }
+    }
+
+    fn try_borrow_mut(value: &mut Value) -> Option<&mut Self> {
+        static mut UNIT: () = ();
+        match value {
+            &mut Value::Null => Some(unsafe { &mut UNIT }),
+            _ => None,
+        }
+    }
+}
+
+impl ValueKind for bool {
+    fn try_borrow(value: &Value) -> Option<&Self> {
+        match value {
+            &Value::Boolean(ref it) => Some(it),
+            _ => None,
+        }
+    }
+
+    fn try_borrow_mut(value: &mut Value) -> Option<&mut Self> {
+        match value {
+            &mut Value::Boolean(ref mut it) => Some(it),
+            _ => None,
+        }
+    }
+}
+
+impl ValueKind for f64 {
+    fn try_borrow(value: &Value) -> Option<&Self> {
+        match value {
+            &Value::Number(ref it) => Some(it),
+            _ => None,
+        }
+    }
+
+    fn try_borrow_mut(value: &mut Value) -> Option<&mut Self> {
+        match value {
+            &mut Value::Number(ref mut it) => Some(it),
+            _ => None,
+        }
+    }
+}
+
+impl ValueKind for String {
+    fn try_borrow(value: &Value) -> Option<&Self> {
+        match value {
+            &Value::String(ref it) => Some(it),
+            _ => None,
+        }
+    }
+
+    fn try_borrow_mut(value: &mut Value) -> Option<&mut Self> {
+        match value {
+            &mut Value::String(ref mut it) => Some(it),
+            _ => None,
+        }
+    }
+}
+
+impl ValueKind for Array {
+    fn try_borrow(value: &Value) -> Option<&Self> {
+        match value {
+            &Value::Array(ref it) => Some(it),
+            _ => None,
+        }
+    }
+
+    fn try_borrow_mut(value: &mut Value) -> Option<&mut Self> {
+        match value {
+            &mut Value::Array(ref mut it) => Some(it),
+            _ => None,
+        }
+    }
+}
+
+impl ValueKind for Object {
+    fn try_borrow(value: &Value) -> Option<&Self> {
+        match value {
+            &Value::Object(ref it) => Some(it),
+            _ => None,
+        }
+    }
+
+    fn try_borrow_mut(value: &mut Value) -> Option<&mut Self> {
+        match value {
+            &mut Value::Object(ref mut it) => Some(it),
+            _ => None,
+        }
+    }
+}
+
+/// Represents a type of JSON value.
+pub trait ValueLike: Clone + std::fmt::Debug {
+    fn into_value(self) -> Value;
+}
+
+impl ValueLike for Value {
+    fn into_value(self) -> Value {
+        self
+    }
+}
+
+impl ValueLike for () {
+    fn into_value(self) -> Value {
+        Value::Null
+    }
+}
+
+impl ValueLike for bool {
+    fn into_value(self) -> Value {
+        Value::Boolean(self)
+    }
+}
+
+impl ValueLike for f64 {
+    fn into_value(self) -> Value {
+        Value::from_number(self)
+    }
+}
+
+impl ValueLike for i32 {
+    fn into_value(self) -> Value {
+        Value::Number(self as f64)
+    }
+}
+
+impl ValueLike for String {
+    fn into_value(self) -> Value {
+        Value::String(self)
+    }
+}
+
+pub trait ValueCollection {
+    fn new() -> Self;
+    fn into_value(self) -> Value;
+}
+
+impl ValueCollection for Array {
+    fn new() -> Self {
+        Vec::new()
+    }
+
+    fn into_value(self) -> Value {
+        Value::Array(self)
+    }
+}
+
+impl ValueCollection for Object {
+    fn new() -> Self {
+        BTreeMap::new()
+    }
+
+    fn into_value(self) -> Value {
+        Value::Object(self)
+    }
+}
+
+pub trait ValueCollectionItem: Clone + std::fmt::Debug {
+    type Collection: ValueCollection;
+
+    fn add_to(self, collection: &mut Self::Collection);
+}
+
+impl<V: ValueLike> ValueCollectionItem for V {
+    type Collection = Array;
+
+    fn add_to(self, collection: &mut Self::Collection) {
+        collection.push(self.into_value())
+    }
+}
+
+impl<K, V> ValueCollectionItem for (K, V)
+where
+    K: ToString + PartialOrd + Clone + std::fmt::Debug,
+    V: ValueLike,
+{
+    type Collection = Object;
+
+    fn add_to(self, collection: &mut Self::Collection) {
+        let (key, value) = self;
+        collection.insert(key.to_string(), value.into_value());
+    }
+}
+
+impl<T: ValueCollectionItem> ValueLike for Vec<T>
+where
+    T: Clone + std::fmt::Debug,
+{
+    fn into_value(self) -> Value {
+        Value::from_iter_of_item(self)
+    }
+}
+
+impl<K, V> ValueLike for BTreeMap<K, V>
+where
+    K: Clone + std::fmt::Debug,
+    V: ValueLike,
+    (K, V): ValueCollectionItem,
+{
+    fn into_value(self) -> Value {
+        Value::from_iter_of_item(self)
     }
 }
 
@@ -407,7 +553,7 @@ impl<'a> ParseContext for DefaultParseContext<'a> {
             return false;
         }
 
-        let vec = self.out.as_array_mut().unwrap().unwrap_mut();
+        let vec = self.out.as_array_mut().unwrap();
         vec.push(value);
         true
     }
@@ -432,7 +578,7 @@ impl<'a> ParseContext for DefaultParseContext<'a> {
             return false;
         }
 
-        let obj = self.out.as_object_mut().unwrap().unwrap_mut();
+        let obj = self.out.as_object_mut().unwrap();
         obj.insert(key, value);
         true
     }
@@ -659,13 +805,16 @@ pub fn parse_string(s: &str) -> Result<Value, Error> {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use std::cmp::Ordering;
 
     fn array<V: Into<Value>, I: IntoIterator<Item = V>>(iter: I) -> Array {
-        iter.into_iter().collect()
+        iter.into_iter().map(|v| v.into()).collect()
     }
 
     fn obj<K: ToString, V: Into<Value>, I: IntoIterator<Item = (K, V)>>(iter: I) -> Object {
-        iter.into_iter().collect()
+        iter.into_iter()
+            .map(|(k, v)| (k.to_string(), v.into()))
+            .collect()
     }
 
     #[test]
@@ -674,7 +823,7 @@ mod tests {
         let obj2 = obj(vec![("a", Value::Null)]);
 
         assert_eq!(obj1, obj1);
-        assert_eq!(obj1.partial_cmp(&obj2), None);
+        assert_eq!(obj1.partial_cmp(&obj2), Some(Ordering::Greater));
     }
 
     #[test]
@@ -828,7 +977,7 @@ mod ported_tests {
         fn f(r: f64) -> f64 {
             let json = Value::from(r).serialize(SerializeStyle::Minimum);
             let value = parse_string(&json).unwrap();
-            value.as_number().unwrap()
+            value.as_number().cloned().unwrap()
         }
 
         for n in 1..53 {
