@@ -124,7 +124,19 @@ impl Value {
 
         fn serialize_string(value: &str, out: &mut String) {
             *out += "\"";
-            *out += value;
+
+            for c in value.chars() {
+                match c {
+                    '"' => *out += "\\\"",
+                    '\n' => *out += "\\n",
+                    '\r' => *out += "\\r",
+                    '\t' => *out += "\\t",
+                    '\\' => *out += "\\\\",
+                    'u' => panic!("not implemented"),
+                    _ => std::fmt::Write::write_char(*out, c).unwrap(),
+                }
+            }
+
             *out += "\"";
         }
 
@@ -656,9 +668,9 @@ fn _parse_string<'a>(out: &mut String, input: &mut Input<'a>) -> bool {
                     Some('\\') => {
                         out.push('\\');
                     }
-                    Some('/') => {
-                        out.push('/');
-                    }
+                    // Some('/') => {
+                    //     out.push('/');
+                    // }
                     // Some ('b') => {
                     //     out.push('\b');
                     // }
