@@ -40,11 +40,6 @@ pub enum Type {
     Object,
 }
 
-pub enum SerializeStyle {
-    Minimum,
-    Pretty,
-}
-
 #[derive(PartialEq, PartialOrd, Clone, Debug)]
 pub enum Value {
     Null,
@@ -120,7 +115,11 @@ impl Value {
     impl_value_as!(as_array, as_array_mut, Array);
     impl_value_as!(as_object, as_object_mut, Object);
 
-    pub fn serialize(&self, _mode: SerializeStyle) -> String {
+    pub fn serialize(&self) -> String {
+        "".to_string()
+    }
+
+    pub fn pretty_print(&self) -> String {
         "".to_string()
     }
 
@@ -885,7 +884,7 @@ mod ported_tests {
             (Value::from("hello"), "\"hello\""),
         ];
         for (value, json) in table {
-            let actual = value.serialize(SerializeStyle::Minimum);
+            let actual = value.serialize();
             assert_eq!(actual, json);
         }
     }
@@ -895,7 +894,7 @@ mod ported_tests {
     fn test_double_reserialization() {
         /// Serialize and deserialize a number.
         fn f(r: f64) -> f64 {
-            let json = Value::from(r).serialize(SerializeStyle::Minimum);
+            let json = Value::from(r).serialize();
             let value = parse_string(&json).unwrap();
             value.as_number().cloned().unwrap()
         }
@@ -982,7 +981,7 @@ mod ported_tests {
         let v2 = v.get_mut("baz").unwrap();
         v2.insert("piyo", Value::from(3.14));
 
-        let json = v.serialize(SerializeStyle::Minimum);
+        let json = v.serialize();
         assert_eq!(json, r#"{"foo":"bar","hoge":[42],"baz":{"piyo":3.14}}"#);
     }
 
@@ -1036,7 +1035,7 @@ mod ported_tests {
     #[test]
     #[ignore]
     fn test_serialize_integer() {
-        assert_eq!(Value::from(2.0).serialize(SerializeStyle::Minimum), "2.0");
+        assert_eq!(Value::from(2.0).serialize(), "2.0");
     }
 
     fn serialization_sample() -> Value {
@@ -1053,14 +1052,14 @@ mod ported_tests {
     #[test]
     #[ignore]
     fn test_serialize_object_minimum() {
-        let actual = serialization_sample().serialize(SerializeStyle::Minimum);
+        let actual = serialization_sample().serialize();
         assert_eq!(actual, r#"{"a":1,"b":[2,{"b1":"abc"}],"c":{},"d":[]}"#);
     }
 
     #[test]
     #[ignore]
     fn test_serialize_object_pretty() {
-        let actual = serialization_sample().serialize(SerializeStyle::Pretty);
+        let actual = serialization_sample().pretty_print();
         let expected = r#"{
   "a": 1,
   "b": [
