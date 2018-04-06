@@ -116,9 +116,9 @@ impl Value {
     impl_value_as!(as_object, as_object_mut, Object);
 
     pub fn serialize(&self) -> String {
-        let mut out = String::new();
-        serialize_core(self, &mut out);
-        out
+        let mut s = DefaultJsonSerializer { out: String::new() };
+        s.serialize_core(self);
+        s.out
     }
 
     pub fn pretty_print(&self) -> String {
@@ -747,88 +747,93 @@ pub fn parse_string(s: &str) -> Result<Value, Error> {
     }
 }
 
-fn serialize_core(value: &Value, out: &mut String) {
-    fn is_first(value: &mut bool) -> bool {
-        let old_value = *value;
-        *value = false;
-        old_value
-    }
+fn is_first(value: &mut bool) -> bool {
+    let old_value = *value;
+    *value = false;
+    old_value
+}
 
-    fn serialize_string(value: &str, out: &mut String) {
-        *out += "\"";
+trait JsonSerializer {
+    fn write_char(&mut self, c: char);
+    fn write_str(&mut self, s: &str);
+
+    fn serialize_string(&mut self, value: &str) {
+        self.write_char('"');
 
         for c in value.chars() {
             match c {
-                '"' => *out += "\\\"",
-                '\n' => *out += "\\n",
-                '\r' => *out += "\\r",
-                '\t' => *out += "\\t",
-                '\\' => *out += "\\\\",
+                '"' => self.write_str("\\\""),
+                '\n' => self.write_str("\\n"),
+                '\r' => self.write_str("\\r"),
+                '\t' => self.write_str("\\t"),
+                '\\' => self.write_str("\\\\"),
                 'u' => panic!("not implemented"),
-                _ => std::fmt::Write::write_char(out, c).unwrap(),
+                _ => self.write_char(c),
             }
         }
 
-        *out += "\"";
+        self.write_char('"');
     }
 
-    fn serialize_array(array: &Array, out: &mut String) {
+    fn serialize_array(&mut self, array: &Array) {
         if array.is_empty() {
-            *out += "[]";
+            self.write_str("[]");
         } else {
-            *out += "[";
+            self.write_char('[');
             let mut first = true;
             for item in array {
                 if !is_first(&mut first) {
-                    *out += ",";
+                    self.write_char(',');
                 }
-                serialize_core(item, out);
+                self.serialize_core(item);
             }
-            *out += "]";
+            self.write_char(']');
         }
     }
 
-    fn serialize_object(object: &Object, out: &mut String) {
+    fn serialize_object(&mut self, object: &Object) {
         if object.is_empty() {
-            *out += "{}";
+            self.write_str("{}");
         } else {
-            *out += "{";
+            self.write_str("{");
             let mut first = true;
             for (key, item) in object.iter() {
                 if !is_first(&mut first) {
-                    *out += ",";
+                    self.write_str(",");
                 }
 
-                serialize_string(key, out);
-                *out += ":";
-                serialize_core(item, out);
+                self.serialize_string(key);
+                self.write_str(":");
+                self.serialize_core(item);
             }
-            *out += "}";
+            self.write_str("}");
         }
     }
 
-    match value {
-        &Value::Null => {
-            *out += "null";
+    fn serialize_core(&mut self, value: &Value) {
+        match value {
+            &Value::Null => self.write_str("null"),
+            &Value::Boolean(true) => self.write_str("true"),
+            &Value::Boolean(false) => self.write_str("false"),
+            &Value::Number(ref value) => self.write_str(&value.to_string()),
+            &Value::String(ref value) => self.serialize_string(value),
+            &Value::Array(ref array) => self.serialize_array(array),
+            &Value::Object(ref object) => self.serialize_object(object),
         }
-        &Value::Boolean(true) => {
-            *out += "true";
-        }
-        &Value::Boolean(false) => {
-            *out += "false";
-        }
-        &Value::Number(ref value) => {
-            *out += &value.to_string();
-        }
-        &Value::String(ref value) => {
-            serialize_string(value, out);
-        }
-        &Value::Array(ref array) => {
-            serialize_array(array, out);
-        }
-        &Value::Object(ref object) => {
-            serialize_object(object, out);
-        }
+    }
+}
+
+struct DefaultJsonSerializer {
+    out: String,
+}
+
+impl JsonSerializer for DefaultJsonSerializer {
+    fn write_char(&mut self, c: char) {
+        std::fmt::Write::write_char(&mut self.out, c).unwrap()
+    }
+
+    fn write_str(&mut self, s: &str) {
+        self.out += s;
     }
 }
 
