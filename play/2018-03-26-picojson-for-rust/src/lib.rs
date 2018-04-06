@@ -2,29 +2,33 @@
 
 TODOs:
 
+- [ ] conversion from NaN/Inf f64, i64 or usize
 - [ ] parse string
     - [ ] \u+FFFF
     - [ ] \b, \f
-- [ ] error reporting
 - [ ] serialize
+    - [ ] pretty print
+    - [ ] \u+FFFF
+- [ ] error reporting
 - [ ] input::cur, line
 - [ ] i64 support
 - [ ] support file stream
 - [ ] methods of Value
-- [ ] test codes from picojson
-- [ ] helper methods to build object
 - [ ] partial_cmp for obj
 - [ ] refactoring
 
 */
 
 use std::collections::BTreeMap;
-use std::cmp::Ordering;
 use std::iter::FromIterator;
 
 // static indent_width: i32 = 2;
 
 type Error = String;
+
+pub type Array = Vec<Value>;
+
+pub type Object = BTreeMap<String, Value>;
 
 #[derive(PartialEq, PartialOrd, Clone, Copy, Debug)]
 pub enum Type {
@@ -34,109 +38,6 @@ pub enum Type {
     String,
     Array,
     Object,
-}
-
-pub enum SerializeStyle {
-    Minimum,
-    Pretty,
-}
-
-#[derive(PartialEq, Clone, Debug)]
-pub struct Array(Vec<Value>);
-
-impl Array {
-    pub fn new() -> Array {
-        Array(Vec::new())
-    }
-
-    pub fn unwrap(&self) -> &Vec<Value> {
-        &self.0
-    }
-
-    pub fn unwrap_mut(&mut self) -> &mut Vec<Value> {
-        &mut self.0
-    }
-}
-
-impl IntoIterator for Array {
-    type Item = Value;
-    type IntoIter = std::vec::IntoIter<Value>;
-
-    fn into_iter(self) -> std::vec::IntoIter<Value> {
-        let Array(vec) = self;
-        vec.into_iter()
-    }
-}
-
-impl PartialOrd for Array {
-    fn partial_cmp(&self, other: &Array) -> Option<Ordering> {
-        let (&Array(ref ls), &Array(ref rs)) = (self, other);
-
-        // Lexicographical ordering.
-        if let Some(ordering) = ls.len().partial_cmp(&rs.len()) {
-            return Some(ordering);
-        }
-
-        for (l, r) in ls.iter().zip(rs) {
-            if let Some(ordering) = l.partial_cmp(r) {
-                return Some(ordering);
-            }
-        }
-
-        Some(Ordering::Equal)
-    }
-}
-
-impl<V: Into<Value>> FromIterator<V> for Array {
-    fn from_iter<T: IntoIterator<Item = V>>(iter: T) -> Array {
-        Array(iter.into_iter().map(|v| v.into()).collect())
-    }
-}
-
-#[derive(PartialEq, Clone, Debug)]
-pub struct Object(BTreeMap<String, Value>);
-
-impl Object {
-    pub fn new() -> Object {
-        Object(BTreeMap::new())
-    }
-
-    // fn unwrap(&self) -> &BTreeMap<String, Value> {
-    //     &self.0
-    // }
-
-    fn unwrap_mut(&mut self) -> &mut BTreeMap<String, Value> {
-        &mut self.0
-    }
-
-    pub fn insert<K: ToString, V>(&mut self, key: K, value: V) -> Option<Value>
-    where
-        String: From<K>,
-        Value: From<V>,
-    {
-        self.unwrap_mut()
-            .insert(From::from(key), Value::from(value))
-    }
-}
-
-impl PartialOrd for Object {
-    fn partial_cmp(&self, other: &Object) -> Option<Ordering> {
-        let (&Object(ref lt), &Object(ref rt)) = (self, other);
-
-        if lt == rt {
-            Some(Ordering::Equal)
-        } else {
-            None
-        }
-    }
-}
-
-impl<K: ToString, V: Into<Value>> FromIterator<(K, V)> for Object {
-    fn from_iter<T: IntoIterator<Item = (K, V)>>(iter: T) -> Object {
-        Object(BTreeMap::from_iter(
-            iter.into_iter().map(|(k, v)| (k.to_string(), v.into())),
-        ))
-    }
 }
 
 #[derive(PartialEq, PartialOrd, Clone, Debug)]
@@ -149,76 +50,78 @@ pub enum Value {
     Object(Object),
 }
 
+macro_rules! impl_value_as {
+    ($n:ident, $m:ident, $t:ty) => {
+        pub fn $n(&self) -> Option<&$t> {
+            self.try_as::<$t>()
+        }
+
+        pub fn $m(&mut self) -> Option<&mut $t> {
+            self.try_as_mut::<$t>()
+        }
+    }
+}
+
 impl Value {
     pub fn null() -> Value {
         Value::Null
     }
 
     pub fn array() -> Value {
-        Value::Array(Array::new())
+        Value::Array(Vec::new())
     }
 
     pub fn object() -> Value {
-        Value::Object(Object::new())
+        Value::Object(BTreeMap::new())
     }
 
-    fn from<T>(value: T) -> Value
-    where
-        Value: From<T>,
-    {
-        From::from(value)
+    fn from<T: ValueLike>(value: T) -> Value {
+        value.into_value()
     }
 
-    pub fn as_bool(&self) -> Option<bool> {
-        match self {
-            &Value::Boolean(value) => Some(value),
-            _ => None,
+    fn try_from_number(value: f64) -> Result<Value, &'static str> {
+        if value.is_nan() {
+            Err("NaN can't be a json value.")
+        } else if value.is_infinite() {
+            Err("Infinite value can't be a json value.")
+        } else {
+            Ok(Value::Number(value))
         }
     }
 
-    pub fn as_number(&self) -> Option<f64> {
-        match self {
-            &Value::Number(number) => Some(number),
-            _ => None,
-        }
+    fn from_number(value: f64) -> Value {
+        Value::try_from_number(value).unwrap()
     }
 
-    pub fn as_string(&self) -> Option<&str> {
-        match self {
-            &Value::String(ref s) => Some(s),
-            _ => None,
-        }
+    pub fn try_as<T: ValueKind>(&self) -> Option<&T> {
+        T::try_borrow(self)
     }
 
-    pub fn as_array(&self) -> Option<&Array> {
-        match self {
-            &Value::Array(ref array) => Some(array),
-            _ => None,
-        }
+    pub fn try_as_mut<T: ValueKind>(&mut self) -> Option<&mut T> {
+        T::try_borrow_mut(self)
     }
 
-    pub fn as_array_mut(&mut self) -> Option<&mut Array> {
-        match self {
-            &mut Value::Array(ref mut array) => Some(array),
-            _ => None,
-        }
+    pub fn is_of<T: ValueKind>(&self) -> bool {
+        self.try_as::<T>().is_some()
     }
 
-    pub fn as_object(&self) -> Option<&Object> {
-        match self {
-            &Value::Object(ref obj) => Some(obj),
-            _ => None,
-        }
+    pub fn is_null(&self) -> bool {
+        self.is_of::<()>()
     }
 
-    pub fn as_object_mut(&mut self) -> Option<&mut Object> {
-        match self {
-            &mut Value::Object(ref mut obj) => Some(obj),
-            _ => None,
-        }
+    impl_value_as!(as_bool, as_bool_mut, bool);
+    impl_value_as!(as_number, as_number_mut, f64);
+    impl_value_as!(as_string, as_string_mut, String);
+    impl_value_as!(as_array, as_array_mut, Array);
+    impl_value_as!(as_object, as_object_mut, Object);
+
+    pub fn serialize(&self) -> String {
+        let mut s = DefaultJsonSerializer { out: String::new() };
+        s.serialize_core(self);
+        s.out
     }
 
-    pub fn serialize(&self, _mode: SerializeStyle) -> String {
+    pub fn pretty_print(&self) -> String {
         "".to_string()
     }
 
@@ -239,33 +142,221 @@ impl Value {
     }
 }
 
-macro_rules! impl_from_for_value {
-    ($t: ty, $f: expr) => {
-        impl From<$t> for Value {
-            fn from(value: $t) -> Self {
-                $f(value)
-            }
-        }
-    };
-}
+pub trait ValueKind: Clone + std::fmt::Debug + ValueLike {
+    fn try_borrow(value: &Value) -> Option<&Self>;
 
-impl_from_for_value!(bool, Value::Boolean);
-impl_from_for_value!(f64, Value::Number);
-impl_from_for_value!(String, Value::String);
-impl_from_for_value!(Array, Value::Array);
-impl_from_for_value!(Object, Value::Object);
+    fn try_borrow_mut(value: &mut Value) -> Option<&mut Self>;
 
-impl_from_for_value!(i32, |value: i32| Value::Number(value as f64));
-
-impl<V: Into<Value>> FromIterator<V> for Value {
-    fn from_iter<T: IntoIterator<Item = V>>(iter: T) -> Self {
-        Value::Array(<Array as FromIterator<V>>::from_iter(iter))
+    fn into_value(self) -> Value {
+        <Self as ValueLike>::into_value(self)
     }
 }
 
-impl<K: ToString, V: Into<Value>> FromIterator<(K, V)> for Value {
-    fn from_iter<T: IntoIterator<Item = (K, V)>>(iter: T) -> Self {
-        Value::Object(<Object as FromIterator<(K, V)>>::from_iter(iter))
+impl ValueKind for () {
+    fn try_borrow(value: &Value) -> Option<&Self> {
+        match value {
+            &Value::Null => Some(&()),
+            _ => None,
+        }
+    }
+
+    fn try_borrow_mut(value: &mut Value) -> Option<&mut Self> {
+        static mut UNIT: () = ();
+        match value {
+            &mut Value::Null => Some(unsafe { &mut UNIT }),
+            _ => None,
+        }
+    }
+}
+
+impl ValueKind for bool {
+    fn try_borrow(value: &Value) -> Option<&Self> {
+        match value {
+            &Value::Boolean(ref it) => Some(it),
+            _ => None,
+        }
+    }
+
+    fn try_borrow_mut(value: &mut Value) -> Option<&mut Self> {
+        match value {
+            &mut Value::Boolean(ref mut it) => Some(it),
+            _ => None,
+        }
+    }
+}
+
+impl ValueKind for f64 {
+    fn try_borrow(value: &Value) -> Option<&Self> {
+        match value {
+            &Value::Number(ref it) => Some(it),
+            _ => None,
+        }
+    }
+
+    fn try_borrow_mut(value: &mut Value) -> Option<&mut Self> {
+        match value {
+            &mut Value::Number(ref mut it) => Some(it),
+            _ => None,
+        }
+    }
+}
+
+impl ValueKind for String {
+    fn try_borrow(value: &Value) -> Option<&Self> {
+        match value {
+            &Value::String(ref it) => Some(it),
+            _ => None,
+        }
+    }
+
+    fn try_borrow_mut(value: &mut Value) -> Option<&mut Self> {
+        match value {
+            &mut Value::String(ref mut it) => Some(it),
+            _ => None,
+        }
+    }
+}
+
+impl ValueKind for Array {
+    fn try_borrow(value: &Value) -> Option<&Self> {
+        match value {
+            &Value::Array(ref it) => Some(it),
+            _ => None,
+        }
+    }
+
+    fn try_borrow_mut(value: &mut Value) -> Option<&mut Self> {
+        match value {
+            &mut Value::Array(ref mut it) => Some(it),
+            _ => None,
+        }
+    }
+}
+
+impl ValueKind for Object {
+    fn try_borrow(value: &Value) -> Option<&Self> {
+        match value {
+            &Value::Object(ref it) => Some(it),
+            _ => None,
+        }
+    }
+
+    fn try_borrow_mut(value: &mut Value) -> Option<&mut Self> {
+        match value {
+            &mut Value::Object(ref mut it) => Some(it),
+            _ => None,
+        }
+    }
+}
+
+/// Represents a type of JSON value.
+pub trait ValueLike: Clone + std::fmt::Debug {
+    fn into_value(self) -> Value;
+}
+
+impl ValueLike for Value {
+    fn into_value(self) -> Value {
+        self
+    }
+}
+
+impl ValueLike for () {
+    fn into_value(self) -> Value {
+        Value::Null
+    }
+}
+
+impl ValueLike for bool {
+    fn into_value(self) -> Value {
+        Value::Boolean(self)
+    }
+}
+
+impl ValueLike for f64 {
+    fn into_value(self) -> Value {
+        Value::from_number(self)
+    }
+}
+
+impl ValueLike for i32 {
+    fn into_value(self) -> Value {
+        Value::Number(self as f64)
+    }
+}
+
+impl ValueLike for String {
+    fn into_value(self) -> Value {
+        Value::String(self)
+    }
+}
+
+fn array_from_iter<V, I>(iter: I) -> Array
+where
+    V: ValueLike,
+    I: IntoIterator<Item = V>,
+{
+    iter.into_iter().map(|v| v.into_value()).collect::<Array>()
+}
+
+fn object_from_iter<K, V, I>(iter: I) -> Object
+where
+    K: ToString,
+    V: ValueLike,
+    I: IntoIterator<Item = (K, V)>,
+{
+    iter.into_iter()
+        .map(|(k, v)| (k.to_string(), v.into_value()))
+        .collect::<BTreeMap<_, _>>()
+}
+
+pub trait ValueCollectionItem: Clone + std::fmt::Debug {
+    fn collect<I: IntoIterator<Item = Self>>(iter: I) -> Value;
+}
+
+impl<V: ValueLike> ValueCollectionItem for V {
+    fn collect<I: IntoIterator<Item = V>>(iter: I) -> Value {
+        Value::Array(array_from_iter(iter))
+    }
+}
+
+impl<K, V> ValueCollectionItem for (K, V)
+where
+    K: ToString + Clone + std::fmt::Debug,
+    V: ValueLike,
+{
+    fn collect<I: IntoIterator<Item = Self>>(iter: I) -> Value {
+        Value::Object(object_from_iter(iter))
+    }
+}
+
+impl<'a> ValueLike for &'a str {
+    fn into_value(self) -> Value {
+        Value::String(self.to_string())
+    }
+}
+
+impl<T: ValueCollectionItem> ValueLike for Vec<T>
+where
+    T: Clone + std::fmt::Debug,
+{
+    fn into_value(self) -> Value {
+        <T as ValueCollectionItem>::collect(self)
+    }
+}
+
+impl<K, V> ValueLike for BTreeMap<K, V>
+where
+    K: ToString + Clone + std::fmt::Debug,
+    V: ValueLike,
+{
+    fn into_value(self) -> Value {
+        Value::Object(object_from_iter(self))
+    }
+}
+
+impl<T: ValueCollectionItem> FromIterator<T> for Value {
+    fn from_iter<I: IntoIterator<Item = T>>(iter: I) -> Self {
+        T::collect(iter)
     }
 }
 
@@ -407,7 +498,7 @@ impl<'a> ParseContext for DefaultParseContext<'a> {
             return false;
         }
 
-        let vec = self.out.as_array_mut().unwrap().unwrap_mut();
+        let vec = self.out.as_array_mut().unwrap();
         vec.push(value);
         true
     }
@@ -432,7 +523,7 @@ impl<'a> ParseContext for DefaultParseContext<'a> {
             return false;
         }
 
-        let obj = self.out.as_object_mut().unwrap().unwrap_mut();
+        let obj = self.out.as_object_mut().unwrap();
         obj.insert(key, value);
         true
     }
@@ -500,9 +591,9 @@ fn _parse_string<'a>(out: &mut String, input: &mut Input<'a>) -> bool {
                     Some('\\') => {
                         out.push('\\');
                     }
-                    Some('/') => {
-                        out.push('/');
-                    }
+                    // Some('/') => {
+                    //     out.push('/');
+                    // }
                     // Some ('b') => {
                     //     out.push('\b');
                     // }
@@ -656,25 +747,108 @@ pub fn parse_string(s: &str) -> Result<Value, Error> {
     }
 }
 
+fn is_first(value: &mut bool) -> bool {
+    let old_value = *value;
+    *value = false;
+    old_value
+}
+
+trait JsonSerializer {
+    fn write_char(&mut self, c: char);
+    fn write_str(&mut self, s: &str);
+
+    fn serialize_string(&mut self, value: &str) {
+        self.write_char('"');
+
+        for c in value.chars() {
+            match c {
+                '"' => self.write_str("\\\""),
+                '\n' => self.write_str("\\n"),
+                '\r' => self.write_str("\\r"),
+                '\t' => self.write_str("\\t"),
+                '\\' => self.write_str("\\\\"),
+                'u' => panic!("not implemented"),
+                _ => self.write_char(c),
+            }
+        }
+
+        self.write_char('"');
+    }
+
+    fn serialize_array(&mut self, array: &Array) {
+        if array.is_empty() {
+            self.write_str("[]");
+        } else {
+            self.write_char('[');
+            let mut first = true;
+            for item in array {
+                if !is_first(&mut first) {
+                    self.write_char(',');
+                }
+                self.serialize_core(item);
+            }
+            self.write_char(']');
+        }
+    }
+
+    fn serialize_object(&mut self, object: &Object) {
+        if object.is_empty() {
+            self.write_str("{}");
+        } else {
+            self.write_str("{");
+            let mut first = true;
+            for (key, item) in object.iter() {
+                if !is_first(&mut first) {
+                    self.write_str(",");
+                }
+
+                self.serialize_string(key);
+                self.write_str(":");
+                self.serialize_core(item);
+            }
+            self.write_str("}");
+        }
+    }
+
+    fn serialize_core(&mut self, value: &Value) {
+        match value {
+            &Value::Null => self.write_str("null"),
+            &Value::Boolean(true) => self.write_str("true"),
+            &Value::Boolean(false) => self.write_str("false"),
+            &Value::Number(ref value) => self.write_str(&value.to_string()),
+            &Value::String(ref value) => self.serialize_string(value),
+            &Value::Array(ref array) => self.serialize_array(array),
+            &Value::Object(ref object) => self.serialize_object(object),
+        }
+    }
+}
+
+struct DefaultJsonSerializer {
+    out: String,
+}
+
+impl JsonSerializer for DefaultJsonSerializer {
+    fn write_char(&mut self, c: char) {
+        std::fmt::Write::write_char(&mut self.out, c).unwrap()
+    }
+
+    fn write_str(&mut self, s: &str) {
+        self.out += s;
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
-
-    fn array<V: Into<Value>, I: IntoIterator<Item = V>>(iter: I) -> Array {
-        iter.into_iter().collect()
-    }
-
-    fn obj<K: ToString, V: Into<Value>, I: IntoIterator<Item = (K, V)>>(iter: I) -> Object {
-        iter.into_iter().collect()
-    }
+    use std::cmp::Ordering;
 
     #[test]
     fn test_object_comparison() {
-        let obj1 = obj(vec![("a", 1)]);
-        let obj2 = obj(vec![("a", Value::Null)]);
+        let obj1 = object_from_iter(vec![("a", 1)]);
+        let obj2 = object_from_iter(vec![("a", Value::Null)]);
 
         assert_eq!(obj1, obj1);
-        assert_eq!(obj1.partial_cmp(&obj2), None);
+        assert_eq!(obj1.partial_cmp(&obj2), Some(Ordering::Greater));
     }
 
     #[test]
@@ -725,16 +899,16 @@ mod tests {
 
     #[test]
     fn test_parse_string_as_array() {
-        assert_eq!(parse_string("[]"), Ok(Value::Array(Array::new())));
+        assert_eq!(parse_string("[]"), Ok(Value::array()));
         assert_eq!(
             parse_string("[true, false, true]"),
-            Ok(Value::Array(array(vec![true, false, true])))
+            Ok(Value::from(vec![true, false, true]))
         );
     }
 
     #[test]
     fn test_parse_object_empty() {
-        assert_eq!(parse_string("{}"), Ok(Value::Object(Object::new())));
+        assert_eq!(parse_string("{}"), Ok(Value::object()));
     }
 
     #[test]
@@ -743,10 +917,10 @@ mod tests {
             "user_id": 42,
             "name": "John Doe"
         }"#;
-        let expected = Value::from(obj(vec![
+        let expected = Value::from(vec![
             ("user_id", Value::from(42)),
-            ("name", Value::String("John Doe".to_string())),
-        ]));
+            ("name", Value::from("John Doe")),
+        ]);
         assert_eq!(parse_string(json), Ok(expected));
     }
 
@@ -756,13 +930,10 @@ mod tests {
             "array": [1, 2, 3],
             "object": { "foo": true }
         }"#;
-        let expected = Value::from(obj(vec![
-            ("array", Value::Array(array(vec![1, 2, 3]))),
-            (
-                "object",
-                Value::Object(obj(vec![("foo", Value::from(true))])),
-            ),
-        ]));
+        let expected = Value::from(vec![
+            ("array", Value::from(vec![1, 2, 3])),
+            ("object", Value::from(vec![("foo", true)])),
+        ]);
         assert_eq!(parse_string(json), Ok(expected));
     }
 
@@ -788,47 +959,52 @@ mod tests {
         // Case sensitive.
         assert!(parse_string("TRUE").is_err());
     }
+
+    #[test]
+    fn test_serialize_string_simple() {
+        assert_eq!(Value::from("hello").serialize(), r#""hello""#);
+    }
+
+    #[test]
+    fn test_serialize_string_escaped() {
+        let source = "\"\"\"\n\tHello!\n\"\"\"";
+        let expected = r#""\"\"\"\n\tHello!\n\"\"\"""#;
+        assert_eq!(Value::from(source).serialize(), expected);
+    }
+
+    #[test]
+    #[ignore]
+    fn test_serialize_string_unicode() {
+        assert_eq!(Value::from("你好").serialize(), r#""\u4f60\u597d""#);
+    }
 }
 
 #[cfg(test)]
 mod ported_tests {
-    use std;
     use super::*;
-
-    // [ ] constructors
-    // [ ] parse
-    // [ ] array
-    // [ ] object
-    // [ ] equality
-    // [ ] swap
-    // [ ] serialize pretty print
-    // [ ] reject NaN/Inf
-
-    // [ ] unicode string
+    use std::*;
 
     #[test]
-    #[ignore]
-    fn test_construtor() {
+    fn test_constructor() {
         let table = vec![
             (Value::from(true), "true"),
             (Value::from(false), "false"),
             (Value::from(42.0), "42"),
-            (Value::from("hello".to_string()), "\"hello\""),
+            (Value::from("hello"), "\"hello\""),
         ];
         for (value, json) in table {
-            let actual = value.serialize(SerializeStyle::Minimum);
+            let actual = value.serialize();
             assert_eq!(actual, json);
         }
     }
 
     #[test]
-    #[ignore]
     fn test_double_reserialization() {
         /// Serialize and deserialize a number.
         fn f(r: f64) -> f64 {
-            let json = Value::from(r).serialize(SerializeStyle::Minimum);
+            let json = Value::from(r).serialize();
             let value = parse_string(&json).unwrap();
-            value.as_number().unwrap()
+            value.as_number().cloned().unwrap()
         }
 
         for n in 1..53 {
@@ -848,6 +1024,7 @@ mod ported_tests {
     fn test_correct_output() {
         fn test<T>(source: String, expected: T) {
             let value = parse_string(source).unwrap();
+            assert!(value.is_of<T>())
             // value: has type T
             // parsed completely
         }
@@ -889,7 +1066,7 @@ mod ported_tests {
     #[test]
     #[cfg(not_impl)]
     fn test_value_object() {
-        let v = parse_string(r#"{"a": true }"#).expect("Should parse an object");
+        let v = parse_string(r#"{ "a": true }"#).expect("Should parse an object");
 
         assert_eq!(v.as_object().unwrap().unwrap().len(), 1);
         assert!(v.contains_key("a"), true, "Should has a as key.");
@@ -912,7 +1089,123 @@ mod ported_tests {
         let v2 = v.get_mut("baz").unwrap();
         v2.insert("piyo", Value::from(3.14));
 
-        let json = v.serialize(SerializeStyle::Minimum);
+        let json = v.serialize();
         assert_eq!(json, r#"{"foo":"bar","hoge":[42],"baz":{"piyo":3.14}}"#);
+    }
+
+    #[test]
+    #[cfg(not_impl)]
+    fn test_error_message() {
+        fn test(source: &str, line: i32, near: &str) {
+            let actual = parse_string(source).expect_err("Expected an error.");
+            let expected = format!("Syntax error at line {} near: {}", line, near);
+            assert!(actual, expected);
+        }
+
+        test("falsoa", 1, "oa");
+        test("{]", 1, "]");
+        test("\n\ttab", 2, "tab");
+        test("\"abc\nd\"", 1, "");
+    }
+
+    #[test]
+    fn test_deep_comparison_equal() {
+        let l = parse_string(r#"{ "b": true, "a": [1, 2, "three"], "d": 2 }"#);
+        let r = parse_string(r#"{ "d": 2.0, "b": true, "a": [1, 2, "three"] }"#);
+        assert_eq!(l, r);
+    }
+
+    #[test]
+    #[should_panic]
+    fn test_deep_comparison_not_equal_array() {
+        let l = parse_string(r#"{ "b": true, "a": [1, 2, "three"], "d": 2 }"#);
+        let r = parse_string(r#"{ "b": true, "a": [1,    "three"], "d": 2 }"#);
+        assert_eq!(l, r);
+    }
+
+    #[test]
+    #[should_panic]
+    fn test_deep_comparison_not_equal_boolean() {
+        let l = parse_string(r#"{ "b": true, "a": [1, 2, "three"], "d": 2 }"#);
+        let r = parse_string(r#"{ "b":false, "a": [1, 2, "three"], "d": 2 }"#);
+        assert_eq!(l, r);
+    }
+
+    #[test]
+    #[cfg(not_impl)]
+    fn test_erase() {
+        let obj = parse_string(r#"{ "b": true, "a": [1, 2, "three"], "d": 2 }"#).unwrap();
+        obj.erase("b");
+        let expected = parse_string(r#"{ a": [1, 2, "three"], "d": 2 }"#).unwrap();
+        assert_eq!(obj, expected);
+    }
+
+    #[test]
+    fn test_serialize_integer() {
+        assert_eq!(Value::from(2.0).serialize(), "2");
+    }
+
+    fn serialization_sample() -> Value {
+        parse_string(
+            r#"{
+            "a": 1,
+            "b": [2, { "b1": "abc" }],
+            "c": {},
+            "d": []
+        }"#,
+        ).unwrap()
+    }
+
+    #[test]
+    fn test_serialize_object_minimum() {
+        let actual = serialization_sample().serialize();
+        assert_eq!(actual, r#"{"a":1,"b":[2,{"b1":"abc"}],"c":{},"d":[]}"#);
+    }
+
+    #[test]
+    #[ignore]
+    fn test_serialize_object_pretty() {
+        let actual = serialization_sample().pretty_print();
+        let expected = r#"{
+  "a": 1,
+  "b": [
+    2,
+    {
+      "b1": "abc"
+    }
+  ],
+  "c": {},
+  "d": []
+  }"#;
+        assert_eq!(actual, expected);
+    }
+
+    #[test]
+    #[ignore]
+    #[should_panic]
+    fn test_reject_nan() {
+        Value::from(f64::NAN);
+    }
+
+    #[test]
+    #[ignore]
+    #[should_panic]
+    fn test_reject_infinity() {
+        Value::from(f64::INFINITY);
+    }
+
+    #[test]
+    fn test_cast() {
+        assert_eq!(Value::from(3.14).as_bool(), None);
+    }
+
+    #[test]
+    #[cfg(not_impl)]
+    fn test_simple_api() {
+        let v = parse_string(r#"[ 1, "abc" ]"#).unwrap();
+        let a = v.as_array().unwrap();
+        assert_eq!(a.len(), 2);
+        assert_eq!(a[0].as_number().unwrap(), 1);
+        assert_eq!(a[1].as_string().unwrap(), "abc");
     }
 }
