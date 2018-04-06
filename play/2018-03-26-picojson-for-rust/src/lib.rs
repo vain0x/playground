@@ -133,11 +133,46 @@ impl Value {
                     '\t' => *out += "\\t",
                     '\\' => *out += "\\\\",
                     'u' => panic!("not implemented"),
-                    _ => std::fmt::Write::write_char(*out, c).unwrap(),
+                    _ => std::fmt::Write::write_char(out, c).unwrap(),
                 }
             }
 
             *out += "\"";
+        }
+
+        fn serialize_array(array: &Array, out: &mut String) {
+            if array.is_empty() {
+                *out += "[]";
+            } else {
+                *out += "[";
+                let mut first = true;
+                for item in array {
+                    if !is_first(&mut first) {
+                        *out += ",";
+                    }
+                    item.serialize_core(out);
+                }
+                *out += "]";
+            }
+        }
+
+        fn serialize_object(object: &Object, out: &mut String) {
+            if object.is_empty() {
+                *out += "{}";
+            } else {
+                *out += "{";
+                let mut first = true;
+                for (key, item) in object.iter() {
+                    if !is_first(&mut first) {
+                        *out += ",";
+                    }
+
+                    serialize_string(key, out);
+                    *out += ":";
+                    item.serialize_core(out);
+                }
+                *out += "}";
+            }
         }
 
         match self {
@@ -156,38 +191,11 @@ impl Value {
             &Value::String(ref value) => {
                 serialize_string(value, out);
             }
-            &Value::Array(ref value) => {
-                if value.is_empty() {
-                    *out += "[]";
-                } else {
-                    *out += "[";
-                    let mut first = true;
-                    for item in value {
-                        if !is_first(&mut first) {
-                            *out += ",";
-                        }
-                        item.serialize_core(out);
-                    }
-                    *out += "]";
-                }
+            &Value::Array(ref array) => {
+                serialize_array(array, out);
             }
-            &Value::Object(ref value) => {
-                if value.is_empty() {
-                    *out += "{}";
-                } else {
-                    *out += "{";
-                    let mut first = true;
-                    for (key, item) in value.iter() {
-                        if !is_first(&mut first) {
-                            *out += ",";
-                        }
-
-                        serialize_string(key, out);
-                        *out += ":";
-                        item.serialize_core(out);
-                    }
-                    *out += "}";
-                }
+            &Value::Object(ref object) => {
+                serialize_object(object, out);
             }
         }
     }
