@@ -6,14 +6,14 @@ TODOs:
 - [ ] parse string
     - [ ] \u+FFFF
     - [ ] \b, \f
-- [ ] error reporting
 - [ ] serialize
+    - [ ] pretty print
+    - [ ] \u+FFFF
+- [ ] error reporting
 - [ ] input::cur, line
 - [ ] i64 support
 - [ ] support file stream
 - [ ] methods of Value
-- [ ] test codes from picojson
-- [ ] helper methods to build object
 - [ ] partial_cmp for obj
 - [ ] refactoring
 
