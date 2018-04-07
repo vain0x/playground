@@ -116,7 +116,7 @@ impl Value {
     impl_value_as!(as_object, as_object_mut, Object);
 
     pub fn serialize(&self) -> String {
-        let mut s = DefaultJsonSerializer { out: String::new() };
+        let mut s = JsonSerializer::new();
         s.serialize_core(self);
         s.out
     }
@@ -753,9 +753,22 @@ fn is_first(value: &mut bool) -> bool {
     old_value
 }
 
-trait JsonSerializer {
-    fn write_char(&mut self, c: char);
-    fn write_str(&mut self, s: &str);
+struct JsonSerializer {
+    out: String,
+}
+
+impl JsonSerializer {
+    fn new() -> Self {
+        JsonSerializer { out: String::new() }
+    }
+
+    fn write_char(&mut self, c: char) {
+        std::fmt::Write::write_char(&mut self.out, c).unwrap()
+    }
+
+    fn write_str(&mut self, s: &str) {
+        self.out += s;
+    }
 
     fn serialize_string(&mut self, value: &str) {
         self.write_char('"');
@@ -820,20 +833,6 @@ trait JsonSerializer {
             &Value::Array(ref array) => self.serialize_array(array),
             &Value::Object(ref object) => self.serialize_object(object),
         }
-    }
-}
-
-struct DefaultJsonSerializer {
-    out: String,
-}
-
-impl JsonSerializer for DefaultJsonSerializer {
-    fn write_char(&mut self, c: char) {
-        std::fmt::Write::write_char(&mut self.out, c).unwrap()
-    }
-
-    fn write_str(&mut self, s: &str) {
-        self.out += s;
     }
 }
 
