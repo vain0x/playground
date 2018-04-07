@@ -21,6 +21,8 @@ TODOs:
 
 use std::collections::BTreeMap;
 use std::iter::FromIterator;
+use std::iter::*;
+use std::vec::*;
 
 // static indent_width: i32 = 2;
 
@@ -116,9 +118,7 @@ impl Value {
     impl_value_as!(as_object, as_object_mut, Object);
 
     pub fn serialize(&self) -> String {
-        let mut s = JsonSerializer::new();
-        s.serialize_core(self);
-        s.out
+        JsonSerializer::serialize_to_string(self)
     }
 
     pub fn pretty_print(&self) -> String {
@@ -753,25 +753,25 @@ fn is_first(value: &mut bool) -> bool {
     old_value
 }
 
-struct JsonSerializer {
-    out: String,
+struct JsonSerializer<W> {
+    writer: W,
 }
 
-impl JsonSerializer {
-    fn new() -> Self {
-        JsonSerializer { out: String::new() }
+impl<W: std::io::Write> JsonSerializer<W> {
+    fn new(writer: W) -> Self {
+        JsonSerializer { writer }
     }
 
-    fn write_char(&mut self, c: char) {
-        std::fmt::Write::write_char(&mut self.out, c).unwrap()
+    fn write_char(&mut self, c: u8) {
+        self.writer.write(&[c]).unwrap();
     }
 
     fn write_str(&mut self, s: &str) {
-        self.out += s;
+        self.writer.write(s.as_bytes()).unwrap();
     }
 
     fn serialize_string(&mut self, value: &str) {
-        self.write_char('"');
+        self.write_char(b'"');
 
         for c in value.chars() {
             match c {
@@ -780,27 +780,35 @@ impl JsonSerializer {
                 '\r' => self.write_str("\\r"),
                 '\t' => self.write_str("\\t"),
                 '\\' => self.write_str("\\\\"),
-                'u' => panic!("not implemented"),
-                _ => self.write_char(c),
+                _ => {
+                    fn is_u8(n: i32) -> bool {
+                        std::u8::MIN as i32 <= n && n <= std::u8::MAX as i32
+                    }
+                    if is_u8(c as i32) {
+                        self.write_char(c as u8);
+                    } else {
+                        unimplemented!("\\u+10FFFF")
+                    }
+                }
             }
         }
 
-        self.write_char('"');
+        self.write_char(b'"');
     }
 
     fn serialize_array(&mut self, array: &Array) {
         if array.is_empty() {
             self.write_str("[]");
         } else {
-            self.write_char('[');
+            self.write_char(b'[');
             let mut first = true;
             for item in array {
                 if !is_first(&mut first) {
-                    self.write_char(',');
+                    self.write_char(b',');
                 }
                 self.serialize_core(item);
             }
-            self.write_char(']');
+            self.write_char(b']');
         }
     }
 
@@ -808,18 +816,18 @@ impl JsonSerializer {
         if object.is_empty() {
             self.write_str("{}");
         } else {
-            self.write_str("{");
+            self.write_char(b'{');
             let mut first = true;
             for (key, item) in object.iter() {
                 if !is_first(&mut first) {
-                    self.write_str(",");
+                    self.write_char(b',');
                 }
 
                 self.serialize_string(key);
-                self.write_str(":");
+                self.write_char(b':');
                 self.serialize_core(item);
             }
-            self.write_str("}");
+            self.write_char(b'}');
         }
     }
 
@@ -833,6 +841,14 @@ impl JsonSerializer {
             &Value::Array(ref array) => self.serialize_array(array),
             &Value::Object(ref object) => self.serialize_object(object),
         }
+    }
+}
+
+impl JsonSerializer<()> {
+    fn serialize_to_string(value: &Value) -> String {
+        let mut buffer = Vec::<u8>::new();
+        JsonSerializer::new(&mut buffer).serialize_core(value);
+        String::from_utf8(buffer).unwrap()
     }
 }
 
