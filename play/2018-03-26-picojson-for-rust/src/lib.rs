@@ -867,6 +867,7 @@ impl<W: std::io::Write> JsonSerializer<W> {
             self.write_str("[]")
         } else {
             try!(self.write_char(b'['));
+
             self.inc_indent();
             {
                 let mut first = true;
@@ -879,7 +880,6 @@ impl<W: std::io::Write> JsonSerializer<W> {
                     try!(self.serialize_core(item));
                 }
             }
-
             self.dec_indent();
 
             try!(self.end_line());
