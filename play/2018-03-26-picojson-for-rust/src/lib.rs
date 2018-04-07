@@ -118,11 +118,17 @@ impl Value {
     impl_value_as!(as_object, as_object_mut, Object);
 
     pub fn serialize(&self) -> String {
-        JsonSerializer::serialize_to_string(self)
+        let mut buf = Vec::<u8>::new();
+        serialize(self, &mut buf).unwrap();
+        String::from_utf8(buf).unwrap()
     }
 
     pub fn pretty_print(&self) -> String {
-        "".to_string()
+        const DEFAULT_INDENT_WIDTH: i32 = 2;
+
+        let mut buf = Vec::<u8>::new();
+        pretty_print(self, DEFAULT_INDENT_WIDTH, &mut buf).unwrap();
+        String::from_utf8(buf).unwrap()
     }
 
     pub fn is_empty(&self) -> bool {
@@ -753,39 +759,99 @@ fn is_first(value: &mut bool) -> bool {
     old_value
 }
 
-struct JsonSerializer<W> {
-    writer: W,
+enum JsonSerializationStyle {
+    Minimum,
+    Pretty {
+        indent_level: i32,
+        indent_width: i32,
+    },
 }
 
+type SerializeResult = std::io::Result<()>;
+
+struct JsonSerializer<W> {
+    writer: W,
+    style: JsonSerializationStyle,
+}
+
+#[warn(unused_results)]
 impl<W: std::io::Write> JsonSerializer<W> {
-    fn new(writer: W) -> Self {
-        JsonSerializer { writer }
+    fn write_char(&mut self, c: u8) -> SerializeResult {
+        self.writer.write(&[c]).map(|_| ())
     }
 
-    fn write_char(&mut self, c: u8) {
-        self.writer.write(&[c]).unwrap();
+    fn write_str(&mut self, s: &str) -> SerializeResult {
+        self.writer.write(s.as_bytes()).map(|_| ())
     }
 
-    fn write_str(&mut self, s: &str) {
-        self.writer.write(s.as_bytes()).unwrap();
+    /// Ends current line and then emits indentation.
+    fn end_line(&mut self) -> SerializeResult {
+        if let JsonSerializationStyle::Pretty {
+            indent_level,
+            indent_width,
+        } = self.style
+        {
+            try!(self.write_char(b'\n'));
+            for _ in 0..(indent_level * indent_width) {
+                try!(self.write_char(b' '));
+            }
+        }
+        return Ok(());
     }
 
-    fn serialize_string(&mut self, value: &str) {
-        self.write_char(b'"');
+    /// Updates the state to increment indent level by 1 for following lines.
+    fn inc_indent(&mut self) {
+        if let JsonSerializationStyle::Pretty {
+            ref mut indent_level,
+            ..
+        } = self.style
+        {
+            *indent_level += 1;
+        }
+    }
+
+    /// Updates the state to decrease indent level by 1 for following lines.
+    fn dec_indent(&mut self) {
+        if let JsonSerializationStyle::Pretty {
+            ref mut indent_level,
+            ..
+        } = self.style
+        {
+            *indent_level -= 1;
+        }
+    }
+
+    /// Ends final line.
+    fn end_final_line(&mut self) -> SerializeResult {
+        if let JsonSerializationStyle::Pretty { .. } = self.style {
+            try!(self.write_char(b'\n'));
+        }
+        return Ok(());
+    }
+
+    fn write_colon(&mut self) -> SerializeResult {
+        match self.style {
+            JsonSerializationStyle::Minimum => self.write_char(b':'),
+            JsonSerializationStyle::Pretty { .. } => self.write_str(": "),
+        }
+    }
+
+    fn serialize_string(&mut self, value: &str) -> SerializeResult {
+        try!(self.write_char(b'"'));
 
         for c in value.chars() {
             match c {
-                '"' => self.write_str("\\\""),
-                '\n' => self.write_str("\\n"),
-                '\r' => self.write_str("\\r"),
-                '\t' => self.write_str("\\t"),
-                '\\' => self.write_str("\\\\"),
+                '"' => try!(self.write_str("\\\"")),
+                '\n' => try!(self.write_str("\\n")),
+                '\r' => try!(self.write_str("\\r")),
+                '\t' => try!(self.write_str("\\t")),
+                '\\' => try!(self.write_str("\\\\")),
                 _ => {
                     fn is_u8(n: i32) -> bool {
                         std::u8::MIN as i32 <= n && n <= std::u8::MAX as i32
                     }
                     if is_u8(c as i32) {
-                        self.write_char(c as u8);
+                        try!(self.write_char(c as u8));
                     } else {
                         unimplemented!("\\u+10FFFF")
                     }
@@ -793,45 +859,62 @@ impl<W: std::io::Write> JsonSerializer<W> {
             }
         }
 
-        self.write_char(b'"');
+        self.write_char(b'"')
     }
 
-    fn serialize_array(&mut self, array: &Array) {
+    fn serialize_array(&mut self, array: &Array) -> SerializeResult {
         if array.is_empty() {
-            self.write_str("[]");
+            self.write_str("[]")
         } else {
-            self.write_char(b'[');
-            let mut first = true;
-            for item in array {
-                if !is_first(&mut first) {
-                    self.write_char(b',');
+            try!(self.write_char(b'['));
+            self.inc_indent();
+            {
+                let mut first = true;
+                for item in array {
+                    if !is_first(&mut first) {
+                        try!(self.write_char(b','));
+                    }
+
+                    try!(self.end_line());
+                    try!(self.serialize_core(item));
                 }
-                self.serialize_core(item);
             }
-            self.write_char(b']');
+
+            self.dec_indent();
+
+            try!(self.end_line());
+            self.write_char(b']')
         }
     }
 
-    fn serialize_object(&mut self, object: &Object) {
+    fn serialize_object(&mut self, object: &Object) -> SerializeResult {
         if object.is_empty() {
-            self.write_str("{}");
+            self.write_str("{}")
         } else {
-            self.write_char(b'{');
-            let mut first = true;
-            for (key, item) in object.iter() {
-                if !is_first(&mut first) {
-                    self.write_char(b',');
-                }
+            try!(self.write_char(b'{'));
 
-                self.serialize_string(key);
-                self.write_char(b':');
-                self.serialize_core(item);
+            self.inc_indent();
+            {
+                let mut first = true;
+                for (key, item) in object.iter() {
+                    if !is_first(&mut first) {
+                        try!(self.write_char(b','));
+                    }
+
+                    try!(self.end_line());
+                    try!(self.serialize_string(key));
+                    try!(self.write_colon());
+                    try!(self.serialize_core(item));
+                }
             }
-            self.write_char(b'}');
+            self.dec_indent();
+
+            try!(self.end_line());
+            self.write_char(b'}')
         }
     }
 
-    fn serialize_core(&mut self, value: &Value) {
+    fn serialize_core(&mut self, value: &Value) -> SerializeResult {
         match value {
             &Value::Null => self.write_str("null"),
             &Value::Boolean(true) => self.write_str("true"),
@@ -842,14 +925,36 @@ impl<W: std::io::Write> JsonSerializer<W> {
             &Value::Object(ref object) => self.serialize_object(object),
         }
     }
+
+    fn serialize(&mut self, value: &Value) -> SerializeResult {
+        try!(self.serialize_core(value));
+        self.end_final_line()
+    }
 }
 
-impl JsonSerializer<()> {
-    fn serialize_to_string(value: &Value) -> String {
-        let mut buffer = Vec::<u8>::new();
-        JsonSerializer::new(&mut buffer).serialize_core(value);
-        String::from_utf8(buffer).unwrap()
-    }
+/// Serializes a value with compress style.
+/// Writes the utf-8 encoded string to the specified writer.
+pub fn serialize<W: std::io::Write>(value: &Value, writer: &mut W) -> SerializeResult {
+    JsonSerializer {
+        writer,
+        style: JsonSerializationStyle::Minimum,
+    }.serialize(value)
+}
+
+/// Serializes a value with space-indented style.
+/// Writes the utf-8 encoded string to the specified writer.
+pub fn pretty_print<W: std::io::Write>(
+    value: &Value,
+    indent_width: i32,
+    writer: &mut W,
+) -> SerializeResult {
+    JsonSerializer {
+        writer,
+        style: JsonSerializationStyle::Pretty {
+            indent_level: 0,
+            indent_width,
+        },
+    }.serialize(value)
 }
 
 #[cfg(test)]
@@ -991,6 +1096,25 @@ mod tests {
     #[ignore]
     fn test_serialize_string_unicode() {
         assert_eq!(Value::from("你好").serialize(), r#""\u4f60\u597d""#);
+    }
+
+    #[test]
+    fn test_pretty_print_array() {
+        let expected = r#"[
+  42,
+  "hello",
+  [
+    "nested",
+    "items"
+  ]
+]
+"#;
+        let actual = Value::from(vec![
+            Value::from(42),
+            Value::from("hello"),
+            Value::from(vec!["nested", "items"]),
+        ]);
+        assert_eq!(actual.pretty_print(), expected);
     }
 }
 
@@ -1178,8 +1302,7 @@ mod ported_tests {
     }
 
     #[test]
-    #[ignore]
-    fn test_serialize_object_pretty() {
+    fn test_pretty_print_object() {
         let actual = serialization_sample().pretty_print();
         let expected = r#"{
   "a": 1,
@@ -1191,19 +1314,18 @@ mod ported_tests {
   ],
   "c": {},
   "d": []
-  }"#;
+}
+"#;
         assert_eq!(actual, expected);
     }
 
     #[test]
-    #[ignore]
     #[should_panic]
     fn test_reject_nan() {
         Value::from(f64::NAN);
     }
 
     #[test]
-    #[ignore]
     #[should_panic]
     fn test_reject_infinity() {
         Value::from(f64::INFINITY);
