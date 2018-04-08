@@ -131,8 +131,14 @@ impl Value {
         String::from_utf8(buf).unwrap()
     }
 
+    /// Determines if the value is empty, i.e., an empty string or array or object.
     pub fn is_empty(&self) -> bool {
-        true
+        match *self {
+            Value::Null | Value::Boolean(_) | Value::Number(_) => false,
+            Value::String(ref string) => string.is_empty(),
+            Value::Array(ref array) => array.is_empty(),
+            Value::Object(ref object) => object.is_empty(),
+        }
     }
 
     pub fn contains_key(&self, _index: i64) -> bool {
@@ -979,6 +985,11 @@ mod tests {
     }
 
     #[test]
+    fn test_value_is_empty() {
+        assert_eq!(Value::from("").is_empty(), true);
+    }
+
+    #[test]
     fn test_input_getc() {
         let source = "12";
         let mut input = Input::new(source);
@@ -1177,7 +1188,6 @@ mod ported_tests {
     }
 
     #[test]
-    #[cfg(not_impl)]
     fn test_value_is_empty() {
         assert!(parse_string("[]").expect("Parse success").is_empty());
         assert!(parse_string("{}").expect("Parse success").is_empty());
