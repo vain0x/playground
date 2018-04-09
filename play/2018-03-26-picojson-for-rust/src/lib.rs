@@ -151,20 +151,25 @@ impl Value {
 
     /// Determines if the value is a collection and has item for the specified key.
     pub fn has<'a, K: Into<ValueKey<'a>>>(&self, key: K) -> bool {
-        match (self, key.into()) {
-            (&Value::Array(ref array), ValueKey::Index(index)) => index < array.len(),
-            (&Value::Object(ref object), ValueKey::Key(key)) => object.contains_key(key),
-            _ => false,
-        }
+        self.get(key).is_some()
     }
 
     /// Gets an item for the specified key in the value if it's a collection.
-    pub fn get<K>(&self, _key: &K) -> Option<&Value> {
-        None
+    pub fn get<'a, K: Into<ValueKey<'a>>>(&self, key: K) -> Option<&Value> {
+        match (self, key.into()) {
+            (&Value::Array(ref array), ValueKey::Index(index)) => array.get(index),
+            (&Value::Object(ref object), ValueKey::Key(key)) => object.get(key),
+            _ => None,
+        }
     }
 
-    pub fn get_mut<K, V>(&mut self, _key: &K) -> Option<&mut Value> {
-        None
+    /// Gets a mutable reference to an item for the specified key in the value if it's a collection.
+    pub fn get_mut<'a, K: Into<ValueKey<'a>>>(&mut self, key: K) -> Option<&mut Value> {
+        match (self, key.into()) {
+            (&mut Value::Array(ref mut array), ValueKey::Index(index)) => array.get_mut(index),
+            (&mut Value::Object(ref mut object), ValueKey::Key(key)) => object.get_mut(key),
+            _ => None,
+        }
     }
 }
 
@@ -1216,34 +1221,32 @@ mod ported_tests {
     }
 
     #[test]
-    #[cfg(not_impl)]
     fn test_value_array() {
-        let a = parse_string("[1,true,\"hello,\"]").expect("Should parse an array");
+        let a = parse_string("[1,true,\"hello\"]").expect("Should parse an array");
 
-        assert_eq!(a.as_array().unwrap().unwrap().len(), 3);
+        assert_eq!(a.as_array().unwrap().len(), 3);
 
-        assert_eq!(a.contains_key(0), true, "First element should exist.");
-        assert_eq!(a.get(0).unwrap().as_number().unwrap(), 1.0);
+        assert_eq!(a.has(0), true, "First element should exist.");
+        assert_eq!(a.get(0).unwrap().as_number().unwrap(), &1.0);
 
-        assert_eq!(a.contains_key(1), true, "Second element should exist.");
-        assert_eq!(a.get(1).unwrap().as_bool().unwrap(), true);
+        assert_eq!(a.has(1), true, "Second element should exist.");
+        assert_eq!(a.get(1).unwrap().as_bool().unwrap(), &true);
 
-        assert_eq!(a.contains_key(2), true, "Third element should exist.");
-        assert_eq!(a.get(2).unwrap().as_string().unwrap(), "hello".to_string());
+        assert_eq!(a.has(2), true, "Third element should exist.");
+        assert_eq!(a.get(2).unwrap().as_string().unwrap(), "hello");
 
-        assert!(!a.contains_key(3));
+        assert!(!a.has(3));
     }
 
     #[test]
-    #[cfg(not_impl)]
     fn test_value_object() {
         let v = parse_string(r#"{ "a": true }"#).expect("Should parse an object");
 
-        assert_eq!(v.as_object().unwrap().unwrap().len(), 1);
-        assert!(v.contains_key("a"), true, "Should has a as key.");
-        assert!(v.get("a").unwrap(), true);
+        assert_eq!(v.as_object().unwrap().len(), 1);
+        assert_eq!(v.has("a"), true, "Should has a as key.");
+        assert_eq!(v.get("a"), Some(&Value::from(true)));
 
-        assert!(!a.contains_key("z"));
+        assert!(!v.has("z"));
     }
 
     #[test]
