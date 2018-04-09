@@ -32,16 +32,6 @@ pub type Array = Vec<Value>;
 
 pub type Object = BTreeMap<String, Value>;
 
-#[derive(PartialEq, PartialOrd, Clone, Copy, Debug)]
-pub enum Type {
-    Null,
-    Boolean,
-    Number,
-    String,
-    Array,
-    Object,
-}
-
 #[derive(PartialEq, PartialOrd, Clone, Debug)]
 pub enum Value {
     Null,
