@@ -4,16 +4,16 @@ TODOs:
 
 - [ ] conversion from NaN/Inf f64, i64 or usize
 - [ ] parse string
+    - [ ] use Read
+    - [ ] support file stream
     - [ ] \u+FFFF
     - [ ] \b, \f
 - [ ] serialize
-    - [ ] pretty print
     - [ ] \u+FFFF
-- [ ] error reporting
-- [ ] input::cur, line
 - [ ] i64 support
-- [ ] support file stream
 - [ ] methods of Value
+    - [ ] insert
+    - [ ] erase
 - [ ] partial_cmp for obj
 - [ ] refactoring
 
@@ -433,6 +433,18 @@ impl<'a> Input<'a> {
         self.consumed = false;
     }
 
+    fn read_line(&mut self) -> String {
+        let mut buf = Vec::new();
+        loop {
+            match self.getc() {
+                None | Some('\n') => {
+                    return buf.into_iter().collect::<String>();
+                }
+                Some(c) => buf.push(c),
+            }
+        }
+    }
+
     fn skip_ws(&mut self) {
         loop {
             match self.getc() {
@@ -765,17 +777,21 @@ fn parse_input<'a, C: ParseContext>(ctx: &mut C, input: &mut Input<'a>) -> bool 
 
 pub fn parse_string(s: &str) -> Result<Value, Error> {
     let mut out = Value::null();
-    let ok = {
+    {
         let mut context = DefaultParseContext::new(&mut out);
         let mut input = Input::new(s);
-        parse_input(&mut context, &mut input)
-    };
-
-    if ok {
-        Ok(out)
-    } else {
-        Err("ERROR".to_string())
+        let ok = parse_input(&mut context, &mut input);
+        if !ok {
+            input.ungetc();
+            let line_number = input.line;
+            let near = input.read_line();
+            return Err(format!(
+                "Syntax error at line {} near: {}",
+                line_number, near
+            ));
+        }
     }
+    Ok(out)
 }
 
 fn is_first(value: &mut bool) -> bool {
@@ -1268,17 +1284,16 @@ mod ported_tests {
     }
 
     #[test]
-    #[cfg(not_impl)]
     fn test_error_message() {
         fn test(source: &str, line: i32, near: &str) {
             let actual = parse_string(source).expect_err("Expected an error.");
             let expected = format!("Syntax error at line {} near: {}", line, near);
-            assert!(actual, expected);
+            assert_eq!(actual, expected);
         }
 
         test("falsoa", 1, "oa");
         test("{]", 1, "]");
-        test("\n\ttab", 2, "tab");
+        test("\n\tbell", 2, "bell");
         test("\"abc\nd\"", 1, "");
     }
 
