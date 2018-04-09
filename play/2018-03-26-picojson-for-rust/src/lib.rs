@@ -32,6 +32,25 @@ pub type Array = Vec<Value>;
 
 pub type Object = BTreeMap<String, Value>;
 
+/// Represents a reference to a key of json-like value.
+#[derive(PartialEq, PartialOrd, Clone, Hash, Debug)]
+pub enum ValueKey<'a> {
+    Index(usize),
+    Key(&'a str),
+}
+
+impl<'a> From<usize> for ValueKey<'a> {
+    fn from(value: usize) -> ValueKey<'a> {
+        ValueKey::Index(value)
+    }
+}
+
+impl<'a> From<&'a str> for ValueKey<'a> {
+    fn from(key: &'a str) -> Self {
+        ValueKey::Key(key)
+    }
+}
+
 #[derive(PartialEq, PartialOrd, Clone, Debug)]
 pub enum Value {
     Null,
@@ -121,20 +140,25 @@ impl Value {
         String::from_utf8(buf).unwrap()
     }
 
-    /// Determines if the value is empty, i.e., an empty string or array or object.
+    /// Determines if the value is empty, i.e., an empty array or object.
     pub fn is_empty(&self) -> bool {
         match *self {
-            Value::Null | Value::Boolean(_) | Value::Number(_) => false,
-            Value::String(ref string) => string.is_empty(),
+            Value::Null | Value::Boolean(_) | Value::Number(_) | Value::String(_) => false,
             Value::Array(ref array) => array.is_empty(),
             Value::Object(ref object) => object.is_empty(),
         }
     }
 
-    pub fn contains_key(&self, _index: i64) -> bool {
-        false
+    /// Determines if the value is a collection and has item for the specified key.
+    pub fn has<'a, K: Into<ValueKey<'a>>>(&self, key: K) -> bool {
+        match (self, key.into()) {
+            (&Value::Array(ref array), ValueKey::Index(index)) => index < array.len(),
+            (&Value::Object(ref object), ValueKey::Key(key)) => object.contains_key(key),
+            _ => false,
+        }
     }
 
+    /// Gets an item for the specified key in the value if it's a collection.
     pub fn get<K>(&self, _key: &K) -> Option<&Value> {
         None
     }
@@ -976,7 +1000,15 @@ mod tests {
 
     #[test]
     fn test_value_is_empty() {
-        assert_eq!(Value::from("").is_empty(), true);
+        assert_eq!(Value::from("").is_empty(), false);
+    }
+
+    #[test]
+    fn test_value_has() {
+        assert_eq!(Value::Null.has(0), false);
+        assert_eq!(Value::Null.has("unknown"), false);
+
+        assert_eq!(Value::from(vec!["a", "b", "c"]).has(2), true);
     }
 
     #[test]
