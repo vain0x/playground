@@ -74,10 +74,6 @@ macro_rules! impl_value_as {
 }
 
 impl Value {
-    pub fn null() -> Value {
-        Value::Null
-    }
-
     pub fn array() -> Value {
         Value::Array(Vec::new())
     }
@@ -776,7 +772,7 @@ fn parse_input<'a, C: ParseContext>(ctx: &mut C, input: &mut Input<'a>) -> bool 
 }
 
 pub fn parse_string(s: &str) -> Result<Value, Error> {
-    let mut out = Value::null();
+    let mut out = Value::Null;
     {
         let mut context = DefaultParseContext::new(&mut out);
         let mut input = Input::new(s);
