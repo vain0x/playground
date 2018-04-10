@@ -873,6 +873,16 @@ impl<W: std::io::Write> JsonSerializer<W> {
         }
     }
 
+    fn serialize_number(&mut self, value: f64) -> SerializeResult {
+        if value.is_nan() {
+            panic!("Can't serialize NaN.")
+        } else if value.is_infinite() {
+            panic!("Can't serialize infinite number: {}.", value)
+        } else {
+            self.write_str(&value.to_string())
+        }
+    }
+
     fn serialize_string(&mut self, value: &str) -> SerializeResult {
         try!(self.write_char(b'"'));
 
@@ -956,7 +966,7 @@ impl<W: std::io::Write> JsonSerializer<W> {
             &Value::Null => self.write_str("null"),
             &Value::Boolean(true) => self.write_str("true"),
             &Value::Boolean(false) => self.write_str("false"),
-            &Value::Number(ref value) => self.write_str(&value.to_string()),
+            &Value::Number(value) => self.serialize_number(value),
             &Value::String(ref value) => self.serialize_string(value),
             &Value::Array(ref array) => self.serialize_array(array),
             &Value::Object(ref object) => self.serialize_object(object),
@@ -1128,6 +1138,18 @@ mod tests {
 
         // Case sensitive.
         assert!(parse_string("TRUE").is_err());
+    }
+
+    #[test]
+    #[should_panic]
+    fn test_serialize_number_nan() {
+        Value::Number(std::f64::NAN).serialize();
+    }
+
+    #[test]
+    #[should_panic]
+    fn test_serialize_number_infinity() {
+        Value::Number(std::f64::INFINITY).serialize();
     }
 
     #[test]
