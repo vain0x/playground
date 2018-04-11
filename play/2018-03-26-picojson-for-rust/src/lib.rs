@@ -2,7 +2,6 @@
 
 TODOs:
 
-- [ ] conversion from NaN/Inf f64, i64 or usize
 - [ ] parse string
     - [ ] use Read
     - [ ] support file stream
@@ -14,7 +13,6 @@ TODOs:
 - [ ] methods of Value
     - [ ] insert
     - [ ] erase
-- [ ] partial_cmp for obj
 - [ ] refactoring
 
 */
@@ -164,6 +162,36 @@ impl Value {
         match (self, key.into()) {
             (&mut Value::Array(ref mut array), ValueKey::Index(index)) => array.get_mut(index),
             (&mut Value::Object(ref mut object), ValueKey::Key(key)) => object.get_mut(key),
+            _ => None,
+        }
+    }
+
+    /// Adds a value to an array.
+    pub fn push(&mut self, value: Value) {
+        self.as_array_mut().map(|a| a.push(value));
+    }
+
+    /// Inserts an item to an array or object.
+    /// Returns the old value if it's an object and has an item for the specified key.
+    pub fn insert<'a, K: Into<ValueKey<'a>>>(&mut self, key: K, value: Value) -> Option<Value> {
+        match (self, key.into()) {
+            (&mut Value::Array(ref mut array), ValueKey::Index(index)) => {
+                array.insert(index, value);
+                None
+            }
+            (&mut Value::Object(ref mut object), ValueKey::Key(key)) => {
+                object.insert(key.to_string(), value)
+            }
+            _ => None,
+        }
+    }
+
+    /// Removes an item from an array or object.
+    /// Returns the removed value if success.
+    pub fn remove<'a, K: Into<ValueKey<'a>>>(&mut self, key: K) -> Option<Value> {
+        match (self, key.into()) {
+            (&mut Value::Array(ref mut array), ValueKey::Index(index)) => Some(array.remove(index)),
+            (&mut Value::Object(ref mut object), ValueKey::Key(key)) => object.remove(key),
             _ => None,
         }
     }
@@ -1284,21 +1312,22 @@ mod ported_tests {
     }
 
     #[test]
-    #[cfg(not_impl)]
     fn test_value_object_modification() {
-        let v = Value::object();
+        let mut v = Value::object();
 
-        *(v.get_mut("foo").unwrap()) = Value::from("bar".to_string());
+        v.insert("foo", Value::from("bar"));
 
         v.insert("hoge", Value::array());
         v.get_mut("hoge").unwrap().push(Value::from(42.0));
 
         v.insert("baz", Value::object());
-        let v2 = v.get_mut("baz").unwrap();
-        v2.insert("piyo", Value::from(3.14));
+        {
+            let v2 = v.get_mut("baz").unwrap();
+            v2.insert("piyo", Value::from(3.14));
+        }
 
         let json = v.serialize();
-        assert_eq!(json, r#"{"foo":"bar","hoge":[42],"baz":{"piyo":3.14}}"#);
+        assert_eq!(json, r#"{"baz":{"piyo":3.14},"foo":"bar","hoge":[42]}"#);
     }
 
     #[test]
