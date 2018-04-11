@@ -2,25 +2,25 @@
 
 TODOs:
 
-- [ ] conversion from NaN/Inf f64, i64 or usize
 - [ ] parse string
+    - [ ] use Read
+    - [ ] support file stream
     - [ ] \u+FFFF
     - [ ] \b, \f
 - [ ] serialize
-    - [ ] pretty print
     - [ ] \u+FFFF
-- [ ] error reporting
-- [ ] input::cur, line
 - [ ] i64 support
-- [ ] support file stream
 - [ ] methods of Value
-- [ ] partial_cmp for obj
+    - [ ] insert
+    - [ ] erase
 - [ ] refactoring
 
 */
 
 use std::collections::BTreeMap;
 use std::iter::FromIterator;
+use std::iter::*;
+use std::vec::*;
 
 // static indent_width: i32 = 2;
 
@@ -30,14 +30,23 @@ pub type Array = Vec<Value>;
 
 pub type Object = BTreeMap<String, Value>;
 
-#[derive(PartialEq, PartialOrd, Clone, Copy, Debug)]
-pub enum Type {
-    Null,
-    Boolean,
-    Number,
-    String,
-    Array,
-    Object,
+/// Represents a reference to a key of json-like value.
+#[derive(PartialEq, PartialOrd, Clone, Hash, Debug)]
+pub enum ValueKey<'a> {
+    Index(usize),
+    Key(&'a str),
+}
+
+impl<'a> From<usize> for ValueKey<'a> {
+    fn from(value: usize) -> ValueKey<'a> {
+        ValueKey::Index(value)
+    }
+}
+
+impl<'a> From<&'a str> for ValueKey<'a> {
+    fn from(key: &'a str) -> Self {
+        ValueKey::Key(key)
+    }
 }
 
 #[derive(PartialEq, PartialOrd, Clone, Debug)]
@@ -63,10 +72,6 @@ macro_rules! impl_value_as {
 }
 
 impl Value {
-    pub fn null() -> Value {
-        Value::Null
-    }
-
     pub fn array() -> Value {
         Value::Array(Vec::new())
     }
@@ -116,29 +121,79 @@ impl Value {
     impl_value_as!(as_object, as_object_mut, Object);
 
     pub fn serialize(&self) -> String {
-        let mut s = DefaultJsonSerializer { out: String::new() };
-        s.serialize_core(self);
-        s.out
+        let mut buf = Vec::<u8>::new();
+        serialize(self, &mut buf).unwrap();
+        String::from_utf8(buf).unwrap()
     }
 
     pub fn pretty_print(&self) -> String {
-        "".to_string()
+        const DEFAULT_INDENT_WIDTH: i32 = 2;
+
+        let mut buf = Vec::<u8>::new();
+        pretty_print(self, DEFAULT_INDENT_WIDTH, &mut buf).unwrap();
+        String::from_utf8(buf).unwrap()
     }
 
+    /// Determines if the value is empty, i.e., an empty array or object.
     pub fn is_empty(&self) -> bool {
-        true
+        match *self {
+            Value::Null | Value::Boolean(_) | Value::Number(_) | Value::String(_) => false,
+            Value::Array(ref array) => array.is_empty(),
+            Value::Object(ref object) => object.is_empty(),
+        }
     }
 
-    pub fn contains_key(&self, _index: i64) -> bool {
-        false
+    /// Determines if the value is a collection and has item for the specified key.
+    pub fn has<'a, K: Into<ValueKey<'a>>>(&self, key: K) -> bool {
+        self.get(key).is_some()
     }
 
-    pub fn get<K>(&self, _key: &K) -> Option<&Value> {
-        None
+    /// Gets an item for the specified key in the value if it's a collection.
+    pub fn get<'a, K: Into<ValueKey<'a>>>(&self, key: K) -> Option<&Value> {
+        match (self, key.into()) {
+            (&Value::Array(ref array), ValueKey::Index(index)) => array.get(index),
+            (&Value::Object(ref object), ValueKey::Key(key)) => object.get(key),
+            _ => None,
+        }
     }
 
-    pub fn get_mut<K, V>(&mut self, _key: &K) -> Option<&mut Value> {
-        None
+    /// Gets a mutable reference to an item for the specified key in the value if it's a collection.
+    pub fn get_mut<'a, K: Into<ValueKey<'a>>>(&mut self, key: K) -> Option<&mut Value> {
+        match (self, key.into()) {
+            (&mut Value::Array(ref mut array), ValueKey::Index(index)) => array.get_mut(index),
+            (&mut Value::Object(ref mut object), ValueKey::Key(key)) => object.get_mut(key),
+            _ => None,
+        }
+    }
+
+    /// Adds a value to an array.
+    pub fn push(&mut self, value: Value) {
+        self.as_array_mut().map(|a| a.push(value));
+    }
+
+    /// Inserts an item to an array or object.
+    /// Returns the old value if it's an object and has an item for the specified key.
+    pub fn insert<'a, K: Into<ValueKey<'a>>>(&mut self, key: K, value: Value) -> Option<Value> {
+        match (self, key.into()) {
+            (&mut Value::Array(ref mut array), ValueKey::Index(index)) => {
+                array.insert(index, value);
+                None
+            }
+            (&mut Value::Object(ref mut object), ValueKey::Key(key)) => {
+                object.insert(key.to_string(), value)
+            }
+            _ => None,
+        }
+    }
+
+    /// Removes an item from an array or object.
+    /// Returns the removed value if success.
+    pub fn remove<'a, K: Into<ValueKey<'a>>>(&mut self, key: K) -> Option<Value> {
+        match (self, key.into()) {
+            (&mut Value::Array(ref mut array), ValueKey::Index(index)) => Some(array.remove(index)),
+            (&mut Value::Object(ref mut object), ValueKey::Key(key)) => object.remove(key),
+            _ => None,
+        }
     }
 }
 
@@ -400,6 +455,18 @@ impl<'a> Input<'a> {
 
     fn ungetc(&mut self) {
         self.consumed = false;
+    }
+
+    fn read_line(&mut self) -> String {
+        let mut buf = Vec::new();
+        loop {
+            match self.getc() {
+                None | Some('\n') => {
+                    return buf.into_iter().collect::<String>();
+                }
+                Some(c) => buf.push(c),
+            }
+        }
     }
 
     fn skip_ws(&mut self) {
@@ -733,18 +800,22 @@ fn parse_input<'a, C: ParseContext>(ctx: &mut C, input: &mut Input<'a>) -> bool 
 }
 
 pub fn parse_string(s: &str) -> Result<Value, Error> {
-    let mut out = Value::null();
-    let ok = {
+    let mut out = Value::Null;
+    {
         let mut context = DefaultParseContext::new(&mut out);
         let mut input = Input::new(s);
-        parse_input(&mut context, &mut input)
-    };
-
-    if ok {
-        Ok(out)
-    } else {
-        Err("ERROR".to_string())
+        let ok = parse_input(&mut context, &mut input);
+        if !ok {
+            input.ungetc();
+            let line_number = input.line;
+            let near = input.read_line();
+            return Err(format!(
+                "Syntax error at line {} near: {}",
+                line_number, near
+            ));
+        }
     }
+    Ok(out)
 }
 
 fn is_first(value: &mut bool) -> bool {
@@ -753,88 +824,212 @@ fn is_first(value: &mut bool) -> bool {
     old_value
 }
 
-trait JsonSerializer {
-    fn write_char(&mut self, c: char);
-    fn write_str(&mut self, s: &str);
+enum JsonSerializationStyle {
+    Minimum,
+    Pretty {
+        indent_level: i32,
+        indent_width: i32,
+    },
+}
 
-    fn serialize_string(&mut self, value: &str) {
-        self.write_char('"');
+type SerializeResult = std::io::Result<()>;
+
+struct JsonSerializer<W> {
+    writer: W,
+    style: JsonSerializationStyle,
+}
+
+#[warn(unused_results)]
+impl<W: std::io::Write> JsonSerializer<W> {
+    fn write_char(&mut self, c: u8) -> SerializeResult {
+        self.writer.write(&[c]).map(|_| ())
+    }
+
+    fn write_str(&mut self, s: &str) -> SerializeResult {
+        self.writer.write(s.as_bytes()).map(|_| ())
+    }
+
+    /// Ends current line and then emits indentation.
+    fn end_line(&mut self) -> SerializeResult {
+        if let JsonSerializationStyle::Pretty {
+            indent_level,
+            indent_width,
+        } = self.style
+        {
+            try!(self.write_char(b'\n'));
+            for _ in 0..(indent_level * indent_width) {
+                try!(self.write_char(b' '));
+            }
+        }
+        return Ok(());
+    }
+
+    /// Updates the state to increment indent level by 1 for following lines.
+    fn inc_indent(&mut self) {
+        if let JsonSerializationStyle::Pretty {
+            ref mut indent_level,
+            ..
+        } = self.style
+        {
+            *indent_level += 1;
+        }
+    }
+
+    /// Updates the state to decrease indent level by 1 for following lines.
+    fn dec_indent(&mut self) {
+        if let JsonSerializationStyle::Pretty {
+            ref mut indent_level,
+            ..
+        } = self.style
+        {
+            *indent_level -= 1;
+        }
+    }
+
+    /// Ends final line.
+    fn end_final_line(&mut self) -> SerializeResult {
+        if let JsonSerializationStyle::Pretty { .. } = self.style {
+            try!(self.write_char(b'\n'));
+        }
+        return Ok(());
+    }
+
+    fn write_colon(&mut self) -> SerializeResult {
+        match self.style {
+            JsonSerializationStyle::Minimum => self.write_char(b':'),
+            JsonSerializationStyle::Pretty { .. } => self.write_str(": "),
+        }
+    }
+
+    fn serialize_number(&mut self, value: f64) -> SerializeResult {
+        if value.is_nan() {
+            panic!("Can't serialize NaN.")
+        } else if value.is_infinite() {
+            panic!("Can't serialize infinite number: {}.", value)
+        } else {
+            self.write_str(&value.to_string())
+        }
+    }
+
+    fn serialize_string(&mut self, value: &str) -> SerializeResult {
+        try!(self.write_char(b'"'));
 
         for c in value.chars() {
             match c {
-                '"' => self.write_str("\\\""),
-                '\n' => self.write_str("\\n"),
-                '\r' => self.write_str("\\r"),
-                '\t' => self.write_str("\\t"),
-                '\\' => self.write_str("\\\\"),
-                'u' => panic!("not implemented"),
-                _ => self.write_char(c),
+                '"' => try!(self.write_str("\\\"")),
+                '\n' => try!(self.write_str("\\n")),
+                '\r' => try!(self.write_str("\\r")),
+                '\t' => try!(self.write_str("\\t")),
+                '\\' => try!(self.write_str("\\\\")),
+                _ => {
+                    fn is_u8(n: i32) -> bool {
+                        std::u8::MIN as i32 <= n && n <= std::u8::MAX as i32
+                    }
+                    if is_u8(c as i32) {
+                        try!(self.write_char(c as u8));
+                    } else {
+                        unimplemented!("\\u+10FFFF")
+                    }
+                }
             }
         }
 
-        self.write_char('"');
+        self.write_char(b'"')
     }
 
-    fn serialize_array(&mut self, array: &Array) {
+    fn serialize_array(&mut self, array: &Array) -> SerializeResult {
         if array.is_empty() {
-            self.write_str("[]");
+            self.write_str("[]")
         } else {
-            self.write_char('[');
-            let mut first = true;
-            for item in array {
-                if !is_first(&mut first) {
-                    self.write_char(',');
+            try!(self.write_char(b'['));
+
+            self.inc_indent();
+            {
+                let mut first = true;
+                for item in array {
+                    if !is_first(&mut first) {
+                        try!(self.write_char(b','));
+                    }
+
+                    try!(self.end_line());
+                    try!(self.serialize_core(item));
                 }
-                self.serialize_core(item);
             }
-            self.write_char(']');
+            self.dec_indent();
+
+            try!(self.end_line());
+            self.write_char(b']')
         }
     }
 
-    fn serialize_object(&mut self, object: &Object) {
+    fn serialize_object(&mut self, object: &Object) -> SerializeResult {
         if object.is_empty() {
-            self.write_str("{}");
+            self.write_str("{}")
         } else {
-            self.write_str("{");
-            let mut first = true;
-            for (key, item) in object.iter() {
-                if !is_first(&mut first) {
-                    self.write_str(",");
-                }
+            try!(self.write_char(b'{'));
 
-                self.serialize_string(key);
-                self.write_str(":");
-                self.serialize_core(item);
+            self.inc_indent();
+            {
+                let mut first = true;
+                for (key, item) in object.iter() {
+                    if !is_first(&mut first) {
+                        try!(self.write_char(b','));
+                    }
+
+                    try!(self.end_line());
+                    try!(self.serialize_string(key));
+                    try!(self.write_colon());
+                    try!(self.serialize_core(item));
+                }
             }
-            self.write_str("}");
+            self.dec_indent();
+
+            try!(self.end_line());
+            self.write_char(b'}')
         }
     }
 
-    fn serialize_core(&mut self, value: &Value) {
+    fn serialize_core(&mut self, value: &Value) -> SerializeResult {
         match value {
             &Value::Null => self.write_str("null"),
             &Value::Boolean(true) => self.write_str("true"),
             &Value::Boolean(false) => self.write_str("false"),
-            &Value::Number(ref value) => self.write_str(&value.to_string()),
+            &Value::Number(value) => self.serialize_number(value),
             &Value::String(ref value) => self.serialize_string(value),
             &Value::Array(ref array) => self.serialize_array(array),
             &Value::Object(ref object) => self.serialize_object(object),
         }
     }
+
+    fn serialize(&mut self, value: &Value) -> SerializeResult {
+        try!(self.serialize_core(value));
+        self.end_final_line()
+    }
 }
 
-struct DefaultJsonSerializer {
-    out: String,
+/// Serializes a value with compress style.
+/// Writes the utf-8 encoded string to the specified writer.
+pub fn serialize<W: std::io::Write>(value: &Value, writer: &mut W) -> SerializeResult {
+    JsonSerializer {
+        writer,
+        style: JsonSerializationStyle::Minimum,
+    }.serialize(value)
 }
 
-impl JsonSerializer for DefaultJsonSerializer {
-    fn write_char(&mut self, c: char) {
-        std::fmt::Write::write_char(&mut self.out, c).unwrap()
-    }
-
-    fn write_str(&mut self, s: &str) {
-        self.out += s;
-    }
+/// Serializes a value with space-indented style.
+/// Writes the utf-8 encoded string to the specified writer.
+pub fn pretty_print<W: std::io::Write>(
+    value: &Value,
+    indent_width: i32,
+    writer: &mut W,
+) -> SerializeResult {
+    JsonSerializer {
+        writer,
+        style: JsonSerializationStyle::Pretty {
+            indent_level: 0,
+            indent_width,
+        },
+    }.serialize(value)
 }
 
 #[cfg(test)]
@@ -856,6 +1051,19 @@ mod tests {
         assert_eq!(Value::from(true), Value::Boolean(true));
         assert_eq!(Value::from(42), Value::Number(42.0));
         assert_eq!(Value::from(3.14), Value::Number(3.14));
+    }
+
+    #[test]
+    fn test_value_is_empty() {
+        assert_eq!(Value::from("").is_empty(), false);
+    }
+
+    #[test]
+    fn test_value_has() {
+        assert_eq!(Value::Null.has(0), false);
+        assert_eq!(Value::Null.has("unknown"), false);
+
+        assert_eq!(Value::from(vec!["a", "b", "c"]).has(2), true);
     }
 
     #[test]
@@ -961,6 +1169,18 @@ mod tests {
     }
 
     #[test]
+    #[should_panic]
+    fn test_serialize_number_nan() {
+        Value::Number(std::f64::NAN).serialize();
+    }
+
+    #[test]
+    #[should_panic]
+    fn test_serialize_number_infinity() {
+        Value::Number(std::f64::INFINITY).serialize();
+    }
+
+    #[test]
     fn test_serialize_string_simple() {
         assert_eq!(Value::from("hello").serialize(), r#""hello""#);
     }
@@ -976,6 +1196,25 @@ mod tests {
     #[ignore]
     fn test_serialize_string_unicode() {
         assert_eq!(Value::from("你好").serialize(), r#""\u4f60\u597d""#);
+    }
+
+    #[test]
+    fn test_pretty_print_array() {
+        let expected = r#"[
+  42,
+  "hello",
+  [
+    "nested",
+    "items"
+  ]
+]
+"#;
+        let actual = Value::from(vec![
+            Value::from(42),
+            Value::from("hello"),
+            Value::from(vec!["nested", "items"]),
+        ]);
+        assert_eq!(actual.pretty_print(), expected);
     }
 }
 
@@ -1038,73 +1277,70 @@ mod ported_tests {
     }
 
     #[test]
-    #[cfg(not_impl)]
     fn test_value_is_empty() {
         assert!(parse_string("[]").expect("Parse success").is_empty());
         assert!(parse_string("{}").expect("Parse success").is_empty());
     }
 
     #[test]
-    #[cfg(not_impl)]
     fn test_value_array() {
-        let a = parse_string("[1,true,\"hello,\"]").expect("Should parse an array");
+        let a = parse_string("[1,true,\"hello\"]").expect("Should parse an array");
 
-        assert_eq!(a.as_array().unwrap().unwrap().len(), 3);
+        assert_eq!(a.as_array().unwrap().len(), 3);
 
-        assert_eq!(a.contains_key(0), true, "First element should exist.");
-        assert_eq!(a.get(0).unwrap().as_number().unwrap(), 1.0);
+        assert_eq!(a.has(0), true, "First element should exist.");
+        assert_eq!(a.get(0).unwrap().as_number().unwrap(), &1.0);
 
-        assert_eq!(a.contains_key(1), true, "Second element should exist.");
-        assert_eq!(a.get(1).unwrap().as_bool().unwrap(), true);
+        assert_eq!(a.has(1), true, "Second element should exist.");
+        assert_eq!(a.get(1).unwrap().as_bool().unwrap(), &true);
 
-        assert_eq!(a.contains_key(2), true, "Third element should exist.");
-        assert_eq!(a.get(2).unwrap().as_string().unwrap(), "hello".to_string());
+        assert_eq!(a.has(2), true, "Third element should exist.");
+        assert_eq!(a.get(2).unwrap().as_string().unwrap(), "hello");
 
-        assert!(!a.contains_key(3));
+        assert!(!a.has(3));
     }
 
     #[test]
-    #[cfg(not_impl)]
     fn test_value_object() {
         let v = parse_string(r#"{ "a": true }"#).expect("Should parse an object");
 
-        assert_eq!(v.as_object().unwrap().unwrap().len(), 1);
-        assert!(v.contains_key("a"), true, "Should has a as key.");
-        assert!(v.get("a").unwrap(), true);
+        assert_eq!(v.as_object().unwrap().len(), 1);
+        assert_eq!(v.has("a"), true, "Should has a as key.");
+        assert_eq!(v.get("a"), Some(&Value::from(true)));
 
-        assert!(!a.contains_key("z"));
+        assert!(!v.has("z"));
     }
 
     #[test]
-    #[cfg(not_impl)]
     fn test_value_object_modification() {
-        let v = Value::object();
+        let mut v = Value::object();
 
-        *(v.get_mut("foo").unwrap()) = Value::from("bar".to_string());
+        v.insert("foo", Value::from("bar"));
 
         v.insert("hoge", Value::array());
         v.get_mut("hoge").unwrap().push(Value::from(42.0));
 
         v.insert("baz", Value::object());
-        let v2 = v.get_mut("baz").unwrap();
-        v2.insert("piyo", Value::from(3.14));
+        {
+            let v2 = v.get_mut("baz").unwrap();
+            v2.insert("piyo", Value::from(3.14));
+        }
 
         let json = v.serialize();
-        assert_eq!(json, r#"{"foo":"bar","hoge":[42],"baz":{"piyo":3.14}}"#);
+        assert_eq!(json, r#"{"baz":{"piyo":3.14},"foo":"bar","hoge":[42]}"#);
     }
 
     #[test]
-    #[cfg(not_impl)]
     fn test_error_message() {
         fn test(source: &str, line: i32, near: &str) {
             let actual = parse_string(source).expect_err("Expected an error.");
             let expected = format!("Syntax error at line {} near: {}", line, near);
-            assert!(actual, expected);
+            assert_eq!(actual, expected);
         }
 
         test("falsoa", 1, "oa");
         test("{]", 1, "]");
-        test("\n\ttab", 2, "tab");
+        test("\n\tbell", 2, "bell");
         test("\"abc\nd\"", 1, "");
     }
 
@@ -1163,8 +1399,7 @@ mod ported_tests {
     }
 
     #[test]
-    #[ignore]
-    fn test_serialize_object_pretty() {
+    fn test_pretty_print_object() {
         let actual = serialization_sample().pretty_print();
         let expected = r#"{
   "a": 1,
@@ -1176,19 +1411,18 @@ mod ported_tests {
   ],
   "c": {},
   "d": []
-  }"#;
+}
+"#;
         assert_eq!(actual, expected);
     }
 
     #[test]
-    #[ignore]
     #[should_panic]
     fn test_reject_nan() {
         Value::from(f64::NAN);
     }
 
     #[test]
-    #[ignore]
     #[should_panic]
     fn test_reject_infinity() {
         Value::from(f64::INFINITY);
