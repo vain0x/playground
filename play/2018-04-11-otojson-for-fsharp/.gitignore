@@ -1,0 +1,17 @@
+
+# Created by https://www.gitignore.io/api/fsharp
+
+### fsharp ###
+lib/debug
+lib/release
+Debug
+*.suo
+*.user
+obj
+bin
+/build/
+*.exe
+!.paket/paket.bootstrapper.exe
+
+
+# End of https://www.gitignore.io/api/fsharp
