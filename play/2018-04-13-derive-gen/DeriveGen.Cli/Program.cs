@@ -182,6 +182,14 @@ namespace DeriveGen.Cli
                     `type`: `int`
                 }
             }
+        },
+        `Box`: {
+            `derive`: `record`,
+            `fields`: {
+                `Value`: {
+                    `type`: `string`
+                }
+            }
         }
     }
 }".Replace("`", "\"");
@@ -193,7 +201,9 @@ namespace DeriveGen.Cli
 namespace {{ ns.NamespaceName }}
 {
     {%- for class in ns.Classes -%}
+    {%- if class != ns.Classes.first -%}
 
+    {%- endif -%}
     {{ class.Modifiers }} partial class {{ class.ClassName }}
     {
         {%- for field in class.Fields -%}
