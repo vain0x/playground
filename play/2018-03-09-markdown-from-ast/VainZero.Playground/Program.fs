@@ -121,25 +121,25 @@ namespace VainZero.Markdown
 
     let writer (p: Printer) = p.Writer
 
-    let writeIndent (context: Printer) =
-      if context.IndentLevel > 0 then
-        context.Writer.Write(context.Indent)
+    let writeIndent (p: Printer) =
+      if p.IndentLevel > 0 then
+        p.Writer.Write(p.Indent)
 
-    let writeLine context =
-      (context |> writer).WriteLine()
+    let writeLine p =
+      (p |> writer).WriteLine()
 
-    let writeChar (c: char) context =
-      (context |> writer).Write(c)
+    let writeChar (c: char) p =
+      (p |> writer).Write(c)
 
-    let writeShort (str: string) context =
+    let writeShort (str: string) p =
       let str = str.Replace("\r", " ").Replace("\n", " ")
-      (context |> writer).Write(str)
+      (p |> writer).Write(str)
 
-    let writeLong (str: string) (context: Printer) =
-      let writer = context |> writer
+    let writeLong (str: string) (p: Printer) =
+      let writer = p |> writer
       let lines = str.Replace("\r\n", "\n").Split([|'\n'|])
       for line in lines do
-        writeIndent context
+        writeIndent p
         writer.WriteLine(line)
 
     let emphasisSymbol emphasis level =
