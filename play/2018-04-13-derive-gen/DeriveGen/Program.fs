@@ -1,8 +1,13 @@
-﻿// Learn more about F# at http://fsharp.org
+﻿namespace DeriveGen
 
+open Chiron
 open System
 
-[<EntryPoint>]
-let main argv =
-    printfn "Hello World from F#!"
-    0 // return an integer exit code
+module Processor =
+  let generate (sourceJson: string) =
+    ""
+
+module Program =
+  [<EntryPoint>]
+  let main _ =
+    0

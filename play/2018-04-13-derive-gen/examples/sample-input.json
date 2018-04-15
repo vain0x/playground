@@ -1,0 +1,12 @@
+{
+  "types": {
+    "JohnDoe.AwesomeApp": {
+      "Person": {
+        "fields": {
+          "Name": "string",
+          "Age": "int"
+        }
+      }
+    }
+  }
+}

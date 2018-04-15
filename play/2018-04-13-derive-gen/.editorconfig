@@ -3,6 +3,11 @@ root = true
 
 
 
+[*.json]
+indent_size = 2
+
+
+
 ; Global settings
 [*.md]
 indent_style = space
