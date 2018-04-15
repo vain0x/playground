@@ -6,4 +6,7 @@
   <ItemGroup>
     <Compile Include="Program.fs" />
   </ItemGroup>
+  <ItemGroup>
+    <PackageReference Include="Chiron" Version="7.0.0-beta-180105" />
+  </ItemGroup>
 </Project>
