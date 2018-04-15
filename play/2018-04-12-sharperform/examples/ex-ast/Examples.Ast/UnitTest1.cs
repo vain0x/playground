@@ -1,24 +1,11 @@
 using System;
+using Sharperform;
 using Xunit;
-
-namespace Examples.Ast
-{
-    using Sharperform;
-
-    [Derive("Immutable")]
-    public sealed partial class Person
-    {
-        public string Name { get; }
-        public int Age { get; }
-    }
-}
 
 namespace Sharperform
 {
-    using System;
-
-    [AttributeUsage(AttributeTargets.Class, Inherited = false, AllowMultiple = true)]
-    internal sealed class DeriveAttribute
+    [AttributeUsage(AttributeTargets.Class | AttributeTargets.Struct, Inherited = false, AllowMultiple = true)]
+    public class DeriveAttribute
         : Attribute
     {
         public string Trait { get; }
@@ -27,5 +14,22 @@ namespace Sharperform
         {
             Trait = trait;
         }
+    }
+}
+
+namespace Examples.Ast
+{
+    [Derive("Immutable")]
+    public sealed partial class Person
+    {
+        public string Name { get; }
+        public int Age { get; }
+    }
+
+    [Derive("Immutable")]
+    public partial struct Maybe<T>
+    {
+        public bool HasValue { get; }
+        public T Value { get; }
     }
 }
