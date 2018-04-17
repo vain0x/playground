@@ -23,7 +23,7 @@ namespace {{ ns.NamespaceName }}
     {%- if class != ns.Classes.first -%}
 
     {%- endif -%}
-    {{ class.Modifiers | join: " " }} {{ class.Kind }} {{ class.ClassName }}
+    {{ class.Modifiers | join: " " }} {{ class.Kind.Keyword }} {{ class.ClassName }}
     {
         {%- for field in class.Fields -%}
         {{ field.Modifiers | join: " " }} {{ field.Type }} {{ field.FieldName }} {{- field.AutoAccessors }};
@@ -93,23 +93,14 @@ type DotLiquidHelper =
 
 module CodeGeneration =
 
-  type ToJsonFormatter<'T>() =
-    interface Utf8Json.IJsonFormatter<'T> with
-      override __.Serialize(writer, value, _) =
-        writer.WriteString(value.ToString())
-
-      override __.Deserialize(_, _) =
-        NotImplementedException() |> raise
-
   type Identifier = string
   type Modifier = string
 
-  [<Utf8Json.JsonFormatter(typeof<ToJsonFormatter<TypeKind>>)>]
   type TypeKind =
     | Class
     | Struct
   with
-    override this.ToString() =
+    member this.Keyword =
       match this with
       | Class -> "class"
       | Struct -> "struct"
