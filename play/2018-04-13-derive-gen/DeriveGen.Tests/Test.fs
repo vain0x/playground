@@ -33,6 +33,44 @@ module ProcessorTests =
   }
   //*)
 
+module Utf8JsonTests =
+  open Utf8Json
+
+  type Bar = {
+    BarName: string
+  }
+
+  type Foo = {
+    FooName: string
+    Bars: Bar[]
+  }
+
+  let ``test serialize json to objects`` = test {
+    let foo =
+      {
+        FooName = "foo"
+        Bars =
+          [|
+            { BarName = "bar1" }
+            { BarName = "bar2" }
+          |]
+      }
+    let data = JsonSerializer.Serialize(foo)
+    let json = JsonSerializer.PrettyPrint(data)
+    let expected = """{
+  "FooName": "foo",
+  "Bars": [
+    {
+      "BarName": "bar1"
+    },
+    {
+      "BarName": "bar2"
+    }
+  ]
+}"""
+    do! json |> assertEquals expected
+  }
+
 module ChironTests =
   open Chiron
   open Chiron.Inference
