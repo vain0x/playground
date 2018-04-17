@@ -1,7 +1,6 @@
 module DeriveGen.Processor
 
 open System
-open System.Text
 open Chiron
 open Chiron.Inference
 
@@ -94,16 +93,26 @@ type DotLiquidHelper =
 
 module CodeGeneration =
 
+  type ToJsonFormatter<'T>() =
+    interface Utf8Json.IJsonFormatter<'T> with
+      override __.Serialize(writer, value, _) =
+        writer.WriteString(value.ToString())
+
+      override __.Deserialize(_, _) =
+        NotImplementedException() |> raise
+
   type Identifier = string
   type Modifier = string
+
+  [<Utf8Json.JsonFormatter(typeof<ToJsonFormatter<TypeKind>>)>]
   type TypeKind =
     | Class
     | Struct
   with
-    static member ToJson(self: TypeKind) =
-      match self with
-      | Class -> Json.String "class"
-      | Struct -> Json.String "struct"
+    override this.ToString() =
+      match this with
+      | Class -> "class"
+      | Struct -> "struct"
 
   type FieldModel =
     {
@@ -148,53 +157,9 @@ module CodeGeneration =
       Namespaces: NamespaceModel[]
     }
   with
-    static member ToJson(model: ModuleModel) =
-      let jobj xs = xs |> Array.toList |> JsonObject.ofPropertyList |> Json.Object
-      let usings =
-        JE.stringArray model.UsingDirectives
-      let namespaces =
-        JE.array [|
-          for model in model.Namespaces do
-            let content =
-              JE.array [|
-                for model in model.Classes ->
-                  let fields =
-                    JE.array [|
-                      for field in model.Fields ->
-                        jobj [|
-                          ("FieldName", JE.string field.FieldName)
-                          ("Modifiers", JE.arrayWith JE.string field.Modifiers)
-                          ("Type", JE.string field.Type)
-                        |]
-                    |]
-                  let methods =
-                    JE.array [|
-                      for method in model.Methods ->
-                        jobj [|
-                          ("MethodName", JE.string method.MethodName)
-                          ("Modifiers", JE.arrayWith JE.string method.Modifiers)
-                          ("Type", JE.string method.Type)
-                          ("Parameters", JE.arrayWith (fun p -> jobj [|("ParameterName", JE.string p.ParameterName); ("Type", JE.string p.Type)|]) method.Parameters)
-                          ("Statements", JE.arrayWith JE.string method.Statements)
-                        |]
-                    |]
-                  jobj [|
-                    ("ClassName", JE.string model.ClassName)
-                    ("Kind", TypeKind.ToJson(model.Kind))
-                    ("Modifiers", JE.arrayWith JE.string model.Modifiers)
-                    ("Fields", fields)
-                    ("Methods", methods)
-                  |]
-              |]
-            yield jobj [|
-              ("NamespaceName", JE.string model.NamespaceName)
-              ("Classes", content)
-            |]
-        |]
-      jobj [|
-        ("Usings", usings)
-        ("Namespaces", namespaces)
-      |]
+    member this.ToJson() =
+      let data = Utf8Json.JsonSerializer.Serialize(this)
+      Utf8Json.JsonSerializer.PrettyPrint(data)
 
   module Identifier =
     let toLowerCamelCase (ident: string) =
@@ -381,8 +346,7 @@ module ConfigParsing =
 
 let render (model: CodeGeneration.ModuleModel) =
   let template = DotLiquid.Template.Parse(templateSource)
-  let modelJson = Json.serialize model
-  let local = DotLiquidHelper.LocalFromJson(modelJson)
+  let local = DotLiquidHelper.LocalFromJson(model.ToJson())
   template.Render(local)
 
 let generate (sourceJson: string) =
