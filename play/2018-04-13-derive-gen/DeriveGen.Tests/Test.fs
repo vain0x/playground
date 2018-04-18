@@ -1,7 +1,6 @@
 module DeriveGen.ExampleTests
 
 open System.IO
-open System.Text
 open Persimmon
 open UseTestNameByReflection
 
@@ -56,8 +55,9 @@ module Utf8JsonTests =
           |]
       }
     let data = JsonSerializer.Serialize(foo)
-    let json = JsonSerializer.PrettyPrint(data)
-    let expected = """{
+    let json = JsonSerializer.PrettyPrint(data).Replace("\r\n", "\n")
+    let expected =
+      """{
   "FooName": "foo",
   "Bars": [
     {
@@ -68,7 +68,7 @@ module Utf8JsonTests =
     }
   ]
 }"""
-    do! json |> assertEquals expected
+    do! json |> assertEquals (expected.Replace("\r\n", "\n"))
   }
 
 module ChironTests =
