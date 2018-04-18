@@ -242,8 +242,8 @@ module CodeGeneration =
         Statements =
           [|
             if typeKind = TypeKind.Class then
-              yield "if (this == other) return true;"
-              yield "if (other == null) return false;"
+              yield "if (ReferenceEquals(this, other)) return true;"
+              yield "if (ReferenceEquals(other, null)) return false;"
             let equation field =
               sprintf "%s == other.%s" field.FieldName field.FieldName
             if fields |> Array.length = 1 then
@@ -337,7 +337,8 @@ module ConfigParsing =
                 yield CodeGeneration.generateCompleteConstructor className fields
                 if derives |> Set.contains "?Eq" |> not then
                   yield! CodeGeneration.generateEquality className kind fields
-                yield! CodeGeneration.generateToString className fields
+                if derives |> Set.contains "?ToString" |> not then
+                  yield! CodeGeneration.generateToString className fields
               |]
             yield
               ({

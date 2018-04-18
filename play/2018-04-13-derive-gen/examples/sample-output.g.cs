@@ -34,8 +34,8 @@ namespace JohnDoe.AwesomeApp
 
         public bool Equals(Person other)
         {
-            if (this == other) return true;
-            if (other == null) return false;
+            if (ReferenceEquals(this, other)) return true;
+            if (ReferenceEquals(other, null)) return false;
             return Name == other.Name
                 && Age == other.Age;
         }
