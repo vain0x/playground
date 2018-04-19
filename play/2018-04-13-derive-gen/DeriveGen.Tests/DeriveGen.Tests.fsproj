@@ -17,8 +17,8 @@
     <ProjectReference Include="..\DeriveGen\DeriveGen.fsproj" />
   </ItemGroup>
   <ItemGroup>
-    <Watch Include="..\example\*-input.json" />
-</ItemGroup>
+    <Watch Include="..\examples\*-input.json" />
+  </ItemGroup>
   <ItemGroup>
     <DotNetCliToolReference Include="Microsoft.DotNet.Watcher.Tools" Version="2.0.0" />
   </ItemGroup>
