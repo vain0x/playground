@@ -149,21 +149,16 @@ namespace Sharperform.Build
 
     internal static class Helper
     {
-        public static bool Tap(Action action)
+        public static T Tap<T>(this T self, Action<T> action)
         {
-            action();
-            return true;
+            action(self);
+            return self;
         }
 
-        public static bool TapToWriteLine(this IO.TextWriter self, string message)
+        public static IO.TextWriter TapToWriteLine(this IO.TextWriter self, string message)
         {
             self.WriteLine(message);
-            return true;
-        }
-
-        public static string Join<T>(this IEnumerable<T> self, string separator)
-        {
-            return string.Join(separator, self);
+            return self;
         }
 
         public static string JoinMap<T>(this IEnumerable<T> self, string separator, Func<T, string> selector)
