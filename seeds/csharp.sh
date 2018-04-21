@@ -37,7 +37,7 @@ fi ;
 
 # Ensure work tree is clean.
 
-if ! [ -z "$(git clean -n)" ] ; then
+if ! [ -z "$(git status --short)" ] ; then
     echo "Work tree must be clean." ;
     exit 1 ;
 fi ;
