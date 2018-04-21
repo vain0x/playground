@@ -1,0 +1,17 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <TargetFramework>netcoreapp2.0</TargetFramework>
+    <AssemblyName>derive-gen</AssemblyName>
+  </PropertyGroup>
+  <ItemGroup>
+    <Compile Include="Processor.fs" />
+    <Compile Include="Program.fs" />
+  </ItemGroup>
+  <ItemGroup>
+    <PackageReference Include="Chiron" Version="7.0.0-beta-180105" />
+    <PackageReference Include="DotLiquid" Version="2.0.254" />
+    <PackageReference Include="Utf8Json" Version="1.3.7" />
+    <PackageReference Include="Utf8Json.FSharpExtensions" Version="0.1.0" />
+  </ItemGroup>
+</Project>

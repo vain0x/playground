@@ -1,0 +1,19 @@
+{
+  "types": {
+    "JohnDoe.AwesomeApp": {
+      "Person": {
+        "derive": ["?ToString"],
+        "fields": {
+          "Name": "string",
+          "Age": "int"
+        }
+      },
+      "PersonId": {
+        "kind": "struct",
+        "fields": {
+          "Value": "long"
+        }
+      }
+    }
+  }
+}
