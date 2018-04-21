@@ -54,14 +54,6 @@ namespace JohnDoe.AwesomeApp
         {
             return !(l == r);
         }
-
-        public override string ToString()
-        {
-            return new System.Text.StringBuilder().Append("Person {")
-                .Append("\"Name\": ").Append(Name)
-                .Append(", \"Age\": ").Append(Age)
-                .Append("}").ToString();
-        }
     }
 
     public partial struct PersonId

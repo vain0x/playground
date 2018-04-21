@@ -2,6 +2,7 @@
   "types": {
     "JohnDoe.AwesomeApp": {
       "Person": {
+        "derive": ["?ToString"],
         "fields": {
           "Name": "string",
           "Age": "int"
