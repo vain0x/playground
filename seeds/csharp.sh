@@ -1,13 +1,17 @@
-#!/bin/bash
+#!/bin/sh
 
 set -eu ;
+
+match () {
+    grep -Eq "^$1$" ;
+} ;
 
 # Parse arguments.
 
 if [ $# -ne 2 ] ; then
-    echo "USAGE:"
+    echo "USAGE:" ;
     echo "$ ./seeds/csharp.sh <slug> <namespace>" ;
-    echo "Example:"
+    echo "Example:" ;
     echo "$ ./seeds/csharp.sh awesome-app John.AwesomeApp" ;
     exit 1 ;
 fi ;
@@ -16,12 +20,12 @@ date="$(date --iso-8601)" ;
 slug="$1" ;
 namespace="$2" ;
 
-if ! [[ $slug =~ ^[a-z][a-z0-9-]*$ ]] ; then
+if ! { echo "$slug" | match "[a-z][a-z0-9-]*" ] ; } ; then
     echo "Invalid slug." ;
     exit 1 ;
 fi ;
 
-if ! [[ $namespace =~ ^[A-Z][a-zA-Z0-9_.]*$ ]] ; then
+if ! { echo "$namespace" | match "[A-Z][a-zA-Z0-9_.]*" ; } ; then
     echo "Invalid project name." ;
     exit 1 ;
 fi ;
