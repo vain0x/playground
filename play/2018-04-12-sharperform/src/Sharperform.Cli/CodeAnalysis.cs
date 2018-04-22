@@ -111,7 +111,12 @@ namespace Sharperform.CodeAnalysis
                 var varMembers = new VariableMemberCollector(Model).Collect(typeDecl);
                 var ctor = sf.CompleteConstructor(Model, typeDecl, varMembers);
 
-                var root = ctor;
+                var partialTypeDecl =
+                    SyntaxFactory.TypeDeclaration(typeDecl.Kind(), typeDecl.Identifier)
+                    .WithModifiers()
+                    .WithMembers(new SyntaxList<MemberDeclarationSyntax>(new[] { ctor }));
+
+                var root = partialTypeDecl;
                 var formatted =
                     Formatter.Format(
                         root.WithAdditionalAnnotations(Formatter.Annotation),

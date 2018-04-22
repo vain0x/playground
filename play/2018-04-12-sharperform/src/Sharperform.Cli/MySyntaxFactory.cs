@@ -8,6 +8,7 @@ using Microsoft.CodeAnalysis.CSharp.Syntax;
 using Microsoft.CodeAnalysis.Formatting;
 using Microsoft.CodeAnalysis.Simplification;
 using static Microsoft.CodeAnalysis.CSharp.SyntaxFactory;
+using Sharperform;
 using Sharperform.CodeAnalysis;
 
 namespace Sharperform.Syntax

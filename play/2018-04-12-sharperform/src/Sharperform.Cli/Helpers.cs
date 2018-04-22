@@ -5,6 +5,7 @@ using Microsoft.CodeAnalysis.CSharp;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
 using IO = System.IO;
+using System.Collections.Immutable;
 
 namespace Sharperform
 {
@@ -103,6 +104,12 @@ namespace Sharperform
                 default:
                     throw new InvalidOperationException();
             }
+        }
+
+        public static SyntaxList<TNode> ToSyntaxList<TNode>(this ImmutableArray<TNode> nodes)
+            where TNode : SyntaxNode
+        {
+            return new SyntaxList<TNode>(nodes);
         }
     }
 }
