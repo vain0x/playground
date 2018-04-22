@@ -1,11 +1,11 @@
 using System;
 using System.Collections.Generic;
+using System.Collections.Immutable;
 using System.Linq;
 using Microsoft.CodeAnalysis.CSharp;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
 using IO = System.IO;
-using System.Collections.Immutable;
 
 namespace Sharperform
 {
@@ -76,6 +76,36 @@ namespace Sharperform
 
     internal static class SyntaxNodeExtension
     {
+        public static TypeDeclarationSyntax WithAttributeLists(this TypeDeclarationSyntax typeDecl, SyntaxList<AttributeListSyntax> attributeLists)
+        {
+            switch (typeDecl)
+            {
+                case ClassDeclarationSyntax classDecl:
+                    return classDecl.WithAttributeLists(attributeLists);
+                case StructDeclarationSyntax structDecl:
+                    return structDecl.WithAttributeLists(attributeLists);
+                case InterfaceDeclarationSyntax interfaceDecl:
+                    return interfaceDecl.WithAttributeLists(attributeLists);
+                default:
+                    throw new ArgumentException(nameof(typeDecl));
+            }
+        }
+
+        public static TypeDeclarationSyntax WithModifiers(this TypeDeclarationSyntax typeDecl, SyntaxTokenList modifiers)
+        {
+            switch (typeDecl)
+            {
+                case ClassDeclarationSyntax classDecl:
+                    return classDecl.WithModifiers(modifiers);
+                case StructDeclarationSyntax structDecl:
+                    return structDecl.WithModifiers(modifiers);
+                case InterfaceDeclarationSyntax interfaceDecl:
+                    return interfaceDecl.WithModifiers(modifiers);
+                default:
+                    throw new ArgumentException(nameof(typeDecl));
+            }
+        }
+
         public static TypeDeclarationSyntax WithMembers(this TypeDeclarationSyntax typeDecl, SyntaxList<MemberDeclarationSyntax> members)
         {
             switch (typeDecl)
@@ -87,7 +117,7 @@ namespace Sharperform
                 case InterfaceDeclarationSyntax interfaceDecl:
                     return interfaceDecl.WithMembers(members);
                 default:
-                    throw new InvalidOperationException();
+                    throw new ArgumentException(nameof(typeDecl));
             }
         }
 

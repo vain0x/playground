@@ -19,6 +19,9 @@ namespace Sharperform
 
 namespace Examples.Ast
 {
+    /// <summary>
+    /// Represents a person.
+    /// </summary>
     [Derive("Immutable")]
     public sealed partial class Person
     {

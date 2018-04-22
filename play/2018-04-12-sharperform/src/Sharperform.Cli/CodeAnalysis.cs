@@ -7,6 +7,8 @@ using Microsoft.CodeAnalysis.CSharp;
 using Microsoft.CodeAnalysis.Formatting;
 using Sharperform.Syntax;
 using IO = System.IO;
+using Microsoft.CodeAnalysis.Simplification;
+using Microsoft.CodeAnalysis.Options;
 
 namespace Sharperform.CodeAnalysis
 {
@@ -103,6 +105,7 @@ namespace Sharperform.CodeAnalysis
             // Render:
 
             var sf = new MySyntaxFactory(LanguageVersion.CSharp5);
+            var partialTypeDecls = new List<MemberDeclarationSyntax>();
             foreach (var (typeDecl, deriveNames) in items)
             {
                 Logger.WriteLine($"#![derive({string.Join(", ", deriveNames)})]");
@@ -112,19 +115,44 @@ namespace Sharperform.CodeAnalysis
                 var ctor = sf.CompleteConstructor(Model, typeDecl, varMembers);
 
                 var partialTypeDecl =
-                    SyntaxFactory.TypeDeclaration(typeDecl.Kind(), typeDecl.Identifier)
-                    .WithModifiers()
-                    .WithMembers(new SyntaxList<MemberDeclarationSyntax>(new[] { ctor }));
+                    typeDecl
+                    .WithLeadingTrivia(SyntaxFactory.TriviaList())
+                    .WithTrailingTrivia(SyntaxFactory.TriviaList())
+                    .WithAttributeLists(SyntaxFactory.List<AttributeListSyntax>())
+                    .WithModifiers(SyntaxFactory.TokenList(
+                        SyntaxFactory.Token(SyntaxKind.PublicKeyword),
+                        SyntaxFactory.Token(SyntaxKind.PartialKeyword)
+                    ))
+                    .WithMembers(new SyntaxList<MemberDeclarationSyntax>(new[]
+                    {
+                        ctor,
+                    }));
 
-                var root = partialTypeDecl;
-                var formatted =
-                    Formatter.Format(
-                        root.WithAdditionalAnnotations(Formatter.Annotation),
-                        Formatter.Annotation,
-                        Workspace
-                    );
-                Logger.WriteLine(formatted.ToString());
+                partialTypeDecls.Add(partialTypeDecl);
             }
+
+            var ns =
+                SyntaxFactory.NamespaceDeclaration(SyntaxFactory.ParseName("Examples.Ast"))
+                .WithUsings(SyntaxFactory.List<UsingDirectiveSyntax>(new[]
+                {
+                    SyntaxFactory.UsingDirective(SyntaxFactory.ParseName("System"))
+                }))
+                .WithMembers(SyntaxFactory.List(partialTypeDecls));
+
+            var generatedModule =
+                SyntaxFactory
+                .CompilationUnit()
+                .WithMembers(SyntaxFactory.List<MemberDeclarationSyntax>(new[] { ns }))
+                .WithAdditionalAnnotations(
+                    Formatter.Annotation,
+                    Simplifier.Annotation
+                );
+            var formatted = Formatter.Format(generatedModule, Workspace);
+            var generatedDoc = Project.AddDocument("Sharperform.g.cs", formatted);
+            var simplified = Simplifier.ReduceAsync(generatedDoc).Result;
+            Logger.WriteLine(simplified.GetTextAsync().Result);
+
+            // Logger.WriteLine(formatted.ToString());
 
             return ImmutableArray<string>.Empty;
         }
