@@ -1,63 +1,13 @@
-using System;
 using System.Collections.Generic;
 using System.Collections.Immutable;
 using System.Linq;
-using System.Threading.Tasks;
-using Buildalyzer.Workspaces;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
+using Microsoft.CodeAnalysis.CSharp;
 using IO = System.IO;
-using B = Buildalyzer;
-using C = Microsoft.CodeAnalysis;
-using S = Microsoft.CodeAnalysis.CSharp.Syntax;
 
-namespace Sharperform.Build
+namespace Sharperform.CodeAnalysis
 {
-    public sealed class SharperformWorkspace
-    {
-        B.AnalyzerManager AnalyzerManager { get; }
-        Workspace Workspace { get; }
-        IO.TextWriter Logger { get; set; } = Console.Out;
-
-        public SharperformWorkspace()
-        {
-            AnalyzerManager = new B.AnalyzerManager();
-            Workspace = AnalyzerManager.GetWorkspace();
-        }
-
-        public void AddProject(string projectPath)
-        {
-            var projectAnalyzer = AnalyzerManager.GetProject(projectPath);
-            projectAnalyzer.AddToWorkspace(Workspace, addProjectReferences: true);
-        }
-
-        public async Task<ImmutableArray<dynamic>> CollectAsync()
-        {
-            var all = ImmutableArray.CreateBuilder<dynamic>();
-            var projects = Workspace.CurrentSolution.Projects.ToImmutableArray();
-
-            Logger.WriteLine($"Solution {projects.Length}");
-
-            foreach (var project in projects)
-            {
-                Logger.WriteLine($"\nProject: {project.Name}");
-
-                foreach (var document in project.Documents)
-                {
-                    Logger.WriteLine($"\nDocument: {document.Name}\n");
-
-                    var tree = await document.GetSyntaxTreeAsync();
-                    var root = await document.GetSyntaxRootAsync();
-                    var model = await document.GetSemanticModelAsync();
-                    var items = new DeclCollector(Workspace, project, document, tree, root, model, Logger).Collect();
-                    all.AddRange(items);
-                }
-            }
-
-            return all.ToImmutable();
-        }
-    }
-
     internal sealed class DeclCollector
     {
         Workspace Workspace { get; }
@@ -169,38 +119,151 @@ namespace Sharperform.Build
         }
     }
 
-    internal static class Helper
+    /// <summary>
+    /// Represents a member (field or auto property)
+    /// which stores a value in an instance.
+    /// </summary>
+    public abstract class VariableMember
     {
-        public static T Tap<T>(this T self, Action<T> action)
+        VariableMember()
         {
-            action(self);
-            return self;
         }
 
-        public static IO.TextWriter TapToWriteLine(this IO.TextWriter self, string message)
-        {
-            self.WriteLine(message);
-            return self;
-        }
+        public abstract ISymbol SymbolBase { get; }
 
-        public static string JoinMap<T>(this IEnumerable<T> self, string separator, Func<T, string> selector)
-        {
-            return string.Join(separator, self.Select(selector));
-        }
+        public abstract SyntaxNode DeclBase { get; }
 
-        public static IEnumerable<U> SelectMany<T, U>(
-            this IEnumerable<T> self,
-            Func<T, Optional<U>> selector
-        )
+        public abstract ITypeSymbol TypeSymbol { get; }
+
+        public abstract bool IsReadOnly { get; }
+
+        public abstract bool HasInitializer { get; }
+
+        public string NameAsParameter()
         {
-            foreach (var x in self)
+            var name = SymbolBase.Name;
+            if (name.Length >= 1 && char.IsUpper(name[0]))
             {
-                var yo = selector(x);
-                if (yo.HasValue)
+                return char.ToLowerInvariant(name[0]).ToString() + name.Substring(1);
+            }
+            else if (name.Length >= 2 && name[0] == '_')
+            {
+                return name.Substring(1);
+            }
+            return name;
+        }
+
+        public sealed class Field
+            : VariableMember
+        {
+            public IFieldSymbol Symbol { get; }
+
+            public FieldDeclarationSyntax FieldDecl { get; }
+
+            public VariableDeclaratorSyntax VarDecl { get; }
+
+            public override ISymbol SymbolBase => Symbol;
+
+            public override SyntaxNode DeclBase => VarDecl;
+
+            public Field(IFieldSymbol symbol, FieldDeclarationSyntax fieldDecl, VariableDeclaratorSyntax varDecl)
+            {
+                Symbol = symbol;
+                FieldDecl = fieldDecl;
+                VarDecl = varDecl;
+            }
+
+            public override ITypeSymbol TypeSymbol =>
+                Symbol.Type;
+
+            public override bool IsReadOnly =>
+                Symbol.IsReadOnly;
+
+            public override bool HasInitializer =>
+                VarDecl.Initializer != null;
+        }
+
+        public sealed class Property
+            : VariableMember
+        {
+            public IPropertySymbol Symbol { get; }
+
+            public PropertyDeclarationSyntax Decl { get; }
+
+            public override ISymbol SymbolBase => Symbol;
+
+            public override SyntaxNode DeclBase => Decl;
+
+            public Property(IPropertySymbol symbol, PropertyDeclarationSyntax decl)
+            {
+                Symbol = symbol;
+                Decl = decl;
+            }
+
+            public override ITypeSymbol TypeSymbol =>
+                Symbol.Type;
+
+            public override bool IsReadOnly =>
+                Symbol.SetMethod == null
+                || (Symbol.DeclaredAccessibility != Accessibility.Private
+                    && Symbol.SetMethod.DeclaredAccessibility == Accessibility.Private);
+
+            public override bool HasInitializer =>
+                Decl.Initializer != null;
+        }
+    }
+
+    public sealed class VariableMemberCollector
+    {
+        SemanticModel SemanticModel { get; }
+
+        public VariableMemberCollector(SemanticModel semanticModel)
+        {
+            SemanticModel = semanticModel;
+        }
+
+        public ImmutableArray<VariableMember> Collect(TypeDeclarationSyntax typeDecl)
+        {
+            var varMembers = ImmutableArray.CreateBuilder<VariableMember>();
+
+            void OnFieldDecl(FieldDeclarationSyntax fieldDecl)
+            {
+                foreach (var varDecl in fieldDecl.Declaration.Variables)
                 {
-                    yield return yo.Value;
+                    var symbol = SemanticModel.GetDeclaredSymbol(varDecl) as IFieldSymbol;
+                    if (symbol == null || symbol.IsStatic) continue;
+
+                    varMembers.Add(new VariableMember.Field(symbol, fieldDecl, varDecl));
                 }
             }
+
+            void OnPropertyDecl(PropertyDeclarationSyntax propertyDecl)
+            {
+                if (propertyDecl.AccessorList == null) return;
+                if (propertyDecl.AccessorList.Accessors.Any(a => a.Body != null)) return;
+
+                var symbol = SemanticModel.GetDeclaredSymbol(propertyDecl) as IPropertySymbol;
+                if (symbol == null || symbol.IsStatic || symbol.GetMethod == null) return;
+
+                varMembers.Add(new VariableMember.Property(symbol, propertyDecl));
+            }
+
+            foreach (var member in typeDecl.Members)
+            {
+                switch (member)
+                {
+                    case FieldDeclarationSyntax fieldDecl:
+                        OnFieldDecl(fieldDecl);
+                        break;
+                    case PropertyDeclarationSyntax propertyDecl:
+                        OnPropertyDecl(propertyDecl);
+                        break;
+                    default:
+                        break;
+                }
+            }
+
+            return varMembers.ToImmutable();
         }
     }
 }
