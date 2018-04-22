@@ -81,32 +81,49 @@ namespace Sharperform.Build
 
         private bool TryAnalyzeTypeDeclWithDeriveAttribute(TypeDeclarationSyntax typeDecl, out ImmutableArray<string> result)
         {
+            IEnumerable<ISymbol> AttributeSymbolCandidates(SymbolInfo attrSymInfo)
+            {
+                Logger.WriteLine($"symbol={attrSymInfo.Symbol} reason={attrSymInfo.CandidateReason} candidates={attrSymInfo.CandidateSymbols.JoinMap(", ", x => x.Name)}");
+
+                // NOTE: [Derive] is just a candidate because of NotAnAttribute for some reason.
+                // Although [DeriveAttribute] is ok.
+                var candidates =
+                    attrSymInfo.CandidateReason == CandidateReason.NotAnAttributeType
+                        ? attrSymInfo.CandidateSymbols
+                        : ImmutableArray<ISymbol>.Empty;
+                return
+                    attrSymInfo.Symbol != null
+                        ? candidates.Prepend(attrSymInfo.Symbol)
+                        : candidates;
+            }
+
+            /// <summary>
+            /// Gets constant argument values of attribute from syntax tree.
+            /// NOTE: Semantic model reports "no arguments" for some reasaon.
+            /// <code>
+            /// typeSym.GetAttributes()[0].ConstructorArguments
+            /// </code>
+            /// </summary>
+            /// <param name="syntax"></param>
+            /// <returns></returns>
+            IEnumerable<T> ConstantArguments<T>(AttributeSyntax attr)
+            {
+                return attr.ArgumentList.Arguments
+                    .SelectMany(arg => Model.GetConstantValue(arg.Expression))
+                    .OfType<T>();
+            }
+
             var typeSym = Model.GetDeclaredSymbol(typeDecl);
 
             var deriveNames =
                 (
                     from attrList in typeDecl.AttributeLists
                     from attr in attrList.Attributes
-                    let __1 = Logger.TapToWriteLine($"attrAncestors={attr.AncestorsAndSelf().JoinMap(", ", n => n.GetType().Name)}")
                     let attrSymInfo = Model.GetSymbolInfo(attr)
-                    let __2 = Logger.TapToWriteLine($"symbol={attrSymInfo.Symbol} reason={attrSymInfo.CandidateReason} candidates={attrSymInfo.CandidateSymbols.JoinMap(", ", x => x.Name)}")
-                    let candidates =
-                        // NOTE: [Derive] is just a candidate because of NotAnAttribute for some reason.
-                        // Although [DeriveAttribute] is ok.
-                        attrSymInfo.CandidateReason == CandidateReason.NotAnAttributeType
-                            ? attrSymInfo.CandidateSymbols
-                            : ImmutableArray<ISymbol>.Empty
-                    from attrSym in candidates.Prepend(attrSymInfo.Symbol).Where(sym => sym != null)
-                    let __a = Logger.TapToWriteLine($"Name={attrSym.ContainingSymbol.Name}")
+                    from attrSym in AttributeSymbolCandidates(attrSymInfo)
                     where attrSym.ContainingSymbol.Name == "DeriveAttribute"
-                    where attr.ArgumentList.Arguments.Count == 1
-                    // Get the argument value from the syntax tree.
-                    // NOTE: _a.Count = 0 for some reason.
-                    let _a = typeSym.GetAttributes()[0].ConstructorArguments
-                    let arg = attr.ArgumentList.Arguments[0]
-                    let argValue = Model.GetConstantValue(arg.Expression)
-                    where argValue.HasValue && argValue.Value is string
-                    select (string)argValue.Value
+                    from argValue in ConstantArguments<string>(attr)
+                    select argValue
                 ).ToImmutableArray();
 
             result = deriveNames;
@@ -115,7 +132,12 @@ namespace Sharperform.Build
 
         public ImmutableArray<string> Collect()
         {
-            var typeDecls = Root.DescendantNodesAndSelf().OfType<TypeDeclarationSyntax>().ToImmutableArray();
+            var typeDecls =
+                Root
+                .DescendantNodesAndSelf()
+                .OfType<TypeDeclarationSyntax>()
+                .ToImmutableArray();
+
             var items = new List<(ITypeSymbol typeSym, ImmutableArray<string> deriveNames)>();
 
             foreach (var typeDecl in typeDecls)
@@ -164,6 +186,21 @@ namespace Sharperform.Build
         public static string JoinMap<T>(this IEnumerable<T> self, string separator, Func<T, string> selector)
         {
             return string.Join(separator, self.Select(selector));
+        }
+
+        public static IEnumerable<U> SelectMany<T, U>(
+            this IEnumerable<T> self,
+            Func<T, Optional<U>> selector
+        )
+        {
+            foreach (var x in self)
+            {
+                var yo = selector(x);
+                if (yo.HasValue)
+                {
+                    yield return yo.Value;
+                }
+            }
         }
     }
 }
