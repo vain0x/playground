@@ -4,6 +4,8 @@ using System.Linq;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
 using Microsoft.CodeAnalysis.CSharp;
+using Microsoft.CodeAnalysis.Formatting;
+using Sharperform.Syntax;
 using IO = System.IO;
 
 namespace Sharperform.CodeAnalysis
@@ -88,20 +90,35 @@ namespace Sharperform.CodeAnalysis
                 .OfType<TypeDeclarationSyntax>()
                 .ToImmutableArray();
 
-            var items = new List<(ITypeSymbol typeSym, ImmutableArray<string> deriveNames)>();
+            var items = new List<(TypeDeclarationSyntax typeDecl, ImmutableArray<string> deriveNames)>();
 
             foreach (var typeDecl in typeDecls)
             {
                 var typeSym = (ITypeSymbol)Model.GetDeclaredSymbol(typeDecl);
                 if (!TryAnalyzeTypeDeclWithDeriveAttribute(typeDecl, out var deriveNames)) continue;
 
-                items.Add((typeSym, deriveNames));
+                items.Add((typeDecl, deriveNames));
             }
 
-            foreach (var (typeSym, deriveNames) in items)
+            // Render:
+
+            var sf = new MySyntaxFactory(LanguageVersion.CSharp5);
+            foreach (var (typeDecl, deriveNames) in items)
             {
                 Logger.WriteLine($"#![derive({string.Join(", ", deriveNames)})]");
-                Logger.WriteLine($"class {typeSym.Name};");
+                Logger.WriteLine($"class {typeDecl.Identifier.ToString()};");
+
+                var varMembers = new VariableMemberCollector(Model).Collect(typeDecl);
+                var ctor = sf.CompleteConstructor(Model, typeDecl, varMembers);
+
+                var root = ctor;
+                var formatted =
+                    Formatter.Format(
+                        root.WithAdditionalAnnotations(Formatter.Annotation),
+                        Formatter.Annotation,
+                        Workspace
+                    );
+                Logger.WriteLine(formatted.ToString());
             }
 
             return ImmutableArray<string>.Empty;
