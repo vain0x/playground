@@ -17,7 +17,11 @@ namespace Sharperform.Cli
                 var solutionDir = Path.GetFullPath("../../examples/ex-ast");
                 var projectPath = Path.Combine(solutionDir, @"Examples.Ast/Examples.Ast.csproj");
 
-                var workspace = new Sharperform.Build.SharperformWorkspace();
+                var workspace = new Sharperform.Build.SharperformWorkspace()
+                {
+                    Logger = Console.Error,
+                };
+
                 workspace.AddProject(projectPath);
                 var messages = await workspace.CollectAsync();
 

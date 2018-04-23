@@ -102,6 +102,11 @@ namespace Sharperform.CodeAnalysis
                 items.Add((typeDecl, deriveNames));
             }
 
+            if (items.Count == 0)
+            {
+                return ImmutableArray<string>.Empty;
+            }
+
             // Render:
 
             var sf = new MySyntaxFactory(LanguageVersion.CSharp5);
@@ -150,11 +155,12 @@ namespace Sharperform.CodeAnalysis
             var formatted = Formatter.Format(generatedModule, Workspace);
             var generatedDoc = Project.AddDocument("Sharperform.g.cs", formatted);
             var simplified = Simplifier.ReduceAsync(generatedDoc).Result;
-            Logger.WriteLine(simplified.GetTextAsync().Result);
+            var generatedCode = simplified.GetTextAsync().Result.ToString();
+            Logger.WriteLine(generatedCode);
 
             // Logger.WriteLine(formatted.ToString());
 
-            return ImmutableArray<string>.Empty;
+            return ImmutableArray.Create(generatedCode);
         }
 
         public string Render()

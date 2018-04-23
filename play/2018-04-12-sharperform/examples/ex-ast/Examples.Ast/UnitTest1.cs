@@ -36,3 +36,25 @@ namespace Examples.Ast
         public T Value { get; }
     }
 }
+
+namespace Examples
+{
+    using Examples.Ast;
+
+    public sealed class UnitTests
+    {
+        [Fact]
+        public void HelloTest()
+        {
+            Assert.Equal(3, 1 + 2);
+        }
+
+        [Fact]
+        public void MeybeTest()
+        {
+            var maybe = new Maybe<int>(true, 1);
+            Assert.Equal(true, maybe.HasValue);
+            Assert.Equal(1, maybe.Value);
+        }
+    }
+}

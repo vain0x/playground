@@ -17,7 +17,8 @@ namespace Sharperform.Build
     {
         B.AnalyzerManager AnalyzerManager { get; }
         Workspace Workspace { get; }
-        IO.TextWriter Logger { get; set; } = Console.Out;
+
+        public IO.TextWriter Logger { get; set; } = Console.Out;
 
         public SharperformWorkspace()
         {
