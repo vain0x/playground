@@ -1,12 +1,5 @@
 
-# Created by https://www.gitignore.io/api/code,node
-
-### Code ###
-# Visual Studio Code - https://code.visualstudio.com/
-.settings/
-.vscode/
-tsconfig.json
-jsconfig.json
+# Created by https://www.gitignore.io/api/node
 
 ### Node ###
 # Logs
@@ -69,4 +62,5 @@ typings/
 .env
 
 
-# End of https://www.gitignore.io/api/code,node
+# End of https://www.gitignore.io/api/node
+
