@@ -1,0 +1,10 @@
+﻿[
+  {
+    "id": "RtaGen",
+    "sevirity": "Info",
+    "line": 7,
+    "column": 21,
+    "path": "RecordlikeClass.cs",
+    "message-args": [ "RecordlikeClass" ]
+  }
+]
