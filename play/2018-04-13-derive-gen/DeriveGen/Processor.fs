@@ -35,6 +35,9 @@ namespace {{ ns.NamespaceName }}
 
     {%- endif -%}
     {{ class.Modifiers | join: " " }} {{ class.Kind.Keyword }} {{ class.ClassName }}
+    {%- if class.BaseType != nil -%}
+        : {{ class.BaseType.Value }}
+    {%- endif -%}
     {
         {%- for field in class.Fields -%}
         {{ field.Modifiers | join: " " }} {{ field.Type }} {{ field.FieldName }} {{- field.AutoAccessors }};
@@ -143,6 +146,7 @@ module CodeGeneration =
       ClassName: Identifier
       Kind: TypeKind
       Modifiers: Modifier[]
+      BaseType: option<Identifier>
       Fields: FieldModel[]
       Methods: MethodModel[]
     }
@@ -263,6 +267,7 @@ module CodeGeneration =
         Parameters = [||]
         Statements =
           [|
+            // FIXME: xor is bad
             sprintf "return %s;" (fields |> Array.map (fun field -> "Dgh.Hash(" + field.FieldName + ")") |> String.concat " ^ ")
           |]
       }
@@ -332,19 +337,23 @@ module ConfigParsing =
         (fun classes ->
         [|
           for (className, (kind, modifiers, derives, fields)) in classes |> List.rev do
+            let deriveEq = derives |> Set.contains "?Eq" |> not
             let methods =
               [|
                 yield CodeGeneration.generateCompleteConstructor className fields
-                if derives |> Set.contains "?Eq" |> not then
+                if deriveEq then
                   yield! CodeGeneration.generateEquality className kind fields
                 if derives |> Set.contains "?ToString" |> not then
                   yield! CodeGeneration.generateToString className fields
               |]
+            let baseType =
+              if deriveEq then sprintf "IEquatable<%s>" className |> Some else None
             yield
               ({
                 ClassName = className
                 Kind = kind
                 Modifiers = modifiers
+                BaseType = baseType
                 Fields = fields
                 Methods = methods
               }: G.ClassModel)

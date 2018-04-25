@@ -17,6 +17,7 @@ namespace DeriveGen.Internals
 namespace JohnDoe.AwesomeApp
 {
     public sealed partial class Person
+        : IEquatable<Person>
     {
         public readonly string Name;
         public readonly int Age;
@@ -57,6 +58,7 @@ namespace JohnDoe.AwesomeApp
     }
 
     public partial struct PersonId
+        : IEquatable<PersonId>
     {
         public readonly long Value;
 
