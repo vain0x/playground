@@ -1,0 +1,7 @@
+[package]
+name = "blackjack-rust"
+version = "0.1.0"
+authors = ["vain0 <id_vain@yahoo.co.jp>"]
+
+[dependencies]
+rand = "0.4.2"
