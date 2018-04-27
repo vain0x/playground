@@ -25,6 +25,7 @@ fn read_line() -> String {
 
 fn game() {
     println!("Game start.");
+    println!("--------------------");
 
     // Decks.
 
@@ -79,8 +80,7 @@ fn game() {
         }
 
         println!("Hit or stand? (H/S)");
-        let hit = read_line().starts_with("H");
-
+        let hit = read_line().to_lowercase().starts_with("h");
         if !hit {
             break;
         }
@@ -120,7 +120,11 @@ fn main() {
     loop {
         game();
 
-        println!("Press enter to restart.");
-        read_line();
+        println!("Next? (y/n)");
+        let yes = read_line().to_lowercase().starts_with("y");
+        if !yes {
+            println!("Thanks for playing.");
+            return;
+        }
     }
 }
