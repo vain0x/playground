@@ -67,7 +67,6 @@ impl Player {
     }
 }
 
-#[derive(PartialEq, Clone, Copy)]
 struct Card {
     rank: Rank,
     suit: Suit,
@@ -88,18 +87,18 @@ impl Card {
         self.rank.score()
     }
 
-    pub fn to_string(self) -> String {
+    pub fn to_string(&self) -> String {
         format!("{}{}", self.rank.to_string(), self.suit.to_string())
     }
 }
 
-#[derive(PartialEq, Clone, Copy)]
+#[derive(Clone, Copy)]
 enum Rank {
     Ace,
     Number(i32),
     Jack,
-    King,
     Queen,
+    King,
 }
 
 impl Rank {
@@ -123,7 +122,7 @@ impl Rank {
         }
     }
 
-    pub fn to_string(self) -> String {
+    pub fn to_string(&self) -> String {
         match self {
             Rank::Ace => "A".to_string(),
             Rank::Number(n) => n.to_string(),
@@ -134,7 +133,7 @@ impl Rank {
     }
 }
 
-#[derive(PartialEq, Clone, Copy)]
+#[derive(Clone, Copy)]
 enum Suit {
     Space,
     Clover,
