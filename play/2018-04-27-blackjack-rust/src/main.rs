@@ -23,95 +23,228 @@ fn read_line() -> String {
     buf.trim().to_owned()
 }
 
-fn game() {
-    println!("Game start.");
-    println!("--------------------");
+type Score = i32;
 
-    // Decks.
+struct Deck {
+    cards: VecDeque<Card>,
+    rng: rand::StdRng,
+}
 
-    let mut deck: VecDeque<(String, i32)> = {
-        let mut deck = Vec::new();
-        for suite in &["♠", "🍀", "♥", "♦"] {
-            {
-                let name = format!("{}A", suite);
-                deck.push((name, 1));
-            }
+impl Deck {
+    fn unseal_and_shuffle(rng: &mut rand::StdRng) -> VecDeque<Card> {
+        let mut cards = Card::all();
+        rng.shuffle(&mut cards);
+        VecDeque::from(cards)
+    }
 
-            for i in 2..11 {
-                let name = format!("{}{}", suite, i);
-                deck.push((name, i));
-            }
-
-            for s in &["J", "Q", "K"] {
-                let name = format!("{}{}", suite, s);
-                deck.push((name, 10));
-            }
-        }
-
+    pub fn new() -> Deck {
         let mut rng = rand::StdRng::new().unwrap();
-        rng.shuffle(&mut deck);
-        deck.into_iter().collect()
-    };
+        let cards = Deck::unseal_and_shuffle(&mut rng);
+        Deck { cards, rng }
+    }
 
-    let mut dealer = 0;
-    let mut you = 0;
-
-    // Deal.
-
-    let open_card = deck.pop_back().unwrap();
-    let hidden_card = deck.pop_back().unwrap();
-    dealer += open_card.1;
-    println!("Dealer draws a hidden card.");
-    println!("Dealer's open card is {}.", open_card.0);
-    println!("Dealer's score is now {}.", dealer);
-
-    // Your turn.
-
-    loop {
-        let card = deck.pop_back().unwrap();
-        you += card.1;
-
-        println!("You hit {}.", card.0);
-        println!("Your total is now {}.", you);
-
-        if you > 21 {
-            println!("Bust! Dealer wins.");
-            return;
+    pub fn draw(&mut self) -> Card {
+        if self.cards.is_empty() {
+            self.cards = Deck::unseal_and_shuffle(&mut self.rng);
         }
 
-        println!("Hit or stand? (H/S)");
-        let hit = read_line().to_lowercase().starts_with("h");
-        if !hit {
-            break;
+        self.cards.pop_front().unwrap()
+    }
+}
+
+struct Player {
+    name: String,
+    score: Score,
+}
+
+impl Player {
+    pub fn is_bust(&self) -> bool {
+        self.score > 21
+    }
+
+    pub fn receive(&mut self, card: &Card) {
+        self.score += card.score();
+    }
+}
+
+#[derive(PartialEq, Clone, Copy)]
+struct Card {
+    rank: Rank,
+    suit: Suit,
+}
+
+impl Card {
+    pub fn all() -> Vec<Card> {
+        let mut cards = Vec::new();
+        for suit in Suit::all() {
+            for rank in Rank::all() {
+                cards.push(Card { suit, rank });
+            }
+        }
+        cards
+    }
+
+    pub fn score(&self) -> Score {
+        self.rank.score()
+    }
+
+    pub fn to_string(self) -> String {
+        format!("{}{}", self.rank.to_string(), self.suit.to_string())
+    }
+}
+
+#[derive(PartialEq, Clone, Copy)]
+enum Rank {
+    Ace,
+    Number(i32),
+    Jack,
+    King,
+    Queen,
+}
+
+impl Rank {
+    pub fn all() -> Vec<Rank> {
+        let mut ranks = Vec::new();
+        ranks.push(Rank::Ace);
+        for i in 2..11 {
+            ranks.push(Rank::Number(i));
+        }
+        ranks.push(Rank::Jack);
+        ranks.push(Rank::Queen);
+        ranks.push(Rank::King);
+        ranks
+    }
+
+    pub fn score(&self) -> Score {
+        match *self {
+            Rank::Ace => 1,
+            Rank::Number(value) => value,
+            Rank::Jack | Rank::Queen | Rank::King => 10,
         }
     }
 
-    // Dealer's turn.
+    pub fn to_string(self) -> String {
+        match self {
+            Rank::Ace => "A".to_string(),
+            Rank::Number(n) => n.to_string(),
+            Rank::Jack => "J".to_string(),
+            Rank::Queen => "Q".to_string(),
+            Rank::King => "K".to_string(),
+        }
+    }
+}
 
-    dealer += hidden_card.1;
-    println!("Dealer's hidden card was {}.", hidden_card.0);
-    println!("Dealer's total is {}.", dealer);
+#[derive(PartialEq, Clone, Copy)]
+enum Suit {
+    Space,
+    Clover,
+    Heart,
+    Diamond,
+}
 
-    while dealer < 17 {
-        let card = deck.pop_front().unwrap();
-        dealer += card.1;
-
-        println!("Dealer receives {}.", card.1);
-        println!("Dealer's total grows to {}.", dealer);
+impl Suit {
+    pub fn all() -> Vec<Suit> {
+        vec![Suit::Space, Suit::Clover, Suit::Heart, Suit::Diamond]
     }
 
-    if dealer > 21 {
-        println!("Dealer busts. You win!");
+    pub fn to_string(self) -> &'static str {
+        match self {
+            Suit::Space => "♠",
+            Suit::Clover => "🍀",
+            Suit::Heart => "♥",
+            Suit::Diamond => "♦",
+        }
+    }
+}
+
+struct BlackjackGame {
+    you: Player,
+    dealer: Player,
+    deck: Deck,
+}
+
+impl BlackjackGame {
+    fn new() -> BlackjackGame {
+        BlackjackGame {
+            you: Player {
+                name: "You".to_owned(),
+                score: 0,
+            },
+            dealer: Player {
+                name: "Dealer".to_owned(),
+                score: 0,
+            },
+            deck: Deck::new(),
+        }
     }
 
-    // Judge.
+    pub fn run() {
+        let mut game = BlackjackGame::new();
 
-    let win = you > dealer;
-    if win {
-        println!("You win!");
-    } else {
-        println!("Dealer wins.");
+        println!("Game start.");
+        println!("--------------------");
+
+        // Deal.
+
+        let open_card = game.deck.draw();
+        let hidden_card = game.deck.draw();
+        game.dealer.receive(&open_card);
+        println!("Dealer draws a hidden card.");
+        println!("Dealer's open card is {}.", open_card.to_string());
+        println!("Dealer's score is now {}.", game.dealer.name);
+
+        // Your turn.
+
+        loop {
+            let card = game.deck.draw();
+            game.you.receive(&card);
+
+            println!("You hit {}.", card.to_string());
+            println!("Your total is now {}.", game.you.score);
+
+            if game.you.is_bust() {
+                println!("Bust! Dealer wins.");
+                return;
+            }
+
+            println!("Hit or stand? (H/S)");
+            let hit = read_line().to_lowercase().starts_with("h");
+            if !hit {
+                break;
+            }
+        }
+
+        // Dealer's turn.
+
+        game.dealer.receive(&hidden_card);
+        println!("Dealer's hidden card was {}.", hidden_card.to_string());
+        println!("Dealer's total is {}.", game.dealer.score);
+
+        while game.dealer.score < 17 {
+            let card = game.deck.draw();
+            game.dealer.receive(&card);
+
+            println!("Dealer receives {}.", card.to_string());
+            println!("Dealer's total grows to {}.", game.dealer.score);
+        }
+
+        if game.dealer.is_bust() {
+            println!("Dealer busts. You win!");
+        }
+
+        // Judge.
+
+        let win = game.you.score > game.dealer.score;
+        if win {
+            println!("You win!");
+        } else {
+            println!("Dealer wins.");
+        }
     }
+}
+
+fn game() {
+    BlackjackGame::run();
 }
 
 fn main() {
