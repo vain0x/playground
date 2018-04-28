@@ -77,7 +77,7 @@
     手役(Hand, (_, Score)).
 
 バーストしていない(Hand) :-
-    手札のスコア(Hand, (nonbust, _)).
+    手役(Hand, (nonbust, _)).
 
 
 
@@ -157,7 +157,7 @@ confirm(Message) :-
 
 % ゲームルーチン
 
-ブラックジャックで遊ぶ(Result) :-
+ブラックジャックで遊ぶ :-
     ディーラーの初手を配る([], (Deck2, UpCard)),
     プレイヤーのターンを開始する(Deck2, (Deck3, PlayerHand)),
     バーストを確認する(PlayerHand, you_bust, continue, Flow1),
@@ -200,7 +200,7 @@ confirm(Message) :-
     カードを引く(Deck1, (Card, Deck)),
     ヒットしたカードを表示する(Card).
 
-ディーラーのターンを開始する(_, Deck, Hand, finish(_), (Deck, Hand)).
+ディーラーのターンを開始する(Deck, Hand, finish(_), (Deck, Hand)).
 
 ディーラーのターンを開始する(Deck1, Hand1, continue, (Deck, Hand)) :-
     write('ディーラーのターンです。'),
