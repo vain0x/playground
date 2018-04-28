@@ -142,15 +142,13 @@ confirm(Message) :-
 % ゲームルーチン
 
 ブラックジャックで遊ぶ(Result) :-
-    ブラックジャックを開始する([], Result).
-
-ブラックジャックを開始する(Deck1, Result) :-
-    ディーラーの初手を配る(Deck1, (Deck2, UpCard)),
+    ディーラーの初手を配る([], (Deck2, UpCard)),
     プレイヤーのターンを開始する(Deck2, (Deck3, PlayerHand)),
     バーストを確認する(PlayerHand, you_bust, continue, Flow1),
     ディーラーのターンを開始する(Deck3, [UpCard], Flow1, (_, DealerHand)),
     バーストを確認する(DealerHand, dealer_bust, Flow1, Flow2),
-    スコアを比較する(DealerHand, PlayerHand, Flow2, finish(Result)).
+    スコアを比較する(DealerHand, PlayerHand, Flow2, finish(Result)),
+    結果を表示する(Result).
 
 バーストを確認する(_, _, finish(Result), finish(Result)).
 
@@ -228,6 +226,5 @@ confirm(Message) :-
 
 main :-
     始まりの挨拶をする,
-    ブラックジャックで遊ぶ(Result),
-    結果を表示する(Result),
+    ブラックジャックで遊ぶ,
     別れの挨拶をする.
