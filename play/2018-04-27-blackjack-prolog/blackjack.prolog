@@ -1,11 +1,4 @@
 
-% How to run:
-% Install Docker.
-% $ sudo docker run -it swipl
-% ?- [user].
-% <paste-this-file>
-% <press-C-d>
-
 % トランプ
 
 ランク(エース).
