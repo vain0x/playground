@@ -29,11 +29,11 @@
 カード((Suit, Rank)) :-
     スート(Suit), ランク(Rank).
 
-カードセット(Cards) :-
+カードリスト(Cards) :-
     findall(Card, カード(Card), Cards).
 
 デッキを生成する(Deck) :-
-    カードセット(Cards),
+    カードリスト(Cards),
     random_permutation(Cards, Deck).
 
 カードを引く([], (Card, Deck)) :-
