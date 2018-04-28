@@ -1,9 +1,10 @@
 
-% Memo:
-% sudo docker run -it swipl
+% How to run:
+% Install Docker.
+% $ sudo docker run -it swipl
 % ?- [user].
-% <input rules>
-% ^D
+% <paste-this-file>
+% <press-C-d>
 
 % トランプ
 
