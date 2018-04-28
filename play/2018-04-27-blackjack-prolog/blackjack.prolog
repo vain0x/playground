@@ -13,6 +13,15 @@ confirm(Message) :-
     skip('\n'),
     Char = y.
 
+ページ送り :-
+    write(' ...'),
+    flush_output,
+    skip('\n').
+
+
+
+% ブラックジャックの基本ルール
+
 ランク(エース).
 ランク(2).
 ランク(3).
@@ -35,6 +44,11 @@ confirm(Message) :-
 カード((Suit, Rank)) :-
     スート(Suit), ランク(Rank).
 
+カードセット(Cards) :-
+    findall(Card, カード(Card), Cards).
+
+
+
 ランクのスコア(エース, 1).
 ランクのスコア(2, 2).
 ランクのスコア(3, 3).
@@ -49,148 +63,182 @@ confirm(Message) :-
 ランクのスコア(クイーン, 10).
 ランクのスコア(キング, 10).
 
-スコア(Cards, Score) :-
-    スコア_loop(Cards, 0, Score).
+手札のスコア(Hand, Score) :-
+    手札のスコア_loop(Hand, 0, Score).
 
-スコア_loop([], Score, Score).
+手札のスコア_loop([], Score, Score).
 
-スコア_loop([(_, Rank)|Cards], ScoreAcc, Score) :-
+手札のスコア_loop([(_, Rank)|Hand], ScoreAcc, Score) :-
     ランクのスコア(Rank, RankScore),
     ScoreAcc2 is ScoreAcc + RankScore,
-    スコア_loop(Cards, ScoreAcc2, Score).
+    手札のスコア_loop(Hand, ScoreAcc2, Score).
+
+バーストしている(Hand) :-
+    手札のスコア(Hand, Score),
+    Score > 21.
+
+バーストしていない(Hand) :-
+    \+ バーストしている(Hand).
+
+デッキを生成する(Deck) :-
+    カードセット(Cards),
+    random_permutation(Cards, Deck).
+
+カードを引く([], (Card, Deck)) :-
+    デッキを生成する([Card | Deck]).
+
+カードを引く([Card | Deck], (Card, Deck)).
+
+カードを2枚引く(Deck1, (Card1, Card2, Deck)) :-
+    カードを引く(Deck1, (Card1, Deck2)),
+    カードを引く(Deck2, (Card2, Deck)).
+
+カードを表示する((Suit, Rank)) :-
+    write(Suit),
+    write('の'),
+    write(Rank).
+
+ディーラーの公開カードを表示する(OpenCard) :-
+    write('ディーラーの公開カード: '),
+    カードを表示する(OpenCard),
+    ページ送り.
+
+ヒットしたカードを表示する(Card) :-
+    write('ヒット: '),
+    カードを表示する(Card),
+    ページ送り.
+
+プレイヤーのステータスを表示する(Hand) :-
+    手札のスコア(Hand, Score),
+    write('手札: '),
+    writeln(Hand),
+    write('スコア: '),
+    write(Score),
+    ページ送り.
+
+ディーラーのステータスを表示する(Hand) :-
+    手札のスコア(Hand, Score),
+    write('ディーラーの手札: '),
+    writeln(Hand),
+    write('ディーラーのスコア:'),
+    write(Score),
+    ページ送り.
+
+バーストを確認する(_, _, Flow, Flow) :-
+    終端(Flow, _).
+
+バーストを確認する(Hand, Flow, continue, Flow) :-
+    終端(Flow, _),
+    バーストしている(Hand).
+
+バーストを確認する(Hand, _, continue, continue) :-
+    バーストしていない(Hand).
+
+フロー(continue, 非終端).
+フロー(you_bust, 終端, 'バーストしました。ディーラーの勝ちです。').
+フロー(dealer_bust, 終端, 'バーストしました。あなたの勝ちです。').
+フロー(dealer_win, 終端, 'ディーラーの勝ちです。').
+フロー(you_win, 終端, 'あなたの勝ちです。').
+
+終端(Flow, Message) :-
+    フロー(Flow, 終端, Message).
 
 
 
 ブラックジャックで遊ぶ(Result) :-
-    デッキを生成する(Deck),
-    最初の2枚を配る(Deck, Result).
+    ブラックジャックを開始する([], Result).
 
-デッキを生成する(Deck) :-
-    findall(Card, カード(Card), Cards),
-    random_permutation(Cards, Deck).
+ブラックジャックを開始する(Deck1, Result) :-
+    ディーラーの初手を配る(Deck1, (Deck2, HiddenCard, OpenCard)),
+    プレイヤーのターンを開始する(Deck2, (Deck3, PlayerHand)),
+    バーストを確認する(PlayerHand, you_bust, continue, Flow1),
+    ディーラーのターンを開始する(HiddenCard, Deck3, [HiddenCard, OpenCard], Flow1, (_, DealerHand)),
+    バーストを確認する(DealerHand, dealer_bust, Flow1, Flow2),
+    スコアを比較する(DealerHand, PlayerHand, Flow2, Result).
 
-最初の2枚を配る([HiddenCard, OpenCard | Deck], Result) :-
-    GameState = (HiddenCard, OpenCard, Result),
-    ディーラーの公開カードを表示する(OpenCard),
-    プレイヤーのターンを開始する(Deck, GameState).
+ディーラーの初手を配る(Deck1, (Deck, HiddenCard, OpenCard)) :-
+    カードを2枚引く(Deck1, (HiddenCard, OpenCard, Deck)),
+    ディーラーの公開カードを表示する(OpenCard).
 
-ディーラーの公開カードを表示する(OpenCard) :-
-    write('ディーラーの公開カード: '),
-    writeln(OpenCard).
+プレイヤーのターンを開始する(Deck1, (Deck, Hand)) :-
+    write('あなたのターンです。'),
+    ページ送り,
+    ヒットする([], Deck1, (Deck2, Hand1)),
+    プレイヤーのターンを継続する(Deck2, Hand1, (Deck, Hand)).
 
-プレイヤーのターンを開始する(Deck, GameState) :-
-    writeln('あなたのターンです。'),
-    ヒットする([], Deck, GameState).
+プレイヤーのターンを継続する(Deck1, Hand1, (Deck, Hand)) :-
+    プレイヤーのステータスを表示する(Hand1),
+    プレイヤーはヒットしてもよい(Deck1, Hand1, (Deck, Hand)), !.
 
-ヒットする(Hand, [Card | Deck], GameState) :-
-    Hand2 = [Card | Hand],
-    write('ヒット: '),
-    writeln(Card),
-    プレイヤーのターンに戻る([Card | Hand], Deck, GameState).
+プレイヤーのターンを継続する(Deck, Hand, (Deck, Hand)).
 
-プレイヤーのターンに戻る(Hand, Deck, GameState) :-
-    プレイヤーのステータスを表示する(Hand),
-    プレイヤーのバーストを確認する(Hand, Deck, GameState).
+プレイヤーはヒットしてもよい(Deck1, Hand1, (Deck, Hand)) :-
+    バーストしていない(Hand1),
+    confirm('ヒットしますか？'),
+    !,
+    ヒットする(Hand1, Deck1, (Deck2, Hand2)),
+    プレイヤーのターンを継続する(Deck2, Hand2, (Deck, Hand)).
 
-プレイヤーのステータスを表示する(Hand) :-
-    スコア(Hand, Score),
-    write('手札: '),
-    writeln(Hand),
-    write('スコア: '),
-    writeln(Score).
+ヒットする(Hand1, Deck1, (Deck, [Card | Hand1])) :-
+    カードを引く(Deck1, (Card, Deck)),
+    ヒットしたカードを表示する(Card).
 
-プレイヤーのバーストを確認する(Hand, Deck, (_, _, you_bust)) :-
-    スコア(Hand, Score),
-    Score > 21.
+ディーラーのターンを開始する(_, Deck, Hand, Flow, (Deck, Hand)) :-
+    終端(Flow, _).
 
-プレイヤーのバーストを確認する(Hand, Deck, GameState) :-
-    GameState = (_, _, Result),
-    スコア(Hand, Score),
-    Score =< 21,
-    プレイヤーが選択する(Hand, Deck, GameState).
-
-プレイヤーが選択する(Hand, Deck, GameState) :-
-    confirm('ヒットしますか？'), !,
-    ヒットする(Hand, Deck, GameState).
-
-プレイヤーが選択する(Hand, Deck, GameState) :-
-    ディーラーのターン(Hand, Deck, GameState).
-
-ディーラーのターン(PlayerHand, Deck, GameState) :-
-    GameState = (HiddenCard, OpenCard, Result),
-    Hand = [HiddenCard, OpenCard],
-    writeln('ディーラーのターンです。'),
-    ディーラーの非公開カードを公開する(Hand, HiddenCard),
-    ディーラーは可能なかぎりヒットする(Hand, Deck, (PlayerHand, Result)).
+ディーラーのターンを開始する(HiddenCard, Deck1, Hand1, continue, (Deck, Hand)) :-
+    write('ディーラーのターンです。'),
+    ページ送り,
+    ディーラーの非公開カードを公開する(Hand1, HiddenCard),
+    ディーラーは可能ならヒットする(Deck1, Hand1, (Deck, Hand)).
 
 ディーラーの非公開カードを公開する(Hand, HiddenCard) :-
-    スコア(Hand, Score),
+    手札のスコア(Hand, Score),
     write('ディーラーの非公開カード: '),
     writeln(HiddenCard),
     write('ディーラーのスコア:'),
-    writeln(Score).
+    write(Score),
+    ページ送り.
 
-ディーラーは可能なかぎりヒットする(Hand, Deck, GameState) :-
-    ディーラーはヒットする必要がある(Hand), !,
-    ディーラーがヒットする(Hand, Deck, GameState).
+ディーラーは可能ならヒットする(Deck1, Hand1, (Deck, Hand)) :-
+    ディーラーがヒットできる(Hand1),
+    ディーラーがヒットする(Deck1, Hand1, (Deck2, Hand2)),
+    ディーラーのステータスを表示する(Hand2),
+    ディーラーは可能ならヒットする(Deck2, Hand2, (Deck, Hand)).
 
-ディーラーは可能なかぎりヒットする(Hand, _, (PlayerHand, Result)) :-
-    ディーラーのバーストを確認する(Hand, PlayerHand, Result).
+ディーラーは可能ならヒットする(Deck, Hand, (Deck, Hand)).
 
-ディーラーはヒットする必要がある(Hand) :-
-    スコア(Hand, Score),
+ディーラーがヒットできる(Hand) :-
+    手札のスコア(Hand, Score),
     Score < 17.
 
-ディーラーがヒットする(Hand, [Card | Deck], GameState) :-
-    write('ヒット: '),
-    writeln(Card),
-    Hand2 = [Card | Hand],
-    ディーラーのステータスを表示する(Hand2),
-    ディーラーは可能なかぎりヒットする(Hand2, Deck, GameState).
+ディーラーがヒットする(Deck1, Hand1, (Deck, [Card | Hand1])) :-
+    カードを引く(Deck1, (Card, Deck)),
+    ヒットしたカードを表示する(Card).
 
-ディーラーのステータスを表示する(Hand) :-
-    スコア(Hand, Score),
-    write('ディーラーの手札: '),
-    writeln(Hand),
-    write('ディーラーのスコア:'),
-    writeln(Score).
+スコアを比較する(_, _, Flow, Flow) :-
+    終端(Flow, _).
 
-ディーラーのバーストを確認する(Hand, _, dealer_bust) :-
-    スコア(Hand, Score),
-    Score > 21.
-
-ディーラーのバーストを確認する(Hand, PlayerHand, Result) :-
-    スコア(Hand, Score),
-    Score =< 21,
-    スコアを比較する(Hand, PlayerHand, Result).
-
-スコアを比較する(DealerHand, PlayerHand, you_win) :-
-    スコア(DealerHand, DealerScore),
-    スコア(DealerHand, PlayerScore),
+スコアを比較する(DealerHand, PlayerHand, continue, you_win) :-
+    手札のスコア(DealerHand, DealerScore),
+    手札のスコア(PlayerHand, PlayerScore),
     PlayerScore > DealerScore, !.
 
-スコアを比較する(_, _, dealer_win).
+スコアを比較する(_, _, continue, dealer_win).
 
 始まりの挨拶をする :-
     writeln('ブラックジャックへようこそ！').
 
-結果を表示する(you_bust) :-
-    writeln('バーストしました。ディーラーの勝ちです。').
-
-結果を表示する(dealer_bust) :-
-    writeln('バーストしました。あなたの勝ちです。').
-
-結果を表示する(dealer_win) :-
-    writeln('あなたの勝ちです。').
-
-結果を表示する(you_win) :-
-    writeln('ディーラーの勝ちです。').
+結果を表示する(Flow) :-
+    終端(Flow, Message),
+    write(Message),
+    ページ送り.
 
 別れの挨拶をする :-
     writeln('また遊んでね！').
 
 main :-
     始まりの挨拶をする,
-    ブラックジャックで遊ぶ(Result),
-    結果を表示する(Result),
+    ブラックジャックで遊ぶ(Flow),
+    結果を表示する(Flow),
     別れの挨拶をする.
