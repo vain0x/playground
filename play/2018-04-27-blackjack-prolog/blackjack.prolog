@@ -53,15 +53,11 @@
 ランクのスコア(クイーン, 10).
 ランクのスコア(キング, 10).
 
-手札のスコア(Hand, Score) :-
-    手札のスコア_loop(Hand, 0, Score).
-
-手札のスコア_loop([], Score, Score).
-
-手札のスコア_loop([(_, Rank)|Hand], ScoreAcc, Score) :-
+手札のスコア([], 0).
+手札のスコア([(_, Rank) | Hand], Score) :-
+    手札のスコア(Hand, Score1),
     ランクのスコア(Rank, RankScore),
-    ScoreAcc2 is ScoreAcc + RankScore,
-    手札のスコア_loop(Hand, ScoreAcc2, Score).
+    Score is Score1 + RankScore.
 
 バーストしていない(Hand) :-
     手札のスコア(Hand, Score),
