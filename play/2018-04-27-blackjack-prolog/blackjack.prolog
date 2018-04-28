@@ -40,6 +40,7 @@
 % スコアの計算
 
 ランクのスコア(エース, 1).
+ランクのスコア(エース, 11).
 ランクのスコア(2, 2).
 ランクのスコア(3, 3).
 ランクのスコア(4, 4).
@@ -53,15 +54,30 @@
 ランクのスコア(クイーン, 10).
 ランクのスコア(キング, 10).
 
-手札のスコア([], 0).
-手札のスコア([(_, Rank) | Hand], Score) :-
-    手札のスコア(Hand, Score1),
+手札のスコアの候補([], 0).
+手札のスコアの候補([(_, Rank) | Hand], Score) :-
+    手札のスコアの候補(Hand, Score1),
     ランクのスコア(Rank, RankScore),
     Score is Score1 + RankScore.
 
+% 21を超えない組み合わせがあるなら、その中での最大値を手役とする。
+手役(Hand, (nonbust, Score)) :-
+    手札のスコアの候補(Hand, Score),
+    Score =< 21,
+    \+ (手札のスコアの候補(Hand, Score2), Score2 =< 21, Score2 > Score),
+    !.
+
+% 21を超えない組み合わせがないなら、その中での最小値を手役とする。
+手役(Hand, (bust, Score)) :-
+    手札のスコアの候補(Hand, Score),
+    Score > 21,
+    \+ (手札のスコアの候補(Hand, Score2), Score2 > Score).
+
+手札のスコア(Hand, Score) :-
+    手役(Hand, (_, Score)).
+
 バーストしていない(Hand) :-
-    手札のスコア(Hand, Score),
-    Score <= 21.
+    手札のスコア(Hand, (nonbust, _)).
 
 
 
@@ -155,7 +171,7 @@ confirm(Message) :-
 バーストを確認する(Hand, _, continue, continue) :-
     バーストしていない(Hand), !.
 
-バーストを確認する(Hand, Result, continue, finish(Result)).
+バーストを確認する(_, Result, continue, finish(Result)).
 
 ディーラーの初手を配る(Deck1, (Deck, UpCard)) :-
     カードを引く(Deck1, (UpCard, Deck)),
