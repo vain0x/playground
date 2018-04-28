@@ -63,12 +63,9 @@
     ScoreAcc2 is ScoreAcc + RankScore,
     手札のスコア_loop(Hand, ScoreAcc2, Score).
 
-バーストしている(Hand) :-
-    手札のスコア(Hand, Score),
-    Score > 21.
-
 バーストしていない(Hand) :-
-    \+ バーストしている(Hand).
+    手札のスコア(Hand, Score),
+    Score <= 21.
 
 
 
@@ -131,36 +128,18 @@ confirm(Message) :-
     write('ブラックジャックへようこそ！'),
     ページ送り.
 
-結果を表示する(Flow) :-
-    終端(Flow, Message),
+結果を表示する(Result) :-
+    結果のメッセージ(Result, Message),
     write(Message),
     ページ送り.
 
+結果のメッセージ(you_bust, 'バーストしました。ディーラーの勝ちです。').
+結果のメッセージ(dealer_bust, 'バーストしました。あなたの勝ちです。').
+結果のメッセージ(dealer_win, 'ディーラーの勝ちです。').
+結果のメッセージ(you_win, 'あなたの勝ちです。').
+
 別れの挨拶をする :-
     writeln('また遊んでね！').
-
-
-
-% ゲームフロー
-
-バーストを確認する(_, _, Flow, Flow) :-
-    終端(Flow, _).
-
-バーストを確認する(Hand, Flow, continue, Flow) :-
-    終端(Flow, _),
-    バーストしている(Hand).
-
-バーストを確認する(Hand, _, continue, continue) :-
-    バーストしていない(Hand).
-
-フロー(continue, 非終端).
-フロー(you_bust, 終端, 'バーストしました。ディーラーの勝ちです。').
-フロー(dealer_bust, 終端, 'バーストしました。あなたの勝ちです。').
-フロー(dealer_win, 終端, 'ディーラーの勝ちです。').
-フロー(you_win, 終端, 'あなたの勝ちです。').
-
-終端(Flow, Message) :-
-    フロー(Flow, 終端, Message).
 
 
 
@@ -175,7 +154,14 @@ confirm(Message) :-
     バーストを確認する(PlayerHand, you_bust, continue, Flow1),
     ディーラーのターンを開始する(Deck3, [UpCard], Flow1, (_, DealerHand)),
     バーストを確認する(DealerHand, dealer_bust, Flow1, Flow2),
-    スコアを比較する(DealerHand, PlayerHand, Flow2, Result).
+    スコアを比較する(DealerHand, PlayerHand, Flow2, finish(Result)).
+
+バーストを確認する(_, _, finish(Result), finish(Result)).
+
+バーストを確認する(Hand, _, continue, continue) :-
+    バーストしていない(Hand), !.
+
+バーストを確認する(Hand, Result, continue, finish(Result)).
 
 ディーラーの初手を配る(Deck1, (Deck, UpCard)) :-
     カードを引く(Deck1, (UpCard, Deck)),
@@ -204,8 +190,7 @@ confirm(Message) :-
     カードを引く(Deck1, (Card, Deck)),
     ヒットしたカードを表示する(Card).
 
-ディーラーのターンを開始する(_, Deck, Hand, Flow, (Deck, Hand)) :-
-    終端(Flow, _).
+ディーラーのターンを開始する(_, Deck, Hand, finish(_), (Deck, Hand)).
 
 ディーラーのターンを開始する(Deck1, Hand1, continue, (Deck, Hand)) :-
     write('ディーラーのターンです。'),
@@ -234,20 +219,19 @@ confirm(Message) :-
     カードを引く(Deck1, (Card, Deck)),
     ヒットしたカードを表示する(Card).
 
-スコアを比較する(_, _, Flow, Flow) :-
-    終端(Flow, _).
+スコアを比較する(_, _, finish(Result), finish(Result)).
 
-スコアを比較する(DealerHand, PlayerHand, continue, you_win) :-
+スコアを比較する(DealerHand, PlayerHand, continue, finish(you_win)) :-
     手札のスコア(DealerHand, DealerScore),
     手札のスコア(PlayerHand, PlayerScore),
     PlayerScore > DealerScore, !.
 
-スコアを比較する(_, _, continue, dealer_win).
+スコアを比較する(_, _, continue, finish(dealer_win)).
 
 
 
 main :-
     始まりの挨拶をする,
-    ブラックジャックで遊ぶ(Flow),
-    結果を表示する(Flow),
+    ブラックジャックで遊ぶ(Result),
+    結果を表示する(Result),
     別れの挨拶をする.
