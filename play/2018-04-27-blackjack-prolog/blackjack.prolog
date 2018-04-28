@@ -89,7 +89,8 @@ confirm(Message) :-
 ページ送り :-
     write(' ...'),
     flush_output,
-    skip('\n').
+    skip('\n'),
+    nl.
 
 カードを表示する((Suit, Rank)) :-
     write(Suit),
@@ -131,7 +132,8 @@ confirm(Message) :-
     ページ送り.
 
 始まりの挨拶をする :-
-    writeln('ブラックジャックへようこそ！').
+    write('ブラックジャックへようこそ！'),
+    ページ送り.
 
 結果を表示する(Flow) :-
     終端(Flow, Message),
