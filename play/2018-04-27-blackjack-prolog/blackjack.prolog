@@ -5,22 +5,7 @@
 % <input rules>
 % ^D
 
-confirm(Message) :-
-    write(Message),
-    write(' (y/n)'),
-    flush_output,
-    get_char(Char),
-    skip('\n'),
-    Char = y.
-
-ページ送り :-
-    write(' ...'),
-    flush_output,
-    skip('\n').
-
-
-
-% ブラックジャックの基本ルール
+% トランプ
 
 ランク(エース).
 ランク(2).
@@ -47,7 +32,22 @@ confirm(Message) :-
 カードセット(Cards) :-
     findall(Card, カード(Card), Cards).
 
+デッキを生成する(Deck) :-
+    カードセット(Cards),
+    random_permutation(Cards, Deck).
 
+カードを引く([], (Card, Deck)) :-
+    デッキを生成する([Card | Deck]).
+
+カードを引く([Card | Deck], (Card, Deck)).
+
+カードを2枚引く(Deck1, (Card1, Card2, Deck)) :-
+    カードを引く(Deck1, (Card1, Deck2)),
+    カードを引く(Deck2, (Card2, Deck)).
+
+
+
+% スコアの計算
 
 ランクのスコア(エース, 1).
 ランクのスコア(2, 2).
@@ -80,18 +80,22 @@ confirm(Message) :-
 バーストしていない(Hand) :-
     \+ バーストしている(Hand).
 
-デッキを生成する(Deck) :-
-    カードセット(Cards),
-    random_permutation(Cards, Deck).
 
-カードを引く([], (Card, Deck)) :-
-    デッキを生成する([Card | Deck]).
 
-カードを引く([Card | Deck], (Card, Deck)).
+% UI
 
-カードを2枚引く(Deck1, (Card1, Card2, Deck)) :-
-    カードを引く(Deck1, (Card1, Deck2)),
-    カードを引く(Deck2, (Card2, Deck)).
+confirm(Message) :-
+    write(Message),
+    write(' (y/n)'),
+    flush_output,
+    get_char(Char),
+    skip('\n'),
+    Char = y.
+
+ページ送り :-
+    write(' ...'),
+    flush_output,
+    skip('\n').
 
 カードを表示する((Suit, Rank)) :-
     write(Suit),
@@ -101,6 +105,14 @@ confirm(Message) :-
 ディーラーの公開カードを表示する(OpenCard) :-
     write('ディーラーの公開カード: '),
     カードを表示する(OpenCard),
+    ページ送り.
+
+ディーラーの非公開カードを表示する(Hand, HiddenCard) :-
+    手札のスコア(Hand, Score),
+    write('ディーラーの非公開カード: '),
+    writeln(HiddenCard),
+    write('ディーラーのスコア:'),
+    write(Score),
     ページ送り.
 
 ヒットしたカードを表示する(Card) :-
@@ -124,6 +136,21 @@ confirm(Message) :-
     write(Score),
     ページ送り.
 
+始まりの挨拶をする :-
+    writeln('ブラックジャックへようこそ！').
+
+結果を表示する(Flow) :-
+    終端(Flow, Message),
+    write(Message),
+    ページ送り.
+
+別れの挨拶をする :-
+    writeln('また遊んでね！').
+
+
+
+% ゲームフロー
+
 バーストを確認する(_, _, Flow, Flow) :-
     終端(Flow, _).
 
@@ -144,6 +171,8 @@ confirm(Message) :-
     フロー(Flow, 終端, Message).
 
 
+
+% ゲームルーチン
 
 ブラックジャックで遊ぶ(Result) :-
     ブラックジャックを開始する([], Result).
@@ -189,16 +218,8 @@ confirm(Message) :-
 ディーラーのターンを開始する(HiddenCard, Deck1, Hand1, continue, (Deck, Hand)) :-
     write('ディーラーのターンです。'),
     ページ送り,
-    ディーラーの非公開カードを公開する(Hand1, HiddenCard),
+    ディーラーの非公開カードを表示する(Hand1, HiddenCard),
     ディーラーは可能ならヒットする(Deck1, Hand1, (Deck, Hand)).
-
-ディーラーの非公開カードを公開する(Hand, HiddenCard) :-
-    手札のスコア(Hand, Score),
-    write('ディーラーの非公開カード: '),
-    writeln(HiddenCard),
-    write('ディーラーのスコア:'),
-    write(Score),
-    ページ送り.
 
 ディーラーは可能ならヒットする(Deck1, Hand1, (Deck, Hand)) :-
     ディーラーがヒットできる(Hand1),
@@ -226,16 +247,7 @@ confirm(Message) :-
 
 スコアを比較する(_, _, continue, dealer_win).
 
-始まりの挨拶をする :-
-    writeln('ブラックジャックへようこそ！').
 
-結果を表示する(Flow) :-
-    終端(Flow, Message),
-    write(Message),
-    ページ送り.
-
-別れの挨拶をする :-
-    writeln('また遊んでね！').
 
 main :-
     始まりの挨拶をする,
