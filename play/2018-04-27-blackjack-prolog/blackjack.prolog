@@ -35,10 +35,6 @@
 
 カードを引く([Card | Deck], (Card, Deck)).
 
-カードを2枚引く(Deck1, (Card1, Card2, Deck)) :-
-    カードを引く(Deck1, (Card1, Deck2)),
-    カードを引く(Deck2, (Card2, Deck)).
-
 
 
 % スコアの計算
@@ -174,15 +170,15 @@ confirm(Message) :-
     ブラックジャックを開始する([], Result).
 
 ブラックジャックを開始する(Deck1, Result) :-
-    ディーラーの初手を配る(Deck1, (Deck2, HiddenCard, OpenCard)),
+    ディーラーの初手を配る(Deck1, (Deck2, OpenCard)),
     プレイヤーのターンを開始する(Deck2, (Deck3, PlayerHand)),
     バーストを確認する(PlayerHand, you_bust, continue, Flow1),
-    ディーラーのターンを開始する(HiddenCard, Deck3, [HiddenCard, OpenCard], Flow1, (_, DealerHand)),
+    ディーラーのターンを開始する(Deck3, [OpenCard], Flow1, (_, DealerHand)),
     バーストを確認する(DealerHand, dealer_bust, Flow1, Flow2),
     スコアを比較する(DealerHand, PlayerHand, Flow2, Result).
 
-ディーラーの初手を配る(Deck1, (Deck, HiddenCard, OpenCard)) :-
-    カードを2枚引く(Deck1, (HiddenCard, OpenCard, Deck)),
+ディーラーの初手を配る(Deck1, (Deck, OpenCard)) :-
+    カードを引く(Deck1, (OpenCard, Deck)),
     ディーラーの公開カードを表示する(OpenCard).
 
 プレイヤーのターンを開始する(Deck1, (Deck, Hand)) :-
@@ -211,11 +207,16 @@ confirm(Message) :-
 ディーラーのターンを開始する(_, Deck, Hand, Flow, (Deck, Hand)) :-
     終端(Flow, _).
 
-ディーラーのターンを開始する(HiddenCard, Deck1, Hand1, continue, (Deck, Hand)) :-
+ディーラーのターンを開始する(Deck1, Hand1, continue, (Deck, Hand)) :-
     write('ディーラーのターンです。'),
     ページ送り,
-    ディーラーの非公開カードを表示する(Hand1, HiddenCard),
-    ディーラーは可能ならヒットする(Deck1, Hand1, (Deck, Hand)).
+    ディーラーの非公開カードをめくる(Deck1, Hand1, (Deck2, Hand2)),
+    ディーラーは可能ならヒットする(Deck2, Hand2, (Deck, Hand)).
+
+ディーラーの非公開カードをめくる(Deck1, Hand1, (Deck, Hand)) :-
+    カードを引く(Deck1, (HiddenCard, Deck2)),
+    Hand2 = [HiddenCard | Hand1],
+    ディーラーの非公開カードを表示する(Hand2, HiddenCard).
 
 ディーラーは可能ならヒットする(Deck1, Hand1, (Deck, Hand)) :-
     ディーラーがヒットできる(Hand1),
