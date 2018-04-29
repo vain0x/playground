@@ -71,7 +71,8 @@
 手役(Hand, (bust, Score)) :-
     手札のスコアの候補(Hand, Score),
     Score > 21,
-    \+ (手札のスコアの候補(Hand, Score2), Score2 > Score).
+    \+ (手札のスコアの候補(Hand, Score2), Score2 > 21, Score2 < Score),
+    !.
 
 手札のスコア(Hand, Score) :-
     手役(Hand, (_, Score)).
