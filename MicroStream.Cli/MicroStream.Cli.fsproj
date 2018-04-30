@@ -135,11 +135,6 @@
       <Project>{0557360a-e1df-4bb4-8adc-6448f992d3ad}</Project>
       <Private>True</Private>
     </ProjectReference>
-    <ProjectReference Include="..\libraries\Mastonet.Net46\Mastonet.Net46.csproj">
-      <Name>Mastonet.Net46</Name>
-      <Project>{98591b69-f142-4c20-bd8d-95362cf49ac1}</Project>
-      <Private>True</Private>
-    </ProjectReference>
     <ProjectReference Include="..\MicroStream.Core\MicroStream.Core.fsproj">
       <Name>MicroStream.Core</Name>
       <Project>{4e07b438-05ce-4167-9f57-a118ac65567a}</Project>
