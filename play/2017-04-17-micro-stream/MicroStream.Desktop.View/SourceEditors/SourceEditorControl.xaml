@@ -1,0 +1,59 @@
+﻿<UserControl
+    x:Class="MicroStream.SourceEditors.SourceEditorControl"
+    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006" 
+    xmlns:d="http://schemas.microsoft.com/expression/blend/2008" 
+    xmlns:materialDesign="http://materialdesigninxaml.net/winfx/xaml/themes"
+    xmlns:local="clr-namespace:MicroStream.SourceEditors"
+    mc:Ignorable="d" 
+    d:DesignWidth="300"
+    d:DesignHeight="300"
+    >
+    <Grid>
+        <Grid.RowDefinitions>
+            <RowDefinition Height="5*" />
+            <RowDefinition Height="5" />
+            <RowDefinition Height="2*" />
+            <RowDefinition Height="Auto" />
+        </Grid.RowDefinitions>
+
+        <TextBox
+            Style="{StaticResource FloatingHintMultilineTextBoxStyle}"
+            materialDesign:HintAssist.Hint="Source"
+            Text="{Binding Source.Value}"
+            />
+
+        <GridSplitter
+            Grid.Row="1"
+            HorizontalAlignment="Stretch"
+            />
+
+        <TextBox
+            Grid.Row="2"
+            Style="{StaticResource FloatingHintMultilineTextBoxStyle}"
+            Margin="6,3,6,3"
+            IsReadOnly="True"
+            materialDesign:HintAssist.Hint="Error"
+            Text="{Binding Error.Value}"
+            />
+
+        <StackPanel
+            Grid.Row="3"
+            HorizontalAlignment="Right"
+            Orientation="Horizontal"
+            >
+            <Button
+                Margin="6,3,6,3"
+                Content="Load"
+                Command="{Binding LoadCommand}"
+                />
+
+            <Button
+                Margin="6,3,6,3"
+                Content="Run"
+                Command="{Binding RunCommand}"
+                />
+        </StackPanel>
+    </Grid>
+</UserControl>
