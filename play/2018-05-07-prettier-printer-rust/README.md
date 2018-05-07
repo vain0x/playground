@@ -1,6 +1,6 @@
 # Prettier Printer
 
-This is (nearly) a port of [prettier/prettier-printer](https://github.com/prettier/prettier-printer) to learn Rust and pretty printing.
+This is (nearly) a port of [prettier/prettier-printer] ([version on 2017-01-10]) to learn Rust and pretty printing.
 
 *Not for production.*
 
@@ -13,3 +13,6 @@ Original license is:
 > The above copyright notice and this permission notice shall be included in all copies or substantial portions of the Software.
 >
 > THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
+
+[prettier/prettier-printer]: https://github.com/prettier/prettier-printer
+[version on 2017-01-10]: https://github.com/prettier/prettier-printer/tree/b57992d1a59b75e66aa18080bce8e965652b4ecf
