@@ -16,3 +16,16 @@ Original license is:
 
 [prettier/prettier-printer]: https://github.com/prettier/prettier-printer
 [version on 2017-01-10]: https://github.com/prettier/prettier-printer/tree/b57992d1a59b75e66aa18080bce8e965652b4ecf
+
+Currently not supporting:
+
+- group with expanded_states
+- conditional_group
+- fill
+- line_suffix
+- hard line
+- literal line
+- cursor
+- utility functions
+- etc. (Find by `unimplemented` or `FIXME`.)
+
