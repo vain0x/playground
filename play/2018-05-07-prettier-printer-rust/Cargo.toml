@@ -1,0 +1,6 @@
+[package]
+name = "prettier-printer-rust"
+version = "0.1.0"
+authors = ["vain0 <id_vain@yahoo.co.jp>"]
+
+[dependencies]
