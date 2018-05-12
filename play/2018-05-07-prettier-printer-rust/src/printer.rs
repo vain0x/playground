@@ -94,14 +94,22 @@ fn fits(next: Command, rest_commands: &mut Vec<Command>, width: i32, must_be_fla
             Doc::Source(ref source) => {
                 width -= source.len() as i32;
             }
-            Doc::Computed(ComputedDoc::Concat { parts })
-            | Doc::Computed(ComputedDoc::Fill { parts }) => {
+            Doc::Computed(ComputedDoc::Concat { parts }) => {
                 for part in parts.iter().rev() {
                     commands.push(Command {
                         indent: indent.clone(),
                         mode,
                         doc: part,
                     })
+                }
+            }
+            Doc::Computed(ComputedDoc::Fill(fill)) => {
+                for part in vec![&fill.second, &fill.whitespace, &fill.first] {
+                    commands.push(Command {
+                        indent: indent.clone(),
+                        mode,
+                        doc: part,
+                    });
                 }
             }
             Doc::Computed(ComputedDoc::Indent { contents }) => commands.push(Command {
@@ -250,12 +258,7 @@ pub fn print_doc_to_string(doc: &Doc, options: &Options) -> Output {
                     }
                 }
             }
-            (Doc::Computed(ComputedDoc::Fill { parts }), _) => {
-                if parts.is_empty() {
-                    continue;
-                }
-                unimplemented!()
-            }
+            (Doc::Computed(ComputedDoc::Fill(fill)), _) => unimplemented!(),
             (
                 Doc::Computed(ComputedDoc::IfBreak {
                     break_contents: Some(contents),
