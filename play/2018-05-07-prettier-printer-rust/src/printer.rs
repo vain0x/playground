@@ -1,8 +1,10 @@
 #![allow(unused_imports)]
 
+use builders::Fill;
 use builders::{concat, fill, AlignSize, ComputedDoc, Doc, LineKind, CURSOR};
 use std;
 use std::borrow::Cow;
+use std::io::Write;
 
 // FIXME: rename to config
 pub struct Options {
@@ -24,7 +26,16 @@ struct Indent {
     tabs: usize,
 }
 
-#[derive(PartialEq, Clone, Copy)]
+impl std::fmt::Debug for Indent {
+    fn fmt(&self, formatter: &mut std::fmt::Formatter) -> Result<(), std::fmt::Error> {
+        formatter.write_fmt(format_args!(
+            "Indent({}, {}, {})",
+            self.indent, self.spaces, self.tabs
+        ))
+    }
+}
+
+#[derive(PartialEq, Clone, Copy, Debug)]
 enum Mode {
     Break,
     Flat,
@@ -35,6 +46,15 @@ struct Command<'a> {
     indent: Indent,
     mode: Mode,
     doc: &'a Doc,
+}
+
+impl<'a> std::fmt::Debug for Command<'a> {
+    fn fmt(&self, formatter: &mut std::fmt::Formatter) -> Result<(), std::fmt::Error> {
+        formatter.write_fmt(format_args!(
+            "Command({:?} {:?} {:?})",
+            self.indent, self.mode, self.doc
+        ))
+    }
 }
 
 fn root_indent() -> Indent {
@@ -190,7 +210,13 @@ pub fn print_doc_to_string(doc: &Doc, options: &Options) -> Output {
     let mut should_remeasure = false;
     let mut line_suffix: Vec<Command> = Vec::new();
 
+    let err = std::io::stderr();
+    let mut lock = err.lock();
+
     while let Some(Command { indent, mode, doc }) = commands.pop() {
+        lock.write_fmt(format_args!("{:?}\n", &Command { indent, mode, doc }))
+            .unwrap();
+
         match (doc, mode) {
             (Doc::Source(ref source), _) => {
                 pos += source.len() as i32;
@@ -258,7 +284,78 @@ pub fn print_doc_to_string(doc: &Doc, options: &Options) -> Output {
                     }
                 }
             }
-            (Doc::Computed(ComputedDoc::Fill(fill)), _) => unimplemented!(),
+            (Doc::Computed(ComputedDoc::Fill(fill)), _) => {
+                let rem = width - pos;
+
+                let content = &fill.first;
+                let content_flat_command = Command {
+                    indent,
+                    mode: Mode::Flat,
+                    doc: content,
+                };
+                let content_break_command = Command {
+                    indent,
+                    mode: Mode::Break,
+                    doc: content,
+                };
+                let content_fits = fits(
+                    content_flat_command.clone(),
+                    &mut Vec::new(),
+                    width - rem,
+                    true,
+                );
+
+                let whitespace = &fill.whitespace;
+                let whitespacce_flat_command = Command {
+                    indent,
+                    mode: Mode::Flat,
+                    doc: whitespace,
+                };
+                let whitespace_break_command = Command {
+                    indent,
+                    mode: Mode::Break,
+                    doc: whitespace,
+                };
+
+                let remaining_doc = &fill.second;
+                let remaining_command = Command {
+                    indent,
+                    mode,
+                    doc: remaining_doc,
+                };
+
+                let two_contents_flat_command = {
+                    let second_content = match remaining_doc {
+                        Doc::Computed(ComputedDoc::Fill(fill)) => &fill.first,
+                        doc => doc,
+                    };
+                    Command {
+                        indent,
+                        mode: Mode::Flat,
+                        doc: &concat(vec![
+                            content.clone(),
+                            whitespace.clone(),
+                            second_content.clone(),
+                        ]),
+                    }
+                };
+
+                let two_contents_fit = fits(two_contents_flat_command, &mut Vec::new(), rem, true);
+
+                if two_contents_fit {
+                    commands.push(remaining_command);
+                    commands.push(whitespacce_flat_command);
+                    commands.push(content_flat_command);
+                } else if content_fits {
+                    commands.push(remaining_command);
+                    commands.push(whitespace_break_command);
+                    commands.push(content_flat_command);
+                } else {
+                    commands.push(remaining_command);
+                    commands.push(whitespace_break_command);
+                    commands.push(content_break_command);
+                }
+            }
             (
                 Doc::Computed(ComputedDoc::IfBreak {
                     break_contents: Some(contents),
@@ -332,7 +429,7 @@ pub fn print_doc_to_string(doc: &Doc, options: &Options) -> Output {
                     let break_and_indent = std::iter::once(&new_line as &str)
                         .chain(indent_chars)
                         .collect::<String>();
-                    pos += break_and_indent.len() as i32;
+                    pos = break_and_indent.len() as i32;
                     out.push(Cow::Owned(break_and_indent));
                 }
             }
@@ -412,5 +509,18 @@ mod tests {
 
         // If not fit.
         assert_eq!(print(13, &doc), "abcdef\nghi\njk\nl\nmnopq");
+    }
+
+    #[test]
+    pub fn test_fill() {
+        let words = "Lorem ipsum dolor sit amet".split(" ");
+        let doc = fill(
+            words
+                .flat_map(|word| vec![LINE, s(word)])
+                .skip(1)
+                .collect::<Vec<_>>(),
+        );
+
+        assert_eq!(print(20, &doc), "Lorem ipsum dolor\nsit amet");
     }
 }
