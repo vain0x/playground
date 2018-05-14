@@ -60,6 +60,51 @@ pub fn sieve_by_def(m: usize) -> impl Fn(usize) -> bool {
     move |n: usize| sieve[n]
 }
 
+pub fn sieve_compact(m: usize) -> impl Fn(usize) -> bool {
+    static REMINDERS: [usize; 8] = [1, 7, 11, 13, 17, 19, 23, 29];
+
+    fn is_prime(n: usize, small: &Vec<bool>, sieve: &Vec<u8>) -> bool {
+        if n < 30 {
+            return small[n];
+        }
+
+        let r = n % 30;
+        for i in 0..8 {
+            if REMINDERS[i] == r {
+                let q = n / 30;
+                return (sieve[q - 1] & (1_u8 << i)) != 0;
+            }
+        }
+        false
+    }
+
+    let small = (0..30).map(|n| is_prime_using_sqrt(n)).collect::<Vec<_>>();
+
+    let u = (m + 30 - 1) / 30;
+    let mut sieve = vec![0xff_u8; u];
+
+    for p in 2..m {
+        if !is_prime(p, &small, &sieve) {
+            continue;
+        }
+
+        let mut k = 2 * p;
+        while k < m {
+            let q = k / 30;
+            let r = k % 30;
+            for i in 0..8 {
+                if REMINDERS[i] == r {
+                    sieve[q - 1] = sieve[q - 1] & !(1_u8 << i);
+                    break;
+                }
+            }
+            k += p;
+        }
+    }
+
+    move |n: usize| is_prime(n, &small, &sieve)
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -96,11 +141,36 @@ mod tests {
         }
     }
 
+    #[test]
+    fn test_sieve_compact() {
+        let m = 1000;
+        let expected_f = sieve_by_def(m);
+        let actual_f = sieve_compact(m);
+        for n in 0..m {
+            assert_eq!(actual_f(n), expected_f(n));
+        }
+    }
+
     #[bench]
     fn bench_add_two(b: &mut Bencher) {
         b.iter(|| {
             let n = test::black_box(100);
             (0..n).fold(1, |s, x| if is_prime_using_sqrt(x) { s / 3 } else { s + 1 })
+        })
+    }
+
+    #[bench]
+    fn bench_sieve_by_def(b: &mut Bencher) {
+        b.iter(|| {
+            let m = test::black_box(10000);
+            let is_prime = sieve_by_def(m);
+            let mut k = 0_u64;
+            for n in 0..m {
+                if is_prime(n) {
+                    k += 1
+                }
+            }
+            k
         })
     }
 }
