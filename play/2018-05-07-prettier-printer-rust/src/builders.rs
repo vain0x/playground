@@ -27,9 +27,7 @@ pub enum ComputedDoc {
         breaks: bool,
         expanded_states: Option<Vec<Doc>>,
     },
-    Fill {
-        parts: Vec<Doc>,
-    },
+    Fill(Box<Fill>),
     IfBreak {
         break_contents: Option<Box<Doc>>,
         flat_contents: Option<Box<Doc>>,
@@ -41,6 +39,13 @@ pub enum ComputedDoc {
     BreakParent,
     Line(LineKind),
     Cursor,
+}
+
+#[derive(Clone, Debug)]
+pub struct Fill {
+    pub first: Doc,
+    pub whitespace: Doc,
+    pub second: Doc,
 }
 
 #[derive(Clone, Copy, Debug)]
@@ -138,7 +143,27 @@ pub fn conditional_group(_options: Vec<Doc>, _setting: Option<GroupSetting>) -> 
 }
 
 pub fn fill(parts: Vec<Doc>) -> Doc {
-    com(ComputedDoc::Fill { parts })
+    fn go<T: Iterator<Item = Doc>>(mut iter: T) -> Doc {
+        let first = match iter.next() {
+            None => panic!("Doc can't be empty."),
+            Some(x) => x,
+        };
+
+        let whitespace = match iter.next() {
+            None => return first,
+            Some(x) => x,
+        };
+
+        let second = go(iter);
+
+        let fill = Fill {
+            first,
+            whitespace,
+            second,
+        };
+        Doc::Computed(ComputedDoc::Fill(Box::new(fill)))
+    }
+    go(parts.into_iter().fuse())
 }
 
 pub fn if_break(break_contents: Option<Doc>, flat_contents: Option<Doc>) -> Doc {
