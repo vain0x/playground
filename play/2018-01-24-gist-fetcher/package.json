@@ -12,5 +12,13 @@
     "dotenv": "^4.0.0",
     "passport": "^0.4.0",
     "passport-oauth2": "^1.4.0"
+  },
+  "devDependencies": {
+    "@types/dotenv": "^4.0.2",
+    "@types/node": "^9.4.7",
+    "jest": "^22.4.3",
+    "ts-jest": "^22.4.2",
+    "ts-node": "^5.0.1",
+    "typescript": "^2.7.2"
   }
 }
