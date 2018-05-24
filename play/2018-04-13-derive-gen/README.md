@@ -64,11 +64,11 @@ where
 
 - LanguageExt:
 
-    Library provindg a way to generate code for structural equality etc. dynamically.
+    Library providing a way to *dynamically* generate code for structural equality etc.
 
 - Sharperform:
 
-    App to generate such codes by analyzing C# source code with some attributes.
+    (WIP) App to generate such codes by analyzing C# source code with some attributes.
 
 ## See also
 
