@@ -91,7 +91,7 @@ fn break_if(mode: Mode, breaks: bool) -> Mode {
     }
 }
 
-fn fits(next: Command, rest_commands: &mut Vec<Command>, width: i32, must_be_flat: bool) -> bool {
+fn fits(next: Command, rest_commands: &[Command], width: i32, must_be_flat: bool) -> bool {
     // always equal to rest_commands.len() ?
     let mut rest_index = rest_commands.len();
     let mut commands = vec![next];
@@ -214,8 +214,11 @@ pub fn print_doc_to_string(doc: &Doc, options: &Options) -> Output {
     let mut lock = err.lock();
 
     while let Some(Command { indent, mode, doc }) = commands.pop() {
-        lock.write_fmt(format_args!("{:?}\n", &Command { indent, mode, doc }))
-            .unwrap();
+        lock.write_fmt(format_args!(
+            "{:?} (sr={:?})\n",
+            &Command { indent, mode, doc },
+            should_remeasure
+        )).unwrap();
 
         match (doc, mode) {
             (Doc::Source(ref source), _) => {
@@ -271,7 +274,10 @@ pub fn print_doc_to_string(doc: &Doc, options: &Options) -> Output {
                     doc: contents,
                 };
                 let reminder = width - pos;
-                if !*breaks && fits(next.clone(), &mut commands, reminder, false) {
+                let fit = fits(next.clone(), &commands, reminder, false);
+
+                println!("breaks={} fits={}", !*breaks, fit);
+                if !*breaks && fit {
                     commands.push(next);
                 } else {
                     match expanded_states {
@@ -403,7 +409,8 @@ pub fn print_doc_to_string(doc: &Doc, options: &Options) -> Output {
                 if !kind.is_hard() && kind.is_soft() => {}
             (Doc::Computed(ComputedDoc::Line(kind)), _) => {
                 if mode == Mode::Flat {
-                    should_remeasure = false;
+                    assert!(kind.is_hard());
+                    should_remeasure = true;
                 }
 
                 if !line_suffix.is_empty() {
