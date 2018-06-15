@@ -59,6 +59,60 @@ mod tests {
     use super::*;
 
     #[test]
+    fn test_recurse_with_fact() {
+        let f7 = recurse_with(7, |fact, n| if n == 0 { 1 } else { fact(n - 1) * n });
+        assert_eq!(f7, 1 * 2 * 3 * 4 * 5 * 6 * 7);
+    }
+
+    #[test]
+    fn test_recursive_memoized_fib() {
+        let mut memo = HashMap::new();
+        let mut fib = recursive(|fib, n: i32| {
+            let e = memo.entry(n)
+                .or_insert_with(|| if n <= 1 { 1 } else { fib(n - 1) + fib(n - 2) });
+            *e
+        });
+        let mut fib = |n| fib.call(n);
+        assert_eq!(fib(0), 1);
+        assert_eq!(fib(4), 5);
+        assert_eq!(fib(5), 8);
+        assert_eq!(fib(10), 89);
+        assert_eq!(fib(20), 10946);
+    }
+
+    #[test]
+    fn test_dfs() {
+        let n = 7;
+        let mut g = vec![vec![]; n];
+
+        for &(u, v) in &[(1, 3), (3, 2), (3, 4), (5, 6)] {
+            g[u].push(v);
+            g[v].push(u);
+        }
+
+        let mut root = vec![None; n];
+
+        for v in 0..n {
+            recurse_with((v, v), |dfs, (v, r)| {
+                if root[v].is_some() {
+                    return;
+                }
+
+                // It can borrow variables out of the closure.
+                root[v] = Some(r);
+
+                for &w in g[v].iter() {
+                    // Recursive call!
+                    dfs((w, r));
+                }
+            });
+        }
+
+        let root = root.into_iter().filter_map(|x| x).collect::<Vec<_>>();
+        assert_eq!(root, vec![0, 1, 1, 1, 1, 5, 5]);
+    }
+
+    #[test]
     fn test_fib() {
         let mut fib1 = {
             fn mfib(n: i32, memo: &mut HashMap<i32, i64>) -> i64 {
