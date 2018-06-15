@@ -58,4 +58,31 @@ mod tests {
 
         assert_eq!(roots, vec![0, 0, 0, 0, 4, 4]);
     }
+
+    #[test]
+    fn test_closure_is_dropped() {
+        let n = 4;
+        let mut k = 0;
+        struct D<'a>(pub &'a mut i32);
+        impl<'a> Drop for D<'a> {
+            fn drop(&mut self) {
+                *self.0 += 1;
+            }
+        }
+
+        {
+            recurse(0, &mut |i, go| {
+                let d = D(&mut k);
+
+                if i >= n {
+                    assert_eq!(*d.0, 0);
+                    return;
+                }
+
+                go(i + 1);
+            });
+        }
+
+        assert_eq!(k, n + 1);
+    }
 }
