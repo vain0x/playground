@@ -1,4 +1,4 @@
-# Rustでローカル無名再帰してみた
+# Rustで無名再帰してみた
 
 クロージャを再帰呼び出しする方法を考えました。
 
@@ -7,15 +7,19 @@
 本稿では小さなヘルパーを用意して記述を簡略化することを試みました。
 
 - 環境: Rust 1.15.1 (AtCoder での現在のバージョン)
+- 筆者: AtCoder もうすぐ青といい続けて1年
 
 ## 要約
 
-- 競プロではよくローカルで無名再帰する
+- 競プロではよく再帰する
 - 小さなアダプタを書くと再帰呼び出しできる
 - イミュータブルなクロージャはローカル変数を書き換えられない
     - `RefCell` で対処する
 - ミュータブルなクロージャの再帰呼び出しは借用ルールに抵触する
     - `unsafe` で解決する
+- 成果:
+    - [Fn で再帰するやつ](https://play.rust-lang.org/?gist=97ad8427affee25a31656d750d2a01d6&version=stable&mode=debug)
+    - [FnMut で再帰するやつ](https://play.rust-lang.org/?gist=bceca5a2af42a5436996b99712cb28ed&version=stable&mode=debug)
 
 ## 用例1: 階乗
 
@@ -46,7 +50,7 @@
     }
 ```
 
-注意点は、クロージャの引数の型がまたそのクロージャの型で……という無限再帰を避けるため、関数をトレイトオブジェクトへの参照という形で扱っていることです。
+注意点は、クロージャの引数の型がまたそのクロージャの型で……という無限の循環を避けるため、関数を [トレイトオブジェクト](https://rust-lang-ja.github.io/the-rust-programming-language-ja/1.6/book/trait-objects.html) への参照という形で扱っていることです。
 
 ``Fn(X) -> Y`` というのは「型 `X` の値を受け取って型 `Y` の値を返す関数」の型を表すトレイトで、ある種のクロージャは自動的に `Fn` を実装した型になります。参照: [std::ops::Fn - Rust](https://doc.rust-lang.org/std/ops/trait.Fn.html)
 
@@ -100,7 +104,9 @@
 
 ここでは `RefCell` を使ってこの問題を回避しています。クロージャに渡すのが `RefCell` へのイミュータブルな参照でも、内部の値をミュータブルとして扱えます。参照: [保証を選ぶ](https://rust-lang-ja.github.io/the-rust-programming-language-ja/1.6/book/choosing-your-guarantees.html#refcellt)
 
-なんにせよ、これで晴れてローカル無名再帰ができました！
+なんにせよ、それなりに簡潔に再帰処理ができました！
+
+- [Rust Playground で試す](https://play.rust-lang.org/?gist=97ad8427affee25a31656d750d2a01d6&version=stable&mode=debug)
 
 ## 実装2. ミュータブル版
 
@@ -123,9 +129,9 @@ fn recurse<X, Y>(x: X, f: &mut FnMut(X, &mut FnMut(X) -> Y) -> Y) -> Y {
 
 これをみると分かるように、 `recurse` は受け取ったクロージャへの参照を2つに複製します: 即座に呼び出すための参照と、再帰用に呼び出すための参照です。ミュータブルな参照は複製できないので、`unsafe` を使って強制的に複製しています。
 
-「unsafe だから危険じゃないのか」という疑問がありますが、実行中のクロージャが自分への参照 self, f で2重に受け取っているだけなので、たぶん大丈夫です。
+「unsafe だから危険じゃないのか」という疑問がありますが、実行中のクロージャが自分への参照を self, f で2重に受け取っているだけなので、たぶん大丈夫です。
 
-これでDFSを書き直すと、`RefCell` が消失してすっきり。
+これで深さ優先探索の例を書き直すと、`RefCell` が消失してすっきり。
 
 ```rust
     let mut roots = vec![n; n];
@@ -144,8 +150,14 @@ fn recurse<X, Y>(x: X, f: &mut FnMut(X, &mut FnMut(X) -> Y) -> Y) -> Y {
     }
 ```
 
+[Rust Playground で試す](https://play.rust-lang.org/?gist=bceca5a2af42a5436996b99712cb28ed&version=stable&mode=debug)
+
 ## 参考
 
 - [Stebalien commented on 28 Jan 2016](https://github.com/Hoverbear/rust-rosetta/issues/450#issuecomment-175848086)
 
-    Zコンビネータを使ってクロージャを再帰可能にするコードの例。関数の型が推論されにくい。
+    Zコンビネータを使ってクロージャを再帰可能にするコードの例。引数として受け取る再帰関数の型は推論されないっぽい。
+
+- [無名再帰 - Google 検索](https://www.google.co.jp/search?q=無名再帰&oq=無名再帰)
+
+    クロージャのような匿名の関数を再帰呼び出しすることを無名再帰というらしい。
