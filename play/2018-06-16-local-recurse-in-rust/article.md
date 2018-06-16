@@ -7,6 +7,7 @@
 本稿では小さなヘルパーを用意して記述を簡略化することを試みました。
 
 - 環境: Rust 1.15.1 (AtCoder での現在のバージョン)
+- 筆者: AtCoder もうすぐ青といい続けて1年
 
 ## 要約
 
@@ -16,6 +17,9 @@
     - `RefCell` で対処する
 - ミュータブルなクロージャの再帰呼び出しは借用ルールに抵触する
     - `unsafe` で解決する
+- 成果:
+    - [Fn で再帰するやつ](https://play.rust-lang.org/?gist=97ad8427affee25a31656d750d2a01d6&version=stable&mode=debug)
+    - [FnMut で再帰するやつ](https://play.rust-lang.org/?gist=bceca5a2af42a5436996b99712cb28ed&version=stable&mode=debug)
 
 ## 用例1: 階乗
 
@@ -102,6 +106,8 @@
 
 なんにせよ、これで晴れてローカル無名再帰ができました！
 
+- [Rust Playground で試す](https://play.rust-lang.org/?gist=97ad8427affee25a31656d750d2a01d6&version=stable&mode=debug)
+
 ## 実装2. ミュータブル版
 
 記述量を減らすのが目的なので、 `RefCell` をなくす方法も考えてみます。
@@ -143,6 +149,8 @@ fn recurse<X, Y>(x: X, f: &mut FnMut(X, &mut FnMut(X) -> Y) -> Y) -> Y {
         })
     }
 ```
+
+[Rust Playground で試す](https://play.rust-lang.org/?gist=bceca5a2af42a5436996b99712cb28ed&version=stable&mode=debug)
 
 ## 参考
 
