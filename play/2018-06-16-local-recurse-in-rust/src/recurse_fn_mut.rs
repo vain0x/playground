@@ -60,6 +60,25 @@ mod tests {
     }
 
     #[test]
+    #[cfg(xxx)]
+    fn test_broken() {
+        // https://qiita.com/vain0x/items/90c9580aa34926160ac1#comment-1988da50c4701cc0add8
+
+        let mut b = Some(Box::new(1));
+        recurse(true, &mut |flag, f| {
+            if flag {
+                if let Some(ref b) = b {
+                    f(false);
+                    println!("b = {}", *b); // SEGV
+                }
+            } else {
+                b.take();
+                println!("box droped");
+            }
+        });
+    }
+
+    #[test]
     fn test_closure_is_dropped() {
         let n = 4;
         let mut k = 0;
