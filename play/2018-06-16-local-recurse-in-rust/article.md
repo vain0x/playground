@@ -1,5 +1,3 @@
-# Rustのクロージャで再帰してみた
-
 クロージャを再帰呼び出しする方法を考えました。
 
 競技プログラミングではローカル変数を書き換えながら再帰する処理がよく出てきます。しかし Rust でそれを書こうとするとやや冗長になりがちです。
@@ -15,11 +13,8 @@
 - 小さなアダプタを書くと再帰呼び出しできる
 - イミュータブルなクロージャはローカル変数を書き換えられない
     - `RefCell` で対処する
-- ミュータブルなクロージャの再帰呼び出しは借用ルールに抵触する
-    - `unsafe` で解決する
 - 成果:
     - [Fn で再帰するやつ](https://play.rust-lang.org/?gist=97ad8427affee25a31656d750d2a01d6&version=stable&mode=debug)
-    - [FnMut で再帰するやつ](https://play.rust-lang.org/?gist=bceca5a2af42a5436996b99712cb28ed&version=stable&mode=debug)
 
 ## 用例1: 階乗
 
@@ -110,6 +105,11 @@
 
 ## 実装2. ミュータブル版
 
+**追記**: ミュータブルなローカル変数を書き換えながらクロージャを再帰呼び出しする方法について記述していましたが、 [安全でないコードが書けてしまう](https://qiita.com/vain0x/items/90c9580aa34926160ac1#comment-1988da50c4701cc0add8) ので取り下げました。
+
+<details>
+<summary>変更前の内容はたたんであります。</summary>
+<div>
 記述量を減らすのが目的なので、 `RefCell` をなくす方法も考えてみます。
 
 クロージャの型が自動で実装するトレイトは `Fn` のほかに `FnMut` もあります。`FnMut` は、簡単にいうと「ミュータブルな状態を持つ関数」の型が実装すべきトレイトです。参照: [std::ops::FnMut - Rust](https://doc.rust-lang.org/std/ops/trait.FnMut.html)
@@ -151,6 +151,8 @@ fn recurse<X, Y>(x: X, f: &mut FnMut(X, &mut FnMut(X) -> Y) -> Y) -> Y {
 ```
 
 [Rust Playground で試す](https://play.rust-lang.org/?gist=bceca5a2af42a5436996b99712cb28ed&version=stable&mode=debug)
+</div>
+</details>
 
 ## 参考
 
