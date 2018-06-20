@@ -1,0 +1,5 @@
+#!/bin/bash
+
+dotnet watch -p Structures.Tests test &
+dotnet watch -p StructuresFSharp.Tests test &
+wait
