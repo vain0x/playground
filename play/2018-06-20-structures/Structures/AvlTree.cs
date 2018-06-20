@@ -174,19 +174,16 @@ namespace Structures
                     value = default(TValue);
                     return false;
                 }
-                else if (key == Key)
+
+                if (key == Key)
                 {
                     value = Value;
                     return true;
                 }
-                else if (key < Key)
-                {
-                    return Left.TryFind(key, out value);
-                }
-                else
-                {
-                    return Right.TryFind(key, out value);
-                }
+
+                return key < Key
+                    ? Left.TryFind(key, out value)
+                    : Right.TryFind(key, out value);
             }
 
             Node ReplaceRoot(TValue newValue)
@@ -201,9 +198,7 @@ namespace Structures
                 Debug.Assert(!IsEmpty);
 
                 if (Left.IsEmpty || Right.IsEmpty)
-                {
                     return Right.IsEmpty ? Left : Right;
-                }
 
                 // これの次に大きいキーを持つノード (右部分木の左端) を新しい根にする。
 
@@ -249,7 +244,8 @@ namespace Structures
 
             public IEnumerable<TValue> ToEnumerable()
             {
-                if (IsEmpty) yield break;
+                if (IsEmpty)
+                    yield break;
 
                 foreach (var item in Left.ToEnumerable())
                     yield return item;

@@ -165,7 +165,7 @@ namespace Structures
 
     public static class VecExtensions
     {
-        public static Vec<T> ToVector<T>(this IEnumerable<T> source) =>
+        public static Vec<T> ToVec<T>(this IEnumerable<T> source) =>
             new Vec<T>(source.ToArray());
     }
 }
