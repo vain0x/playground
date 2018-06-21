@@ -13,11 +13,6 @@ namespace Structures
         : IEquatable<TRecord>
         where TRecord : RecordBase<TRecord>, new()
     {
-        static RecordBase()
-        {
-            ForceRegister();
-        }
-
         object[] Bag;
 
         public T Get<T>(Field<T> field)
