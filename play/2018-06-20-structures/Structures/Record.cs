@@ -13,6 +13,11 @@ namespace Structures
         : IEquatable<TRecord>
         where TRecord : RecordBase<TRecord>, new()
     {
+        static RecordBase()
+        {
+            ForceRegister();
+        }
+
         object[] Bag;
 
         public T Get<T>(Field<T> field)
@@ -85,7 +90,7 @@ namespace Structures
 
         protected static UntypedField F { get; } = new UntypedField();
 
-        static FieldList Fields = new FieldList(new IRecordField<TRecord>[0], false);
+        static FieldList Fields { get; } = ForceRegister();
 
         sealed class FieldList
         {
@@ -99,19 +104,32 @@ namespace Structures
             }
         }
 
-        public sealed class Field<T>
-            : RecordFieldBase<TRecord, T>
-            , ILens<TRecord, T>
+        interface IIndexSettable
         {
+            int Index { set; }
+        }
+
+        public sealed class Field<T>
+            : IRecordField<TRecord>
+            , ILens<TRecord, T>
+            , IIndexSettable
+        {
+            public int Index { get; set; }
+
+            public Opt<T> DefaultValue { get; private set; }
+
+            Opt<object> IRecordField<TRecord>.DefaultValue =>
+                DefaultValue.Map(x => (object)x);
 
             public Field(Opt<T> defaultValue, int index)
-                : base(defaultValue)
             {
+                DefaultValue = defaultValue;
+                Index = index;
             }
 
             public static implicit operator Field<T>(UntypedField _)
             {
-                return Register<T>();
+                return new Field<T>(Opt.None<T>(), 0);
             }
 
             public T Get(TRecord record)
@@ -125,57 +143,35 @@ namespace Structures
             }
         }
 
-        internal static Field<T> Register<T>()
-        {
-            var defaultValue = default(T);
-
-            while (true)
-            {
-                var oldFields = Fields;
-                if (oldFields.Frozen) throw new InvalidOperationException("cannot add field dynamically");
-
-                var index = oldFields.Fields.Length;
-                var field = new Field<T>(defaultValue.AcceptNull(), index);
-                var fields = new FieldList(oldFields.Fields.Concat(new[] { field }).ToArray(), frozen: false);
-
-                var replaced = System.Threading.Interlocked.CompareExchange(ref Fields, fields, oldFields);
-                if (replaced == oldFields) return field;
-            }
-        }
-
-        static IRecordField<TRecord>[] Freeze()
-        {
-            while (true)
-            {
-                var oldFieldList = Fields;
-                if (oldFieldList.Frozen) return oldFieldList.Fields;
-
-                var makeFields =
-                    typeof(TRecord)
-                    .GetProperties(BindingFlags.Static | BindingFlags.GetProperty)
-                    .Where(p =>
-                        typeof(IRecordField<TRecord>).IsAssignableFrom(p.PropertyType)
-                        && p.GetIndexParameters().Length == 0
-                        && p.GetMethod != null
-                    )
-                    .Select(p => p.GetValue(null))
-                    .ToVec();
-                Debug.WriteLine(makeFields);
-
-                var fieldList = new FieldList(oldFieldList.Fields, frozen: false);
-                var replaced = System.Threading.Interlocked.CompareExchange(ref Fields, fieldList, oldFieldList);
-                if (replaced == oldFieldList) return fieldList.Fields;
-            }
-        }
-
         public static IRecordField<TRecord>[] GetFields()
         {
-            return Freeze();
+            return Fields.Fields;
         }
 
         public static int GetFieldCount()
         {
             return GetFields().Length;
+        }
+
+        static FieldList ForceRegister()
+        {
+            var fields =
+                typeof(TRecord)
+                .GetProperties(BindingFlags.Static | BindingFlags.Public)
+                .Where(p =>
+                    typeof(IRecordField<TRecord>).IsAssignableFrom(p.PropertyType)
+                    && p.GetIndexParameters().Length == 0
+                    && p.GetMethod != null
+                )
+                .Select(p => p.GetValue(null))
+                .ToVec();
+
+            for (var i = 0; i < fields.Length; i++)
+            {
+                ((IIndexSettable)fields[i]).Index = i;
+            }
+
+            return new FieldList(fields.Cast<IRecordField<TRecord>>().ToArray(), frozen: true);
         }
 
         #endregion
@@ -242,22 +238,6 @@ namespace Structures.Internals
         : IRecordField<TRecord>
     {
         new Opt<T> DefaultValue { get; }
-    }
-
-    public abstract class RecordFieldBase<TRecord, T>
-        : IRecordField<TRecord, T>
-    {
-        public int Index { get; set; }
-
-        public Opt<T> DefaultValue { get; private set; }
-
-        public RecordFieldBase(Opt<T> defaultValue = default(Opt<T>))
-        {
-            DefaultValue = defaultValue;
-        }
-
-        Opt<object> IRecordField<TRecord>.DefaultValue =>
-            DefaultValue.Map(x => (object)x);
     }
 
     public struct RecordFieldFactory<TRecord>

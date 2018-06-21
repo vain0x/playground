@@ -9,8 +9,8 @@ namespace Structures
     public sealed class Person
         : RecordBase<Person>
     {
-        public static readonly Field<string> Name = F;
-        public static readonly Field<DateTime> Birthday = F;
+        public static Field<string> Name { get; } = F;
+        public static Field<DateTime> Birthday { get; } = F;
 
         public static Person Create(
             string name,
@@ -29,6 +29,7 @@ namespace Structures
         [Fact]
         public void ItCanConstruct()
         {
+            var r = new Person();
             var person = P.Create("Hatsune Miku", new DateTime(2007, 8, 31));
 
             person.Get(P.Name).Is("Hatsune Miku");
