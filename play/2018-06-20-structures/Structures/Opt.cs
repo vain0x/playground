@@ -97,6 +97,12 @@ namespace Structures
             !(left < right);
 
         #endregion
+
+        public Opt<Y> Map<Y>(Func<T, Y> f) =>
+            IsSome ? Opt.Some(f(Value)) : Opt.None<Y>();
+
+        public Opt<Y> FlatMap<Y>(Func<T, Opt<Y>> f) =>
+            IsSome ? f(Value) : Opt.None<Y>();
     }
 
     public static class Opt
