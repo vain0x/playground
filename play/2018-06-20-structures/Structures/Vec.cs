@@ -75,7 +75,7 @@ namespace Structures
             if (ReferenceEquals(self, other)) return 0;
 
             var len = Math.Min(self.Length, other.Length);
-            for (var i = 0; i <  len; i++)
+            for (var i = 0; i < len; i++)
             {
                 var c = Comparer<T>.Default.Compare(self[i], other[i]);
                 if (c != 0) return c;
