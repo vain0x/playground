@@ -75,6 +75,9 @@ module Element =
     | EContainer ({ TopLeft = topLeft }, _) ->
       topLeft
 
+module E = Element
+type Element = Element.T
+
 type LayoutF<'R> =
   | Embed
     of Element
@@ -88,8 +91,6 @@ type LayoutF<'R> =
 and Layout<'K> =
   | Layout
     of LayoutF<Layout<'K>> * Element * 'K
-
-
 
 module Say =
     let hello name =
