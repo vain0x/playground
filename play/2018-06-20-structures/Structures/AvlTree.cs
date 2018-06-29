@@ -87,11 +87,11 @@ namespace Structures
 
             // RotateLeft
             // from:
-            //         T
+            //       T
+            //      / \
+            //     L   R
             //        / \
-            //       L   R
-            //          / \
-            //         X   Y
+            //       X   Y
             // to:
             //        [R]
             //        / \
@@ -107,11 +107,11 @@ namespace Structures
             //      / \
             //     X   Y
             // to:
-            //        [L]
+            //      [L]
+            //      / \
+            //     X  [T]
             //        / \
-            //       X  [T]
-            //          / \
-            //         Y   R
+            //       Y   R
 
             static Node RotateLeft(Node tree)
             {
