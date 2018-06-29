@@ -8,12 +8,12 @@ namespace Xunit
     {
         public static void Is<T>(this T actual, T expected)
         {
-            Assert.Equal(actual, expected);
+            Assert.Equal(expected, actual);
         }
 
         public static void Are<T>(this IEnumerable<T> actual, IEnumerable<T> expected)
         {
-            Assert.Equal(actual, expected);
+            Assert.Equal(expected, actual);
         }
     }
 }
