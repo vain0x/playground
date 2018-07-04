@@ -6,22 +6,25 @@
 
 ## Syntax
 
-The code looks like the following:
+Code looks like the following:
 
 ```fsharp
-// Bracky code. (Highlighted as F# though.)
+// Bracky code (highlighted as F# though)
 
-{ val main () =
-  { if true ->
-      {val x = 1};
-      x + 2;
-    if false -> 3;
-    else 4
+{ val fizz_buzz n =
+  { if n % 15 == 0 -> -15
+    if n % 3 == 0 ->
+      {val fizz = -3};
+      fizz
+    if n % 5 == 0 ->
+      {val buzz = -5};
+      buzz
+    else n
   }
 }
 ```
 
-Because `if` expressions occur directly inside of `{}`, it is distinct from other `if`s that mean `else-if` in the same block. So all conditions are aligned at the same column.
+Because `if` expressions occur directly inside of `{}`, the first `if` in an if/else-if chain is distinct from second `if`s. So all conditions are aligned at the same column.
 
 ## Semantics
 
@@ -34,10 +37,10 @@ Because `if` expressions occur directly inside of `{}`, it is distinct from othe
 
 ## Development
 
-- Install .NET Core CLI 2.1.
+- Install .NET Core Cli Tools 2.1.
 - Install F# 4.1.
 
-In `./src` directory:
+In the `src` directory:
 
 ```sh
 # To build:
