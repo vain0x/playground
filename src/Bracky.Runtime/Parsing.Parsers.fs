@@ -1,7 +1,6 @@
 ﻿namespace Bracky.Runtime.Parsing
 
 open System
-open DotNetKit.FSharp.ErrorHandling
 open FParsec
 
 module private List =

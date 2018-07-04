@@ -1,6 +1,5 @@
 ﻿namespace Bracky.Runtime.Typing
 
-open DotNetKit.FSharp.ErrorHandling
 open FParsec
 open Persimmon
 open Persimmon.Syntax.UseTestNameByReflection

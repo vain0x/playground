@@ -90,7 +90,7 @@ type Substitution private (map: Map<_, _>) =
         KindTypeExpression (kind, arguments |> Array.map apply)
     apply
 
-  member this.Apply(t: TypeExpression) =
+  member __.Apply(t: TypeExpression) =
     apply t
 
   member this.Extend(tu: TypeVariable, t: TypeExpression) =
@@ -122,7 +122,7 @@ module Substitution =
     | (VarTypeExpression tv, _)
       when t' |> TypeExpression.typeVariables |> Seq.forall ((<>) tv) ->
       this.Extend(tv, t')
-    | (_, VarTypeExpression tv) ->
+    | (_, VarTypeExpression _) ->
       unify t' t this
     | (FunTypeExpression (s, u), FunTypeExpression (s', u')) ->
       this
@@ -168,13 +168,13 @@ type TypeEnvironment private (map: Map<string, TypeScheme>) =
       |> Seq.toArray
     TypeScheme (tvs, t)
 
-  member this.TryFind(identifier) =
+  member __.TryFind(identifier) =
     map |> Map.tryFind identifier
 
-  member this.Add(identifier, ts) =
+  member __.Add(identifier, ts) =
     TypeEnvironment(map |> Map.add identifier ts)
 
-  member this.Generalize(t) =
+  member __.Generalize(t) =
     generalize t
 
   static member val Empty =
@@ -239,11 +239,11 @@ module TypeInferer =
   /// また、expresssion が変数を定義する場合は、環境が拡張される。
   /// expression の型が t になりえない場合はエラーとする。
   /// なお previous は直前に推論した式を表す。(エラー出力用に使う。)
-  type private InferFunction(previous, expression, t, inferer) =
+  type private InferFunction(_previous, expression, t, inferer) =
     let infer expression' t' inferer' =
       InferFunction(Some expression, expression', t', inferer').Run()
 
-    member this.InferOperator(operator) =
+    member __.InferOperator(operator) =
       match operator with
       | AddOperator
       | MulOperator ->
@@ -251,7 +251,7 @@ module TypeInferer =
         let tInt = TypeExpression.int
         inferer |> unify t (tFun (tInt, tFun (tInt, tInt)))
 
-    member this.InferVar(identifier) =
+    member __.InferVar(identifier) =
       match inferer.TypeEnvironment.TryFind(identifier) with
       | Some (typeScheme: TypeScheme) ->
         let t' = typeScheme.Instantiate()
@@ -259,7 +259,7 @@ module TypeInferer =
       | None ->
         failwith "TODO: variable not defined"
 
-    member this.InferFun(pattern, body) =
+    member __.InferFun(pattern, body) =
       match pattern with
       | UnitPattern _ ->
         let tu = TypeVariable.fresh () |> VarTypeExpression
@@ -280,7 +280,7 @@ module TypeInferer =
               |> infer body tu
             )
 
-    member this.InferIf(clauses) =
+    member __.InferIf(clauses) =
       let (inferer, elseExists) =
         clauses |> Array.fold
           (fun (inferer, elseExists) clause ->
@@ -298,18 +298,18 @@ module TypeInferer =
       then inferer
       else inferer |> unify t TypeExpression.unit
 
-    member this.InferApply(left, right) =
+    member __.InferApply(left, right) =
       let tv = TypeVariable.fresh () |> VarTypeExpression
       inferer
       |> infer left (FunTypeExpression (tv, t))
       |> infer right tv
 
-    member this.InferThen(left, right) =
+    member __.InferThen(left, right) =
       inferer
       |> infer left TypeExpression.unit
       |> infer right t
 
-    member this.InferVal(pattern, right) =
+    member __.InferVal(pattern, right) =
       match pattern with
       | UnitPattern _ ->
         inferer
