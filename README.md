@@ -30,7 +30,7 @@ Because `if` expressions occur directly inside of `{}`, it is distinct from othe
     - bool
     - int (64 bit signed)
     - function
-- Type inference with Hindly-Milner algorithm.
+- Type inference with Hindley-Milner algorithm.
 
 ## Development
 
