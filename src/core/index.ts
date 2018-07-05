@@ -72,7 +72,9 @@ const ioEffect = {
 
 type Ident = string;
 
-type Value = string | number | object | IOAction;
+type Value = {
+  value: string | number | Value[] | object | IOAction
+};
 
 interface Env {
   parent: Env | undefined;
@@ -98,113 +100,193 @@ const bind = (env: Env, ref: string, value: Value): Env => {
 
 const jsnow: IOAction = {
   io() {
-    return Date();
+    return { value: Date() };
   }
 };
 
-const jslog = (value: Value): IOAction => ({
+const jslog = ({ value: content }: Value): IOAction => ({
   io() {
-    console.log(value);
-    return { consoleLogResult: value };
+    console.log(content);
+    return { value: "consoleLogResult" };
   }
 });
 
 const exhaust = (x: never): never => x;
 
 const evaluateBinOp = (op: string, left: Value, right: Value) => {
-  const l = left as any, r = right as any;
-  if (op === "+") {
-    return (l + r) as Value;
-  } else if (op === "*") {
-    return (l * r) as Value;
-  } else {
-    throw new Error(`Unknown binary operator ${op}`);
-  }
+  const k = () => {
+    const l = left.value as any, r = right.value as any;
+    if (op === "+") {
+      return (l + r);
+    } else if (op === "*") {
+      return (l * r);
+    } else {
+      throw new Error(`Unknown binary operator ${op}`);
+    }
+  };
+  return { value: k() as Value };
 };
 
-const evaluate = (expr: Expr, env: Env): Value => {
+interface EvalContext {
+  env: Env,
+  effect: string,
+  context: {},
+};
+
+const evaluate = (expr: Expr, context: EvalContext, cont: (value: Value) => Value): Value => {
   if ("literal" in expr) {
-    return expr.literal;
+    return cont({ value: expr.literal });
   } else if ("ref" in expr) {
-    return resolveRef(env, expr.ref);
+    return cont(resolveRef(context.env, expr.ref));
   } else if ("binary" in expr) {
-    const left = evaluate(expr.left, env);
-    const right = evaluate(expr.right, env);
-    return evaluateBinOp(expr.binary, left, right);
+    return evaluate(expr.left, context, left =>
+      evaluate(expr.right, context, right =>
+        cont(evaluateBinOp(expr.binary, left, right))
+      ));
   } else if ("call" in expr) {
     if ("ref" in expr.call && expr.call.ref === "jslog" && expr.args.length === 1) {
-      const arg = evaluate(expr.args[0], env);
-      return jslog(arg);
+      return evaluate(expr.args[0], context, arg => cont({ value: jslog(arg) }));
     }
     throw new Error("not impl");
   } else if ("let" in expr) {
-    const content = evaluate(expr.be, env);
-    const nextEnv = bind(env, expr.let.var, content);
-    return evaluate(expr.in, nextEnv);
+    return evaluate(expr.be, context, content => {
+      const nextEnv = bind(context.env, expr.let.var, content);
+      return evaluate(expr.in, { ...context, env: nextEnv }, cont);
+    });
   } else if ("affect" in expr) {
-    const action = evaluate(expr.affect, env);
-    // only in io context:
-    if (typeof action === "object" && "io" in action) {
-      return action.io();
-    }
-    throw new Error("Expected IO action");
+    return evaluate(expr.affect, context, ({ value: action }) => {
+      if (context.effect === "io" && typeof action === "object" && "io" in action) {
+        return cont(action.io());
+      }
+      if (context.effect === "list" && typeof action === "object" && action instanceof Array && context.context) {
+        for (const a of action) {
+          cont(a);
+        }
+        return { value: action }; // ignored
+      }
+      throw new Error("Invalid action");
+    });
   } else if ("effect" in expr) {
-    return { io: () => evaluate(expr.body, env) };
+    if ("ref" in expr.effect && expr.effect.ref === "io") {
+      return cont({
+        value: {
+          io: () => evaluate(expr.body, { ...context, effect: "io", context: {} }, v => v)
+        }
+      });
+    }
+    if ("ref" in expr.effect && expr.effect.ref === "list") {
+      return cont({
+        value: {
+          io: () => {
+            const list: Value[] = [];
+            evaluate(expr.body, { ...context, effect: "list", context: { list } }, value => {
+              list.push(value);
+              return value;
+            });
+            return { value: list };
+          }
+        }
+      });
+    }
+    throw new Error(`Expected io or list: ${expr.effect}`);
   } else {
     return exhaust(expr);
   }
 };
 
-// let main = io {
-//   let now = jsnow()!
+// io {
+//   let now = jsnow!
 //   let message = "It's " + now
-//   jslog(now)!
+//   jslog(message)!
 // }
-const sample: Expr = {
-  let: {
-    var: "main",
+const logSample: Expr = {
+  effect: {
+    ref: "io",
   },
-  be: {
-    effect: {
-      ref: "io",
+  body: {
+    let: { var: "now" },
+    be: {
+      affect: { ref: "jsnow" },
     },
-    body: {
-      let: { var: "now" },
+    in: {
+      let: { var: "message" },
       be: {
-        affect: { ref: "jsnow" },
+        binary: "+",
+        left: { literal: "It's " },
+        right: { ref: "now" }
       },
       in: {
-        let: { var: "message" },
-        be: {
-          binary: "+",
-          left: { literal: "At " },
-          right: { ref: "now" }
+        affect: {
+          call: { ref: "jslog" },
+          args: [{ ref: "message" }],
         },
-        in: {
-          affect: {
-            call: { ref: "jslog" },
-            args: [{ ref: "message" }],
-          },
-        }
       }
     }
-  },
-  in: { ref: "main" },
+  }
 };
 
-const main = () => {
-  const emptyEnv: Env = { parent: undefined, bindings: new Map<Ident, Value>() };
-  const defaultEnv: Env = bind(emptyEnv, "jsnow", jsnow);
+// list {
+//   let x = xs!
+//   let y = ys!
+//   x + y
+// }
+const listSample: Expr = {
+  effect: {
+    ref: "list",
+  },
+  body: {
+    let: { var: "x" },
+    be: { affect: { ref: "xs" } },
+    in: {
+      let: { var: "y" },
+      be: { affect: { ref: "ys" } },
+      in: {
+        binary: "+",
+        left: { ref: "x" },
+        right: { ref: "y" },
+      }
+    }
+  }
+};
 
-  const action = evaluate(sample, defaultEnv);
-  console.info("evaluation completed.");
+const execute = (expr: Expr, bindings: Map<Ident, Value>): Value => {
+  const defaultEnv: Env = { parent: undefined, bindings };
 
+  const { value: action } = evaluate(expr, { env: defaultEnv, effect: "total", context: {} }, value => value);
   if (typeof action === "object" && "io" in action) {
     const result = action.io();
-    console.log(result);
+    console.info(result);
+    return result;
   } else {
     throw new Error(`main must be an action`);
   }
 };
 
+const executeLogSample = () => {
+  execute(logSample, new Map<Ident, Value>([
+    ["jsnow", { value: jsnow }],
+  ]))
+};
+
+const executeListSample = () => {
+  const range = (start: number, end: number): Value => {
+    const list: Value[] = [];
+    for (let i = start; i < end; i++) {
+      list.push({ value: i });
+    }
+    return { value: list };
+  };
+  execute(listSample, new Map<Ident, Value>([
+    ["xs", range(1, 4)],
+    ["ys", { value: [{ value: 10 }, { value: 20 }] }],
+  ]));
+}
+
+const main = () => {
+  executeLogSample();
+  executeListSample();
+};
+
 main();
+
+// npx ts-node ./core/index.ts
