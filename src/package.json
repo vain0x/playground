@@ -1,0 +1,30 @@
+{
+  "name": "puqqing-lang",
+  "version": "0.1.0",
+  "description": "Dynamic purely functional language",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/vain0x/puqqing-lang.git"
+  },
+  "author": "vain0x",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/vain0x/puqqing-lang/issues"
+  },
+  "homepage": "https://github.com/vain0x/puqqing-lang#readme",
+  "devDependencies": {
+    "@types/jest": "^23.1.4",
+    "@types/node": "^10.5.1",
+    "cross-env": "^5.2.0",
+    "jest": "^23.3.0",
+    "npm-run-all": "^4.1.3",
+    "ts-node": "^7.0.0",
+    "tslint": "^5.10.0",
+    "typescript": "^2.9.2",
+    "webpack": "^4.15.0"
+  }
+}

@@ -1,0 +1,39 @@
+{
+  "terminal.integrated.cwd": "src",
+  "files.exclude": {
+    "**/.git": true,
+    "**/.svn": true,
+    "**/.hg": true,
+    "**/CVS": true,
+    "**/.DS_Store": true,
+    "**/*.orig": true,
+    "**/*.hot-update.js": true,
+    "**/*.hot-update.json": true
+  },
+  "search.exclude": {
+    "**/node_modules": true,
+    "**/bower_components": true,
+    "dist/**/*.js": true,
+    "dist/**/*.js.map": true,
+    "dist/**/*.css": true
+  },
+  "javascript.format.insertSpaceAfterConstructor": true,
+  "javascript.format.insertSpaceBeforeFunctionParenthesis": true,
+  "eslint.autoFixOnSave": true,
+  "eslint.options": {
+    "c": "./src/.eslintrc.json",
+  },
+  "typescript.tsdk": "src/node_modules/typescript/lib",
+  "typescript.format.insertSpaceAfterConstructor": false,
+  "typescript.format.insertSpaceAfterFunctionKeywordForAnonymousFunctions": false,
+  "typescript.format.insertSpaceBeforeFunctionParenthesis": false,
+  "tslint.configFile": "./src/tslint.json",
+  "tslint.autoFixOnSave": true,
+  "tslint.alwaysShowRuleFailuresAsWarnings": true,
+  "[javascript]": {
+    "editor.formatOnSave": true
+  },
+  "[typescript]": {
+    "editor.formatOnSave": true
+  }
+}
