@@ -1,5 +1,5 @@
 package-lock.json
-
+dist/*.js
 
 
 # Created by https://www.gitignore.io/api/node
