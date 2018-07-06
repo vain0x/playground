@@ -1,3 +1,4 @@
+import { generate } from 'pegjs';
 
 interface VarPattern {
   var: string;
@@ -80,6 +81,138 @@ interface Env {
   parent: Env | undefined;
   bindings: Map<Ident, Value>;
 }
+
+const peg = `
+start
+  = shebang? (_ ";")* _ expr:expr _ { return expr; }
+
+expr
+  = let
+  / do
+
+let
+  = "let" _ pat:pattern _ "=" _ init:factor mulspace _ body:expr {
+    return { let: pat, init, body };
+  }
+  / "let" _ pat:pattern _ "=" _ init:term _ body:expr {
+  	return { err: "Semicolon required", let: pat, init, body };
+  }
+  / "let" _ pat:pattern _ "=" _ init:term (_ ";")+ _ body:expr {
+  	return { let: pat, init, body };
+  }
+  / "let" _ pat:pattern _ "=" _ init:term (_ ";")* {
+    return { let: pat, init, body: { literal: 0 } };
+  }
+  / "let" _ pat:pattern _ "=" _ ";" _ body:expr {
+    return { err: "Missing initializer", pat, body };
+  }
+
+do
+  = init:factor mulspace body:expr {
+    return { do: init, body };
+  }
+  / init:term (_ ";")+ _ body:expr {
+  	return { do: init, body };
+  }
+  / init:term (_ ";")* { return init; }
+
+term "term"
+  = add
+
+factor "factor"
+  = affect
+
+add
+  = head:mul tail:(_ ("+" / "-") _ mul)* {
+    return tail.reduce((left, e) => ({ bin: e[1], left, right: e[3] }), head);
+  }
+
+mul
+  = head:affect tail:(_ ("*" / "/") _ affect)* {
+    return tail.reduce((left, e) => ({ bin: e[1], left, right: e[3] }), head);
+  }
+
+affect
+  = head:call tail:(_ "!")* {
+    return tail.reduce((affect, _) => ({ affect }), head);
+  }
+
+call
+  = head:effect tail:(minispaces args)* {
+    return tail.reduce((call, e) => ({ call, args: e[1] }), head);
+  }
+
+args "argument list"
+  = "(" _ seq:seq _ ")" { return seq; }
+  / "(" _ ")" { return []; }
+
+seq
+  = head:factor mulspace tail:seq {
+    return [head, ...tail];
+  }
+  / head:term (_ ",") _ tail:seq {
+    return [head, ...tail];
+  }
+  / head:term (_ ",")? { return [head]; }
+
+effect
+  = ref:("io" / "list") _ "{" _ body:expr _ "}" {
+    return { effect: { ref }, body };
+  }
+  / "(" _ expr:expr _ ")" { return expr; }
+  / "(" _ ")" { return { err: "Missing content of parenthesis" } }
+  / ref
+  / literal
+
+literal
+  = int / simpleStr / rawStr
+
+pattern "pattern"
+  = ref:ident {
+    return { ref };
+  }
+
+ref "variable"
+  = ref:ident {
+    return { ref };
+  }
+
+ident "identifier"
+  = $ ([a-zA-Z_] [0-9a-zA-Z_]*)
+
+int "integer"
+  = ("0" / [1-9] [0-9]*) {
+    return { literal: parseInt(text(), 10) };
+  }
+
+rawStr "raw string"
+  = 'r#"' literal:($ ((! '"#') .)*) '"#' {
+    return { literal };
+  }
+
+simpleStr "string"
+  = '"' literal:($ [^"]*) '"' {
+    return { literal };
+  }
+
+_ "whitespace"
+  = spaces (comment spaces)*
+
+shebang "shebang"
+  = "#!" ($ [^\r\n]*) spaces
+
+comment "comment"
+  = "//" ($ [^\r\n]*) ([\r\n]+ / ! .)
+
+mulspace "multiline whitespace"
+  = [ \t]* ([\n\r] / comment) spaces
+
+spaces "blank"
+  = [ \t\n\r]*
+
+minispaces "blank"
+  = [ \t]*
+`;
 
 const resolveRef = (env: Env, ref: string): Value => {
   const value = env.bindings.get(ref);
@@ -196,11 +329,13 @@ const evaluate = (expr: Expr, context: EvalContext, cont: (value: Value) => Valu
   }
 };
 
-// io {
-//   let now = jsnow!
-//   let message = "It's " + now
-//   jslog(message)!
-// }
+const logSampleSource = `
+io {
+  let now = jsnow!
+  let message = "It's " + now;
+  jslog(message)!
+}
+`;
 const logSample: Expr = {
   effect: {
     ref: 'io',
@@ -227,11 +362,13 @@ const logSample: Expr = {
   },
 };
 
-// list {
-//   let x = xs!
-//   let y = ys!
-//   x + y
-// }
+const listSampleSource = `
+list {
+  let x = xs!
+  let y = ys!
+  x + y
+}
+`;
 const listSample: Expr = {
   effect: {
     ref: 'list',
