@@ -1,4 +1,4 @@
-import { generate } from 'pegjs';
+import { generate as pegGenerate } from 'pegjs';
 
 interface VarPattern {
   var: string;
@@ -435,13 +435,35 @@ interface BddHelper {
 }
 
 export const testSuite = () => {
-  describe('hello', () => {
-    describe('evaluateBinOp', () => {
-      it('add', () => {
-        expect(
-          evaluateBinOp('+', { value: 1 }, { value: 2 }).value,
-        ).toBe(3);
-      });
+  describe('parser', () => {
+    const parser = pegGenerate(`
+      expr = _ expr:add _ {
+        return expr;
+      }
+
+      add = head:mul tail:(_ "+" _ mul)* {
+        return tail.reduce((l, e) => ({ op: "+", l, r: e[3] }), head);
+      }
+
+      mul = head:int tail:(_ "*" _ int)* {
+        return tail.reduce((l, e) => ({ op: "*", l, r: e[3] }), head);
+      }
+
+      int = digits:($ [0-9]+) {
+        return parseInt(digits, 10);
+      }
+
+      _ "whitespace" = [ \t]*
+    `);
+    const result = parser.parse('2 + 3 * 7');
+    expect(result).toEqual({ l: 2, op: '+', r: { l: 3, op: '*', r: 7 } });
+  });
+
+  describe('evaluateBinOp', () => {
+    it('add', () => {
+      expect(
+        evaluateBinOp('+', { value: 1 }, { value: 2 }).value,
+      ).toEqual(3);
     });
   });
 };
