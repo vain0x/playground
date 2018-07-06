@@ -4,7 +4,9 @@
   "description": "Dynamic purely functional language",
   "main": "index.js",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "tsc": "tsc",
+    "jest": "jest",
+    "test": "jest"
   },
   "repository": {
     "type": "git",
@@ -31,5 +33,19 @@
   },
   "dependencies": {
     "pegjs": "^0.10.0"
+  },
+  "jest": {
+    "transform": {
+      "^.+\\.tsx?$": "ts-jest"
+    },
+    "testRegex": "(/__tests__/.*|(\\.|/)(test|spec))\\.(jsx?|tsx?)$",
+    "moduleFileExtensions": [
+      "ts",
+      "tsx",
+      "js",
+      "jsx",
+      "json",
+      "node"
+    ]
   }
 }
