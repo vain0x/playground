@@ -4,8 +4,7 @@
   "description": "Dynamic purely functional language",
   "main": "index.js",
   "scripts": {
-    "tsc": "tsc",
-    "jest": "jest",
+    "dev": "jest --watchAll",
     "test": "jest"
   },
   "repository": {

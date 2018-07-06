@@ -259,7 +259,7 @@ const evaluateBinOp = (op: string, left: Value, right: Value) => {
       throw new Error(`Unknown binary operator ${op}`);
     }
   };
-  return { value: k() as Value };
+  return { value: k() } as Value;
 };
 
 interface EvalContext {
@@ -422,11 +422,26 @@ const executeListSample = () => {
   ]));
 };
 
-const main = () => {
+export const main = () => {
   executeLogSample();
   executeListSample();
 };
 
-main();
+type DescribeFunction = (name: string, fn: () => void) => void;
+type ItFunction = (name: string, fn: () => void) => void;
+interface BddHelper {
+  describe: DescribeFunction;
+  it: ItFunction;
+}
 
-// npx ts-node ./core/index.ts
+export const testSuite = () => {
+  describe('hello', () => {
+    describe('evaluateBinOp', () => {
+      it('add', () => {
+        expect(
+          evaluateBinOp('+', { value: 1 }, { value: 2 }).value,
+        ).toBe(3);
+      });
+    });
+  });
+};

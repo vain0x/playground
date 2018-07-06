@@ -51,5 +51,8 @@ In the `src` directory:
 npm install
 
 # Run sample program.
-$(npm bin)/ts-node ./core/index.ts
+$(npm bin)/ts-node ./core/example.ts
+
+# Run unit tests.
+npm run test
 ```
