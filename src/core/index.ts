@@ -17,9 +17,20 @@ interface DoExpr {
   body: Expr;
 }
 
-interface EffectExpr {
-  effect: Expr;
-  body: Expr;
+interface BinaryExpr {
+  bin: string;
+  left: Expr;
+  right: Expr;
+}
+
+interface CallExpr {
+  call: Expr;
+  args: Expr[];
+}
+
+interface NavExpr {
+  nav: Expr;
+  member: Expr;
 }
 
 interface AffectExpr {
@@ -27,10 +38,9 @@ interface AffectExpr {
   body: Expr;
 }
 
-interface BinaryExpr {
-  bin: string;
-  left: Expr;
-  right: Expr;
+interface EffectExpr {
+  effect: Expr;
+  body: Expr;
 }
 
 interface LiteralExpr {
@@ -41,11 +51,6 @@ interface RefExpr {
   ref: string;
 }
 
-interface CallExpr {
-  call: Expr;
-  args: Expr[];
-}
-
 interface ErrorExpr {
   err: string;
 }
@@ -53,10 +58,11 @@ interface ErrorExpr {
 type Expr =
   | LiteralExpr
   | RefExpr
-  | BinaryExpr
-  | CallExpr
   | EffectExpr
   | AffectExpr
+  | CallExpr
+  | NavExpr
+  | BinaryExpr
   | LetExpr
   | DoExpr
   | ErrorExpr;
@@ -290,6 +296,8 @@ const evaluate = (expr: Expr, context: EvalContext, cont: (value: Value) => Valu
     return cont({ value: expr.lit });
   } else if ('ref' in expr) {
     return cont(resolveRef(context.env, expr.ref));
+  } else if ('nav' in expr) {
+    throw new Error('not impl');
   } else if ('bin' in expr) {
     return evaluate(expr.left, context, left =>
       evaluate(expr.right, context, right =>
