@@ -51,13 +51,13 @@ interface ErrorExpr {
 
 type Expr =
   | LiteralExpr
-  | DoExpr
   | RefExpr
   | BinaryExpr
   | CallExpr
   | EffectExpr
   | AffectExpr
   | LetExpr
+  | DoExpr
   | ErrorExpr;
 
 interface IOAction {
