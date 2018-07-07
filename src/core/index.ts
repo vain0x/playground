@@ -262,13 +262,11 @@ const evaluateBinOp = (op: string, left: Value, right: Value) => {
   const k = () => {
     const l = left.value as any;
     const r = right.value as any;
-    if (op === '+') {
-      return (l + r);
-    } else if (op === '*') {
-      return (l * r);
-    } else {
-      throw new Error(`Unknown binary operator ${op}`);
-    }
+    if (op === '+') { return l + r; }
+    if (op === '-') { return l - r; }
+    if (op === '*') { return l * r; }
+    if (op === '/') { return Math.floor(l / r); }
+    throw new Error(`Unknown binary operator ${op}`);
   };
   return { value: k() } as Value;
 };
