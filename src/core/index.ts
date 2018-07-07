@@ -23,7 +23,8 @@ interface EffectExpr {
 }
 
 interface AffectExpr {
-  affect: Expr;
+  affect: '!';
+  body: Expr;
 }
 
 interface BinaryExpr {
@@ -125,27 +126,30 @@ do
 term "term"
   = add
 
-factor "factor"
-  = affect
-
 add
   = head:mul tail:(_ ("+" / "-") _ mul)* {
     return tail.reduce((left, e) => ({ bin: e[1], left, right: e[3] }), head);
   }
 
 mul
-  = head:affect tail:(_ ("*" / "/") _ affect)* {
+  = head:factor tail:(_ ("*" / "/") _ factor)* {
     return tail.reduce((left, e) => ({ bin: e[1], left, right: e[3] }), head);
   }
 
-affect
-  = head:call tail:(_ "!")* {
-    return tail.reduce((affect, _) => ({ affect }), head);
+factor "fatcor"
+  = head:effect tail:suffix* {
+    return tail.reduce((acc, f) => f(acc), head);
   }
 
-call
-  = head:effect tail:(minispaces args)* {
-    return tail.reduce((call, e) => ({ call, args: e[1] }), head);
+suffix =
+  minispaces args:args {
+    return call => ({ call, args });
+  }
+  / minispaces "!" {
+    return body => ({ affect: "!", body });
+  }
+  / _ "." _ member:effect {
+    return nav => ({ nav, member });
   }
 
 args "argument list"
@@ -159,14 +163,20 @@ seq
   / head:term (_ ",") _ tail:seq {
     return [head, ...tail];
   }
-  / head:term (_ ",")? { return [head]; }
+  / head:term (_ ",")? {
+    return [head];
+  }
 
 effect
   = ref:("io" / "list") _ "{" _ body:expr _ "}" {
     return { effect: { ref }, body };
   }
-  / "(" _ expr:expr _ ")" { return expr; }
-  / "(" _ ")" { return { err: "Missing content of parenthesis" } }
+  / "(" _ expr:expr _ ")" {
+    return expr;
+  }
+  / "(" _ ")" {
+    return { err: "Missing content of parenthesis" }
+  }
   / ref
   / literal
 
@@ -174,9 +184,7 @@ literal
   = int / simpleStr / rawStr
 
 pattern "pattern"
-  = ref:ident {
-    return { ref };
-  }
+  = ref
 
 ref "variable"
   = ref:ident {
@@ -302,7 +310,7 @@ const evaluate = (expr: Expr, context: EvalContext, cont: (value: Value) => Valu
       return evaluate(expr.body, context, cont);
     });
   } else if ('affect' in expr) {
-    return evaluate(expr.affect, context, ({ value: action }) => {
+    return evaluate(expr.body, context, ({ value: action }) => {
       if (context.effect === 'io' && typeof action === 'object' && 'io' in action) {
         return cont(action.io());
       }
@@ -444,7 +452,8 @@ export const testSuite = () => {
         body: {
           let: { ref: 'now' },
           init: {
-            affect: { ref: 'jsnow' },
+            affect: '!',
+            body: { ref: 'jsnow' },
           },
           body: {
             let: { ref: 'message' },
@@ -454,7 +463,8 @@ export const testSuite = () => {
               right: { ref: 'now' },
             },
             body: {
-              affect: {
+              affect: '!',
+              body: {
                 call: { ref: 'jslog' },
                 args: [{ ref: 'message' }],
               },
@@ -473,10 +483,10 @@ export const testSuite = () => {
         },
         body: {
           let: { ref: 'x' },
-          init: { affect: { ref: 'xs' } },
+          init: { affect: '!', body: { ref: 'xs' } },
           body: {
             let: { ref: 'y' },
-            init: { affect: { ref: 'ys' } },
+            init: { affect: '!', body: { ref: 'ys' } },
             body: {
               bin: '+',
               left: { ref: 'x' },
@@ -487,6 +497,30 @@ export const testSuite = () => {
       };
 
       expect(listSampleAst()).toStrictEqual(expected);
+    });
+
+    it('parse complex factor', () => {
+      expect(parseExpr(`
+        a.b.c()!.d()
+      `)).toStrictEqual({
+          call: {
+            nav: {
+              affect: '!',
+              body: {
+                call: {
+                  nav: {
+                    nav: { ref: 'a' },
+                    member: { ref: 'b' },
+                  },
+                  member: { ref: 'c' },
+                },
+                args: [],
+              },
+            },
+            member: { ref: 'd' },
+          },
+          args: [],
+        });
     });
   });
 
