@@ -1,20 +1,20 @@
 import { generate as pegGenerate } from 'pegjs';
 
-interface VarPattern {
-  var: string;
+interface RefPattern {
+  ref: string;
 }
 
-type Pattern = VarPattern;
+type Pattern = RefPattern;
 
 interface LetExpr {
   let: Pattern;
-  be: Expr;
-  in: Expr;
+  init: Expr;
+  body: Expr;
 }
 
 interface DoExpr {
   do: Expr;
-  in: Expr;
+  body: Expr;
 }
 
 interface EffectExpr {
@@ -27,13 +27,13 @@ interface AffectExpr {
 }
 
 interface BinaryExpr {
-  binary: string;
+  bin: string;
   left: Expr;
   right: Expr;
 }
 
 interface LiteralExpr {
-  literal: string | number;
+  lit: string | number;
 }
 
 interface RefExpr {
@@ -45,14 +45,20 @@ interface CallExpr {
   args: Expr[];
 }
 
+interface ErrorExpr {
+  err: string;
+}
+
 type Expr =
   | LiteralExpr
+  | DoExpr
   | RefExpr
   | BinaryExpr
   | CallExpr
   | EffectExpr
   | AffectExpr
-  | LetExpr;
+  | LetExpr
+  | ErrorExpr;
 
 interface IOAction {
   io: () => Value;
@@ -82,7 +88,7 @@ interface Env {
   bindings: Map<Ident, Value>;
 }
 
-const peg = `
+const puqqingGrammer = String.raw`
 start
   = shebang? (_ ";")* _ expr:expr _ { return expr; }
 
@@ -182,17 +188,17 @@ ident "identifier"
 
 int "integer"
   = ("0" / [1-9] [0-9]*) {
-    return { literal: parseInt(text(), 10) };
+    return { lit: parseInt(text(), 10) };
   }
 
 rawStr "raw string"
-  = 'r#"' literal:($ ((! '"#') .)*) '"#' {
-    return { literal };
+  = 'r#"' lit:($ ((! '"#') .)*) '"#' {
+    return { lit };
   }
 
 simpleStr "string"
-  = '"' literal:($ [^"]*) '"' {
-    return { literal };
+  = '"' lit:($ [^"]*) '"' {
+    return { lit };
   }
 
 _ "whitespace"
@@ -213,6 +219,11 @@ spaces "blank"
 minispaces "blank"
   = [ \t]*
 `;
+
+const puqqingPegParser = pegGenerate(puqqingGrammer);
+
+const parseExpr = (source: string) =>
+  puqqingPegParser.parse(source) as Expr;
 
 const resolveRef = (env: Env, ref: string): Value => {
   const value = env.bindings.get(ref);
@@ -269,14 +280,14 @@ interface EvalContext {
 }
 
 const evaluate = (expr: Expr, context: EvalContext, cont: (value: Value) => Value): Value => {
-  if ('literal' in expr) {
-    return cont({ value: expr.literal });
+  if ('lit' in expr) {
+    return cont({ value: expr.lit });
   } else if ('ref' in expr) {
     return cont(resolveRef(context.env, expr.ref));
-  } else if ('binary' in expr) {
+  } else if ('bin' in expr) {
     return evaluate(expr.left, context, left =>
       evaluate(expr.right, context, right =>
-        cont(evaluateBinOp(expr.binary, left, right)),
+        cont(evaluateBinOp(expr.bin, left, right)),
       ));
   } else if ('call' in expr) {
     if ('ref' in expr.call && expr.call.ref === 'jslog' && expr.args.length === 1) {
@@ -284,9 +295,13 @@ const evaluate = (expr: Expr, context: EvalContext, cont: (value: Value) => Valu
     }
     throw new Error('not impl');
   } else if ('let' in expr) {
-    return evaluate(expr.be, context, content => {
-      const nextEnv = bind(context.env, expr.let.var, content);
-      return evaluate(expr.in, { ...context, env: nextEnv }, cont);
+    return evaluate(expr.init, context, content => {
+      const nextEnv = bind(context.env, expr.let.ref, content);
+      return evaluate(expr.body, { ...context, env: nextEnv }, cont);
+    });
+  } else if ('do' in expr) {
+    return evaluate(expr.do, context, _ => {
+      return evaluate(expr.body, context, cont);
     });
   } else if ('affect' in expr) {
     return evaluate(expr.affect, context, ({ value: action }) => {
@@ -324,6 +339,8 @@ const evaluate = (expr: Expr, context: EvalContext, cont: (value: Value) => Valu
       });
     }
     throw new Error(`Expected io or list: ${expr.effect}`);
+  } else if ('err' in expr) {
+    throw new Error(`Syntax Error ${expr.err}`);
   } else {
     return exhaust(expr);
   }
@@ -336,31 +353,7 @@ io {
   jslog(message)!
 }
 `;
-const logSample: Expr = {
-  effect: {
-    ref: 'io',
-  },
-  body: {
-    let: { var: 'now' },
-    be: {
-      affect: { ref: 'jsnow' },
-    },
-    in: {
-      let: { var: 'message' },
-      be: {
-        binary: '+',
-        left: { literal: 'It\'s ' },
-        right: { ref: 'now' },
-      },
-      in: {
-        affect: {
-          call: { ref: 'jslog' },
-          args: [{ ref: 'message' }],
-        },
-      },
-    },
-  },
-};
+const logSampleAst = () => parseExpr(logSampleSource);
 
 const listSampleSource = `
 list {
@@ -369,24 +362,7 @@ list {
   x + y
 }
 `;
-const listSample: Expr = {
-  effect: {
-    ref: 'list',
-  },
-  body: {
-    let: { var: 'x' },
-    be: { affect: { ref: 'xs' } },
-    in: {
-      let: { var: 'y' },
-      be: { affect: { ref: 'ys' } },
-      in: {
-        binary: '+',
-        left: { ref: 'x' },
-        right: { ref: 'y' },
-      },
-    },
-  },
-};
+const listSampleAst = () => parseExpr(listSampleSource);
 
 const execute = (expr: Expr, bindings: Map<Ident, Value>): Value => {
   const defaultEnv: Env = { parent: undefined, bindings };
@@ -403,7 +379,7 @@ const execute = (expr: Expr, bindings: Map<Ident, Value>): Value => {
 };
 
 const executeLogSample = () => {
-  execute(logSample, new Map<Ident, Value>([
+  execute(logSampleAst(), new Map<Ident, Value>([
     ['jsnow', { value: jsnow }],
   ]));
 };
@@ -416,7 +392,7 @@ const executeListSample = () => {
     }
     return { value: list };
   };
-  execute(listSample, new Map<Ident, Value>([
+  execute(listSampleAst(), new Map<Ident, Value>([
     ['xs', range(1, 4)],
     ['ys', { value: [{ value: 10 }, { value: 20 }] }],
   ]));
@@ -435,28 +411,85 @@ interface BddHelper {
 }
 
 export const testSuite = () => {
-  describe('parser', () => {
-    const parser = pegGenerate(`
-      expr = _ expr:add _ {
-        return expr;
-      }
+  describe('peg.js', () => {
+    it('parse calc', () => {
+      const parser = pegGenerate(`
+        expr = _ expr:add _ {
+          return expr;
+        }
 
-      add = head:mul tail:(_ "+" _ mul)* {
-        return tail.reduce((l, e) => ({ op: "+", l, r: e[3] }), head);
-      }
+        add = head:mul tail:(_ "+" _ mul)* {
+          return tail.reduce((l, e) => ({ op: "+", l, r: e[3] }), head);
+        }
 
-      mul = head:int tail:(_ "*" _ int)* {
-        return tail.reduce((l, e) => ({ op: "*", l, r: e[3] }), head);
-      }
+        mul = head:int tail:(_ "*" _ int)* {
+          return tail.reduce((l, e) => ({ op: "*", l, r: e[3] }), head);
+        }
 
-      int = digits:($ [0-9]+) {
-        return parseInt(digits, 10);
-      }
+        int = digits:($ [0-9]+) {
+          return parseInt(digits, 10);
+        }
 
-      _ "whitespace" = [ \t]*
-    `);
-    const result = parser.parse('2 + 3 * 7');
-    expect(result).toEqual({ l: 2, op: '+', r: { l: 3, op: '*', r: 7 } });
+        _ "whitespace" = [ \t]*
+      `);
+      const result = parser.parse('2 + 3 * 7');
+      expect(result).toEqual({ l: 2, op: '+', r: { l: 3, op: '*', r: 7 } });
+    });
+  });
+
+  describe('parseExpr', () => {
+    it('parse log sample', () => {
+      const expected: Expr = {
+        effect: {
+          ref: 'io',
+        },
+        body: {
+          let: { ref: 'now' },
+          init: {
+            affect: { ref: 'jsnow' },
+          },
+          body: {
+            let: { ref: 'message' },
+            init: {
+              bin: '+',
+              left: { lit: 'It\'s ' },
+              right: { ref: 'now' },
+            },
+            body: {
+              affect: {
+                call: { ref: 'jslog' },
+                args: [{ ref: 'message' }],
+              },
+            },
+          },
+        },
+      };
+
+      expect(logSampleAst()).toStrictEqual(expected);
+    });
+
+    it('parse list sample', () => {
+      const expected: Expr = {
+        effect: {
+          ref: 'list',
+        },
+        body: {
+          let: { ref: 'x' },
+          init: { affect: { ref: 'xs' } },
+          body: {
+            let: { ref: 'y' },
+            init: { affect: { ref: 'ys' } },
+            body: {
+              bin: '+',
+              left: { ref: 'x' },
+              right: { ref: 'y' },
+            },
+          },
+        },
+      };
+
+      expect(listSampleAst()).toStrictEqual(expected);
+    });
   });
 
   describe('evaluateBinOp', () => {
