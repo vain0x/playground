@@ -360,6 +360,37 @@ const evaluate = (expr: Expr, context: EvalContext, cont: (value: Value) => Valu
   }
 };
 
+const translate = (expr: Expr, buf: string) => {
+  if ('lit' in expr) {
+    if (typeof expr.lit === 'number') {
+      buf += expr.lit;
+    } else if (typeof expr.lit === 'string') {
+      buf += '"';
+      buf += expr.lit;
+      buf += '"';
+    }
+  } else if ('ref' in expr) {
+    buf += expr.ref;
+  } else if ('call' in expr) {
+    translate(expr.call, buf);
+    buf += '(';
+    for (const a of expr.args) {
+      translate(a, buf);
+      buf += ',';
+    }
+    buf += ')';
+  } else if ('nav' in expr) {
+    buf += '(';
+    translate(expr.nav, buf);
+    buf += ').';
+    translate(expr.member, buf);
+  } else if ('effect' in expr) {
+    throw new Error('not impl');
+  } else if ('affect' in expr) {
+    translate(expr.body, buf);
+  }
+};
+
 const logSampleSource = `
 io {
   let now = jsnow!
