@@ -570,4 +570,44 @@ export const testSuite = () => {
       ).toEqual(3);
     });
   });
+
+  describe('runtime', () => {
+    it('list', () => {
+      const listEffect = {
+        run(body: (context: any) => void, cont: (value: any) => void) {
+          const a: any[] = [];
+          body(a);
+          cont(a);
+        },
+        affect(context: any, action: any, cont: (context: any, value: any) => void): void {
+          for (const item of action as any[]) {
+            cont(context, item);
+          }
+        },
+        yield(context: any, value: any): void {
+          (context as any[]).push(value);
+        },
+      };
+
+      const zs = (cont: (value: any) => void) => {
+        const $effect = listEffect;
+        $effect.run($context => {
+          const xs = [1, 2, 3];
+          // xs!
+          $effect.affect($context, xs, ($context: any, x: any) => {
+            const ys = [100, 200];
+            // ys!
+            $effect.affect($context, ys, ($context: any, y: any) => {
+              const sum = x + y;
+              $effect.yield($context, sum);
+            });
+          });
+        }, cont);
+      };
+
+      let result: any[] = [];
+      zs(a => result = a);
+      expect(result).toEqual([101, 201, 102, 202, 103, 203]);
+    });
+  });
 };
