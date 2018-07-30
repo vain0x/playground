@@ -1,0 +1,6 @@
+[package]
+name = "git-carve"
+version = "0.1.0"
+authors = ["vain0x <vainzerox@gmail.com>"]
+
+[dependencies]
