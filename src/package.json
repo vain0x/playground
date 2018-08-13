@@ -4,8 +4,12 @@
   "description": "Dynamic purely functional language",
   "main": "index.js",
   "scripts": {
-    "dev": "jest --watchAll",
-    "test": "jest"
+    "dev": "run-p build-watch serve test-watch",
+    "build": "tsc",
+    "build-watch": "tsc --watch",
+    "test": "jest",
+    "test-watch": "jest --watchAll",
+    "serve": "node ../build/serve.js"
   },
   "repository": {
     "type": "git",

@@ -423,6 +423,18 @@ const execute = (expr: Expr, bindings: Map<Ident, Value>): Value => {
   }
 };
 
+export const repl = {
+  start() {
+    const env = new Map();
+    return {
+      submit(source: string): Value {
+        const expr = parseExpr(source);
+        return execute(expr, new Map());
+      },
+    };
+  },
+};
+
 const executeLogSample = () => {
   execute(logSampleAst(), new Map<Ident, Value>([
     ['jsnow', { value: jsnow }],
@@ -447,13 +459,6 @@ export const main = () => {
   executeLogSample();
   executeListSample();
 };
-
-type DescribeFunction = (name: string, fn: () => void) => void;
-type ItFunction = (name: string, fn: () => void) => void;
-interface BddHelper {
-  describe: DescribeFunction;
-  it: ItFunction;
-}
 
 export const testSuite = () => {
   describe('peg.js', () => {

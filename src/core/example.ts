@@ -1,5 +1,5 @@
 // Execute sample programs.
 
-import { main } from './index';
+import { main } from './repl';
 
 main();
