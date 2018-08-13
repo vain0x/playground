@@ -19,7 +19,21 @@
     <!-- <img src="/assets/logo.png" /> -->
   </header>
 
-  <div id="app"></div>
+  <section class="repl">
+    REPL:
+
+    <section class="repl-controller">
+      <textarea class="repl-editor" rows="3"></textarea>
+
+      <button type="button" class="repl-button repl-submit-button">
+        Run
+      </button>
+    </section>
+
+    Output:
+
+    <ol class="repl-logs"></ol>
+  </section>
 
   <footer id="footer">
     <a href="https://github.com/vain0x/puqqing-lang">GitHub</a>
@@ -31,10 +45,8 @@
     </a>
   </footer>
 
-  <!-- Development version. -->
-  <script src="https://cdn.jsdelivr.net/npm/vue/dist/vue.js"></script>
+  <!-- <script src="https://cdn.jsdelivr.net/npm/vue/dist/vue.js"></script> -->
 
-  <script src="/index.js" type="module"></script>
   <script src="/app.js"></script>
 </body>
 

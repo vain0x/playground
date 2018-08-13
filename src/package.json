@@ -4,9 +4,11 @@
   "description": "Dynamic purely functional language",
   "main": "index.js",
   "scripts": {
-    "dev": "run-p build-watch serve test-watch",
+    "dev": "run-p bundle-watch serve test-watch",
     "build": "tsc",
     "build-watch": "tsc --watch",
+    "bundle": "webpack",
+    "bundle-watch": "webpack --watch",
     "test": "jest",
     "test-watch": "jest --watchAll",
     "serve": "node ../build/serve.js"

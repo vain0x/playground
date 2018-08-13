@@ -423,8 +423,8 @@ const execute = (expr: Expr, bindings: Map<Ident, Value>): Value => {
   }
 };
 
-export const repl = {
-  start() {
+export const Repl = {
+  create() {
     const env = new Map();
     return {
       submit(source: string): Value {

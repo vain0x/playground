@@ -1,4 +1,4 @@
-// NodeJS 8
+// NodeJS >= 8
 
 const http = require("http");
 const fs = require("fs");
@@ -8,7 +8,19 @@ const url = require("url");
 const contentBase = "../dist";
 const port = 8080;
 
-const staticFileHandler = (request, response) => {
+const contentTypes = (() => {
+  const mapping = {
+    ".html": "text/html",
+    ".css": "text/stylesheet",
+    ".js": "application/javascript",
+    ".mjs": "application/javascript",
+    ".jpg": "image/jpeg",
+    ".png": "image/png",
+  };
+  return ext => mapping[ext] || "text/plain";
+})();
+
+const server = http.createServer((request, response) => {
   try {
     console.debug(`Request ${request.url}`);
 
@@ -26,7 +38,9 @@ const staticFileHandler = (request, response) => {
     })();
 
     const buffer = fs.readFileSync(fullPath);
+    const contentType = contentTypes(path.extname(fullPath));
     response.statusCode = 200;
+    response.setHeader("Content-Type", contentType);
     response.write(buffer);
     return response.end();
   } catch (err) {
@@ -39,8 +53,7 @@ const staticFileHandler = (request, response) => {
     }
     return response.end();
   }
-};
+});
 
 console.log(`Listening to http://localhost:${port} ...`);
-const server = http.createServer(staticFileHandler);
 server.listen(port);
