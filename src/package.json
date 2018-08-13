@@ -32,7 +32,8 @@
     "ts-node": "^7.0.0",
     "tslint": "^5.10.0",
     "typescript": "^2.9.2",
-    "webpack": "^4.15.0"
+    "webpack": "^4.15.0",
+    "webpack-command": "^0.4.1"
   },
   "dependencies": {
     "pegjs": "^0.10.0"
