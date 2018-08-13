@@ -39,6 +39,7 @@
     "webpack-command": "^0.4.1"
   },
   "dependencies": {
+    "hyperapp": "^1.2.8",
     "pegjs": "^0.10.0"
   },
   "jest": {

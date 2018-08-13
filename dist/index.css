@@ -72,8 +72,12 @@ footer ol {
   list-style: none;
 }
 
-#main-content {
+#app {
   flex: 1;
+}
+
+.repl > * {
+  margin: 8px;
 }
 
 .repl-controller {

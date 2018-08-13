@@ -11,7 +11,7 @@ const port = 8080;
 const contentTypes = (() => {
   const mapping = {
     ".html": "text/html",
-    ".css": "text/stylesheet",
+    ".css": "text/css",
     ".js": "application/javascript",
     ".mjs": "application/javascript",
     ".jpg": "image/jpeg",

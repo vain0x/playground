@@ -1,59 +1,82 @@
+import { app, h } from 'hyperapp';
 import { Repl } from '../core/repl';
 
 const repl = Repl.create();
 
-const elems = {
-  editor: document.getElementsByClassName('repl-editor')[0] as HTMLTextAreaElement,
-  submitButton: document.getElementsByClassName('repl-submit-button')[0] as HTMLButtonElement,
-  logs: document.getElementsByClassName('repl-logs')[0] as HTMLOListElement,
+interface Output {
+  content: string;
+}
+
+interface AppState {
+  source: string;
+  outputs: Output[];
+}
+
+const initState: AppState = {
+  source: `io {
+  let _a = jslog("hello, world!")!
+  2 * 3 * 4
+}`,
+  outputs: [],
 };
 
 const actions = {
-  addLog(value: any) {
-    const fullText = JSON.stringify(value, undefined, 2);
-    const isLong = fullText.length >= 80;
-    const summaryText = !isLong ? fullText : fullText.substring(0, 20) + '...';
-
-    const itemElem = document.createElement('li');
-    if (isLong) {
-      const detailsElem = document.createElement('details');
-      detailsElem.textContent = fullText;
-      const summaryElem = document.createElement('summary');
-      summaryElem.textContent = summaryText;
-      detailsElem.appendChild(summaryElem);
-      itemElem.appendChild(detailsElem);
-    } else {
-      itemElem.textContent = fullText;
-    }
-    elems.logs.insertBefore(itemElem, elems.logs.firstChild);
-  },
-
-  submit() {
-    const source = (elems.editor.value || '').trim();
+  run: () => (state: AppState): AppState => {
+    const source = (state.source || '').trim();
     if (source === '') {
-      return;
+      return state;
     }
 
     const result = repl.submit(source);
-    actions.addLog(result);
-
-    elems.editor.value = '';
+    state = actions.addLog({ content: JSON.stringify(result, undefined, 2) })(state);
+    return { ...state, source: '' };
+  },
+  setSource: (source: string) => (state: AppState) => {
+    return { ...state, source };
+  },
+  addLog: (output: Output) => (state: AppState): AppState => {
+    return { ...state, outputs: [...state.outputs, output] };
+  },
+  onKeyPress: (ev: KeyboardEvent) => (state: AppState): AppState => {
+    if (ev instanceof KeyboardEvent
+      && ev.ctrlKey && !ev.shiftKey && !ev.metaKey
+      && ev.key === 'Enter'
+    ) {
+      return actions.run()(state);
+    }
+    return state;
   },
 };
 
-elems.editor.addEventListener('keypress', ev => {
-  if (!(ev instanceof KeyboardEvent)) { return; }
+const view = (state: AppState, actions: any) => {
+  return h('section', { class: 'repl' }, [
+    h('h3', {}, ['REPL:']),
+    h('ol', { class: 'repl-logs' }, state.outputs.map(output => {
+      return h('li', {}, [output.content]);
+    })),
+    h('section', { class: 'repl-controller' }, [
+      h('textarea',
+        {
+          class: 'repl-editor',
+          rows: 6,
+          autofocus: true,
+          value: state.source,
+          oninput: (ev: any) =>
+            actions.setSource(ev.target.value),
+          onkeypress: (ev: any) =>
+            actions.onKeyPress(ev),
+        }, []),
+      h('button',
+        {
+          class: 'repl-button repl-submit-button',
+          type: 'button',
+          onclick: () => actions.run(),
+        }, [
+          'Run',
+        ]),
+    ]),
+  ]);
+};
 
-  if (ev.ctrlKey && !ev.shiftKey && !ev.metaKey && ev.key === 'Enter') {
-    actions.submit();
-  }
-});
-
-elems.submitButton.addEventListener('click', _ => {
-  actions.submit();
-});
-
-// tslint:disable
-console.debug("ready");
-console.debug(elems);
-console.debug(actions);
+const appElem = document.getElementById('app');
+const _ = app(initState, actions, view, appElem);
