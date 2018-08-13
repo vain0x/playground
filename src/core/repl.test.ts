@@ -3,4 +3,4 @@
 
 import { testSuite as replTests } from './repl';
 
-describe('repl', () => replTests());
+describe('index', () => replTests());
