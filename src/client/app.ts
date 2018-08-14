@@ -4,6 +4,7 @@ import { Repl } from '../core/repl';
 const repl = Repl.create();
 
 interface Output {
+  source: string;
   content: string;
 }
 
@@ -28,7 +29,10 @@ const actions = {
     }
 
     const result = repl.submit(source);
-    state = actions.addLog({ content: JSON.stringify(result, undefined, 2) })(state);
+    state = actions.addLog({
+      source,
+      content: JSON.stringify(result, undefined, 2),
+    })(state);
     return { ...state, source: '' };
   },
   setSource: (source: string) => (state: AppState) => {
@@ -52,7 +56,10 @@ const view = (state: AppState, actions: any) => {
   return h('section', { class: 'repl' }, [
     h('h3', {}, ['REPL:']),
     h('ol', { class: 'repl-logs' }, state.outputs.map(output => {
-      return h('li', {}, [output.content]);
+      return h('li', {}, [
+        h('code', { class: 'output-source' }, [output.source]),
+        h('code', { class: 'output-value' }, [output.content]),
+      ]);
     })),
     h('section', { class: 'repl-controller' }, [
       h('textarea',
@@ -71,9 +78,8 @@ const view = (state: AppState, actions: any) => {
           class: 'repl-button repl-submit-button',
           type: 'button',
           onclick: () => actions.run(),
-        }, [
-          'Run',
-        ]),
+        }, ['Run'],
+      ),
     ]),
   ]);
 };

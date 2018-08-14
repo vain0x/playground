@@ -100,3 +100,14 @@ footer ol {
   background: #fffb00;
   font-weight: 900;
 }
+
+.repl .output-source,
+.repl .output-result {
+  display: block;
+  width: 100%;
+  white-space: pre-wrap;
+}
+
+.repl .output-source {
+  color: gray;
+}
