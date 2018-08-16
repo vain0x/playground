@@ -250,8 +250,12 @@ const resolveRef = (env: Env, ref: string): Value => {
   return resolveRef(env.parent, ref);
 };
 
+const rootEnv = (bindings: Map<Ident, Value>): Env => {
+  return { parent: undefined, bindings };
+};
+
 const bind = (env: Env, ref: string, value: Value): Env => {
-  const bindings = new Map<Ident, Value>([...env.bindings]);
+  const bindings = new Map<Ident, Value>();
   bindings.set(ref, value);
   return { parent: env.parent, bindings };
 };
@@ -289,6 +293,8 @@ interface EvalContext {
   env: Env;
   effect: string;
   context: {};
+  depth: number;
+  topEnv: { env: Env };
 }
 
 const evaluate = (expr: Expr, context: EvalContext, cont: (value: Value) => Value): Value => {
@@ -311,11 +317,14 @@ const evaluate = (expr: Expr, context: EvalContext, cont: (value: Value) => Valu
   } else if ('let' in expr) {
     return evaluate(expr.init, context, content => {
       const nextEnv = bind(context.env, expr.let.ref, content);
-      return evaluate(expr.body, { ...context, env: nextEnv }, cont);
+      if (context.depth === 0) {
+        context.topEnv.env = bind(context.topEnv.env, expr.let.ref, content);
+      }
+      return evaluate(expr.body, { ...context, env: nextEnv, depth: 1 }, cont);
     });
   } else if ('do' in expr) {
     return evaluate(expr.do, context, _ => {
-      return evaluate(expr.body, context, cont);
+      return evaluate(expr.body, { ...context, depth: 1 }, cont);
     });
   } else if ('affect' in expr) {
     return evaluate(expr.body, context, ({ value: action }) => {
@@ -334,7 +343,7 @@ const evaluate = (expr: Expr, context: EvalContext, cont: (value: Value) => Valu
     if ('ref' in expr.effect && expr.effect.ref === 'io') {
       return cont({
         value: {
-          io: () => evaluate(expr.body, { ...context, effect: 'io', context: {} }, v => v),
+          io: () => evaluate(expr.body, { ...context, effect: 'io', context: {}, depth: 1 }, v => v),
         },
       });
     }
@@ -343,7 +352,7 @@ const evaluate = (expr: Expr, context: EvalContext, cont: (value: Value) => Valu
         value: {
           io: () => {
             const list: Value[] = [];
-            evaluate(expr.body, { ...context, effect: 'list', context: { list } }, value => {
+            evaluate(expr.body, { ...context, effect: 'list', context: { list }, depth: 1 }, value => {
               list.push(value);
               return value;
             });
@@ -409,27 +418,42 @@ list {
 `;
 const listSampleAst = () => parseExpr(listSampleSource);
 
-const execute = (expr: Expr, bindings: Map<Ident, Value>): Value => {
-  const defaultEnv: Env = { parent: undefined, bindings };
+const evaluateTopLevel = (expr: Expr, env: Env): { value: Value, env: Env } => {
+  const evalContext: EvalContext = {
+    env,
+    effect: 'total',
+    context: {},
+    depth: 0,
+    topEnv: { env },
+  };
 
-  const { value: action } = evaluate(expr, { env: defaultEnv, effect: 'total', context: {} }, value => value);
+  const result = evaluate(expr, evalContext, value => value);
+
+  const action = result.value;
   if (typeof action === 'object' && 'io' in action) {
-    const result = action.io();
-    // tslint:disable-next-line:no-console
-    console.info(result);
-    return result;
-  } else {
-    throw new Error(`main must be an action`);
+    return { value: action.io(), env: evalContext.topEnv.env };
   }
+
+  return { value: result, env: evalContext.topEnv.env };
+};
+
+const execute = (expr: Expr, bindings: Map<Ident, Value>): Value => {
+  const defaultEnv: Env = rootEnv(bindings);
+  const { value } = evaluateTopLevel(expr, defaultEnv);
+  // tslint:disable-next-line:no-console
+  console.info(value);
+  return value;
 };
 
 export const Repl = {
   create() {
-    const env = new Map();
     return {
+      env: rootEnv(new Map<Ident, Value>()),
       submit(source: string): Value {
         const expr = parseExpr(source);
-        return execute(expr, new Map());
+        const { value, env } = evaluateTopLevel(expr, this.env);
+        this.env = env;
+        return value;
       },
     };
   },
@@ -573,6 +597,15 @@ export const testSuite = () => {
       expect(
         evaluateBinOp('+', { value: 1 }, { value: 2 }).value,
       ).toEqual(3);
+    });
+  });
+
+  describe('Repl', () => {
+    it('let', () => {
+      const repl = Repl.create();
+      repl.submit('let a = 1');
+      expect(resolveRef(repl.env, 'a'))
+        .toEqual({ value: 1 });
     });
   });
 
