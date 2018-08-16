@@ -239,15 +239,37 @@ const puqqingPegParser = pegGenerate(puqqingGrammer);
 const parseExpr = (source: string) =>
   puqqingPegParser.parse(source) as Expr;
 
+const dumpEnv = (env: Env): Array<[Ident, Value]> => {
+  const dump: Array<[Ident, Value]> = [];
+  let it = env;
+  while (true) {
+    for (const entry of it.bindings) {
+      dump.push(entry);
+    }
+
+    if (it.parent === undefined) {
+      break;
+    }
+
+    it = it.parent;
+  }
+  return dump;
+};
+
 const resolveRef = (env: Env, ref: string): Value => {
-  const value = env.bindings.get(ref);
-  if (value !== undefined) {
-    return value;
+  let it = env;
+  while (true) {
+    const value = it.bindings.get(ref);
+    if (value !== undefined) {
+      return value;
+    }
+
+    if (it.parent === undefined) {
+      throw new Error(`Undefined ${ref} in ${JSON.stringify(dumpEnv(env), undefined, 2)}`);
+    }
+
+    it = it.parent;
   }
-  if (env.parent === undefined) {
-    throw new Error(`Undefined ${ref}`);
-  }
-  return resolveRef(env.parent, ref);
 };
 
 const rootEnv = (bindings: Map<Ident, Value>): Env => {
@@ -257,7 +279,7 @@ const rootEnv = (bindings: Map<Ident, Value>): Env => {
 const bind = (env: Env, ref: string, value: Value): Env => {
   const bindings = new Map<Ident, Value>();
   bindings.set(ref, value);
-  return { parent: env.parent, bindings };
+  return { parent: env, bindings };
 };
 
 const jsnow: IOAction = {
@@ -305,8 +327,8 @@ const evaluate = (expr: Expr, context: EvalContext, cont: (value: Value) => Valu
   } else if ('nav' in expr) {
     throw new Error('not impl');
   } else if ('bin' in expr) {
-    return evaluate(expr.left, context, left =>
-      evaluate(expr.right, context, right =>
+    return evaluate(expr.left, { ...context, depth: 1 }, left =>
+      evaluate(expr.right, { ...context, depth: 1 }, right =>
         cont(evaluateBinOp(expr.bin, left, right)),
       ));
   } else if ('call' in expr) {
@@ -315,19 +337,19 @@ const evaluate = (expr: Expr, context: EvalContext, cont: (value: Value) => Valu
     }
     throw new Error('not impl');
   } else if ('let' in expr) {
-    return evaluate(expr.init, context, content => {
+    return evaluate(expr.init, { ...context, depth: 1 }, content => {
       const nextEnv = bind(context.env, expr.let.ref, content);
       if (context.depth === 0) {
         context.topEnv.env = bind(context.topEnv.env, expr.let.ref, content);
       }
-      return evaluate(expr.body, { ...context, env: nextEnv, depth: 1 }, cont);
+      return evaluate(expr.body, { ...context, env: nextEnv }, cont);
     });
   } else if ('do' in expr) {
-    return evaluate(expr.do, context, _ => {
-      return evaluate(expr.body, { ...context, depth: 1 }, cont);
+    return evaluate(expr.do, { ...context, depth: 1 }, _ => {
+      return evaluate(expr.body, { ...context }, cont);
     });
   } else if ('affect' in expr) {
-    return evaluate(expr.body, context, ({ value: action }) => {
+    return evaluate(expr.body, { ...context, depth: 1 }, ({ value: action }) => {
       if (context.effect === 'io' && typeof action === 'object' && 'io' in action) {
         return cont(action.io());
       }
@@ -603,9 +625,24 @@ export const testSuite = () => {
   describe('Repl', () => {
     it('let', () => {
       const repl = Repl.create();
+
       repl.submit('let a = 1');
       expect(resolveRef(repl.env, 'a'))
         .toEqual({ value: 1 });
+    });
+
+    it('shadowing', () => {
+      const repl = Repl.create();
+      repl.submit('let a = 0');
+
+      repl.submit(`
+        let a = 2
+        let b = a * a * a
+      `);
+      expect(resolveRef(repl.env, 'a'))
+        .toEqual({ value: 2 });
+      expect(resolveRef(repl.env, 'b'))
+        .toEqual({ value: 2 * 2 * 2 });
     });
   });
 
