@@ -1,4 +1,4 @@
-namespace TomlHummer
+namespace rec TomlHummer
 
   type Ident = string
 
@@ -21,6 +21,10 @@ namespace TomlHummer
     | BracketLL
     | BracketRR
 
+  type TomlTable =
+    | TomlTable
+      of list<string * TomlValue>
+
   [<RequireQualifiedAccess>]
   type TomlValue =
     | Int
@@ -28,4 +32,4 @@ namespace TomlHummer
     | String
       of string
     | Table
-      of TomlValue
+      of TomlTable

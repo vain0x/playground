@@ -1,4 +1,4 @@
-module TomlHummer.Lexing.LexingTests
+﻿module TomlHummer.Lexing.LexingTests
 
 open System
 open Xunit
