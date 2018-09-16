@@ -7,7 +7,13 @@ module TomlHummer.Lexing
     open System
     open System.Text.RegularExpressions
 
-    exception UnknownTokenException of int
+    exception UnknownTokenException
+      of source:string * position:int
+    with
+      override this.Message =
+        let i = this.position
+        let near = this.source.Substring(i, Math.Min(this.source.Length, i + 8))
+        sprintf "Unknown token at %d near `%s`" this.position near
 
     [<RequireQualifiedAccess>]
     type Pattern<'T> =
@@ -47,7 +53,7 @@ module TomlHummer.Lexing
             if m.Success && m.Index = i && m.Index + m.Length <= endIndex then
               mpi <- pi
           if mpi = ps.Length then
-            UnknownTokenException(i) |> raise
+            UnknownTokenException (source, i) |> raise
           else
             let p, m = ps.[mpi]
             let t = p.ToToken(m)
