@@ -47,7 +47,7 @@ module TomlHummer.Lexing
           let mutable mpi = ps.Length
           for pi in 0..ps.Length - 1 do
             let mutable p, m = ps.[pi]
-            if m.Success && m.Index < i then
+            while m.Success && m.Index < i do
               m <- m.NextMatch()
               ps.[pi] <- p, m
             if m.Success && m.Index = i && m.Index + m.Length <= endIndex then
@@ -77,7 +77,7 @@ module TomlHummer.Lexing
       p """(?!_)[-+0-9_]+"""
         (fun g -> g.Value |> int |> TomlToken.Int |> Some)
       // Rich string
-      p ("\"" + """((?:\\[^"\r\n]|[^\\\r\n]+)*)""" + "\"")
+      p ("\"" + """((?:\\[^"\r\n]|[^"\\\r\n]+)*)""" + "\"")
         (fun g -> g.Groups.[1].Value |> TomlToken.String |> Some)
       // Punctuations
       q """\.""" TomlToken.Dot
