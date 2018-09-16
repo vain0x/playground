@@ -1,12 +1,9 @@
-﻿module TomlHummer.Lexing.LexingTests
+module TomlHummer.Lexing.LexingTests
 
 open System
 open Xunit
 open TomlHummer
 open TomlHummer.Lexing
-
-let inline is<'T> (expected: 'T) (actual: 'T): unit =
-  Assert.Equal(expected, actual)
 
 [<Fact>]
 let lexTests () =
