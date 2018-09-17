@@ -4,7 +4,7 @@ module rec TomlHummer.Parsing
   let parseError message tokens =
     failwithf "%s Near %A" message (tokens |> List.truncate 5)
 
-  let (|Key|) tokens =
+  let parseKey tokens =
     match tokens with
     | TomlToken.Ident ident :: tokens ->
       Some ident, tokens
@@ -13,7 +13,25 @@ module rec TomlHummer.Parsing
     | _ ->
       None, tokens
 
-  let (|Flow|) tokens =
+  let parsePath prefix tokens =
+    let rec go path tokens =
+      match tokens with
+      | TomlToken.Dot :: tokens ->
+        match parseKey tokens with
+        | Some k, tokens ->
+          go (k :: path) tokens
+        | None, _ ->
+          parseError "Expected an identifier or a string." tokens
+      | _ ->
+        path, tokens
+    match parseKey tokens with
+    | Some k, tokens ->
+      let path, tokens = go (k :: prefix) tokens
+      Some path, tokens
+    | _ ->
+      None, tokens
+
+  let parseFlowValue tokens =
     match tokens with
     | TomlToken.Int value :: tokens ->
       Some (TomlValue.Int value), tokens
@@ -22,34 +40,31 @@ module rec TomlHummer.Parsing
     | _ ->
       None, tokens
 
-  let parseBindings acc tokens =
-    match tokens with
-    | Key (Some key, TomlToken.Eq :: Flow (Some value, tokens)) ->
-      parseBindings ((key, value) :: acc) tokens
-    | Key (Some _, tokens) ->
-      match tokens with
-      | TomlToken.Eq :: _ ->
+  let parseBindings prefix acc tokens =
+    match parsePath prefix tokens with
+    | Some path, TomlToken.Eq :: tokens ->
+      match parseFlowValue tokens with
+      | Some value, tokens ->
+        parseBindings prefix ((path, value) :: acc) tokens
+      | None, tokens ->
         parseError "Expected a value just after '=' of binding." tokens
-      | _ ->
-        parseError "Expected '=' just after key of binding." tokens
-    | TomlToken.BracketL :: _
-    | TomlToken.BracketLL :: _
-    | TomlToken.Eof :: _ ->
+    | Some _, tokens ->
+      parseError "Expected '=' just after key of binding." tokens
+    | None, tokens ->
       acc, tokens
-    | _ ->
-      parseError "Expected a binding for current table, a table, an array-of-table, or end of input." tokens
-
-  let parseTable tokens =
-    let acc, tokens = parseBindings [] tokens
-    let t = acc |> List.rev |> TomlTable |> TomlValue.Table
-    t, tokens
 
   let parseTableBindings acc tokens =
     match tokens with
-    | TomlToken.BracketL :: Key (Some key, TomlToken.BracketR :: tokens) ->
-      let t, tokens = parseTable tokens
-      parseTableBindings ((key, t) :: acc) tokens
-    | TomlToken.BracketLL :: Key (Some _key, TomlToken.BracketRR :: _tokens) ->
+    | TomlToken.BracketL :: tokens ->
+      match parsePath [] tokens with
+      | Some path, TomlToken.BracketR :: tokens ->
+        let acc, tokens = parseBindings path acc tokens
+        parseTableBindings acc tokens
+      | Some _, tokens ->
+        parseError "Expected ']'." tokens
+      | _ ->
+        parseError "Expected a path." tokens
+    | TomlToken.BracketLL :: tokens ->
       failwith "array of tables"
     | [TomlToken.Eof] ->
       acc
@@ -57,6 +72,31 @@ module rec TomlHummer.Parsing
       parseError "Expected a table, an array-of-table, or end of input." tokens
 
   let parse (tokens: list<TomlToken>): TomlTable =
-    let bindings, tokens = parseBindings [] tokens
+    let bindings, tokens = parseBindings [] [] tokens
     let bindings = parseTableBindings bindings tokens
-    bindings |> List.rev |> TomlTable
+    bindings |> build
+
+  let build (bindings: (string list * TomlValue) list): TomlTable =
+    let deprefix bindings =
+      bindings
+      |> Seq.map (fun (path, value) ->
+        let path = path |> List.truncate (List.length path - 1)
+        (path, value)
+      )
+    let rec go (bindings: (string list * TomlValue) list) =
+      let bindings =
+        bindings
+        |> Seq.groupBy (fun (path, _) -> List.last path)
+        |> Seq.map
+          (fun (key, bindings) ->
+            let bindings = deprefix bindings |> Seq.toList
+            match bindings with
+            | [[], value] ->
+              (key, value)
+            | bindings ->
+              let t = go bindings |> TomlValue.Table
+              (key, t)
+          )
+        |> Seq.toList
+      TomlTable bindings
+    bindings |> List.rev |> go

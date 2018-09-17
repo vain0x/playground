@@ -36,3 +36,32 @@ y = 2
         ]
     ]
   actual |> is expected
+
+[<Fact>]
+let parseTestNav () =
+  let source = """
+[core]
+autocrlf = "input"
+
+[core.user]
+name = "John Doe"
+age = 18
+
+[core.exclude]
+file = "~/excludes"
+"""
+  let actual = parseString source
+  let expected =
+    TomlTable [
+      "core", TomlValue.Table <| TomlTable [
+        "autocrlf", TomlValue.String "input"
+        "user", TomlValue.Table <| TomlTable [
+          "name", TomlValue.String "John Doe"
+          "age", TomlValue.Int 18
+        ]
+        "exclude", TomlValue.Table <| TomlTable [
+          "file", TomlValue.String "~/excludes"
+        ]
+      ]
+    ]
+  actual |> is expected
