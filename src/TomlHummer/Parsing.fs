@@ -31,28 +31,50 @@ module rec TomlHummer.Parsing
     | _ ->
       None, tokens
 
-  let parseFlowValue tokens =
+  /// Parses ``{ path = value, ... }``.
+  let parseInlineBindings prefix acc tokens =
+    let rec go acc tokens =
+      match tokens with
+      | (TomlToken.BraceL | TomlToken.Comma) :: tokens ->
+        match parsePath prefix tokens with
+        | Some path, TomlToken.Eq :: tokens ->
+          let acc, tokens = parseInlineValue path acc tokens
+          go acc tokens
+        | Some _, tokens ->
+          parseError "Expected '='." tokens
+        | None, _ ->
+          parseError "Expected a path." tokens
+      | TomlToken.BraceR :: tokens ->
+        acc, tokens
+      | _ ->
+        parseError "Expected 'path = value'." tokens
+
+    assert (tokens |> List.head = TomlToken.BraceL)
+    go acc tokens
+
+  let parseInlineValue path acc tokens =
     match tokens with
     | TomlToken.Int value :: tokens ->
-      Some (TomlValue.Int value), tokens
+      (path, TomlValue.Int value) :: acc, tokens
     | TomlToken.String value :: tokens ->
-      Some (TomlValue.String value), tokens
+      (path, TomlValue.String value) :: acc, tokens
+    | TomlToken.BraceL :: _ ->
+      parseInlineBindings path acc tokens
     | _ ->
-      None, tokens
+      parseError "Expected a value just after '=' of binding." tokens
 
+  /// Parses ``p = v \n p2 = v2 \n ...`` until next section.
   let parseBindings prefix acc tokens =
     match parsePath prefix tokens with
     | Some path, TomlToken.Eq :: tokens ->
-      match parseFlowValue tokens with
-      | Some value, tokens ->
-        parseBindings prefix ((path, value) :: acc) tokens
-      | None, tokens ->
-        parseError "Expected a value just after '=' of binding." tokens
+      let acc, tokens = parseInlineValue path acc tokens
+      parseBindings prefix acc tokens
     | Some _, tokens ->
       parseError "Expected '=' just after key of binding." tokens
     | None, tokens ->
       acc, tokens
 
+  /// Parses ``[t] p = v ...`` until next section.
   let parseTableBindings acc tokens =
     match tokens with
     | TomlToken.BracketL :: tokens ->
@@ -71,6 +93,7 @@ module rec TomlHummer.Parsing
     | _ ->
       parseError "Expected a table, an array-of-table, or end of input." tokens
 
+  /// Parses tokens as top-level toml code.
   let parse (tokens: list<TomlToken>): TomlTable =
     let bindings, tokens = parseBindings [] [] tokens
     let bindings = parseTableBindings bindings tokens

@@ -65,3 +65,35 @@ file = "~/excludes"
       ]
     ]
   actual |> is expected
+
+[<Fact>]
+let parseTestInlineTableL () =
+  let source = """
+user = { name = "John Doe", age = 18 }
+"""
+  let actual = parseString source
+  let expected =
+    TomlTable [
+      "user", TomlValue.Table <| TomlTable [
+        "name", TomlValue.String "John Doe"
+        "age", TomlValue.Int 18
+      ]
+    ]
+  actual |> is expected
+
+[<Fact>]
+let parseTestNestedInlineTable () =
+  let source = """
+core = { user = { name = "John Doe", age = 18 } }
+"""
+  let actual = parseString source
+  let expected =
+    TomlTable [
+      "core", TomlValue.Table <| TomlTable [
+        "user", TomlValue.Table <| TomlTable [
+          "name", TomlValue.String "John Doe"
+          "age", TomlValue.Int 18
+        ]
+      ]
+    ]
+  actual |> is expected
