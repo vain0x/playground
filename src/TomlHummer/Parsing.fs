@@ -105,10 +105,15 @@ module rec TomlHummer.Parsing
     let rec go (bindings: (string list * TomlValue) list) =
       let bindings =
         bindings
-        |> Seq.groupBy (fun (path, _) -> List.head path)
+        |> Seq.map (fun (path, value) ->
+          match path with
+          | [] -> failwith "never"
+          | key :: path -> key, (path, value)
+        )
+        |> Seq.groupBy fst
         |> Seq.map
           (fun (key, bindings) ->
-            match [for path, value in bindings -> List.tail path, value] with
+            match bindings |> Seq.map snd |> Seq.toList with
             | [[], value] ->
               (key, value)
             | bindings ->
