@@ -100,20 +100,15 @@ module rec TomlHummer.Parsing
     bindings |> build
 
   let build (bindings: (string list * TomlValue) list): TomlTable =
-    let deprefix bindings =
-      bindings
-      |> Seq.map (fun (path, value) ->
-        let path = path |> List.truncate (List.length path - 1)
-        (path, value)
-      )
+    let bindings =
+      bindings |> List.map (fun (path, value) -> (List.rev path, value))
     let rec go (bindings: (string list * TomlValue) list) =
       let bindings =
         bindings
-        |> Seq.groupBy (fun (path, _) -> List.last path)
+        |> Seq.groupBy (fun (path, _) -> List.head path)
         |> Seq.map
           (fun (key, bindings) ->
-            let bindings = deprefix bindings |> Seq.toList
-            match bindings with
+            match [for path, value in bindings -> List.tail path, value] with
             | [[], value] ->
               (key, value)
             | bindings ->
