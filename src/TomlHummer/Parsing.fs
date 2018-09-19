@@ -1,15 +1,33 @@
 module rec TomlHummer.Parsing
   open System
 
+  [<RequireQualifiedAccess>]
+  type Key =
+    | Scalar
+      of string
+    | Table
+      of string
+
+  let toScalarKey key =
+    match key with
+    | Key.Scalar _ -> key
+    | Key.Table key -> Key.Scalar key
+
+  let toScalarPath path =
+    match path with
+    | [] -> []
+    | key :: path ->
+      toScalarKey key :: path
+
   let parseError message tokens =
     failwithf "%s Near %A" message (tokens |> List.truncate 5)
 
   let parseKey tokens =
     match tokens with
     | TomlToken.Ident ident :: tokens ->
-      Some ident, tokens
+      Some (Key.Table ident), tokens
     | TomlToken.String str :: tokens ->
-      Some str, tokens
+      Some (Key.Table str), tokens
     | _ ->
       None, tokens
 
@@ -55,9 +73,9 @@ module rec TomlHummer.Parsing
   let parseInlineValue path acc tokens =
     match tokens with
     | TomlToken.Int value :: tokens ->
-      (path, TomlValue.Int value) :: acc, tokens
+      (toScalarPath path, TomlValue.Int value) :: acc, tokens
     | TomlToken.String value :: tokens ->
-      (path, TomlValue.String value) :: acc, tokens
+      (toScalarPath path, TomlValue.String value) :: acc, tokens
     | TomlToken.BraceL :: _ ->
       parseInlineBindings path acc tokens
     | _ ->
@@ -99,10 +117,10 @@ module rec TomlHummer.Parsing
     let bindings = parseTableBindings bindings tokens
     bindings |> build
 
-  let build (bindings: (string list * TomlValue) list): TomlTable =
+  let build (bindings: (Key list * TomlValue) list): TomlTable =
     let bindings =
       bindings |> List.map (fun (path, value) -> (List.rev path, value))
-    let rec go (bindings: (string list * TomlValue) list) =
+    let rec go (bindings: (Key list * TomlValue) seq) =
       let bindings =
         bindings
         |> Seq.map (fun (path, value) ->
@@ -113,11 +131,12 @@ module rec TomlHummer.Parsing
         |> Seq.groupBy fst
         |> Seq.map
           (fun (key, bindings) ->
-            match bindings |> Seq.map snd |> Seq.toList with
-            | [[], value] ->
+            match key with
+            | Key.Scalar key ->
+              let _, (_, value) = bindings |> Seq.exactlyOne
               (key, value)
-            | bindings ->
-              let t = go bindings |> TomlValue.Table
+            | Key.Table key ->
+              let t = bindings |> Seq.map snd |> go |> TomlValue.Table
               (key, t)
           )
         |> Seq.toList
