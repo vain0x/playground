@@ -97,3 +97,29 @@ core = { user = { name = "John Doe", age = 18 } }
       ]
     ]
   actual |> is expected
+
+[<Fact>]
+let parseTestOpenArrays () =
+  let source = """
+[[lang]]
+id = 1
+name = "toml"
+[[lang]]
+id = 2
+name = "json"
+"""
+  let actual = parseString source
+  let expected =
+    TomlTable [
+      "lang", TomlValue.Array [
+        TomlValue.Table <| TomlTable [
+          "id", TomlValue.Int 1
+          "name", TomlValue.String "toml"
+        ]
+        TomlValue.Table <| TomlTable [
+          "id", TomlValue.Int 2
+          "name", TomlValue.String "json"
+        ]
+      ]
+    ]
+  actual |> is expected

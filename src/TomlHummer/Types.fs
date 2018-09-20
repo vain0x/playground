@@ -31,5 +31,7 @@ namespace rec TomlHummer
       of int
     | String
       of string
+    | Array
+      of TomlValue list
     | Table
       of TomlTable

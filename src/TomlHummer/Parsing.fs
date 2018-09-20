@@ -5,12 +5,15 @@ module rec TomlHummer.Parsing
   type Key =
     | Scalar
       of string
+    | Array
+      of string
     | Table
       of string
 
   let toScalarKey key =
     match key with
     | Key.Scalar _ -> key
+    | Key.Array key
     | Key.Table key -> Key.Scalar key
 
   let toScalarPath path =
@@ -18,6 +21,12 @@ module rec TomlHummer.Parsing
     | [] -> []
     | key :: path ->
       toScalarKey key :: path
+
+  let toArrayPath path =
+    match path with
+    | [] -> []
+    | (Key.Scalar key | Key.Array key | Key.Table key) :: path ->
+      Key.Array key :: path
 
   let parseError message tokens =
     failwithf "%s Near %A" message (tokens |> List.truncate 5)
@@ -105,7 +114,17 @@ module rec TomlHummer.Parsing
       | _ ->
         parseError "Expected a path." tokens
     | TomlToken.BracketLL :: tokens ->
-      failwith "array of tables"
+      match parsePath [] tokens with
+      | Some path, TomlToken.BracketRR :: tokens ->
+        // Anonymous and fresh key to identify the table in build process.
+        let freshKey = Guid.NewGuid().ToString() |> Key.Table
+        let path = freshKey :: toArrayPath path
+        let acc, tokens = parseBindings path acc tokens
+        parseTableBindings acc tokens
+      | Some _, tokens ->
+        parseError "Expected ']]'." tokens
+      | _ ->
+        parseError "Expected a path." tokens
     | [TomlToken.Eof] ->
       acc
     | _ ->
@@ -135,6 +154,11 @@ module rec TomlHummer.Parsing
             | Key.Scalar key ->
               let _, (_, value) = bindings |> Seq.exactlyOne
               (key, value)
+            | Key.Array key ->
+              // Build recursively. Each binding is (GUID, array-item).
+              let (TomlTable bindings) = bindings |> Seq.map snd |> go
+              let a = bindings |> Seq.map snd |> Seq.toList |> TomlValue.Array
+              (key, a)
             | Key.Table key ->
               let t = bindings |> Seq.map snd |> go |> TomlValue.Table
               (key, t)
