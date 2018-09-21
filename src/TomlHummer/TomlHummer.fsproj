@@ -8,6 +8,7 @@
     <Compile Include="Types.fs" />
     <Compile Include="Lexing.fs" />
     <Compile Include="Parsing.fs" />
+    <Compile Include="Printing.fs" />
   </ItemGroup>
 
 </Project>
