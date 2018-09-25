@@ -67,6 +67,20 @@ file = "~/excludes"
   actual |> is expected
 
 [<Fact>]
+let parseTestInlineArray () =
+  let source = """default = ["debug", "logger"]
+"""
+  let actual = parseString source
+  let expected =
+    TomlTable [
+      "default", TomlValue.Array [
+        TomlValue.String "debug"
+        TomlValue.String "logger"
+      ]
+    ]
+  actual |> is expected
+
+[<Fact>]
 let parseTestInlineTableL () =
   let source = """
 user = { name = "John Doe", age = 18 }

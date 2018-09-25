@@ -58,6 +58,23 @@ module rec TomlHummer.Parsing
     | _ ->
       None, tokens
 
+  /// Parses ``[ value, ... ]``.
+  let parseInlineArray prefix acc tokens =
+    let rec go acc tokens =
+      match tokens with
+      | (TomlToken.BracketL | TomlToken.Comma) :: tokens ->
+        let freshKey = Guid.NewGuid().ToString() |> Key.Table
+        let path = freshKey :: toArrayPath prefix
+        let acc, tokens = parseInlineValue path acc tokens
+        go acc tokens
+      | TomlToken.BracketR :: tokens ->
+        acc, tokens
+      | _ ->
+        parseError "Expected ',' or ']' between items of array." tokens
+
+    assert (tokens |> List.head = TomlToken.BracketL)
+    go acc tokens
+
   /// Parses ``{ path = value, ... }``.
   let parseInlineBindings prefix acc tokens =
     let rec go acc tokens =
@@ -85,6 +102,8 @@ module rec TomlHummer.Parsing
       (toScalarPath path, TomlValue.Int value) :: acc, tokens
     | TomlToken.String value :: tokens ->
       (toScalarPath path, TomlValue.String value) :: acc, tokens
+    | TomlToken.BracketL :: _ ->
+      parseInlineArray path acc tokens
     | TomlToken.BraceL :: _ ->
       parseInlineBindings path acc tokens
     | _ ->
