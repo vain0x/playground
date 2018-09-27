@@ -35,3 +35,25 @@ namespace rec TomlHummer
       of TomlValue list
     | Table
       of TomlTable
+
+  [<RequireQualifiedAccess>]
+  type ExprSyn =
+    | Int
+      of int
+    | Ident
+      of string
+    | String
+      of string
+    | Array
+      of ExprSyn list
+    | Table
+      of (ExprSyn list * ExprSyn) list
+
+  [<RequireQualifiedAccess>]
+  type StmtSyn =
+    | Binding
+      of ExprSyn list * ExprSyn
+    | Table
+      of ExprSyn list
+    | Array
+      of ExprSyn list
