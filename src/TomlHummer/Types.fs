@@ -27,6 +27,8 @@ namespace rec TomlHummer
 
   [<RequireQualifiedAccess>]
   type TomlValue =
+    | Bool
+      of bool
     | Int
       of int
     | String

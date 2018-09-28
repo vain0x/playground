@@ -98,6 +98,10 @@ module rec TomlHummer.Parsing
 
   let parseInlineValue path acc tokens =
     match tokens with
+    | TomlToken.Ident "true" :: tokens ->
+      (toScalarPath path, TomlValue.Bool true) :: acc, tokens
+    | TomlToken.Ident "false" :: tokens ->
+      (toScalarPath path, TomlValue.Bool true) :: acc, tokens
     | TomlToken.Int value :: tokens ->
       (toScalarPath path, TomlValue.Int value) :: acc, tokens
     | TomlToken.String value :: tokens ->

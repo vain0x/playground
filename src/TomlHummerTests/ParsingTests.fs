@@ -38,6 +38,19 @@ y = 2
   actual |> is expected
 
 [<Fact>]
+let parsePrimitives () =
+  let source = """
+telemetry = true
+"""
+
+  let actual = parseString source
+  let expected =
+    TomlTable [
+      "telemetry", TomlValue.Bool true
+    ]
+  actual |> is expected
+
+[<Fact>]
 let parseTestNav () =
   let source = """
 [core]
