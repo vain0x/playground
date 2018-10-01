@@ -6,7 +6,7 @@
     <Platform Condition=" '$(Platform)' == '' ">AnyCPU</Platform>
     <ProjectGuid>{18FB2435-8718-4F52-93A5-94D26AF8091B}</ProjectGuid>
     <OutputType>Exe</OutputType>
-    <RootNamespace>VainZero.EntityClassGenerator</RootNamespace>
+    <RootNamespace>VainZero</RootNamespace>
     <AssemblyName>VainZero.EntityClassGenerator</AssemblyName>
     <TargetFrameworkVersion>v4.6</TargetFrameworkVersion>
     <FileAlignment>512</FileAlignment>
@@ -32,8 +32,18 @@
     <WarningLevel>4</WarningLevel>
   </PropertyGroup>
   <ItemGroup>
+    <Reference Include="CommandLine, Version=2.0.275.0, Culture=neutral, PublicKeyToken=de6f01bd326f8c32, processorArchitecture=MSIL">
+      <HintPath>..\packages\CommandLineParser.2.1.1-beta\lib\net45\CommandLine.dll</HintPath>
+    </Reference>
+    <Reference Include="MySql.Data, Version=6.9.9.0, Culture=neutral, PublicKeyToken=c5687fc88969c44d, processorArchitecture=MSIL">
+      <HintPath>..\packages\MySql.Data.6.9.9\lib\net45\MySql.Data.dll</HintPath>
+      <Private>True</Private>
+    </Reference>
     <Reference Include="System" />
     <Reference Include="System.Core" />
+    <Reference Include="System.ValueTuple, Version=4.0.1.1, Culture=neutral, PublicKeyToken=cc7b13ffcd2ddd51, processorArchitecture=MSIL">
+      <HintPath>..\packages\System.ValueTuple.4.3.1\lib\netstandard1.0\System.ValueTuple.dll</HintPath>
+    </Reference>
     <Reference Include="System.Xml.Linq" />
     <Reference Include="System.Data.DataSetExtensions" />
     <Reference Include="Microsoft.CSharp" />
@@ -42,11 +52,31 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="Program.cs" />
+    <Compile Include="EntityClassGenerator\AppArgument.cs" />
+    <Compile Include="EntityClassGenerator\CSharpWriters\ContextClass.cs" />
+    <Compile Include="EntityClassGenerator\CSharpWriters\ITextWritable.cs" />
+    <Compile Include="EntityClassGenerator\CSharpWriters\CSharpWriter.cs" />
+    <Compile Include="EntityClassGenerator\CSharpWriters\CSharpIdentifier.cs" />
+    <Compile Include="EntityClassGenerator\CSharpWriters\EntityClass.cs" />
+    <Compile Include="EntityClassGenerator\CSharpWriters\EntityClassCollection.cs" />
+    <Compile Include="EntityClassGenerator\CSharpWriters\CSharpStyle.cs" />
+    <Compile Include="EntityClassGenerator\Domain\ITypeNameMapper.cs" />
+    <Compile Include="EntityClassGenerator\Domain\DbColumn.cs" />
+    <Compile Include="EntityClassGenerator\Domain\DbSchema.cs" />
+    <Compile Include="EntityClassGenerator\Domain\DbTable.cs" />
+    <Compile Include="EntityClassGenerator\Generator.cs" />
+    <Compile Include="EntityClassGenerator\Program.cs" />
+    <Compile Include="EntityClassGenerator\Providers\DbProviderType.cs" />
+    <Compile Include="EntityClassGenerator\Providers\IDbProvider.cs" />
+    <Compile Include="EntityClassGenerator\Providers\MySql\MySqlDbProvider.cs" />
+    <Compile Include="EntityClassGenerator\Providers\MySql\MySqlTypeNameMapper.cs" />
+    <Compile Include="Misc\Disposables\AnonymousDisposable.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="App.config" />
+    <None Include="packages.config" />
   </ItemGroup>
+  <ItemGroup />
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
 </Project>
