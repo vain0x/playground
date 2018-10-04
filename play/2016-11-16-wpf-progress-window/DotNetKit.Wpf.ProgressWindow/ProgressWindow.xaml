@@ -1,0 +1,51 @@
+﻿<Window
+    x:Class="DotNetKit.Wpf.ProgressWindow"
+    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    Width="320"
+    SizeToContent="Height"
+    WindowStyle="ToolWindow"
+    WindowStartupLocation="CenterOwner"
+    Closed="window_Closed"
+    x:Name="window"
+    Title="{Binding Title}"
+    >
+    <Grid>
+        <Grid.RowDefinitions>
+            <RowDefinition Height="*" />
+            <RowDefinition Height="Auto" />
+        </Grid.RowDefinitions>
+        <Grid Grid.Row="0" >
+            <Grid.RowDefinitions>
+                <RowDefinition Height="*" />
+                <RowDefinition Height="30" />
+            </Grid.RowDefinitions>
+            <ContentControl
+                Grid.Row="0"
+                Margin="10,5,10,5"
+                HorizontalAlignment="Left"
+                VerticalAlignment="Center"
+                Content="{Binding Content}"
+                />
+            <ProgressBar
+                Grid.Row="1"
+                Margin="10,5,10,5"
+                Height="10"
+                Value="{Binding ProgressRateValue}"
+                IsIndeterminate="{Binding IsIndeterminate}"
+                />
+        </Grid>
+        <StackPanel Grid.Row="1">
+            <Button
+                x:Name="cancelButton"
+                Content="{Binding CancelButtonContent}"
+                HorizontalAlignment="Right"
+                Margin="10,5,10,5"
+                Padding="20,0,20,0"
+                Click="cancelButton_Click"
+                IsCancel="True"
+                IsDefault="True"
+                />
+        </StackPanel>
+    </Grid>
+</Window>
