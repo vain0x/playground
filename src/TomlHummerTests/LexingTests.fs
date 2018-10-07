@@ -29,3 +29,19 @@ p = 1
     ]
 
   actual |> is expected
+
+[<Fact>]
+let lexDateTimes () =
+  let source = """
+time = 00:32:00.999999
+"""
+  let actual = Lexing.lex source 0 source.Length
+  let expected =
+    [
+      TomlToken.Ident "time"
+      TomlToken.Eq
+      TomlToken.Time (TimeSpan (0, 0, 32, 0, 999))
+      TomlToken.Eof
+    ]
+
+  actual |> is expected

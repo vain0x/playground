@@ -150,3 +150,15 @@ name = "json"
       ]
     ]
   actual |> is expected
+
+[<Fact>]
+let parseTimeTests () =
+  let source = """
+time = 00:32:00.999999
+"""
+  let actual = parseString source
+  let expected =
+    TomlTable [
+      "time", TomlValue.Time (TimeSpan (0, 0, 32, 0, 999))
+    ]
+  actual |> is expected

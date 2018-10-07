@@ -12,6 +12,10 @@ module rec TomlHummer.Printing
       acc *- "\"" *- value *- "\""
     | ExprSyn.Ident value ->
       acc *- value
+    | ExprSyn.Time value ->
+      let h, m = value.Hours, value.Minutes
+      let s, ms= value.Seconds, value.Milliseconds
+      acc *- sprintf "%02d:%02d:%02d.%03d" h m s ms
     | ExprSyn.Array items ->
       let rec go items acc =
         match items with

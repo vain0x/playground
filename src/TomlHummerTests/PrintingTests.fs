@@ -24,3 +24,14 @@ user.age = 18
 """
 
   actual |> is expected
+
+[<Fact>]
+let printTimeTests () =
+  let source =
+    [
+      StmtSyn.Binding ([ExprSyn.Ident "time"], ExprSyn.Time (TimeSpan (0, 0, 32, 0, 999)))
+    ]
+  let actual = print source
+  let expected = """time = 00:32:00.999
+"""
+  actual |> is expected

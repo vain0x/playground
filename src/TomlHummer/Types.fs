@@ -1,5 +1,7 @@
 namespace rec TomlHummer
 
+  open System
+
   type Ident = string
 
   [<RequireQualifiedAccess>]
@@ -12,6 +14,8 @@ namespace rec TomlHummer
     | String
       of string
     | Eq
+    | Time
+      of TimeSpan
     | Comma
     | Dot
     | BraceL
@@ -33,6 +37,8 @@ namespace rec TomlHummer
       of int
     | String
       of string
+    | Time
+      of TimeSpan
     | Array
       of TomlValue list
     | Table
@@ -46,6 +52,8 @@ namespace rec TomlHummer
       of string
     | String
       of string
+    | Time
+      of TimeSpan
     | Array
       of ExprSyn list
     | Table
@@ -59,3 +67,11 @@ namespace rec TomlHummer
       of ExprSyn list
     | Array
       of ExprSyn list
+
+  [<AutoOpen>]
+  module Operators =
+    [<Literal>]
+    let Day = TimeSpan.TicksPerDay
+
+    let internal timeOfDay (t: TimeSpan) =
+      TimeSpan.FromTicks((t.Ticks % Day + Day) % Day)
