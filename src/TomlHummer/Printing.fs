@@ -12,6 +12,8 @@ module rec TomlHummer.Printing
       acc *- "\"" *- value *- "\""
     | ExprSyn.Ident value ->
       acc *- value
+    | ExprSyn.Date value ->
+      acc *- value.ToString("yyyy-MM-dd")
     | ExprSyn.Time value ->
       let h, m = value.Hours, value.Minutes
       let s, ms= value.Seconds, value.Milliseconds

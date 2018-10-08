@@ -106,6 +106,8 @@ module rec TomlHummer.Parsing
       (toScalarPath path, TomlValue.Int value) :: acc, tokens
     | TomlToken.String value :: tokens ->
       (toScalarPath path, TomlValue.String value) :: acc, tokens
+    | TomlToken.Date value :: tokens ->
+      (toScalarPath path, TomlValue.Date value) :: acc, tokens
     | TomlToken.Time value :: tokens ->
       (toScalarPath path, TomlValue.Time value) :: acc, tokens
     | TomlToken.BracketL :: _ ->

@@ -73,6 +73,12 @@ module TomlHummer.Lexing
       // Identifiers
       p """(?![0-9])[_A-Za-z0-9-]+"""
         (fun g -> g.Value |> TomlToken.Ident |> Some)
+      // Local Date
+      p """([0-9]{4}[-/][0-9]{1,2}[-/][0-9]{1,2})T?"""
+        (fun g ->
+          DateTime.Parse(g.Groups.[1].Value)
+          |> TomlToken.Date |> Some
+        )
       // Local Time
       p """([0-9]{1,2}):([0-9]{1,2}):([0-9]{1,2})(?:\.([0-9]{1,12}))?"""
         (fun g ->

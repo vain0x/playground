@@ -14,6 +14,8 @@ namespace rec TomlHummer
     | String
       of string
     | Eq
+    | Date
+      of DateTime
     | Time
       of TimeSpan
     | Comma
@@ -37,6 +39,8 @@ namespace rec TomlHummer
       of int
     | String
       of string
+    | Date
+      of DateTime
     | Time
       of TimeSpan
     | Array
@@ -52,6 +56,8 @@ namespace rec TomlHummer
       of string
     | String
       of string
+    | Date
+      of DateTime
     | Time
       of TimeSpan
     | Array

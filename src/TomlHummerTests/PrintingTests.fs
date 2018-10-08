@@ -26,6 +26,17 @@ user.age = 18
   actual |> is expected
 
 [<Fact>]
+let printDateTests () =
+  let source =
+    [
+      StmtSyn.Binding ([ExprSyn.Ident "date"], ExprSyn.Date (DateTime(2018, 10, 8)))
+    ]
+  let actual = print source
+  let expected = """date = 2018-10-08
+"""
+  actual |> is expected
+
+[<Fact>]
 let printTimeTests () =
   let source =
     [

@@ -31,7 +31,19 @@ p = 1
   actual |> is expected
 
 [<Fact>]
-let lexDateTimes () =
+let lexLocalDate () =
+  let source = """date = 2018-10-08"""
+  let expected =
+    [
+      TomlToken.Ident "date"
+      TomlToken.Eq
+      TomlToken.Date (DateTime (2018, 10, 8))
+      TomlToken.Eof
+    ]
+  Lexing.lex source 0 source.Length |> is expected
+
+[<Fact>]
+let lexLocalTime () =
   let source = """
 time = 00:32:00.999999
 """
