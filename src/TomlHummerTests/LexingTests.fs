@@ -5,6 +5,9 @@ open Xunit
 open TomlHummer
 open TomlHummer.Lexing
 
+let lexStr (source: string) =
+  Lexing.lex source 0 source.Length
+
 [<Fact>]
 let lexTests () =
   let source = """
@@ -29,6 +32,20 @@ p = 1
     ]
 
   actual |> is expected
+
+[<Fact>]
+let lexMultilineStr () =
+  let source = "str = \"\"\"
+Roses are red
+Violets are blue\"\"\""
+  let expected =
+    [
+      TomlToken.Ident "str"
+      TomlToken.Eq
+      TomlToken.String "Roses are red\nViolets are blue"
+      TomlToken.Eof
+    ]
+  source |> lexStr |> is expected
 
 [<Fact>]
 let lexLocalDate () =

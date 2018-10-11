@@ -95,6 +95,9 @@ module TomlHummer.Lexing
       // Integer
       p """(?!_)[-+0-9_]+"""
         (fun g -> g.Value |> int |> TomlToken.Int |> Some)
+      // Multiline raw string
+      p "\"\"\"\\r?\\n?((?:.|[\\r\\n])*?)\"\"\""
+        (fun g -> g.Groups.[1].Value |> TomlToken.String |> Some)
       // Rich string
       p ("\"" + """((?:\\[^"\r\n]|[^"\\\r\n]+)*)""" + "\"")
         (fun g -> g.Groups.[1].Value |> TomlToken.String |> Some)
