@@ -1,5 +1,7 @@
 # Toml Hummer for .NET
 
+[![Build Status](https://travis-ci.org/vain0x/toml-hummer.svg?branch=master)](https://travis-ci.org/vain0x/toml-hummer)
+
 *WIP*
 
 ## References
