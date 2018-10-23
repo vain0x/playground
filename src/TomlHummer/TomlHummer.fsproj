@@ -6,6 +6,7 @@
 
   <ItemGroup>
     <Compile Include="Types.fs" />
+    <Compile Include="Utils.fs" />
     <Compile Include="Lexing.fs" />
     <Compile Include="Parsing.fs" />
     <Compile Include="Printing.fs" />

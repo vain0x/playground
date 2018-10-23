@@ -73,11 +73,3 @@ namespace rec TomlHummer
       of ExprSyn list
     | Array
       of ExprSyn list
-
-  [<AutoOpen>]
-  module Operators =
-    [<Literal>]
-    let Day = TimeSpan.TicksPerDay
-
-    let internal timeOfDay (t: TimeSpan) =
-      TimeSpan.FromTicks((t.Ticks % Day + Day) % Day)
