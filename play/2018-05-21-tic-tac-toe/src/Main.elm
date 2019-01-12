@@ -1,20 +1,10 @@
-module Main exposing (Model, Msg, init, subscriptions, update, view)
+module Main exposing (main)
 
+import Browser
 import Dict exposing (Dict)
 import Html exposing (..)
 import Html.Attributes as Attr
-import Html.Events as Events
-import Maybe exposing (Maybe)
-
-
-main : Program Never Model Msg
-main =
-    Html.program
-        { init = init
-        , view = view
-        , update = update
-        , subscriptions = subscriptions
-        }
+import Html.Events exposing (onClick)
 
 
 type Player
@@ -40,6 +30,14 @@ type alias Game =
     { activePlayer : Player
     , board : Board
     }
+
+
+main =
+    Browser.sandbox
+        { init = init
+        , update = update
+        , view = view
+        }
 
 
 emptyBoard : Board
@@ -120,8 +118,8 @@ initGame () =
     }
 
 
-update : Msg -> Model -> ( Model, Cmd Msg )
-update msg model =
+update : Msg -> ( Model, Cmd Msg ) -> ( Model, Cmd Msg )
+update msg ( model, _ ) =
     case msg of
         Put pos ->
             let
@@ -134,29 +132,28 @@ update msg model =
 cellButton : Cell -> Position -> Html Msg
 cellButton cell pos =
     let
-        style =
-            Attr.style
-                [ ( "height", "40px" )
-                , ( "width", "40px" )
-                ]
-    in
-    let
-        type_ =
-            Attr.type_ "button"
+        b attrs children =
+            button
+                (Attr.type_ "button"
+                    :: Attr.style "height" "40px"
+                    :: Attr.style "width" "40px"
+                    :: attrs
+                )
+                children
     in
     case cell of
         EmptyCell ->
-            button [ type_, style, Events.onClick (Put pos) ] [ text " " ]
+            b [ onClick (Put pos) ] [ text " " ]
 
         CircleCell ->
-            button [ type_, style, Attr.disabled True ] [ text "○" ]
+            b [ Attr.disabled True ] [ text "○" ]
 
         CrossCell ->
-            button [ type_, style, Attr.disabled True ] [ text "×" ]
+            b [ Attr.disabled True ] [ text "×" ]
 
 
-view : Model -> Html Msg
-view model =
+view : ( Model, Cmd Msg ) -> Html Msg
+view ( model, _ ) =
     div []
         [ h1 [] [ text "Tic Tac Toe" ]
         , text "Hello, world!"
@@ -166,11 +163,6 @@ view model =
                 (Dict.toList model.game.board)
             )
         ]
-
-
-subscriptions : Model -> Sub Msg
-subscriptions model =
-    Sub.none
 
 
 init : ( Model, Cmd Msg )
