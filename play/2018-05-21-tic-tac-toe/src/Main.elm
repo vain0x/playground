@@ -135,15 +135,18 @@ cellButton cell pos =
         b attrs children =
             button
                 (Attr.type_ "button"
-                    :: Attr.style "height" "40px"
-                    :: Attr.style "width" "40px"
+                    :: Attr.style "height" "80px"
+                    :: Attr.style "width" "80px"
+                    :: Attr.style "display" "flex"
+                    :: Attr.style "justify-content" "center"
+                    :: Attr.style "align-items" "center"
                     :: attrs
                 )
                 children
     in
     case cell of
         EmptyCell ->
-            b [ onClick (Put pos) ] [ text " " ]
+            b [ onClick (Put pos) ] []
 
         CircleCell ->
             b [ Attr.disabled True ] [ text "○" ]
@@ -157,7 +160,11 @@ view ( model, _ ) =
     div []
         [ h1 [] [ text "Tic Tac Toe" ]
         , text "Hello, world!"
-        , form []
+        , form
+            [ Attr.style "width" "260px"
+            , Attr.style "display" "flex"
+            , Attr.style "flexFlow" "row wrap"
+            ]
             (List.map
                 (\( pos, cell ) -> cellButton cell pos)
                 (Dict.toList model.game.board)
