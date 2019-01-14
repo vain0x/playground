@@ -4,6 +4,12 @@ using Xunit;
 
 namespace Sharperform
 {
+    [DuplicateWithSuffix("A")]
+    public class Foo
+    {
+    }
+
+
     [AttributeUsage(AttributeTargets.Class | AttributeTargets.Struct, Inherited = false, AllowMultiple = true)]
     public class DeriveAttribute
         : Attribute

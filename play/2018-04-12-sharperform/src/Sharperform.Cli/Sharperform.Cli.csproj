@@ -11,4 +11,7 @@
   <ItemGroup>
     <DotNetCliToolReference Include="Microsoft.DotNet.Watcher.Tools" Version="2.0.0" />
   </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\Sharperform.Core\Sharperform.Core.csproj" />
+  </ItemGroup>
 </Project>
