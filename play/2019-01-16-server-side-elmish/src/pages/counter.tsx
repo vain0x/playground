@@ -33,7 +33,7 @@ const view = (model: Model) => {
       </div>
 
       <div>
-        <button type="button" onclick={mkMsg({ type: "INCREMENT" })}>
+        <button type="button" data-onclick={mkMsg({ type: "INCREMENT" })}>
           +
         </button>
       </div>

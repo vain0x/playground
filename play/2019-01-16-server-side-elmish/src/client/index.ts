@@ -14,15 +14,17 @@ const wireEvents = (node: string | VNode): string | VNode => {
 
   for (const key in attributes) {
     if (attributes.hasOwnProperty(key)
-      && key.startsWith("on")
+      && key.startsWith("data-on")
       && typeof attributes[key] === "object"
       && attributes[key] !== null
       && !(attributes[key] instanceof Function)
     ) {
       const msg = attributes[key]
+      const eventKey = key.slice("data-".length)
+
       console.log("[wireEvents] key=" + key)
 
-      change[key] = () => {
+      change[eventKey] = () => {
         globalActions.dispatch(msg)
       }
     }
