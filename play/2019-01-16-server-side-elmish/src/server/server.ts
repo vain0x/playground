@@ -41,12 +41,28 @@ const dynamicRouter = () => {
     response.send(html)
   })
 
-  r.post("/api/update", (request, response) => {
+  r.post("/api/update", async (request, response) => {
     try {
       console.debug("/api/update", request.body)
 
-      const msg = request.body && request.body.msg
-      const model = current.update(current.model, msg)
+      let model = current.model
+      let msg = request.body && request.body.msg
+
+      while (true) {
+        const [nextModel, cmd] = current.update(current.model, msg)
+        model = nextModel
+
+        let result = cmd()
+        if (result instanceof Promise) {
+          result = await result
+        }
+        if (result !== undefined) {
+          msg = result
+          continue
+        }
+        break
+      }
+
       const node = current.view(model)
       const next = { ...current, model }
 

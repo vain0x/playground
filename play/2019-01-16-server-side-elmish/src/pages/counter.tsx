@@ -1,4 +1,6 @@
 import { h } from "hyperapp"
+import { Program, UpdateFn } from "../tea/types"
+import { cmdNone } from "../tea/prelude"
 
 const exhaust = (value: never) => value
 
@@ -14,10 +16,10 @@ type Msg = MsgIncrement
 
 const mkMsg = (msg: Msg) => msg
 
-const update = (model: Model, msg: Msg) => {
+const update: UpdateFn<Model, Msg> = (model, msg) => {
   switch (msg.type) {
     case "INCREMENT": {
-      return { count: model.count + 1 }
+      return [{ count: model.count + 1 }, cmdNone]
     }
     default: {
       throw exhaust(msg.type)
@@ -41,10 +43,13 @@ const view = (model: Model) => {
   )
 }
 
-export default {
+const init: Program<Model, Msg> = {
   model: {
     count: 0,
   },
+  cmd: cmdNone,
   update,
   view,
 }
+
+export default init
