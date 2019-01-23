@@ -1,0 +1,3 @@
+#!/bin/bash
+
+docker run --interactive --tty --detach --rm -p 3306:3306 --volume /tmp/node-mysql2:/var/lib/mysql --name node-mysql2 vain0x/node-mysql2

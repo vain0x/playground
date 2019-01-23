@@ -1,0 +1,13 @@
+{
+    "defaultSeverity": "warn",
+    "rules": {
+        "semicolon": [
+            true,
+            "never"
+        ],
+        "quotemark": [
+            true,
+            "double"
+        ]
+    }
+}

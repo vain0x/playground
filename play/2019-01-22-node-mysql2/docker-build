@@ -1,0 +1,3 @@
+#!/bin/bash
+
+docker build . -t vain0x/node-mysql2 -f ./scripts/docker-dev.dockerfile

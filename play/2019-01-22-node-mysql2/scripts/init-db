@@ -1,0 +1,18 @@
+#!/bin/bash
+
+set -eu
+
+mkdir -p /opt/mysql/mysql
+chown -R mysql:mysql /opt/mysql/mysql
+
+mysqld --initialize --user=mysql --basedir=/opt/mysql/mysql --datadir=/opt/mysql/mysql/data
+
+# Wait until MySQL server starts.
+until mysqladmin ping >/dev/null 2>&1
+do
+  echo -n "." >&2
+  sleep 0.5
+done
+
+# Create schema.
+mysql -uroot -p -v ./scripts/init.sql
