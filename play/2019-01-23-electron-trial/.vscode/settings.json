@@ -1,0 +1,6 @@
+{
+    "tslint.autoFixOnSave": true,
+    "[typescript]": {
+        "editor.formatOnSave": true
+    }
+}
