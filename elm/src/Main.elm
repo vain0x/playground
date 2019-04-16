@@ -1,10 +1,12 @@
-module Main exposing (Model, Msg(..), Suggestion, SuggestionId, SuggestionList, init, main, subscriptions, suggestionListEmpty, update, view)
+module Main exposing (Model, Msg(..), Suggestion, SuggestionId, activeSuggestions, fetchUsers, findSuggestionById, init, initActiveSuggestionIds, main, subscriptions, update, userDecoder, view)
 
 import Browser
 import Html exposing (..)
 import Html.Attributes exposing (..)
+import Html.Events exposing (..)
 import Http
 import Json.Decode as D exposing (Decoder, field, string)
+import Random
 
 
 
@@ -30,38 +32,107 @@ type alias SuggestionId =
 
 type alias Suggestion =
     { id : SuggestionId
-    , name : String
-    }
-
-
-type alias SuggestionList =
-    { suggestions : List Suggestion
-    , activeSuggestionIds : List SuggestionId
-    }
-
-
-suggestionListEmpty : SuggestionList
-suggestionListEmpty =
-    { suggestions = []
-    , activeSuggestionIds = []
+    , username : String
+    , avatarUrl : String
     }
 
 
 type alias Model =
-    { suggestionList : SuggestionList
+    { suggestions : List Suggestion
+    , activeSuggestionIds : List SuggestionId
+    , offsets : List Int
     , message : String
     }
 
 
-init : () -> ( Model, Cmd Msg )
-init _ =
-    ( { suggestionList = suggestionListEmpty
-      , message = "Loading..."
-      }
-    , Http.get
-        { url = "https://api.github.com/users"
+nth : Int -> List a -> Maybe a
+nth index xs =
+    xs |> List.drop index |> List.head
+
+
+findSuggestionById : SuggestionId -> Model -> Maybe Suggestion
+findSuggestionById suggestionId model =
+    model.suggestions
+        |> List.filter (\suggestion -> suggestion.id == suggestionId)
+        |> List.head
+
+
+initActiveSuggestionIds : List Suggestion -> List SuggestionId
+initActiveSuggestionIds suggestions =
+    suggestions
+        |> List.take 3
+        |> List.map (\suggestion -> suggestion.id)
+
+
+activeSuggestions : Model -> List Suggestion
+activeSuggestions model =
+    model.activeSuggestionIds
+        |> List.filterMap (\suggestionId -> findSuggestionById suggestionId model)
+
+
+closeSuggestion : Int -> Model -> Model
+closeSuggestion index model =
+    let
+        ( rawOffset, newModel ) =
+            popOffset model
+
+        newIndex =
+            -- FIXME: Too bad use of random number
+            rawOffset |> remainderBy (List.length model.suggestions)
+
+        newSuggestionId =
+            newModel.suggestions
+                |> nth newIndex
+                |> Maybe.map (\suggestion -> suggestion.id)
+
+        -- Replace the closed one with new one if possible.
+        newActiveSuggestionIds =
+            newModel.activeSuggestionIds
+                |> List.indexedMap
+                    (\i suggestionId ->
+                        if i == index then
+                            newSuggestionId
+
+                        else
+                            Just suggestionId
+                    )
+                |> List.filterMap (\x -> x)
+    in
+    { newModel | activeSuggestionIds = newActiveSuggestionIds }
+
+
+popOffset : Model -> ( Int, Model )
+popOffset model =
+    case model.offsets of
+        [] ->
+            -- FIXME: refresh offsets
+            ( 0, model )
+
+        offset :: offsets ->
+            ( offset, { model | offsets = offsets } )
+
+
+randomOffsets : (List Int -> Msg) -> Cmd Msg
+randomOffsets mkMsg =
+    Random.int 0 500 |> Random.list 100 |> Random.generate mkMsg
+
+
+fetchUsers : Int -> Cmd Msg
+fetchUsers offset =
+    Http.get
+        { url = "https://api.github.com/users?since=" ++ String.fromInt offset
         , expect = Http.expectJson GotSuggestionList userDecoder
         }
+
+
+init : () -> ( Model, Cmd Msg )
+init _ =
+    ( { suggestions = []
+      , activeSuggestionIds = []
+      , offsets = []
+      , message = "Loading..."
+      }
+    , randomOffsets (\offsets -> GotOffsets offsets Refresh)
     )
 
 
@@ -69,9 +140,10 @@ userDecoder : Decoder (List Suggestion)
 userDecoder =
     let
         user =
-            D.map2 Suggestion
+            D.map3 Suggestion
                 (D.field "id" D.int)
                 (D.field "login" D.string)
+                (D.field "avatar_url" D.string)
     in
     D.list user
 
@@ -81,24 +153,43 @@ userDecoder =
 
 
 type Msg
-    = GotSuggestionList (Result Http.Error (List Suggestion))
+    = GenerateOffsets Msg
+    | GotOffsets (List Int) Msg
+    | Refresh
+    | GotSuggestionList (Result Http.Error (List Suggestion))
+    | Close Int
 
 
 update : Msg -> Model -> ( Model, Cmd Msg )
 update msg model =
     case msg of
+        GenerateOffsets nextMsg ->
+            ( model, randomOffsets (\offsets -> GotOffsets offsets nextMsg) )
+
+        GotOffsets offsets nextMsg ->
+            let
+                nextModel =
+                    { model | offsets = offsets }
+            in
+            update nextMsg nextModel
+
+        Refresh ->
+            let
+                ( offset, nextModel ) =
+                    popOffset model
+            in
+            ( { nextModel
+                | message = "Fetching..."
+              }
+            , fetchUsers offset
+            )
+
         GotSuggestionList result ->
             case result of
                 Ok suggestions ->
-                    let
-                        suggestionList =
-                            model.suggestionList
-                    in
                     ( { model
-                        | suggestionList =
-                            { suggestionList
-                                | suggestions = suggestions
-                            }
+                        | suggestions = suggestions
+                        , activeSuggestionIds = initActiveSuggestionIds suggestions
                         , message = "Completed"
                       }
                     , Cmd.none
@@ -106,6 +197,9 @@ update msg model =
 
                 Err error ->
                     ( { model | message = "Failed" }, Cmd.none )
+
+        Close index ->
+            ( closeSuggestion index model, Cmd.none )
 
 
 
@@ -123,16 +217,61 @@ subscriptions model =
 
 view : Model -> Html Msg
 view model =
-    section []
-        [ text model.message
-        , ul []
-            (model.suggestionList.suggestions
-                |> List.map
-                    (\suggestion ->
-                        li []
-                            [ div [ class "username" ]
-                                [ text suggestion.name ]
-                            ]
-                    )
-            )
+    article
+        [ style "padding" "10px"
+        ]
+        [ header [ style "backgroundColor" "#ececec", style "padding" "5px" ]
+            [ h2
+                [ style "display" "inline-block"
+                ]
+                [ text "Who to follow" ]
+            , a
+                [ style "margin-left" "10px"
+                , style "font-size" "80%"
+                , href "#"
+                , onClick Refresh
+                ]
+                [ text "Refresh"
+                ]
+            ]
+        , main_ [ style "border" "2px solid #ECECEC" ]
+            [ text model.message
+            , ul
+                [ style "list-style" "none"
+                , style "padding" "5px"
+                , style "display" "flex"
+                , style "flex-flow" "column nowrap"
+                , style "width" "max-content"
+                ]
+                (activeSuggestions model
+                    |> List.indexedMap
+                        (\index suggestion ->
+                            li
+                                [ style "padding" "5px"
+                                , style "display" "flex"
+                                , style "flex-flow" "row nowrap"
+                                , style "align-items" "center"
+                                ]
+                                [ img
+                                    [ style "width" "40px"
+                                    , style "height" "40px"
+                                    , style "border-radius" "20px"
+                                    , src suggestion.avatarUrl
+                                    ]
+                                    []
+                                , a
+                                    [ style "flex" "1"
+                                    , style "margin" "0 5px"
+                                    , href "#"
+                                    ]
+                                    [ text suggestion.username ]
+                                , a
+                                    [ href "#"
+                                    , onClick (Close index)
+                                    ]
+                                    [ text "x" ]
+                                ]
+                        )
+                )
+            ]
         ]
