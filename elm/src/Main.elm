@@ -5,7 +5,7 @@ import Html exposing (..)
 import Html.Attributes exposing (..)
 import Html.Events exposing (..)
 import Http
-import Json.Decode as D exposing (Decoder, field, string)
+import Json.Decode as D exposing (Decoder)
 import Random
 
 
@@ -114,7 +114,9 @@ popOffset model =
 
 randomOffsets : (List Int -> Msg) -> Cmd Msg
 randomOffsets mkMsg =
-    Random.int 0 500 |> Random.list 100 |> Random.generate mkMsg
+    Random.int 0 500
+        |> Random.list 100
+        |> Random.generate mkMsg
 
 
 fetchUsers : Int -> Cmd Msg
@@ -215,63 +217,88 @@ subscriptions model =
 -- VIEW
 
 
+viewSuggestions : Model -> Html Msg
+viewSuggestions model =
+    let
+        listStyles =
+            [ style "list-style" "none"
+            , style "padding" "5px"
+            , style "display" "flex"
+            , style "flex-flow" "column nowrap"
+            , style "width" "max-content"
+            ]
+
+        listItemStyles =
+            [ style "padding" "5px"
+            , style "display" "flex"
+            , style "flex-flow" "row nowrap"
+            , style "align-items" "center"
+            ]
+
+        avatarStyles =
+            [ style "width" "40px"
+            , style "height" "40px"
+            , style "border-radius" "20px"
+            ]
+
+        usernameStyles =
+            [ style "flex" "1"
+            , style "margin" "0 5px"
+            ]
+
+        viewSuggestion index suggestion =
+            [ img
+                (src suggestion.avatarUrl :: avatarStyles)
+                []
+            , a
+                (href "#" :: usernameStyles)
+                [ text suggestion.username ]
+            , a
+                [ style "user-selection" "none"
+                , href "#"
+                , onClick (Close index)
+                ]
+                [ text "x" ]
+            ]
+                |> li listItemStyles
+    in
+    (activeSuggestions model |> List.indexedMap viewSuggestion) |> ul listStyles
+
+
+viewHeader : Html Msg
+viewHeader =
+    header
+        [ style "backgroundColor" "#ececec"
+        , style "padding" "5px"
+        ]
+        [ h2
+            [ style "display" "inline-block"
+            ]
+            [ text "Who to follow" ]
+        , viewRefreshButton
+        ]
+
+
+viewRefreshButton : Html Msg
+viewRefreshButton =
+    a
+        [ style "margin-left" "10px"
+        , style "font-size" "80%"
+        , href "#"
+        , onClick Refresh
+        ]
+        [ text "Refresh"
+        ]
+
+
 view : Model -> Html Msg
 view model =
     article
         [ style "padding" "10px"
         ]
-        [ header [ style "backgroundColor" "#ececec", style "padding" "5px" ]
-            [ h2
-                [ style "display" "inline-block"
-                ]
-                [ text "Who to follow" ]
-            , a
-                [ style "margin-left" "10px"
-                , style "font-size" "80%"
-                , href "#"
-                , onClick Refresh
-                ]
-                [ text "Refresh"
-                ]
-            ]
+        [ viewHeader
         , main_ [ style "border" "2px solid #ECECEC" ]
-            [ text model.message
-            , ul
-                [ style "list-style" "none"
-                , style "padding" "5px"
-                , style "display" "flex"
-                , style "flex-flow" "column nowrap"
-                , style "width" "max-content"
-                ]
-                (activeSuggestions model
-                    |> List.indexedMap
-                        (\index suggestion ->
-                            li
-                                [ style "padding" "5px"
-                                , style "display" "flex"
-                                , style "flex-flow" "row nowrap"
-                                , style "align-items" "center"
-                                ]
-                                [ img
-                                    [ style "width" "40px"
-                                    , style "height" "40px"
-                                    , style "border-radius" "20px"
-                                    , src suggestion.avatarUrl
-                                    ]
-                                    []
-                                , a
-                                    [ style "flex" "1"
-                                    , style "margin" "0 5px"
-                                    , href "#"
-                                    ]
-                                    [ text suggestion.username ]
-                                , a
-                                    [ href "#"
-                                    , onClick (Close index)
-                                    ]
-                                    [ text "x" ]
-                                ]
-                        )
-                )
+            [ viewSuggestions model
+            , text model.message
             ]
         ]
