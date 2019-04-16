@@ -40,7 +40,6 @@ type alias Suggestion =
 type alias Model =
     { suggestions : List Suggestion
     , activeSuggestionIds : List SuggestionId
-    , offsets : List Int
     , message : String
     }
 
@@ -48,6 +47,19 @@ type alias Model =
 nth : Int -> List a -> Maybe a
 nth index xs =
     xs |> List.drop index |> List.head
+
+
+listReplace : a -> a -> List a -> List a
+listReplace src dest xs =
+    xs
+        |> List.map
+            (\x ->
+                if x == src then
+                    dest
+
+                else
+                    x
+            )
 
 
 findSuggestionById : SuggestionId -> Model -> Maybe Suggestion
@@ -70,52 +82,31 @@ activeSuggestions model =
         |> List.filterMap (\suggestionId -> findSuggestionById suggestionId model)
 
 
-closeSuggestion : Int -> Model -> Model
-closeSuggestion index model =
+closeSuggestion : SuggestionId -> Int -> Model -> Model
+closeSuggestion oldSuggestionId newIndex model =
     let
-        ( rawOffset, newModel ) =
-            popOffset model
-
-        newIndex =
-            -- FIXME: Too bad use of random number
-            rawOffset |> remainderBy (List.length model.suggestions)
-
         newSuggestionId =
-            newModel.suggestions
+            model.suggestions
                 |> nth newIndex
                 |> Maybe.map (\suggestion -> suggestion.id)
+                |> Maybe.withDefault oldSuggestionId
 
-        -- Replace the closed one with new one if possible.
         newActiveSuggestionIds =
-            newModel.activeSuggestionIds
-                |> List.indexedMap
-                    (\i suggestionId ->
-                        if i == index then
-                            newSuggestionId
-
-                        else
-                            Just suggestionId
-                    )
-                |> List.filterMap (\x -> x)
+            model.activeSuggestionIds
+                |> listReplace oldSuggestionId newSuggestionId
     in
-    { newModel | activeSuggestionIds = newActiveSuggestionIds }
+    { model | activeSuggestionIds = newActiveSuggestionIds }
 
 
-popOffset : Model -> ( Int, Model )
-popOffset model =
-    case model.offsets of
-        [] ->
-            -- FIXME: refresh offsets
-            ( 0, model )
-
-        offset :: offsets ->
-            ( offset, { model | offsets = offsets } )
-
-
-randomOffsets : (List Int -> Msg) -> Cmd Msg
-randomOffsets mkMsg =
+randomOffset : (Int -> Msg) -> Cmd Msg
+randomOffset mkMsg =
     Random.int 0 500
-        |> Random.list 100
+        |> Random.generate mkMsg
+
+
+randomIndex : List a -> (Int -> Msg) -> Cmd Msg
+randomIndex xs mkMsg =
+    Random.int 0 (List.length xs - 1)
         |> Random.generate mkMsg
 
 
@@ -129,13 +120,14 @@ fetchUsers offset =
 
 init : () -> ( Model, Cmd Msg )
 init _ =
-    ( { suggestions = []
-      , activeSuggestionIds = []
-      , offsets = []
-      , message = "Loading..."
-      }
-    , randomOffsets (\offsets -> GotOffsets offsets Refresh)
-    )
+    let
+        model =
+            { suggestions = []
+            , activeSuggestionIds = []
+            , message = "Loading..."
+            }
+    in
+    update Refresh model
 
 
 userDecoder : Decoder (List Suggestion)
@@ -155,36 +147,23 @@ userDecoder =
 
 
 type Msg
-    = GenerateOffsets Msg
-    | GotOffsets (List Int) Msg
-    | Refresh
+    = Refresh
+    | FetchSuggestionList Int
     | GotSuggestionList (Result Http.Error (List Suggestion))
-    | Close Int
+    | Close SuggestionId
+    | CloseEnd SuggestionId Int
 
 
 update : Msg -> Model -> ( Model, Cmd Msg )
 update msg model =
     case msg of
-        GenerateOffsets nextMsg ->
-            ( model, randomOffsets (\offsets -> GotOffsets offsets nextMsg) )
-
-        GotOffsets offsets nextMsg ->
-            let
-                nextModel =
-                    { model | offsets = offsets }
-            in
-            update nextMsg nextModel
-
         Refresh ->
-            let
-                ( offset, nextModel ) =
-                    popOffset model
-            in
-            ( { nextModel
-                | message = "Fetching..."
-              }
-            , fetchUsers offset
+            ( { model | message = "Loading..." }
+            , randomOffset FetchSuggestionList
             )
+
+        FetchSuggestionList offset ->
+            ( model, fetchUsers offset )
 
         GotSuggestionList result ->
             case result of
@@ -192,16 +171,21 @@ update msg model =
                     ( { model
                         | suggestions = suggestions
                         , activeSuggestionIds = initActiveSuggestionIds suggestions
-                        , message = "Completed"
+                        , message = ""
                       }
                     , Cmd.none
                     )
 
                 Err error ->
-                    ( { model | message = "Failed" }, Cmd.none )
+                    ( { model | message = "Something wrong" }, Cmd.none )
 
-        Close index ->
-            ( closeSuggestion index model, Cmd.none )
+        Close oldSuggestionId ->
+            ( model
+            , randomIndex model.suggestions (CloseEnd oldSuggestionId)
+            )
+
+        CloseEnd oldSuggestionId index ->
+            ( closeSuggestion oldSuggestionId index model, Cmd.none )
 
 
 
@@ -246,7 +230,7 @@ viewSuggestions model =
             , style "margin" "0 5px"
             ]
 
-        viewSuggestion index suggestion =
+        viewSuggestion suggestion =
             [ img
                 (src suggestion.avatarUrl :: avatarStyles)
                 []
@@ -256,13 +240,15 @@ viewSuggestions model =
             , a
                 [ style "user-selection" "none"
                 , href "#"
-                , onClick (Close index)
+                , onClick (Close suggestion.id)
                 ]
                 [ text "x" ]
             ]
                 |> li listItemStyles
     in
-    (activeSuggestions model |> List.indexedMap viewSuggestion) |> ul listStyles
+    activeSuggestions model
+        |> List.map viewSuggestion
+        |> ul listStyles
 
 
 viewHeader : Html Msg
