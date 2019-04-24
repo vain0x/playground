@@ -1,0 +1,2 @@
+[*.{cs,csx,xaml}]
+charset = utf-8
