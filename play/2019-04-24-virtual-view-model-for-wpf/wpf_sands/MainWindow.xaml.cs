@@ -35,11 +35,6 @@ namespace wpf_sands
                           new NoteViewModel(setState, i - 3, text)).ToArray()
                 ));
         }
-
-        private void TextBox_TextChanged(object sender, TextChangedEventArgs e)
-        {
-
-        }
     }
 
     delegate void SetState<T>(Func<T, T> change);
@@ -498,6 +493,8 @@ namespace wpf_sands
 
         public ICommand AddCommand { get; set; }
 
+        public ICommand RemoveCommand { get; set; }
+
         public RootViewModel WithNewNote(string text)
         {
             var noteId = ++NoteId;
@@ -525,6 +522,11 @@ namespace wpf_sands
             {
                 SetState(root => root.WithNewNote("New Note"));
             });
+
+            RemoveCommand = new Command<int>(noteId =>
+            {
+                SetState(root => root.RemoveNote(noteId));
+            });
         }
     }
 
@@ -532,7 +534,7 @@ namespace wpf_sands
     {
         readonly SetState<RootViewModel> SetState;
 
-        public readonly int NoteId;
+        public int NoteId { get; }
 
         readonly string text;
 
@@ -553,18 +555,11 @@ namespace wpf_sands
             return new NoteViewModel(SetState, NoteId, text);
         }
 
-        public ICommand RemoveCommand { get; set; }
-
         public NoteViewModel(SetState<RootViewModel> setState, int noteId, string text)
         {
             SetState = setState;
             NoteId = noteId;
             this.text = text;
-
-            RemoveCommand = new Command<object>(_ =>
-            {
-                SetState(root => root.RemoveNote(noteId));
-            });
         }
     }
 }

@@ -13,7 +13,7 @@
         </TextBlock>
         <TextBox DockPanel.Dock="Top" Text="{Binding Text, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" />
 
-        <Button DockPanel.Dock="Top" Command="{Binding AddCommand}">
+        <Button DockPanel.Dock="Top" Command="{Binding DataContext.AddCommand, RelativeSource={RelativeSource AncestorType=Window}}">
             Add
         </Button>
         
@@ -21,7 +21,10 @@
             <ListBox.ItemTemplate>
                 <DataTemplate>
                     <DockPanel>
-                        <Button DockPanel.Dock="Right" Command="{Binding RemoveCommand}">
+                        <Button
+                            DockPanel.Dock="Right"
+                            Command="{Binding DataContext.RemoveCommand, RelativeSource={RelativeSource AncestorType=Window}}"
+                            CommandParameter="{Binding NoteId}">
                             Remove
                         </Button>
 
