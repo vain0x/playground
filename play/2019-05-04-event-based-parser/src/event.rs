@@ -42,18 +42,19 @@ pub(crate) enum Event {
     // token(*)
     // token(y)
     // finish // *
+    // token(+)
     // token(z)
     // finish // +
     // finish // root
     //
     // これではパーサーは * より先に + を発見する必要がある。つまりかなりの先読みが必要であり、実装が難しい。代わりに、次のようなイベントを発行していいことにする。
     //
-    // 0: start(root)
-    // 1: token(x)
-    // 2: start(*, forward_parent = 0)
-    // 3: token(*)
-    // 4: token(y)
-    // 5: start(+, forward_parent = 2)
+    // 0: start(root, forward_parent = 2) --+
+    // 1: token(x)                          |
+    // 2: start(*, forward_parent = 3)  <---+
+    // 3: token(*)                |
+    // 4: token(y)                |
+    // 5: start(+)             <--+
     // 6: token(+)
     // 7: token(z)
     // 8: finish // +
