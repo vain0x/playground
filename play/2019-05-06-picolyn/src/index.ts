@@ -1,7 +1,7 @@
 import { Event } from "./types"
 import { GreenNodeBuilder } from "./green"
 import { exhaust } from "./util"
-import { redNodeRootFromGreenNode } from "./red"
+import { syntaxNodeFromGreenNode } from "./syntax_node"
 
 const build = (events: Event[]) => {
   const builder = new GreenNodeBuilder()
@@ -39,7 +39,7 @@ const main = () => {
     { type: "finish" }
   ]
   const green = build(events)
-  const root = redNodeRootFromGreenNode(green)
+  const root = syntaxNodeFromGreenNode(green)
   console.log(root)
 }
 

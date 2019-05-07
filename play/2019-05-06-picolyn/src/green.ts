@@ -4,44 +4,44 @@ import { exhaust } from "./util"
 /// startNode したときの children の長さ
 type ChildrenOffset = number
 
-export type GreenNode =
+export type GreenElement =
   | {
-    type: "leaf",
+    type: "token",
     kind: SyntaxKind,
     text: string,
   }
   | {
-    type: "branch",
+    type: "node",
     kind: SyntaxKind,
     textLen: number,
-    children: GreenNode[],
+    children: GreenElement[],
   }
 
-const greenNodeNewBranch = (kind: SyntaxKind, children: GreenNode[]): GreenNode => {
+const greenNodeNewBranch = (kind: SyntaxKind, children: GreenElement[]): GreenElement => {
   const textLen = children.reduce((sum, node) => sum + greenNodeToTextLen(node), 0)
   return {
-    type: "branch",
+    type: "node",
     kind,
     textLen,
     children,
   }
 }
 
-export const greenNodeToTextLen = (green: GreenNode): number => {
-  if (green.type === "leaf") {
+export const greenNodeToTextLen = (green: GreenElement): number => {
+  if (green.type === "token") {
     return green.text.length
   }
-  if (green.type === "branch") {
+  if (green.type === "node") {
     return green.children.reduce((sum, node) => sum + greenNodeToTextLen(node), 0)
   }
   throw exhaust(green)
 }
 
-export const greenNodeToChildren = (green: GreenNode) => {
-  if (green.type === "leaf") {
+export const greenNodeToChildren = (green: GreenElement) => {
+  if (green.type === "token") {
     return []
   }
-  if (green.type === "branch") {
+  if (green.type === "node") {
     return green.children
   }
   throw exhaust(green)
@@ -49,12 +49,12 @@ export const greenNodeToChildren = (green: GreenNode) => {
 
 export class GreenNodeBuilder {
   private readonly parents: Array<[SyntaxKind, ChildrenOffset]> = []
-  private readonly children: GreenNode[] = []
+  private readonly children: GreenElement[] = []
 
   /// トークンノードを追加する
   readonly leaf = (kind: SyntaxKind, text: string) => {
     this.children.push({
-      type: "leaf",
+      type: "token",
       kind,
       text,
     })
@@ -71,7 +71,7 @@ export class GreenNodeBuilder {
   readonly finishNode = () => {
     const [kind, offset] = this.parents.pop()!
 
-    const children: GreenNode[] = []
+    const children: GreenElement[] = []
     for (let i = this.children.length - offset - 1; i >= 0; i--) {
       children.push(this.children.pop()!)
     }
