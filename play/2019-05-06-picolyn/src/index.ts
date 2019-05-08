@@ -7,7 +7,7 @@ const build = (events: Event[]) => {
   const builder = new GreenNodeBuilder()
   for (const event of events) {
     if (event.type === "token") {
-      builder.leaf(event.kind, event.text)
+      builder.token(event.kind, event.text)
       continue
     }
     if (event.type === "start") {

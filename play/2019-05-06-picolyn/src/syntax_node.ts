@@ -1,11 +1,11 @@
 import { SyntaxRoot, syntaxRootAlloc } from "./syntax_root"
-import { GreenElement, greenNodeToChildren, greenNodeToTextLen } from "./green"
+import { GreenElement, greenToChildren, greenToTextLen } from "./green"
 import { LazyNode, lazyNodeGetOrInit, lazyNodeFromSeed } from "./lazy_node"
 import { TextUnit } from "./types"
 import { exhaust } from "./util";
 
 /**
- * red ツリーの子ノードから見た親ノードの情報
+ * 具象構文木の子ノードから見た親ノードの情報
  */
 interface ParentData {
   /** 親ノード */
@@ -17,9 +17,10 @@ interface ParentData {
 }
 
 /**
- * red ツリーのノード
+ * 具象構文木のノード
  *
- * green ツリーのノード (親ノードを参照していない、ソースコードにおける範囲は相対的な大きさしか知らない) をラップしたもの。これは親ノードとの関係や、元のソースコードにおける絶対的な範囲を持つ
+ * Green ツリーのノード (親ノードを参照していない、ソースコードにおける範囲は相対的な大きさしか知らない) をラップしたもの。
+ * これは親ノードとの関係や、元のソースコードにおける絶対的な範囲を持つ
  */
 export interface SyntaxNode {
   root: SyntaxRoot,
@@ -34,12 +35,12 @@ const parentToStartOffset = (parent: ParentData | null) =>
 const syntaxNodeNew = (root: SyntaxRoot, parent: ParentData | null, green: GreenElement): SyntaxNode => {
   let startOffset = parentToStartOffset(parent)
 
-  const greenChildren = greenNodeToChildren(green)
+  const greenChildren = greenToChildren(green)
   const children: LazyNode[] = []
   for (let i = 0; i < greenChildren.length; i++) {
     const g = greenChildren[i]
     const offset = startOffset
-    startOffset += greenNodeToTextLen(g)
+    startOffset += greenToTextLen(g)
     if (g.type === "token") {
       continue
     }

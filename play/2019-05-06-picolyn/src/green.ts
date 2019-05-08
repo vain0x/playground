@@ -1,7 +1,9 @@
 import { SyntaxKind } from "./syntax_kind"
 import { exhaust } from "./util"
 
-/// startNode したときの children の長さ
+/**
+ * startNode した時点の children の長さ。
+ */
 type ChildrenOffset = number
 
 export type GreenElement =
@@ -17,8 +19,8 @@ export type GreenElement =
     children: GreenElement[],
   }
 
-const greenNodeNewBranch = (kind: SyntaxKind, children: GreenElement[]): GreenElement => {
-  const textLen = children.reduce((sum, node) => sum + greenNodeToTextLen(node), 0)
+const greenNew = (kind: SyntaxKind, children: GreenElement[]): GreenElement => {
+  const textLen = children.reduce((sum, node) => sum + greenToTextLen(node), 0)
   return {
     type: "node",
     kind,
@@ -27,17 +29,17 @@ const greenNodeNewBranch = (kind: SyntaxKind, children: GreenElement[]): GreenEl
   }
 }
 
-export const greenNodeToTextLen = (green: GreenElement): number => {
+export const greenToTextLen = (green: GreenElement): number => {
   if (green.type === "token") {
     return green.text.length
   }
   if (green.type === "node") {
-    return green.children.reduce((sum, node) => sum + greenNodeToTextLen(node), 0)
+    return green.children.reduce((sum, node) => sum + greenToTextLen(node), 0)
   }
   throw exhaust(green)
 }
 
-export const greenNodeToChildren = (green: GreenElement) => {
+export const greenToChildren = (green: GreenElement) => {
   if (green.type === "token") {
     return []
   }
@@ -51,8 +53,10 @@ export class GreenNodeBuilder {
   private readonly parents: Array<[SyntaxKind, ChildrenOffset]> = []
   private readonly children: GreenElement[] = []
 
-  /// トークンノードを追加する
-  readonly leaf = (kind: SyntaxKind, text: string) => {
+  /**
+   * トークンを追加する
+   */
+  readonly token = (kind: SyntaxKind, text: string) => {
     this.children.push({
       type: "token",
       kind,
@@ -60,14 +64,19 @@ export class GreenNodeBuilder {
     })
   }
 
-  /// 内部ノードの構築を開始する
-  /// finishNode するまでの間にあるノードは、これの子ノードになる
+  /**
+   * 内部ノードの構築を開始する。
+   *
+   * 対応する finishNode までの間にあるノードは、これの子ノードになる。
+   */
   readonly startNode = (kind: SyntaxKind) => {
     const offset = this.children.length
     this.parents.push([kind, offset])
   }
 
-  /// 内部ノードの構築を終了する
+  /**
+   * 内部ノードの構築を終了する。
+   */
   readonly finishNode = () => {
     const [kind, offset] = this.parents.pop()!
 
@@ -77,7 +86,7 @@ export class GreenNodeBuilder {
     }
     children.reverse()
 
-    this.children.push(greenNodeNewBranch(kind, children))
+    this.children.push(greenNew(kind, children))
   }
 
   readonly finish = () => this.children[0]
