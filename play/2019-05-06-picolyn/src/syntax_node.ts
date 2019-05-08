@@ -1,4 +1,4 @@
-import { SyntaxRoot, syntaxRootAlloc } from "./syntax_root"
+import { SyntaxRoot } from "./syntax_root"
 import { GreenElement, greenToChildren, greenToTextLen } from "./green"
 import { LazyNode, lazyNodeGetOrInit, lazyNodeFromSeed } from "./lazy_node"
 import { TextUnit } from "./types"
@@ -64,11 +64,9 @@ export const syntaxNodeNewRoot = (root: SyntaxRoot, green: GreenElement): Syntax
   return syntaxNodeNew(root, NO_PARENT, green)
 }
 
-export const syntaxNodeFromGreenNode = (green: GreenElement): SyntaxNode => {
-  const root : SyntaxRoot = {
-    arena: [],
-  }
-  const lazyNode = syntaxRootAlloc(root)
+export const syntaxNodeFromGreenTree = (green: GreenElement): SyntaxNode => {
+  const root : SyntaxRoot = { type: "root" }
+  const lazyNode = lazyNodeFromSeed(0, 0)
   const syntaxNode = lazyNodeGetOrInit(lazyNode, () => syntaxNodeNewRoot(root, green))
   return syntaxNode
 }
