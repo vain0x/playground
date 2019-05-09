@@ -10,3 +10,7 @@ export type SyntaxKind =
   | "root"
   | "bin"
   | "literal"
+
+export const syntaxKindIsOperator = (syntaxKind: SyntaxKind) =>
+  syntaxKind === "plus"
+  || syntaxKind === "minus"

@@ -3,13 +3,14 @@ import { GreenElement, greenToChildren, greenToTextLen } from "./green"
 import { LazyNode, lazyNodeGetOrInit, lazyNodeFromSeed } from "./lazy_node"
 import { TextUnit } from "./types"
 import { exhaust } from "./util";
+import { SyntaxKind } from "./syntax_kind";
 
 /**
  * 具象構文木の子ノードから見た親ノードの情報
  */
 interface ParentData {
   /** 親ノード */
-  parent: SyntaxNode,
+  parentNode: SyntaxNode,
   /** 親ノードがテキスト上で占める範囲の開始位置 */
   startOffset: TextUnit,
   /** 親ノードの何番目の子ノードであるか */
@@ -24,10 +25,12 @@ interface ParentData {
  */
 export interface SyntaxNode {
   root: SyntaxRoot,
-  parent: ParentData | null,
+  parentData: ParentData | null,
   green: GreenElement,
   children: LazyNode[],
 }
+
+const NO_PARENT = null
 
 const parentToStartOffset = (parent: ParentData | null) =>
   parent ? parent.startOffset : 0
@@ -53,20 +56,47 @@ const syntaxNodeNew = (root: SyntaxRoot, parent: ParentData | null, green: Green
 
   return {
     root,
-    parent,
+    parentData: parent,
     children,
     green,
   }
 }
 
-export const syntaxNodeNewRoot = (root: SyntaxRoot, green: GreenElement): SyntaxNode => {
-  const NO_PARENT = null
-  return syntaxNodeNew(root, NO_PARENT, green)
-}
+export const syntaxNodeNewRoot = (root: SyntaxRoot, green: GreenElement): SyntaxNode =>
+  syntaxNodeNew(root, NO_PARENT, green)
+
+const syntaxNodeNewChild = (parentData: ParentData, green: GreenElement): SyntaxNode =>
+  syntaxNodeNew(parentData.parentNode.root, parentData, green)
 
 export const syntaxNodeFromGreenTree = (green: GreenElement): SyntaxNode => {
-  const root : SyntaxRoot = { type: "root" }
+  const root: SyntaxRoot = { type: "root" }
   const lazyNode = lazyNodeFromSeed(0, 0)
   const syntaxNode = lazyNodeGetOrInit(lazyNode, () => syntaxNodeNewRoot(root, green))
   return syntaxNode
+}
+
+export const syntaxNodeToKind = (node: SyntaxNode): SyntaxKind =>
+  node.green.kind
+
+/**
+ * 具象構文木の子ノードのリストを生成する。
+ *
+ * 具象構文木は構築が遅延されているので、子ノードはこの関数を初めて呼んだときに生成される。
+ */
+export const syntaxNodeToChildren = (node: SyntaxNode): SyntaxNode[] => {
+  const greenChildren = greenToChildren(node.green)
+  const childNodeCount = node.children.length
+  const childNodes: SyntaxNode[] = []
+  for (let i = 0; i < childNodeCount; i++) {
+    const childNode = lazyNodeGetOrInit(node.children[i], (startOffset, greenIndex) => {
+      const parentData: ParentData = {
+        startOffset,
+        parentNode: node,
+        indexInParent: i,
+      }
+      return syntaxNodeNewChild(parentData, greenChildren[greenIndex])
+    })
+    childNodes.push(childNode)
+  }
+  return childNodes
 }
