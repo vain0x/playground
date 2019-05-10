@@ -8,6 +8,16 @@ fn test_nil() {
 }
 
 #[test]
+fn test_concat_tests() {
+    let mut printer = Printer::new();
+    let p = &mut printer;
+    let concat = Doc::text("hello".to_string(), p)
+        .concat(Doc::text(", ".to_string(), p), p)
+        .concat(Doc::text("world!".to_string(), p), p);
+    assert_eq!(p.print(concat, PrintConfig::new()), "hello, world!");
+}
+
+#[test]
 fn test_tree_example() {
     struct Node {
         text: &'static str,
@@ -77,5 +87,13 @@ fn test_tree_example() {
         )
     }
 
-    assert_eq!(print(&tree, 4, 80), "");
+    assert_eq!(
+        print(&tree, 4, 80),
+        r#"aaa[bbbbb[ccc,
+          dd],
+    eee,
+    ffff[gg,
+         hhh,
+         ii]]"#
+    );
 }

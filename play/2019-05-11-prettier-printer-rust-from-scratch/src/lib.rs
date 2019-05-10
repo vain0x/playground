@@ -3,10 +3,18 @@ mod doc;
 mod printer;
 
 type TextId = usize;
+type LayoutId = usize;
 type DocId = usize;
 
 #[derive(Clone, Copy, Debug)]
 pub struct Doc(DocId);
+
+#[derive(Clone, Debug)]
+enum LayoutKind {
+    Nil,
+    Text(String),
+    Line(isize),
+}
 
 /// ドキュメント。
 /// レイアウトの集合を表す。

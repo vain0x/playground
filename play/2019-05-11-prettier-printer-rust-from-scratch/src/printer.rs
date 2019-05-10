@@ -1,6 +1,5 @@
 use super::*;
 
-pub(crate) mod layout;
 pub(crate) mod print;
 
 impl Printer {
@@ -29,5 +28,9 @@ impl Printer {
         let doc_id = self.docs.len();
         self.docs.push(doc);
         Doc(doc_id)
+    }
+
+    pub(crate) fn kind(&self, doc: Doc) -> &DocKind {
+        &self.docs[doc.0]
     }
 }
