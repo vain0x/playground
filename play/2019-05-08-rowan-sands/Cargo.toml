@@ -1,0 +1,9 @@
+[package]
+name = "rowan-sands"
+version = "0.1.0"
+authors = ["vain0x"]
+edition = "2018"
+
+[dependencies]
+rowan = "*"
+m_lexer = "*"
