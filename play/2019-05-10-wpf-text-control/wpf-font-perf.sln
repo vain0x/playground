@@ -1,0 +1,25 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio Version 16
+VisualStudioVersion = 16.0.28803.156
+MinimumVisualStudioVersion = 10.0.40219.1
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "wpf-font-perf", "wpf-font-perf\wpf-font-perf.csproj", "{1C5DF9F9-2D52-407B-94F8-E7CE32B519A3}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Release|Any CPU = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{1C5DF9F9-2D52-407B-94F8-E7CE32B519A3}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{1C5DF9F9-2D52-407B-94F8-E7CE32B519A3}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{1C5DF9F9-2D52-407B-94F8-E7CE32B519A3}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{1C5DF9F9-2D52-407B-94F8-E7CE32B519A3}.Release|Any CPU.Build.0 = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(ExtensibilityGlobals) = postSolution
+		SolutionGuid = {D786B49A-B5A5-4D74-956B-3A3C19CFE28E}
+	EndGlobalSection
+EndGlobal
