@@ -1,18 +1,21 @@
 use super::*;
 
-impl PrinterConfig {
+impl PrintConfig {
     pub fn new() -> Self {
-        PrinterConfig {
+        Self {
             indent_size: 4,
             width: 80,
         }
     }
 
     pub fn with_indent_size(self, indent_size: usize) -> Self {
-        PrinterConfig { indent_size, ..self }
+        Self {
+            indent_size,
+            ..self
+        }
     }
 
     pub fn with_width(self, width: usize) -> Self {
-        PrinterConfig { width, ..self }
+        Self { width, ..self }
     }
 }

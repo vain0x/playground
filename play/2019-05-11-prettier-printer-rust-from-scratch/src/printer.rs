@@ -1,17 +1,36 @@
 use super::*;
 
+pub(crate) mod print;
+
 impl Printer {
-    pub fn new(config: PrinterConfig) -> Self {
-        let mut docs = vec![
-            Doc::Nil,
-            Doc::Line,
-        ];
+    pub fn new() -> Self {
+        let mut docs = vec![DocKind::Nil, DocKind::Line];
         Printer {
-            config,
             docs,
-            nil_doc_id: 0,
-            line_doc_id: 1,
-            root_doc_id: 0,
+            nil_doc: Doc(0),
+            line_doc: Doc(1),
         }
+    }
+
+    pub(crate) fn add_text(&mut self, text: String) -> String {
+        text
+    }
+
+    pub(crate) fn nil(&self) -> Doc {
+        self.nil_doc
+    }
+
+    pub(crate) fn line(&self) -> Doc {
+        self.line_doc
+    }
+
+    pub(crate) fn add_doc(&mut self, doc: DocKind) -> Doc {
+        let doc_id = self.docs.len();
+        self.docs.push(doc);
+        Doc(doc_id)
+    }
+
+    pub(crate) fn kind(&self, doc: Doc) -> &DocKind {
+        &self.docs[doc.0]
     }
 }
