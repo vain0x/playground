@@ -40,6 +40,9 @@ struct PrintContext<'a> {
     emits: Vec<(Emit, EmitList)>,
 }
 
+const DO_FLATTEN: bool = true;
+const NO_FLATTEN: bool = false;
+
 impl PrintContext<'_> {
     /// ドキュメントリストの先頭要素の詳細と、tail を取得する。
     fn uncons_doc(
@@ -50,6 +53,12 @@ impl PrintContext<'_> {
             None => None,
             Some(indent_doc_id) => {
                 let &(ref indent_doc, tail) = &self.docs[indent_doc_id];
+                eprintln!(
+                    "doc={} kind={:?} tail={:?}",
+                    indent_doc.doc.0,
+                    self.p.kind(indent_doc.doc),
+                    tail
+                );
                 Some((self.p.kind(indent_doc.doc), indent_doc.depth, tail))
             }
         }
@@ -67,9 +76,8 @@ impl PrintContext<'_> {
         id
     }
 
-    /// `Emit` のリストが表現する文字列を構築する。
-    /// `emits` は逆順に構築されているので注意。
-    fn print_emits(&mut self, mut emits: EmitList, out: &mut String) {
+    // FIXME: use iterator?
+    fn emits_to_vec(&self, mut emits: EmitList) -> Vec<&Emit> {
         let mut buf = vec![];
 
         while let Some(emit_id) = emits {
@@ -78,7 +86,14 @@ impl PrintContext<'_> {
             emits = next;
         }
 
-        for emit in buf.into_iter().rev() {
+        buf.reverse();
+        buf
+    }
+
+    /// `Emit` のリストが表現する文字列を構築する。
+    /// `emits` は逆順に構築されているので注意。
+    fn print_emits(&mut self, mut emits: EmitList, out: &mut String) {
+        for emit in self.emits_to_vec(emits) {
             match emit {
                 Emit::Space => out.push(' '),
                 Emit::Text(text) => out.push_str(text),
@@ -130,26 +145,67 @@ impl PrintContext<'_> {
                 self.be(column, flatten, Some(head), emits)
             }
             DocKind::Text(text) => {
-                let text = text.clone();
-                let emits = self.cons_emit(Emit::Text(text.to_string()), emits);
-                let column = column + text.len();
+                let text = text.to_string();
+                let text_len = text.len();
+                let emits = self.cons_emit(Emit::Text(text), emits);
+                let column = column + text_len;
                 self.be(column, flatten, docs, Some(emits))
             }
-            DocKind::Union(..) => unimplemented!(),
-            DocKind::Flatten(..) => unimplemented!(),
+            &DocKind::Union(first, second) => {
+                if flatten {
+                    // flatten first == flatten second なので first が最良
+                    let docs = self.cons_doc(first, depth, docs);
+                    return self.be(column, flatten, Some(docs), emits);
+                }
+
+                // 1つ目のドキュメントの最良のレイアウトの最初の行が、現在の行に収まるなら、それが最良。(Union の不変条件より)
+                let first_docs = self.cons_doc(first, depth, docs);
+                let first_emits = self.be(column, NO_FLATTEN, Some(first_docs), None);
+                if self.fits(column, &self.emits_to_vec(first_emits)) {
+                    return self.be(column, NO_FLATTEN, Some(first_docs), emits);
+                }
+
+                let second_docs = self.cons_doc(second, depth, docs);
+                self.be(column, NO_FLATTEN, Some(second_docs), emits)
+            }
+            &DocKind::Flatten(content) => {
+                let docs = self.cons_doc(content, depth, docs);
+                self.be(column, DO_FLATTEN, Some(docs), emits)
+            }
         }
     }
 
+    fn fits(&self, mut column: usize, emits: &[&Emit]) -> bool {
+        for emit in emits {
+            if column >= self.width {
+                return false;
+            }
+            match emit {
+                Emit::Space => {
+                    column += 1;
+                }
+                Emit::Text(text) => {
+                    column += text.len();
+                }
+                Emit::Line(..) => {
+                    return true;
+                }
+            }
+        }
+        true
+    }
+
     /// ドキュメントの最良のレイアウトを計算する。
-    fn best(&mut self, column: usize, doc: Doc) -> Option<EmitId> {
-        const NO_FLATTEN: bool = false;
-        let head = self.cons_doc(doc, 0, None);
-        self.be(column, NO_FLATTEN, Some(head), None)
+    fn best(&mut self, column: usize, doc: Doc) -> EmitList {
+        let docs = self.cons_doc(doc, 0, None);
+        self.be(column, NO_FLATTEN, Some(docs), None)
     }
 }
 
 impl Printer {
     pub fn print(&self, doc: Doc, config: PrintConfig) -> String {
+        eprintln!("{:?}", doc);
+
         let mut context = PrintContext {
             p: self,
             width: config.width,
