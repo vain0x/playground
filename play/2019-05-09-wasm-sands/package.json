@@ -1,0 +1,10 @@
+{
+  "name": "wasm-sands",
+  "version": "1.0.0",
+  "main": "index.js",
+  "author": "vain0x <vainzerox@gmail.com>",
+  "license": "MIT",
+  "dependencies": {
+    "express": "^4.16.4"
+  }
+}
