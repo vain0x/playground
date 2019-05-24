@@ -1,4 +1,5 @@
 pub mod binary;
+pub mod text;
 
 use std::fs::File;
 use std::io::*;
