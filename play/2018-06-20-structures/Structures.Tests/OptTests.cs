@@ -38,40 +38,40 @@ namespace Structures
             );
         }
 
-        public class NotNullTests
+        public class AllowNullTests
         {
             [Fact]
             public void ItMapsNullReferenceToNone()
             {
-                Opt.NotNull((string)null)
+                Opt.AllowNull((string)null)
                     .Is(Opt.None<string>());
             }
 
             [Fact]
             public void ItMapsNullStructToNone()
             {
-                Opt.NotNull((int?)null)
-                    .Is(Opt.None<int?>());
+                Opt.AllowNull((int?)null)
+                    .Is(Opt.None<int>());
             }
 
             [Fact]
             public void ItMapsNonnullToSome()
             {
-                Opt.NotNull("not null")
+                Opt.AllowNull("not null")
                     .Is(Opt.Some("not null"));
             }
 
             [Fact]
             public void ItMapsNonnullDefaultToSome()
             {
-                Opt.NotNull(default(int))
+                Opt.AllowNull(default(int))
                     .Is(Opt.Some(0));
             }
 
             [Fact]
             public void ItMapsNoneToNestedSome()
             {
-                Opt.NotNull(Opt.None<int>())
+                Opt.AllowNull(Opt.None<int>())
                     .Is(Opt.Some(Opt.None<int>()));
             }
         }

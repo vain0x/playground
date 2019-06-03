@@ -114,7 +114,7 @@ namespace Structures
             public Opt<T> DefaultValue { get; private set; }
 
             Opt<object> IRecordField<TRecord>.DefaultValue =>
-                DefaultValue.Map(x => (object)x);
+                DefaultValue.IsSome ? Opt.Some((object)DefaultValue.Value) : Opt.None<object>();
 
             public Field(Opt<T> defaultValue, int index)
             {
