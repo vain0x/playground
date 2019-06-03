@@ -1,0 +1,8 @@
+Add a
+Add b
+Add c
+Remove b
+Remove a
+Add b
+Add a
+Hello World!
