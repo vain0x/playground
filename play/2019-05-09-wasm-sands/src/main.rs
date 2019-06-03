@@ -3,6 +3,7 @@ pub mod text;
 
 use std::fs::File;
 use std::io::*;
+use text::{ast, Ast, SynTree};
 
 fn create_binary_ast() -> binary::Root {
     use binary::*;
@@ -29,7 +30,7 @@ fn create_binary_ast() -> binary::Root {
     }
 }
 
-fn main() {
+fn compile() {
     let mut buf: Vec<u8> = vec![];
 
     let root = create_binary_ast();
@@ -53,4 +54,29 @@ fn main() {
         write!(f, "\n").unwrap();
     }
     f.flush().unwrap();
+}
+
+fn parse(text: &str) -> SynTree<'_> {
+    // let tokens = text::tokenize::tokenize(text);
+    // text::parser::parse(text, &tokens);
+
+    let st = text::syn::parse(text);
+    st.debug();
+    st
+}
+
+fn main() {
+    parse(" ( module ) ");
+
+    let st = parse("(module (func $add (result i32) i32.const 2 i32.const 3))");
+
+    let module_decl = st.cast_child::<ast::ModuleDecl>(st.root_id()).unwrap();
+    for func_decl in module_decl.func_decls(&st) {
+        eprintln!("{:?}", func_decl.name(&st).unwrap().as_syn(&st))
+    }
+
+    let st = parse("(module (func (result) i32.const i32.const 3");
+    eprintln!("{:?}", st.errors());
+
+    compile();
 }

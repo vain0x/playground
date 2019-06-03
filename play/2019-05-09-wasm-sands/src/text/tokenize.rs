@@ -71,6 +71,10 @@ impl<'a> Tokenize<'a> {
         }
     }
 
+    fn current_text(&self) -> &str {
+        &self.text[self.last..self.index]
+    }
+
     /// Add a token with the specified kind.
     /// It spans over the range from the last position where previously `complete` is called
     /// to the current position.
@@ -144,7 +148,8 @@ impl<'a> Tokenize<'a> {
                 self.bump();
             }
 
-            self.complete(TokenKind::Keyword);
+            let keyword = Keyword::parse(self.current_text());
+            self.complete(TokenKind::Keyword(keyword));
         }
     }
 
@@ -179,6 +184,8 @@ impl<'a> Tokenize<'a> {
                 self.read_error_char();
             }
         }
+
+        self.complete(TokenKind::Eof);
     }
 }
 
@@ -196,7 +203,7 @@ fn inspect<'a>(text: &'a str, tokens: &'a [Token]) -> Vec<&'a str> {
         let l = r;
         r += token.len;
 
-        if token.kind == TokenKind::Whitespace {
+        if token.kind == TokenKind::Whitespace || token.kind == TokenKind::Eof {
             continue;
         }
 
