@@ -7,6 +7,7 @@ const KEYWORDS: &[(Keyword, &str)] = &[
     (Keyword::I32, "i32"),
     (Keyword::Const, "const"),
     (Keyword::Add, "add"),
+    (Keyword::Export, "export"),
 ];
 
 impl Keyword {

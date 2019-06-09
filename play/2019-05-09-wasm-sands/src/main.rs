@@ -68,15 +68,24 @@ fn parse(text: &str) -> SynTree<'_> {
 fn main() {
     parse(" ( module ) ");
 
-    let st = parse("(module (func $add (result i32) i32.const 2 i32.const 3))");
+    let st = parse("(module (func (result) i32.const i32.const 3");
+    eprintln!("{:?}", st.errors());
+
+    let st = parse(
+        "(module
+            (func $add (result i32)
+                i32.const 2
+                i32.const 3
+                i32.add)
+            (export \"add\" (func $add))
+        )",
+    );
 
     let module_decl = st.cast_child::<ast::ModuleDecl>(st.root_id()).unwrap();
     for func_decl in module_decl.func_decls(&st) {
         eprintln!("{:?}", func_decl.name(&st).unwrap().as_syn(&st))
     }
-
-    let st = parse("(module (func (result) i32.const i32.const 3");
-    eprintln!("{:?}", st.errors());
+    eprintln!("{:?}", text::assemble::assemble(&st));
 
     compile();
 }

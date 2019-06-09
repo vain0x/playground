@@ -1,8 +1,10 @@
+pub(crate) mod assemble;
 pub(crate) mod ast;
 pub(crate) mod grammar;
 pub(crate) mod keyword;
 pub(crate) mod parser;
 pub(crate) mod syn;
+pub(crate) mod token;
 pub(crate) mod tokenize;
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq, PartialOrd, Ord, Hash)]
@@ -23,6 +25,7 @@ pub(crate) enum Keyword {
     I32,
     Const,
     Add,
+    Export,
 }
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
@@ -63,8 +66,9 @@ pub(crate) enum SynKind {
     ResultTy,
     Op,
     Instr,
-    ExportDecl,
     Val,
+    ExportDecl,
+    ExportDesc,
 }
 
 pub(crate) type SynId = usize;

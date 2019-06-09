@@ -76,6 +76,45 @@ impl<'a> SynTree<'a> {
         }
     }
 
+    pub(crate) fn node_text(&self, syn_id: SynId) -> String {
+        fn go(
+            st: &SynTree<'_>,
+            node: SynId,
+            inside: bool,
+            syn_id: SynId,
+            pos: &mut usize,
+            out: &mut String,
+        ) {
+            let inside = inside || node == syn_id;
+
+            match &st.nodes[node] {
+                &Syn::Token(Token { len, .. }) => {
+                    if inside {
+                        *out += &st.text[*pos..*pos + len];
+                    }
+                    *pos += len;
+                }
+                Syn::Node { children, .. } => {
+                    for &child in children {
+                        go(st, child, inside, syn_id, pos, out);
+                    }
+                }
+            }
+        }
+
+        let mut pos = 0;
+        let mut out = String::new();
+        go(self, self.root_id(), false, syn_id, &mut pos, &mut out);
+        out
+    }
+
+    pub(crate) fn as_token(&self, syn_id: SynId) -> Option<&Token> {
+        match &self.nodes[syn_id] {
+            Syn::Token(token) => Some(token),
+            Syn::Node { .. } => None,
+        }
+    }
+
     pub(crate) fn cast<T: Ast>(&self, syn_id: SynId) -> Option<T> {
         T::cast(syn_id, self)
     }
@@ -99,6 +138,14 @@ impl<'a> SynTree<'a> {
             .into_iter()
             .filter_map(|&child| T::cast(child, self))
             .next()
+    }
+
+    pub(crate) fn find_first_token_by_kind(&self, parent: SynId, kind: TokenKind) -> Option<Token> {
+        self.child_ids(parent)
+            .into_iter()
+            .filter_map(|&child| self.as_token(child).filter(|token| token.kind == kind))
+            .next()
+            .cloned()
     }
 
     pub(crate) fn root_id(&self) -> SynId {

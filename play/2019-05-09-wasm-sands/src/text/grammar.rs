@@ -35,6 +35,14 @@ fn expect_dot(p: &mut Parser<'_>) -> bool {
     true
 }
 
+fn expect_ident(p: &mut Parser<'_>) -> bool {
+    if !eat_kind(TokenKind::Ident, p) {
+        p.error("Expected identifier");
+        return false;
+    }
+    true
+}
+
 fn eat_keyword(keyword: Keyword, p: &mut Parser<'_>) -> bool {
     eat_kind(TokenKind::Keyword(keyword), p)
 }
@@ -112,6 +120,9 @@ fn parse_section(p: &mut Parser<'_>) -> bool {
         TokenKind::Keyword(Keyword::Func) => {
             parse_func_decl(p);
         }
+        TokenKind::Keyword(Keyword::Export) => {
+            parse_export_decl(p);
+        }
         _ => {
             p.error("Expected keyword");
         }
@@ -167,6 +178,16 @@ fn parse_instr(p: &mut Parser<'_>) -> bool {
             parse_const_instr(p);
             true
         }
+        (TokenKind::Keyword(Keyword::I32), TokenKind::Dot, TokenKind::Keyword(Keyword::Add)) => {
+            let instr_node = p.start_node();
+            let op_node = p.start_node();
+            expect_keyword(Keyword::I32, p);
+            expect_dot(p);
+            expect_keyword(Keyword::Add, p);
+            op_node.complete(SynKind::Op, p);
+            instr_node.complete(SynKind::Instr, p);
+            true
+        }
         _ => false,
     }
 }
@@ -197,4 +218,30 @@ fn parse_val(p: &mut Parser<'_>) -> bool {
         }
         _ => false,
     }
+}
+
+fn parse_export_decl(p: &mut Parser<'_>) {
+    let node = p.start_node();
+
+    expect_paren_l(p);
+    expect_keyword(Keyword::Export, p);
+
+    // name
+    eat_kind(TokenKind::Str, p);
+
+    // export-desc
+    match p.next2() {
+        (TokenKind::ParenL, TokenKind::Keyword(Keyword::Func)) => {
+            let node = p.start_node();
+            expect_paren_l(p);
+            expect_keyword(Keyword::Func, p);
+            expect_ident(p);
+            node.complete(SynKind::ExportDesc, p);
+        }
+        _ => p.error("export desc not supported other than (func ..)"),
+    }
+
+    expect_paren_r(p);
+
+    node.complete(SynKind::ExportDecl, p);
 }
