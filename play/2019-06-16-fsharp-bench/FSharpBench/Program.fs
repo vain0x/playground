@@ -42,20 +42,19 @@ type Benchmarks() =
 
   [<Benchmark>]
   member __.TokenListRender() =
-    let rec render (out: StringBuilder) tokens =
-      match tokens with
-      | [] ->
-        out.ToString()
+    let render tokens =
+      let tokens = tokens |> List.toArray
+      let out = StringBuilder()
 
-      | token :: tokens ->
-        match token with
+      for i in tokens.Length - 1..-1..0 do
+        match tokens.[i] with
         | Token.Int value ->
           out.Append(value) |> ignore
 
         | Token.Str value ->
           out.Append(value) |> ignore
 
-        render out tokens
+      out.ToString()
 
     let rec go i acc =
       if i > 10_000 then
@@ -66,7 +65,7 @@ type Benchmarks() =
         |> cons (Token.Int (i * i)) |> cons (Token.Str "\n")
         |> go (i + 1)
 
-    [] |> go 1 |> List.rev |> render (StringBuilder())
+    [] |> go 1 |> render
 
 [<EntryPoint>]
 let main _ =
