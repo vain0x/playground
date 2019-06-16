@@ -8,6 +8,43 @@ open BenchmarkDotNet.Jobs
 
 let inline cons head tail = head :: tail
 
+type LinkListArena<'T>() =
+  let mutable arena = ResizeArray<struct (int * int * 'T)>()
+
+  // arena.[0] を nil にする。
+  do arena.Add((0, 0, Unchecked.defaultof<'T>))
+
+  member val nil = 0
+
+  member this.cons item tail =
+    let id = arena.Count
+    arena.Add((tail, this.length tail + 1, item))
+    id
+
+  member __.length tip =
+    let struct (_, n, _) = arena.[tip]
+    n
+
+  member __.Item
+    with get id =
+      if id = 0 then
+        ValueNone
+      else
+        let struct (tail, _, item) = arena.[id]
+        ValueSome (item, tail)
+
+  member this.toArray tip =
+    let array = Array.zeroCreate (this.length tip)
+
+    let rec go tip =
+      if tip <> 0 then
+        let struct (tail, length, item) = arena.[tip]
+        array.[length - 1] <- item
+        go tail
+
+    go tip
+    array
+
 [<Struct>]
 type Token =
   | Int
@@ -42,6 +79,21 @@ type Benchmarks() =
     [] |> go 1 |> List.rev |> String.concat ""
 
   [<Benchmark>]
+  member __.StringListConcatWithArena() =
+    let arena = LinkListArena<string>()
+
+    let rec go i acc =
+      if i > 10_000 then
+        acc
+      else
+        acc
+        |> arena.cons (string i) |> arena.cons ","
+        |> arena.cons (string (i * i)) |> arena.cons "\n"
+        |> go (i + 1)
+
+    arena.nil |> go 1 |> arena.toArray |> String.concat ""
+
+  [<Benchmark>]
   member __.TokenListRender() =
     let render tokens =
       let tokens = tokens |> List.toArray
@@ -74,6 +126,7 @@ let main _ =
   let expected = Benchmarks().StringBuilder()
   assert (
     Benchmarks().StringListConcat() = expected
+    && Benchmarks().StringListConcatWithArena() = expected
     && Benchmarks().TokenListRender() = expected
   )
 

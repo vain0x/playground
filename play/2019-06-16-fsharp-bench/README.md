@@ -6,6 +6,7 @@ F# に関するベンチマークを取る。
 
 - StringBuilder: 数値や文字列を StringBuilder に順次 Append する
 - StringListConcat: 文字列のリストを逆順で構築して、反転してから Join する
+- StringListConcatWithArena: 上と同じ、ただし cons セルをオブジェクトとして生成しない
 - TokenListRender: トークン (数値または文字列) のリストを逆順で構築して、反転してから StringBuilder に Append する
 
 ``` ini
@@ -19,8 +20,9 @@ Job=QuickRough  MaxRelativeError=0.1  IterationCount=3
 LaunchCount=1  WarmupCount=3
 ```
 
-|           Method |       Mean |      Error |    StdDev |
-|----------------- |-----------:|-----------:|----------:|
-|    StringBuilder |   874.2 us |   738.0 us |  40.45 us |
-| StringListConcat | 4,556.9 us | 4,945.2 us | 271.06 us |
-|  TokenListRender | 2,330.3 us |   464.8 us |  25.48 us |
+|                    Method |       Mean |       Error |     StdDev |
+|-------------------------- |-----------:|------------:|-----------:|
+|             StringBuilder |   838.1 us |    36.59 us |   2.006 us |
+|          StringListConcat | 4,386.5 us |   690.49 us |  37.848 us |
+| StringListConcatWithArena | 4,757.1 us | 2,796.84 us | 153.304 us |
+|           TokenListRender | 2,306.6 us |   415.55 us |  22.778 us |
