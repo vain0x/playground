@@ -31,14 +31,12 @@ type Benchmarks() =
     let rec go i acc =
       if i > 10_000 then
         acc
-        |> List.rev
-        |> String.concat ""
       else
         acc
         |> cons (string i) |> cons ","
         |> cons (string (i * i)) |> cons "\n"
         |> go (i + 1)
-    [] |> go 1
+    [] |> go 1 |> List.rev |> String.concat ""
 
   [<Benchmark>]
   member __.TokenListRender() =
@@ -70,11 +68,11 @@ type Benchmarks() =
 [<EntryPoint>]
 let main _ =
   // 結果が正しいことを確認する。
+  let expected = Benchmarks().StringBuilder()
   assert (
-    Benchmarks().StringBuilder()
-      = Benchmarks().StringListConcat()
-    && Benchmarks().StringBuilder()
-      = Benchmarks().TokenListRender())
+    Benchmarks().StringListConcat() = expected
+    && Benchmarks().TokenListRender() = expected
+  )
 
 #if !DEBUG
   // ベンチマークをとる。
