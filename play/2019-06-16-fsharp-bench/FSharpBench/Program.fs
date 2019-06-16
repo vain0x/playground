@@ -19,11 +19,14 @@ type Benchmarks() =
   [<Benchmark>]
   member __.StringBuilder() =
     let out = StringBuilder()
-    for i in 1..10_000 do
-      out
-        .Append(i).Append(",")
-        .Append(i * i).Append("\n")
-        |> ignore
+    let rec go (out: StringBuilder) i =
+      if i <= 10_000 then
+        out
+          .Append(i).Append(",")
+          .Append(i * i).Append("\n")
+          |> ignore
+        go out (i + 1)
+    go out 1
     out.ToString()
 
   [<Benchmark>]
