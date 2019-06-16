@@ -120,6 +120,29 @@ type Benchmarks() =
 
     [] |> go 1 |> render
 
+  [<Benchmark>]
+  member __.StringBuilderBad() =
+    let out = StringBuilder()
+    let rec go (out: StringBuilder) i =
+      if i <= 10_000 then
+        // NOTE: Don't do this.
+        out.Append(sprintf "%d,%d\n" i (i * i)) |> ignore
+        go out (i + 1)
+    go out 1
+    out.ToString()
+
+  [<Benchmark>]
+  member __.StringListConcatBad() =
+    let rec go i acc =
+      if i > 10_000 then
+        acc
+      else
+        // NOTE: Don't do this.
+        acc
+        |> cons (sprintf "%d,%d\n" i (i * i))
+        |> go (i + 1)
+    [] |> go 1 |> List.rev |> String.concat ""
+
 [<EntryPoint>]
 let main _ =
   // 結果が正しいことを確認する。

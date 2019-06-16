@@ -20,9 +20,11 @@ Job=QuickRough  MaxRelativeError=0.1  IterationCount=3
 LaunchCount=1  WarmupCount=3
 ```
 
-|                    Method |       Mean |       Error |     StdDev |
-|-------------------------- |-----------:|------------:|-----------:|
-|             StringBuilder |   838.1 us |    36.59 us |   2.006 us |
-|          StringListConcat | 4,386.5 us |   690.49 us |  37.848 us |
-| StringListConcatWithArena | 4,757.1 us | 2,796.84 us | 153.304 us |
-|           TokenListRender | 2,306.6 us |   415.55 us |  22.778 us |
+|                    Method |       Mean |       Error |    StdDev |
+|-------------------------- |-----------:|------------:|----------:|
+|             StringBuilder |   982.5 us | 1,654.56 us | 90.692 us |
+|          StringListConcat | 4,341.1 us |    70.80 us |  3.881 us |
+| StringListConcatWithArena | 4,824.8 us |   650.22 us | 35.641 us |
+|           TokenListRender | 2,305.1 us |   286.52 us | 15.705 us |
+|          StringBuilderBad | 2,850.7 us |   248.73 us | 13.634 us |
+|       StringListConcatBad | 4,588.9 us | 1,253.88 us | 68.729 us |
