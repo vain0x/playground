@@ -210,7 +210,7 @@ const patternFrom = obj => {
     return NULL_PATTERN
   }
 
-  throw new Error("Unknown pattern object")
+  return new StrictEqualPattern(obj)
 }
 
 export default {
