@@ -1,0 +1,342 @@
+// cross kassen entry point
+
+#define global false 0
+#define global true 1
+#define global gsel_hide (-1)
+#define global gsel_active 1
+#define global redraw_on 1
+#define global redraw_off 2
+#define global objmode_font 2
+
+#packopt name "cross_kassen"
+#packopt hide true
+
+#module m_app
+
+#enum k_team_front = 1
+#enum k_team_max
+
+#const k_window_main 0
+
+#const int k_render_millisec (1000 / 60)
+
+#enum k_font_text = 1
+#enum k_font_title
+#enum k_font_count
+
+#enum k_page_home = 1
+#enum k_page_battle
+
+#enum k_battle_start = 1
+#enum k_battle_new_turn
+#enum k_battle_action
+#enum k_battle_end_turn
+#enum k_battle_finish
+
+#const int k_auto_ticks (500 / k_render_millisec)
+
+#deffunc local _initialize_model
+
+	// model
+
+	dim s_unit_hps
+	dim s_unit_ats
+	dim s_unit_ags
+	s_unit_count = 0
+
+	dim s_teams
+	s_team_count = 0
+
+	dim s_team_units, k_team_max, 1
+	s_team_unit_count = 0
+
+	s_friend_team_i = -1
+
+	s_enemy_team_i = -1
+
+	// view
+
+	s_page = k_page_home
+	s_page_prev = -1
+
+	s_font_i = -1
+	sdim s_font_families, , k_font_count
+	dim s_font_sizes, k_font_count
+	dim s_font_styles, k_font_count
+	s_font_families(k_font_text) = "Yu Gothic Medium"
+	s_font_sizes(k_font_text) = 12
+	s_font_families(k_font_title) = "Yu Gothic Medium"
+	s_font_sizes(k_font_title) = 30
+	s_font_styles(k_font_title) = font_bold | font_italic
+
+	return
+
+#deffunc local _set_up_test_data \
+	local i, local unit_i, local team_i
+
+	// friend
+
+	s_unit_count++
+	unit_i = s_unit_count - 1
+	i = unit_i
+	s_unit_hps(i) = 100
+	s_unit_ats(i) = 100
+	s_unit_ags(i) = 100
+
+	s_team_count++
+	team_i = s_team_count - 1
+
+	s_team_unit_count++
+	team_unit_i = s_team_unit_count - 1
+	s_team_units(k_team_front, team_i) = unit_i
+
+	s_friend_team_i = team_i
+
+	// enemy
+
+	s_unit_count++
+	unit_i = s_unit_count - 1
+	i = unit_i
+	s_unit_hps(i) = 100
+	s_unit_ats(i) = 100
+	s_unit_ags(i) = 100
+
+	s_team_count++
+	team_i = s_team_count - 1
+
+	s_team_unit_count++
+	team_unit_i = s_team_unit_count - 1
+	s_team_units(k_team_front, team_i) = unit_i
+
+	s_enemy_team_i = team_i
+
+	s_actor = -1
+
+	s_auto = true
+	s_auto_tick = 0
+
+	s_signal = false
+
+	return
+
+#deffunc local _initialize_window
+
+	gsel k_window_main, gsel_hide
+	width , , (ginfo_dispx - ginfo_winx) / 2, (ginfo_dispy - ginfo_winy) / 2
+
+	title "Xross Kassen"
+	gsel k_window_main, gsel_active
+	return
+
+#deffunc local _set_font int font_i
+
+	assert 0 < font_i && font_i < k_font_count
+	if s_font_i == font_i {
+		return
+	}
+
+	s_font_i = font_i
+	font s_font_families(font_i), s_font_sizes(font_i), s_font_styles(font_i)
+	return
+
+#deffunc local _render_unit int unit_i, int px, int py, \
+	local w, local is_actor
+
+	is_actor = unit_i == s_actor
+
+	// background
+	hsvcolor , 128, 16
+	boxf px, py, px + w, py + w
+
+	// border
+	if is_actor {
+		hsvcolor 255, , 255
+	} else {
+		hsvcolor , , 255
+	}
+	line px, py, px + w, py
+	line px + w, py, px + w, py + w
+	line px + w, py + w, px, py + w
+	line px, py + w, px, py
+
+	// name
+	color
+	_set_font k_font_text
+	pos px + 10, py + 10
+	mes "Unit"
+
+	// status
+	pos px + 10, py + 40
+	mes strf("HP%3d", s_unit_hps(unit_i))
+	mes strf("AT%3d", s_unit_ats(unit_i))
+	mes strf("AG%3d", s_unit_ags(unit_i))
+
+	return
+
+#deffunc local _update_page_home
+
+	assert s_page == k_page_home
+
+	hsvcolor ,, 255
+	boxf
+
+	_set_font k_font_title
+	pos 30, 30
+	color
+	mes "Xross Kassen"
+
+	if s_page != s_page_prev {
+		_set_font k_font_text
+		pos 30, 80
+		objsize 120, 40
+		objmode objmode_font
+		button gosub "BATTLE", *l_home_battle
+		s_battle_button_i = stat
+	}
+
+	return
+
+#deffunc local _update_page_battle
+
+	assert s_page == k_page_battle
+
+	// initialize
+
+	if s_page != s_page_prev {
+		s_battle_state = k_battle_start
+		s_actor = -1
+
+		s_signal = false
+		s_auto_tick = k_auto_ticks
+	}
+
+	// render
+
+	hsvcolor ,, 255
+	boxf
+
+	_render_unit 0, 10, 10
+	_render_unit 1, 100, 10
+
+	if s_page != s_page_prev {
+		pos 30, ginfo_winy - 40
+		_set_font k_font_text
+		button gosub "Next", *l_battle_next
+	}
+
+	if s_battle_state == k_battle_start {
+		_set_font k_font_title
+		pos 30, 30
+		color
+		mes "GAME START"
+
+	} else : if s_battle_state == k_battle_new_turn {
+		_set_font k_font_title
+		pos 30, 30
+		hsvcolor 64, 128, 128
+		mes "START of turn"
+
+	} else : if s_battle_state == k_battle_action {
+		//
+
+	} else : if s_battle_state == k_battle_end_turn {
+		_set_font k_font_title
+		pos 30, 30
+		hsvcolor 128, 128, 128
+		mes "END of turn"
+
+	} else : if s_battle_state == k_battle_finish {
+		_set_font k_font_title
+		pos 30, 30
+		color
+		mes "GAME OVER"
+	}
+
+	// auto update
+
+	if s_auto_tick == 0 || s_signal {
+		s_auto_tick = k_auto_ticks
+		gosub *l_battle_next
+
+	} else {
+		s_auto_tick--
+	}
+
+	// next
+
+	if s_signal {
+		s_signal = false
+
+		if s_battle_state == k_battle_start {
+			s_battle_state++
+
+		} else : if s_battle_state = k_battle_new_turn {
+			s_actor = 0
+			s_battle_state++
+
+		} else : if s_battle_state == k_battle_action {
+			s_unit_hps(1 - s_actor) -= s_unit_ats(s_actor) / 6
+
+			if s_unit_hps(1 - s_actor) <= 0 {
+				s_battle_state = k_battle_finish
+
+			} else {
+				s_actor++
+
+				if s_actor >= s_unit_count {
+					s_battle_state = k_battle_end_turn
+				}
+			}
+
+		} else : if s_battle_state == k_battle_end_turn {
+			s_battle_state = k_battle_new_turn
+
+		} else : if s_battle_state == k_battle_finish {
+			//
+		}
+	}
+
+	return
+
+#deffunc local _update_all
+
+	if s_page != s_page_prev {
+		clrobj
+	}
+
+	redraw redraw_off
+	if s_page == k_page_home {
+		_update_page_home
+	} else : if s_page == k_page_battle {
+		_update_page_battle
+	} else {
+		assert false
+	}
+	redraw redraw_on
+
+	s_page_prev = s_page
+	return
+
+#deffunc app_main
+
+	_initialize_model
+	_set_up_test_data
+	_initialize_window
+	repeat
+		_update_all
+		await k_render_millisec
+	loop
+
+*l_home_battle
+
+	s_page = k_page_battle
+	return
+
+*l_battle_next
+
+	s_signal = true
+	return
+
+#global
+
+	app_main

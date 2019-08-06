@@ -1,3 +1,7 @@
+src/cross_kassen.ax
+src/cross_kassen.exe
+
+# hsp3
 hsptmp
 obj
 packfile
