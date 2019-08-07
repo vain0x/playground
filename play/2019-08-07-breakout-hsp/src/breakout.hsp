@@ -1,0 +1,373 @@
+// Breakout main program.
+
+#include "constants.hsp"
+
+#packopt name "breakout"
+#packopt hide true
+
+#module
+
+#defcfunc hypot2 double x, double y
+
+	return sqrt(x * x + y * y)
+
+#global
+
+#module m_app
+
+#enum k_team_front = 1
+#enum k_team_max
+
+#const k_window_main 0
+
+#const int k_render_millisec (1000 / 60)
+
+#enum k_page_home = 1
+#enum k_page_battle
+
+#enum k_battle_start = 1
+#enum k_battle_new_turn
+#enum k_battle_action
+#enum k_battle_end_turn
+#enum k_battle_finish
+
+#const int k_auto_ticks (500 / k_render_millisec)
+
+#const k_gravity 9.80665
+
+// coefficient of restitution
+#const k_wall_bound 1.0
+
+#const k_bar_bound 1.0
+
+#const k_tau (3.14159265358979 * 2)
+
+#const k_bound_vert 1
+#const k_bound_horz 2
+
+#deffunc local _initialize_vars \
+	local y, local x
+
+	// margin size
+	s_margin_a = 24
+	s_margin_b = 6
+
+	// size of window
+	s_win_wx = 640
+	s_win_wy = 480
+
+	s_area_px = s_margin_a
+	s_area_py = s_margin_a
+	s_area_wx = s_win_wx - s_margin_a * 2
+	s_area_wy = s_win_wy - s_margin_a * 2
+
+	// number of blocks
+	s_block_yn = 6
+	s_block_xn = 6
+	s_block_count = s_block_xn * s_block_yn
+
+	dim s_block_dones, s_block_count
+
+	// position of blocks
+	dim s_block_pxs, s_block_count
+	dim s_block_pys, s_block_count
+
+	// size of blocks
+	dim s_block_wxs, s_block_count
+	dim s_block_wys, s_block_count
+
+	// index of blocks on a row
+	dim s_block_xi, s_block_count
+	dim s_block_yi, s_block_count
+
+	// ball position
+	dim s_ball_px
+	dim s_ball_py
+	s_ball_wx = 18
+	s_ball_wy = 18
+	s_ball_vx = -4.0
+	s_ball_vy = 4.0
+	s_ball_ax = 0.0
+	s_ball_ay = 0.0
+
+	// bar position
+	dim s_bar_px
+	dim s_bar_py
+
+	// bar size
+	s_bar_wx = 100
+	s_bar_wy = 12
+
+	// bar velocity
+	s_bar_vx = 0
+	s_bar_vy = 0
+	s_bar_speed = 12
+
+	// key states
+	s_key_left = false
+	s_key_right = false
+
+	return
+
+#deffunc local _layout_blocks \
+	local wx, local wy
+
+	// index blocks
+	repeat s_block_count
+		s_block_xi(cnt) = cnt \ s_block_xn
+		s_block_yi(cnt) = cnt / s_block_xn
+	loop
+
+	// layout block area
+
+	s_block_area_px = s_margin_a
+	s_block_area_py = s_margin_a
+	s_block_area_wx = s_win_wx - s_margin_a * 2
+	s_block_area_wy = s_win_wy / 4 - s_margin_a
+
+	// measure blocks
+
+	wx = double(s_block_area_wx - (s_block_xn - 1) * s_margin_b) / s_block_xn
+	wy = double(s_block_area_wy - (s_block_yn - 1) * s_margin_b) / s_block_yn
+
+	repeat s_block_count
+		s_block_wxs(cnt) = wx
+		s_block_wys(cnt) = wy
+	loop
+
+	// arrange blocks
+
+	repeat s_block_count
+		s_block_pxs(cnt) = s_block_area_px + s_block_xi(cnt) * (wx + s_margin_b)
+		s_block_pys(cnt) = s_block_area_py + s_block_yi(cnt) * (wy + s_margin_b)
+	loop
+
+	return
+
+#deffunc local _layout_ball
+
+	s_ball_px = (s_win_wx - s_ball_wx) / 2
+	s_ball_py = s_block_area_py + s_block_area_wy + s_margin_a
+	return
+
+#deffunc local _layout_bar
+
+	s_bar_area_px = s_margin_a
+	s_bar_area_py = s_win_wy - s_bar_wy - s_margin_a * 2
+	s_bar_area_wx = s_win_wx - s_margin_a * 2
+	s_bar_area_wy = s_bar_wy
+
+	s_bar_px = s_bar_area_px + (s_bar_area_wx - s_bar_wx) / 2
+	s_bar_py = s_bar_area_py
+	return
+
+#deffunc local _initialize_window
+
+	gsel k_window_main, gsel_hide
+	width , , (ginfo_dispx - s_win_wx) / 2, (ginfo_dispy - s_win_wy) / 2
+
+	title "Breakout"
+	gsel k_window_main, gsel_active
+	return
+
+#deffunc local _render_block int block_i, \
+	local r, local px, local py, local qx, local qy
+
+	if s_block_dones(block_i) {
+		return
+	}
+
+	r = double(s_block_xi(cnt) + s_block_yi(cnt)) / (s_block_xn + s_block_yn - 2)
+	hsvcolor 60 + r * 120, 155, 192
+
+	px = s_block_pxs(block_i)
+	py = s_block_pys(block_i)
+	qx = px + s_block_wxs(block_i)
+	qy = py + s_block_wys(block_i)
+	boxf px, py, qx, qy
+
+	return
+
+#deffunc local _render_blocks
+
+	repeat s_block_count
+		_render_block cnt
+	loop
+	return
+
+#deffunc local _render_ball \
+	local px, local py, local qx, local qy
+
+	hsvcolor 240, 155, 192
+	px = s_ball_px
+	py = s_ball_py
+	qx = px + s_ball_wx
+	qy = py + s_ball_wy
+	circle px, py, qx, qy, true
+
+	return
+
+#deffunc local _render_bar \
+	local qx, local qy
+
+	hsvcolor 120, 155, 192
+	qx = s_bar_px + s_bar_wx
+	qy = s_bar_py + s_bar_wy
+	boxf s_bar_px, s_bar_py, qx, qy
+	return
+
+#deffunc local _handle_input
+
+	getkey s_key_left, vkey_left
+	getkey s_key_right, vkey_right
+
+	return
+
+#deffunc local _update_ball_bound int bound_type, double coeff, \
+	local vr, local vt
+
+	vr = hypot2(s_ball_vx, s_ball_vy)
+	vt = atan(s_ball_vy, s_ball_vx)
+
+	vr *= coeff
+
+	if bound_type == k_bound_vert {
+		vt *= -1
+		vt += k_tau / 2
+	} else {
+		assert bound_type == k_bound_horz
+		vt *= -1
+	}
+
+	s_ball_vx = vr * cos(vt)
+	s_ball_vy = vr * sin(vt)
+
+	// move again
+
+	s_ball_px += s_ball_vx
+	s_ball_py += s_ball_vy
+	return
+
+#deffunc local _update_move_ball \
+	local bpx, local bpy, local bqx, local bqy, \
+	local px, local py, local qx, local qy
+
+	bpx = s_ball_px + s_ball_vx
+	bpy = s_ball_py + s_ball_vy
+	bqx = bpx + s_ball_wx
+	bqy = bpy + s_ball_wy
+
+	s_collision = false
+
+	// wall
+
+	if s_collision == false {
+		// don't go away for testing
+		s_collision |= bpy <= s_area_py
+		s_collision |= bqy >= s_area_py + s_area_wy
+
+		if s_collision {
+			_update_ball_bound k_bound_horz, k_wall_bound
+		}
+	}
+
+	if s_collision == false {
+		s_collision |= bpx <= s_area_px
+		s_collision |= bqx >= s_area_px + s_area_wx
+
+		if s_collision {
+			_update_ball_bound k_bound_vert, k_wall_bound
+		}
+	}
+
+	// bar
+
+	if s_collision == false {
+		px = s_bar_px
+		py = s_bar_py
+		qx = px + s_bar_wx
+		qy = py + s_bar_wy
+
+		s_collision |= bpx <= qx && px <= bqx && bpy <= qy && py <= bqy
+		if s_collision {
+			_update_ball_bound k_bound_horz, k_bar_bound
+		}
+	}
+
+	// blocks
+
+	repeat s_block_count
+		if s_collision || s_block_dones(cnt) {
+			continue
+		}
+
+		px = s_block_pxs(cnt)
+		py = s_block_pys(cnt)
+		qx = px + s_block_wxs(cnt)
+		qy = py + s_block_wys(cnt)
+
+		s_collision |= bpx <= qx && px <= bqx && bpy <= qy && py <= bqy
+
+		if s_collision {
+			_update_ball_bound k_bound_horz, k_wall_bound
+			s_block_dones(cnt) = true
+			break
+		}
+	loop
+
+	s_ball_px += s_ball_vx
+	s_ball_py += s_ball_vy
+
+	return
+
+#deffunc local _update \
+
+	// move bar
+
+	s_bar_vx = s_bar_speed * (s_key_right - s_key_left)
+	s_bar_px = limitf(s_bar_px + s_bar_vx, s_bar_area_px, s_bar_area_px + s_bar_area_wx - s_bar_wx)
+
+	// gravity
+
+	s_ball_vx += s_ball_ax
+	s_ball_vy += s_ball_ay
+
+	_update_move_ball
+	return
+
+#deffunc local _render
+
+	hsvcolor , , 255
+	boxf
+
+	_render_blocks
+	_render_ball
+	_render_bar
+	return
+
+#deffunc local _frame
+
+	redraw redraw_off
+
+	_handle_input
+	_update
+	_render
+
+	redraw redraw_on
+	return
+
+#deffunc app_main
+
+	_initialize_vars
+	_initialize_window
+	_layout_blocks
+	_layout_ball
+	_layout_bar
+	repeat
+		_frame
+		await k_render_millisec
+	loop
+
+#global
+
+	app_main
