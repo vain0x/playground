@@ -1,0 +1,22 @@
+#ifndef include_constants_hsp
+#define global include_constants_hsp
+
+#define global false 0
+#define global true 1
+
+#define global gsel_hide (-1)
+#define global gsel_active 1
+
+#define global mesbox_editable 1
+
+#define global objmode_font 2
+
+#define global redraw_on 1
+#define global redraw_off 2
+
+#define global vk_left 37
+#define global vk_top 38
+#define global vk_right 39
+#define global vk_bottom 40
+
+#endif

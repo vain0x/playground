@@ -1,0 +1,207 @@
+// Spreadsheet component.
+
+#include "constants.hsp"
+
+#packopt name "spreadsheet"
+#packopt hide true
+
+#module m_spreadsheet
+
+#deffunc local _boxl int px, int py, int qx, int qy
+
+	line px, py, qx, py
+	line qx, py, qx, qy
+	line qx, qy, px, qy
+	line px, qy, px, py
+	return
+
+#deffunc spreadsheet_initialize
+
+	s_sheet_count = 1
+	return
+
+#deffunc spreadsheet_new \
+	int sheet_i, \
+	local i
+
+	i = s_sheet_count
+	s_sheet_count++
+
+	// position
+	s_sheet_pxs(i) = 0
+	s_sheet_pys(i) = 0
+
+	// size
+	s_sheet_wxs(i) = 640
+	s_sheet_wys(i) = 480
+
+	// click handler
+	s_sheet_clicks(i) = false
+	s_sheet_click_xs(i) = -1
+	s_sheet_click_ys(i) = -1
+
+	// edit control
+	s_sheet_edit_i(i) = -1
+	s_sheet_edit_i_prev(i) = -1
+	s_sheet_edit_obj_ids(i) = -1
+
+	// other properties
+	s_cells = 10, 20, 30
+	s_sheet_col_counts = 1
+	s_sheet_row_counts = 3
+	s_col_wxs = 80
+	s_row_wys = 24, 24, 24
+	return i
+
+#deffunc spreadsheet_move int sheet_i, int px, int py
+
+	assert 0 <= sheet_i && sheet_i < s_sheet_count
+	s_sheet_pxs(sheet_i) = px
+	s_sheet_pys(sheet_i) = py
+	return
+
+#deffunc spreadsheet_width int sheet_i, int wx, int wy
+
+	assert 0 <= sheet_i && sheet_i < s_sheet_count
+	s_sheet_wxs(sheet_i) = wx
+	s_sheet_wys(sheet_i) = wy
+	return
+
+// called on click
+#deffunc spreadsheet_did_click int sheet_i, int px, int py
+
+	assert 0 <= sheet_i && sheet_i < s_sheet_count
+	s_sheet_clicks(sheet_i) = true
+	s_sheet_click_xs(sheet_i) = px
+	s_sheet_click_ys(sheet_i) = py
+	return
+
+// called on redraw
+#deffunc spreadsheet_draw int sheet_i, \
+	local px, local py, local qx, local qy, \
+	local yi, local xi, local cell_i, \
+	local ok, local cpx, local cpy, local click_handled
+
+	cell_i = 0
+
+	click_handled = s_sheet_clicks(sheet_i) == false
+	cpx = s_sheet_click_xs(sheet_i)
+	cpy = s_sheet_click_ys(sheet_i)
+
+	px = s_sheet_pxs(sheet_i)
+	py = s_sheet_pys(sheet_i)
+	qx = px + s_sheet_wxs(sheet_i)
+	qy = py + s_sheet_wys(sheet_i)
+	hsvcolor , , 255 // white
+	boxf px, py, qx, qy
+
+	color // black
+	repeat s_sheet_row_counts(sheet_i)
+		yi = cnt
+		px = s_sheet_pxs(sheet_i)
+		qy = py + s_row_wys(cnt)
+
+		repeat s_sheet_col_counts(sheet_i)
+			xi = cnt
+
+			qx = px + s_col_wxs(cnt)
+
+			// border
+			_boxl px, py, qx, qy
+
+			// content
+			pos px + 4, py + 4
+			mes s_cells(cell_i)
+
+			// handle click
+			ok = click_handled == false
+			ok = ok && px <= cpx && cpx <= qx
+			ok = ok && py <= cpy && cpy <= qy
+			if ok {
+				// did edit commit
+				if s_sheet_edit_obj_ids(sheet_i) >= 0 {
+					clrobj s_sheet_edit_obj_ids(sheet_i), s_sheet_edit_obj_ids(sheet_i)
+					s_sheet_edit_obj_ids(sheet_i) = -1
+				}
+
+				// did edit begin
+				s_sheet_edit_i(sheet_i) = cell_i
+				objmode objmode_font
+				pos px, py
+				input s_cells(cell_i), qx - px, qy - py
+				s_sheet_edit_obj_ids(sheet_i) = stat
+
+				click_handled = true
+			}
+
+			cell_i++
+			px = qx
+		loop
+
+		py = qy
+	loop
+
+	// handle click
+	if click_handled == false {
+		// did edit cancel
+		if s_sheet_edit_obj_ids(sheet_i) >= 0 {
+			clrobj s_sheet_edit_obj_ids(sheet_i), s_sheet_edit_obj_ids(sheet_i)
+			s_sheet_edit_obj_ids(sheet_i) = -1
+		}
+	}
+	s_sheet_clicks(sheet_i) = false
+	return
+
+#global
+
+#module m_app
+
+#const k_window_main 0
+
+#deffunc app_main
+
+	sdim s_edit_content
+
+	gsel k_window_main, gsel_hide
+
+	s_win_wx = ginfo_winx
+	s_win_wy = ginfo_winy
+	s_edit_wx = s_win_wx
+	s_edit_wy = 24 * 3
+	s_sheet_px = 0
+	s_sheet_py = s_edit_wy
+	s_sheet_wx = s_win_wx
+	s_sheet_wy = s_win_wy - s_edit_wy
+
+	font "Yu Gothic Medium", 12
+
+	pos 0, 0
+	objmode objmode_font
+	mesbox s_edit_content, s_edit_wx, s_edit_wy, mesbox_editable
+
+	spreadsheet_new
+	s_sheet_i = stat
+	spreadsheet_move s_sheet_i, s_sheet_px, s_sheet_py
+	spreadsheet_width s_sheet_i, s_sheet_wx, s_sheet_wy
+
+	onclick gosub *l_click
+
+	gsel k_window_main, gsel_active
+
+	repeat
+		redraw redraw_off
+
+		spreadsheet_draw s_sheet_i
+
+		redraw redraw_on
+		await 16 // 60 fps
+	loop
+
+*l_click
+
+	spreadsheet_did_click s_sheet_i, mousex, mousey
+	return
+
+#global
+
+	app_main
