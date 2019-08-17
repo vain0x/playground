@@ -1,0 +1,5 @@
+// zero
+
+fn __main() {
+    return 0;
+}

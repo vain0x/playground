@@ -1,0 +1,35 @@
+#!/bin/bash
+
+set -u
+
+function test() {
+    CASE="$1"
+    DIR="tests/$CASE"
+    NAME=$(basename $DIR)
+    REWOL="$DIR/$NAME".rewol
+    OUT_C="$DIR/$NAME".c
+    OUT_CX="$DIR/$NAME"_c.exe
+    OUT_JS="$DIR/$NAME".js
+
+    if [[ ! -f $REWOL ]]
+    then
+        echo "Missing $REWOL"
+        return
+    fi
+
+    echo "Run $CASE .."
+
+    echo "  c"
+    cargo run --bin rew-to-c <$REWOL >$OUT_C && \
+    gcc -std=c11 -Wall -Wextra $OUT_C -o $OUT_CX && \
+    $OUT_CX || \
+    echo "Exit with $?"
+
+    echo "  js"
+    cargo run --bin rew-to-javascript <$REWOL >$OUT_JS && \
+    node $OUT_JS || \
+    echo "Exit with $?"
+}
+
+test "examples/zero" && \
+echo "OK"
