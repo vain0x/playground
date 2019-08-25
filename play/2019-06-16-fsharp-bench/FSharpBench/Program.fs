@@ -8,8 +8,8 @@ open BenchmarkDotNet.Jobs
 
 let inline cons head tail = head :: tail
 
-type LinkListArena<'T>() =
-  let mutable arena = ResizeArray<struct (int * int * 'T)>()
+type LinkListArena<'T>(capacity: int) =
+  let mutable arena = ResizeArray<struct (int * int * 'T)>(1 + capacity)
 
   // arena.[0] を nil にする。
   do arena.Add((0, 0, Unchecked.defaultof<'T>))
@@ -55,7 +55,7 @@ type Token =
 type Benchmarks() =
   [<Benchmark>]
   member __.StringBuilder() =
-    let out = StringBuilder()
+    let out = StringBuilder(4096)
     let rec go (out: StringBuilder) i =
       if i <= 10_000 then
         out
@@ -80,7 +80,7 @@ type Benchmarks() =
 
   [<Benchmark>]
   member __.StringListConcatWithArena() =
-    let arena = LinkListArena<string>()
+    let arena = LinkListArena<string>(4096)
 
     let rec go i acc =
       if i > 10_000 then
@@ -97,7 +97,7 @@ type Benchmarks() =
   member __.TokenListRender() =
     let render tokens =
       let tokens = tokens |> List.toArray
-      let out = StringBuilder()
+      let out = StringBuilder(4096)
 
       for i in tokens.Length - 1..-1..0 do
         match tokens.[i] with
@@ -122,11 +122,11 @@ type Benchmarks() =
 
   [<Benchmark>]
   member __.TokenListRenderWithArena() =
-    let arena = LinkListArena<Token>()
+    let arena = LinkListArena<Token>(4096)
 
     let render tokens =
       let tokens = tokens |> arena.toArray
-      let out = StringBuilder()
+      let out = StringBuilder(4096)
 
       for t in tokens do
         match t with
@@ -151,7 +151,7 @@ type Benchmarks() =
 
   [<Benchmark>]
   member __.StringBuilderBad() =
-    let out = StringBuilder()
+    let out = StringBuilder(4096)
     let rec go (out: StringBuilder) i =
       if i <= 10_000 then
         // NOTE: Don't do this.
