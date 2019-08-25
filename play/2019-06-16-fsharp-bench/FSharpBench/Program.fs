@@ -121,6 +121,35 @@ type Benchmarks() =
     [] |> go 1 |> render
 
   [<Benchmark>]
+  member __.TokenListRenderWithArena() =
+    let arena = LinkListArena<Token>()
+
+    let render tokens =
+      let tokens = tokens |> arena.toArray
+      let out = StringBuilder()
+
+      for t in tokens do
+        match t with
+        | Token.Int value ->
+          out.Append(value) |> ignore
+
+        | Token.Str value ->
+          out.Append(value) |> ignore
+
+      out.ToString()
+
+    let rec go i acc =
+      if i > 10_000 then
+        acc
+      else
+        acc
+        |> arena.cons (Token.Int i) |> arena.cons (Token.Str ",")
+        |> arena.cons (Token.Int (i * i)) |> arena.cons (Token.Str "\n")
+        |> go (i + 1)
+
+    arena.nil |> go 1 |> render
+
+  [<Benchmark>]
   member __.StringBuilderBad() =
     let out = StringBuilder()
     let rec go (out: StringBuilder) i =
@@ -151,6 +180,9 @@ let main _ =
     Benchmarks().StringListConcat() = expected
     && Benchmarks().StringListConcatWithArena() = expected
     && Benchmarks().TokenListRender() = expected
+    && Benchmarks().TokenListRenderWithArena() = expected
+    && Benchmarks().StringBuilderBad() = expected
+    && Benchmarks().StringListConcatBad() = expected
   )
 
 #if !DEBUG
