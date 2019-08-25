@@ -9,40 +9,39 @@ open BenchmarkDotNet.Jobs
 let inline cons head tail = head :: tail
 
 type LinkListArena<'T>(capacity: int) =
-  let mutable arena = ResizeArray<struct (int * int * 'T)>(1 + capacity)
+  let mutable tails = ResizeArray<int>(1 + capacity)
+  let mutable items = ResizeArray<'T>(1 + capacity)
 
-  // arena.[0] を nil にする。
-  do arena.Add((0, 0, Unchecked.defaultof<'T>))
+  member val nil =
+    tails.Add(-1)
+    items.Add(Unchecked.defaultof<'T>)
+    tails.Count - 1
 
-  member val nil = 0
+  member __.cons item tail =
+    tails.Add(tail)
+    items.Add(item)
+    tails.Count - 1
 
-  member this.cons item tail =
-    let id = arena.Count
-    arena.Add((tail, this.length tail + 1, item))
-    id
-
-  member __.length tip =
-    let struct (_, n, _) = arena.[tip]
-    n
-
-  member __.Item
-    with get id =
-      if id = 0 then
-        ValueNone
+  member this.length tip =
+    let rec go acc tip =
+      if tip = this.nil then
+        acc
       else
-        let struct (tail, _, item) = arena.[id]
-        ValueSome (item, tail)
+        go (acc + 1) tails.[tip]
+    go 0 tip
 
   member this.toArray tip =
-    let array = Array.zeroCreate (this.length tip)
+    let length = this.length tip
+    let array = Array.zeroCreate length
 
-    let rec go tip =
-      if tip <> 0 then
-        let struct (tail, length, item) = arena.[tip]
-        array.[length - 1] <- item
-        go tail
+    let rec go length tip =
+      if tip = this.nil then
+        assert (length = 0)
+      else
+        array.[length - 1] <- items.[tip]
+        go (length - 1) tails.[tip]
 
-    go tip
+    go length tip
     array
 
 [<Struct>]
