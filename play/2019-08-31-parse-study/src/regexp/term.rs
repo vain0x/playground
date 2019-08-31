@@ -39,6 +39,13 @@ impl Term {
         Term::Disj(Box::new(self), Box::new(other))
     }
 
+    pub fn is_disj(&self) -> bool {
+        match self {
+            Term::Disj(..) => true,
+            _ => false,
+        }
+    }
+
     pub fn parse(text: &str) -> Term {
         let mut i = 0;
         let t = parse::p_term(text, &mut i);
@@ -63,9 +70,25 @@ impl Term {
                     }
                 },
                 Term::Conj(l, r) => {
+                    if l.is_disj() {
+                        write!(out, "(")?;
+                    }
                     write(l, out)?;
+                    if l.is_disj() {
+                        write!(out, ")")?;
+                    }
+
                     write!(out, " ")?;
-                    write(r, out)
+
+                    if r.is_disj() {
+                        write!(out, "(")?;
+                    }
+                    write(r, out)?;
+                    if r.is_disj() {
+                        write!(out, ")")?;
+                    }
+
+                    Ok(())
                 }
                 Term::Disj(l, r) => {
                     write(l, out)?;
@@ -202,6 +225,6 @@ mod tests {
 
         t("1+", "'1' '1'*");
         t("[01]*", "(ε|'0'|'1')*");
-        t("(0|1)(2|3)", "'0'|'1' '2'|'3'");
+        t("(0|1)(2|3)", "('0'|'1') ('2'|'3')");
     }
 }
