@@ -1,3 +1,5 @@
+//! 正規表現の抽象構文木
+
 use std::io::{self, Write};
 
 #[derive(Clone, Debug)]

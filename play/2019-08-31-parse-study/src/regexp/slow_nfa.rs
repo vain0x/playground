@@ -1,3 +1,5 @@
+//! 状態集合を利用する素朴な NFA の実装
+
 use super::*;
 use std::collections::BTreeSet;
 use std::mem::swap;

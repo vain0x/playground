@@ -1,3 +1,5 @@
+//! 字句解析
+
 pub mod slow_nfa;
 pub mod term;
 
