@@ -1,6 +1,5 @@
 use super::*;
 use std::collections::BTreeSet;
-use std::iter;
 use std::mem::swap;
 
 /// NFA のエッジのラベル
@@ -83,7 +82,7 @@ impl SlowNfa {
         eprintln!("ε {:?} -> {:?}", set, next);
         swap(&mut set, &mut next);
 
-        for c in inputs.chars().chain(iter::once('\0')) {
+        for c in inputs.chars() {
             // 1文字分の遷移を行う。
 
             next.clear();
@@ -159,17 +158,14 @@ pub fn run_term_with_slow_nfa(term: &Term, input: &str) -> bool {
 
     let mut nfa = SlowNfa::new();
     let entry = nfa.add_state();
-
     let exit = add_term(term, entry, &mut nfa);
-    let accept = nfa.add_state();
-    nfa.add_edge(exit, accept, '\0');
 
-    eprintln!("nfa {:?} entry={} accept={}", nfa, entry, accept);
+    eprintln!("nfa {:?} entry={} exit={}", nfa, entry, exit);
 
     let exits = nfa.run(entry, input);
 
     // 状態のいずれかが受理状態に遷移していればOK
-    exits.contains(&accept)
+    exits.contains(&exit)
 }
 
 #[cfg(test)]
