@@ -111,7 +111,8 @@ impl SlowNfa {
 }
 
 /// NFA のシミュレーションにより正規表現を実行する
-pub fn run_term_with_slow_nfa(term: &Term, input: &str) -> bool {
+#[allow(unused)]
+pub(crate) fn run_term_with_slow_nfa(term: &Term, input: &str) -> bool {
     fn add_term(term: &Term, u: usize, nfa: &mut SlowNfa) -> usize {
         match term {
             Term::Null => {

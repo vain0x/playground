@@ -48,6 +48,7 @@ impl Term {
         }
     }
 
+    #[allow(unused)]
     pub fn parse(text: &str) -> Term {
         let mut i = 0;
         let t = parse::p_term(text, &mut i);
@@ -55,6 +56,7 @@ impl Term {
         t
     }
 
+    #[allow(unused)]
     pub fn show(&self) -> String {
         fn write(term: &Term, out: &mut Vec<u8>) -> io::Result<()> {
             match term {
