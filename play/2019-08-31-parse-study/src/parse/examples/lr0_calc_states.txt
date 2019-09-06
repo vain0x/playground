@@ -1,0 +1,26 @@
+e(0)
+  S → ・ID '(' E ')'
+  S' → ・S EOF
+e(1):
+  S → ID ・'(' E ')'
+e(2):
+  S' → S ・EOF
+e(3):
+  E → ・E '+' F
+  E → ・F
+  F → ・INT
+  S → ID '(' ・E ')'
+e(4):
+  E → E ・'+' F
+  S → ID '(' E ・')'
+e(5):
+  E → F・
+e(6):
+  F → INT・
+e(7):
+  E → E '+' ・F
+  F → ・INT
+e(8):
+  S → ID '(' E ')'・
+e(9):
+  E → E '+' F・

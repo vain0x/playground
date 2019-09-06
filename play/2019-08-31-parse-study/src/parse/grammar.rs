@@ -1,7 +1,9 @@
 //! 生成規則
 
+use std::fmt::{self, Debug, Formatter};
+
 /// 終端記号
-#[derive(Clone, Copy, Debug, PartialEq, Eq, Hash)]
+#[derive(Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash)]
 pub(crate) enum Token {
     /// 入力の終わり ($)
     Eof,
@@ -26,18 +28,18 @@ pub(crate) enum Token {
 }
 
 /// 非終端記号
-#[derive(Clone, Copy, Debug, PartialEq, Eq, Hash)]
+#[derive(Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash)]
 pub(crate) struct NonTerm(&'static str);
 
 /// シンボル
-#[derive(Clone, Copy, Debug, PartialEq, Eq, Hash)]
+#[derive(Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash)]
 pub(crate) enum Symbol {
     Token(Token),
     NonTerm(NonTerm),
 }
 
 /// 生成規則
-#[derive(Clone, Debug)]
+#[derive(Clone, PartialEq, Eq, PartialOrd, Ord, Hash)]
 pub(crate) struct Rule {
     source: NonTerm,
     target: Vec<Symbol>,
@@ -49,6 +51,44 @@ pub(crate) struct Grammar {
     rules: Vec<Rule>,
 }
 
+impl Token {
+    pub(crate) fn all() -> &'static [Token] {
+        &[
+            Token::Eof,
+            Token::Int,
+            Token::Ident,
+            Token::ParenL,
+            Token::ParenR,
+            Token::Eq,
+            Token::Plus,
+            Token::Semi,
+            Token::Star,
+            Token::Print,
+            ]
+    }
+
+    pub(crate) fn as_str(self) -> &'static str {
+        match self {
+            Token::Eof => "EOF",
+            Token::Int => "INT",
+            Token::Ident => "ID",
+            Token::ParenL => "'('",
+            Token::ParenR => "')'",
+            Token::Eq => "'='",
+            Token::Plus => "'+'",
+            Token::Semi => "';'",
+            Token::Star => "'*'",
+            Token::Print => "PRINT",
+        }
+    }
+}
+
+impl Debug for Token {
+    fn fmt(&self, f: &mut Formatter) -> fmt::Result {
+        f.write_str(self.as_str())
+    }
+}
+
 impl NonTerm {
     pub(crate) fn new(name: &'static str) -> Self {
         NonTerm(name)
@@ -56,6 +96,12 @@ impl NonTerm {
 
     pub(crate) fn to_rule(self, target: Vec<Symbol>) -> Rule {
         Rule::new(self, target)
+    }
+}
+
+impl Debug for NonTerm {
+    fn fmt(&self, f: &mut Formatter) -> fmt::Result {
+        f.write_str(self.0)
     }
 }
 
@@ -71,6 +117,15 @@ impl From<NonTerm> for Symbol {
     }
 }
 
+impl Debug for Symbol {
+    fn fmt(&self, f: &mut Formatter) -> fmt::Result {
+        match self {
+            Symbol::Token(token) => f.write_fmt(format_args!("{:?}", token)),
+            Symbol::NonTerm(non_term) => f.write_fmt(format_args!("{:?}", non_term)),
+        }
+    }
+}
+
 impl Rule {
     pub(crate) fn new(source: NonTerm, target: Vec<Symbol>) -> Self {
         Rule { source, target }
@@ -82,6 +137,18 @@ impl Rule {
 
     pub(crate) fn target(&self) -> &[Symbol] {
         &self.target
+    }
+}
+
+impl Debug for Rule {
+    fn fmt(&self, f: &mut Formatter) -> fmt::Result {
+        f.write_fmt(format_args!("{:?} →", self.source()))?;
+
+        for symbol in self.target() {
+            f.write_fmt(format_args!(" {:?}", symbol))?;
+        }
+
+        Ok(())
     }
 }
 
