@@ -2,7 +2,7 @@ pub(crate) mod parse;
 pub(crate) mod regexp;
 
 pub fn main() {
-    println!("{:?}", parse::examples::lr0_calc::test());
+    println!("{:?}", parse::examples::lr1_calc::test());
 }
 
 #[cfg(test)]

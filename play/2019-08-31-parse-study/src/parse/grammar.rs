@@ -64,7 +64,7 @@ impl Token {
             Token::Semi,
             Token::Star,
             Token::Print,
-            ]
+        ]
     }
 
     pub(crate) fn as_str(self) -> &'static str {
@@ -102,6 +102,22 @@ impl NonTerm {
 impl Debug for NonTerm {
     fn fmt(&self, f: &mut Formatter) -> fmt::Result {
         f.write_str(self.0)
+    }
+}
+
+impl Symbol {
+    pub(crate) fn as_token(self) -> Option<Token> {
+        match self {
+            Symbol::Token(token) => Some(token),
+            _ => None,
+        }
+    }
+
+    pub(crate) fn as_non_term(self) -> Option<NonTerm> {
+        match self {
+            Symbol::NonTerm(non_term) => Some(non_term),
+            _ => None,
+        }
     }
 }
 

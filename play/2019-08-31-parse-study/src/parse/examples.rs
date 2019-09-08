@@ -8,9 +8,10 @@ macro_rules! vi {
     }};
 }
 
+pub(crate) mod lr0_calc;
+pub(crate) mod lr1_calc;
 pub(crate) mod prefix_calc;
 pub(crate) mod tokenize;
-pub(crate) mod lr0_calc;
 
 pub(crate) use super::*;
 pub(crate) use tokenize::tokenize;
