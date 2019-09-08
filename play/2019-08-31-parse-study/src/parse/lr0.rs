@@ -200,16 +200,16 @@ impl Lr0ParserCompiler {
             .clone();
 
         // 状態集合
-        let mut t = HashSet::new();
+        let mut states = HashSet::new();
         // 状態とドットつき規則の対応付け
-        let mut rules = HashMap::new();
-        let mut map = HashMap::new();
+        let mut state_to_closure = HashMap::new();
+        let mut closure_to_state = HashMap::new();
         // 受理状態の集合
-        let mut a = HashSet::new();
+        let mut accepts = HashSet::new();
         // エッジの集合
-        let mut e = HashSet::new();
+        let mut edges = HashSet::new();
         // 還元の集合
-        let mut r = vec![];
+        let mut reduces = vec![];
 
         // 開始状態を追加する。
         let entry = State(0);
@@ -226,10 +226,10 @@ impl Lr0ParserCompiler {
                 eprintln!("  {:?}", dot_rule);
             }
 
-            map.insert(dot_rules.clone(), entry);
-            rules.insert(entry, dot_rules);
+            closure_to_state.insert(dot_rules.clone(), entry);
+            state_to_closure.insert(entry, dot_rules);
         };
-        t.insert(entry);
+        states.insert(entry);
 
         eprintln!("entry({:?})", entry);
 
@@ -238,10 +238,10 @@ impl Lr0ParserCompiler {
             let mut new_states = vec![];
             let mut new_edges = vec![];
 
-            eprintln!("{:?}", t);
+            eprintln!("{:?}", states);
 
-            for &i in t.iter() {
-                let n = match rules.get(&i) {
+            for &i in states.iter() {
+                let n = match state_to_closure.get(&i) {
                     None => continue,
                     Some(dot_rules) => dot_rules.len(),
                 };
@@ -250,27 +250,29 @@ impl Lr0ParserCompiler {
                     // 次の記号が Y のとき。
                     // i から Y で遷移した先の状態 j を生成して状態集合に加える。
 
-                    eprintln!("rule({:?})", rules[&i][ri]);
+                    eprintln!("rule({:?})", state_to_closure[&i][ri]);
 
-                    let y = match rules[&i][ri].next_symbol() {
+                    let y = match state_to_closure[&i][ri].next_symbol() {
                         None => continue,
                         Some(Symbol::Token(Token::Eof)) => {
-                            a.insert(i);
+                            accepts.insert(i);
                             continue;
                         }
                         Some(y) => y,
                     };
 
-                    let dot_rules = self.trans(i, y, &*rules[&i]);
+                    let dot_rules = self.trans(i, y, &*state_to_closure[&i]);
 
-                    let new_state = State(map.len());
-                    let j = *map.entry(dot_rules.clone()).or_insert(new_state);
+                    let new_state = State(closure_to_state.len());
+                    let j = *closure_to_state
+                        .entry(dot_rules.clone())
+                        .or_insert(new_state);
 
                     if j == new_state {
-                        rules.insert(j, dot_rules);
+                        state_to_closure.insert(j, dot_rules);
 
                         eprintln!("{:?}:", j);
-                        for dot_rule in rules[&j].iter() {
+                        for dot_rule in state_to_closure[&j].iter() {
                             eprintln!("  {:?}", dot_rule);
                         }
                     }
@@ -283,11 +285,11 @@ impl Lr0ParserCompiler {
             let mut modified = false;
 
             for state in new_states.drain(..) {
-                modified |= t.insert(state);
+                modified |= states.insert(state);
             }
 
             for edge in new_edges.drain(..) {
-                modified |= e.insert(edge);
+                modified |= edges.insert(edge);
             }
 
             if !modified {
@@ -296,18 +298,18 @@ impl Lr0ParserCompiler {
         }
 
         // DFA に非終端記号による遷移 (還元) を追加する。
-        for &i in t.iter() {
+        for &i in states.iter() {
             // 状態 i に含まれる各規則 (X → ...・) につき、状態 i において終端記号 X を還元できるとみなす。
 
-            let n = match rules.get(&i) {
+            let n = match state_to_closure.get(&i) {
                 None => continue,
                 Some(dot_rules) => dot_rules.len(),
             };
 
             for ri in 0..n {
-                let dot_rule = &rules[&i][ri];
+                let dot_rule = &state_to_closure[&i][ri];
                 if dot_rule.is_completed() {
-                    r.push((i, dot_rule.source(), dot_rule.len()));
+                    reduces.push((i, dot_rule.source(), dot_rule.len()));
                 }
             }
         }
@@ -315,7 +317,7 @@ impl Lr0ParserCompiler {
         // DFA を構文解析表に変換する。
         let mut table = HashMap::new();
 
-        for &(i, j, y) in e.iter() {
+        for &(i, j, y) in edges.iter() {
             let action = match y {
                 Symbol::Token(_) => Action::Shift(j),
                 Symbol::NonTerm(_) => Action::Go(j),
@@ -327,7 +329,7 @@ impl Lr0ParserCompiler {
             }
         }
 
-        for &(i, non_term, count) in r.iter() {
+        for &(i, non_term, count) in reduces.iter() {
             let reduce = Action::Reduce {
                 source: Symbol::NonTerm(non_term),
                 count,
@@ -343,7 +345,7 @@ impl Lr0ParserCompiler {
             }
         }
 
-        for &i in a.iter() {
+        for &i in accepts.iter() {
             // 次の字句に関係なく受理操作を行う。
             for &token in Token::all() {
                 let other = table.insert((i, Symbol::Token(token)), Action::Accept);
@@ -424,10 +426,9 @@ impl Lr0Parser {
 
                     let next_state = match self.table.get(&(state, source)) {
                         Some(&Action::Go(next_state)) => next_state,
-                        action => unreachable!(
-                            "還元後の操作は Go でなければいけない ({:?})",
-                            action
-                        ),
+                        action => {
+                            unreachable!("還元後の操作は Go でなければいけない ({:?})", action)
+                        }
                     };
 
                     stack.push(next_state);
@@ -438,9 +439,7 @@ impl Lr0Parser {
                     );
                     continue;
                 }
-                Action::Go(..) => {
-                    unreachable!("Go 操作は終端記号によっては引き起こされない")
-                }
+                Action::Go(..) => unreachable!("Go 操作は終端記号によっては引き起こされない"),
             }
         }
     }
