@@ -15,8 +15,26 @@ pub(crate) enum Token {
     ParenL,
     /// )
     ParenR,
+    /// [
+    BracketL,
+    /// ]
+    BracketR,
+    /// {
+    BraceL,
+    /// }
+    BraceR,
+    /// :
+    Colon,
+    /// ,
+    Comma,
     /// =
     Eq,
+    /// >
+    Gt,
+    /// -
+    Hyphen,
+    /// <
+    Lt,
     /// +
     Plus,
     /// ;
@@ -25,6 +43,14 @@ pub(crate) enum Token {
     Star,
     /// print
     Print,
+    If,
+    Else,
+    While,
+    For,
+    In,
+    Fn,
+    Type,
+    Pub,
 }
 
 /// 非終端記号
@@ -59,11 +85,28 @@ impl Token {
             Token::Ident,
             Token::ParenL,
             Token::ParenR,
+            Token::BracketL,
+            Token::BracketR,
+            Token::BraceL,
+            Token::BraceR,
+            Token::Colon,
+            Token::Comma,
             Token::Eq,
+            Token::Gt,
+            Token::Hyphen,
+            Token::Lt,
             Token::Plus,
             Token::Semi,
             Token::Star,
             Token::Print,
+            Token::If,
+            Token::Else,
+            Token::While,
+            Token::For,
+            Token::In,
+            Token::Fn,
+            Token::Type,
+            Token::Pub,
         ]
     }
 
@@ -74,11 +117,28 @@ impl Token {
             Token::Ident => "ID",
             Token::ParenL => "'('",
             Token::ParenR => "')'",
+            Token::BracketL => "'['",
+            Token::BracketR => "']'",
+            Token::BraceL => "'{'",
+            Token::BraceR => "'}'",
+            Token::Colon => "':'",
+            Token::Comma => "','",
             Token::Eq => "'='",
+            Token::Gt => "'>'",
+            Token::Hyphen => "'-'",
+            Token::Lt => "'<'",
             Token::Plus => "'+'",
             Token::Semi => "';'",
             Token::Star => "'*'",
             Token::Print => "PRINT",
+            Token::If => "IF",
+            Token::Else => "ELSE",
+            Token::While => "WHILE",
+            Token::For => "FOR",
+            Token::In => "IN",
+            Token::Fn => "FN",
+            Token::Type => "TYPE",
+            Token::Pub => "PUB",
         }
     }
 }

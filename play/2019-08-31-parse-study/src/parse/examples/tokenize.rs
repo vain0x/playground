@@ -48,10 +48,31 @@ pub(crate) fn tokenize(text: &str) -> Vec<Token> {
     static TABLE: &[(&str, Token)] = &[
         ("(", Token::ParenL),
         (")", Token::ParenR),
+        ("[", Token::BracketL),
+        ("]", Token::BracketR),
+        ("{", Token::BraceL),
+        ("}", Token::BraceR),
+        (":", Token::Colon),
+        (",", Token::Comma),
         ("=", Token::Eq),
+        (">", Token::Gt),
+        ("-", Token::Hyphen),
+        ("<", Token::Lt),
         ("+", Token::Plus),
         (";", Token::Semi),
         ("*", Token::Star),
+    ];
+
+    static KEYWORDS: &[(&str, Token)] = &[
+        ("print", Token::Print),
+        ("if", Token::If),
+        ("else", Token::Else),
+        ("while", Token::While),
+        ("for", Token::For),
+        ("in", Token::In),
+        ("fn", Token::Fn),
+        ("type", Token::Type),
+        ("pub", Token::Pub),
     ];
 
     loop {
@@ -80,11 +101,17 @@ pub(crate) fn tokenize(text: &str) -> Vec<Token> {
             while t.next_char().is_alphanumeric() {
                 t.bump();
             }
-            let kind = if t.current_str() == "print" {
-                Token::Print
-            } else {
-                Token::Ident
-            };
+            let kind = KEYWORDS
+                .iter()
+                .filter_map(|&(word, kind)| {
+                    if t.current_str() == word {
+                        Some(kind)
+                    } else {
+                        None
+                    }
+                })
+                .next()
+                .unwrap_or(Token::Ident);
             tokens.push(t.commit(kind));
             continue;
         }
