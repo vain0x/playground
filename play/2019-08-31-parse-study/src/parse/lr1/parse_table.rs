@@ -47,14 +47,15 @@ impl ParseTable {
         self.add(state, Symbol::NonTerm(non_term), Action::Go(next_state));
     }
 
-    pub(crate) fn add_reduce(&mut self, state: StateId, non_term: NonTerm, count: usize) {
-        for &token in Token::all() {
-            self.add(
-                state,
-                Symbol::Token(token),
-                Action::Reduce { non_term, count },
-            );
-        }
+    pub(crate) fn add_reduce(&mut self, r: Reduction) {
+        self.add(
+            r.state,
+            Symbol::Token(r.look),
+            Action::Reduce {
+                non_term: r.non_term,
+                count: r.count,
+            },
+        );
     }
 
     pub(crate) fn add_accept(&mut self, state: StateId) {

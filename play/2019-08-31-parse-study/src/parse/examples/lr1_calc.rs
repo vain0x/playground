@@ -16,34 +16,40 @@ macro_rules! rule {
 fn make_grammar() -> (Grammar, NonTerm) {
     let mut g = Grammar::new();
 
-    let sp = NonTerm::new("S'");
-    let s = NonTerm::new("S");
-    let e = NonTerm::new("E");
-    let f = NonTerm::new("F");
+    let root = NonTerm::new("root");
+    let stmt = NonTerm::new("stmt");
+    let expr = NonTerm::new("expr");
+    let add = NonTerm::new("add");
+    let mul = NonTerm::new("mul");
+    let atom = NonTerm::new("atom");
 
-    // S' -> S $
-    g.add_rule(rule!(sp => [s, Eof]));
+    g.add_rule(rule!(root => [stmt, Eof]));
 
-    // S -> id ( E )
-    g.add_rule(rule!(s => [Ident, ParenL, e, ParenR]));
+    g.add_rule(rule!(stmt => [expr]));
 
-    // E -> E + F
-    g.add_rule(rule!(e => [e, Plus, f]));
+    g.add_rule(rule!(expr => [add]));
 
-    // E -> F
-    g.add_rule(rule!(e => [f]));
+    g.add_rule(rule!(add => [add, Plus, mul]));
 
-    // F -> num
-    g.add_rule(rule!(f => [Int]));
+    g.add_rule(rule!(add => [add, Hyphen, mul]));
 
-    // F -> ( E )
-    g.add_rule(rule!(f => [ParenL, e, ParenR]));
+    g.add_rule(rule!(add => [mul]));
 
-    (g, sp)
+    g.add_rule(rule!(mul => [mul, Star, atom]));
+
+    g.add_rule(rule!(mul => [atom]));
+
+    g.add_rule(rule!(atom => [Int]));
+
+    g.add_rule(rule!(atom => [ParenL, expr, ParenR]));
+
+    (g, root)
 }
 
 #[allow(unused)]
 fn parse(text: &str) -> bool {
+    eprintln!("text = {}", text);
+
     let tokens = tokenize(text);
     let (grammar, non_term) = make_grammar();
     crate::parse::lr1::functions::parse(tokens, non_term, grammar)
@@ -59,21 +65,29 @@ mod tests {
 
     #[test]
     fn test_accept() {
-        assert!(parse("f(2)"));
-        assert!(parse("f(2 + 3)"));
+        assert!(parse("1"));
+        assert!(parse("2 + 3"));
+        assert!(parse("4 * 5"));
+        assert!(parse("2 + 3 * 4"));
+        assert!(parse("4 * 5 + 6"));
 
-        assert!(parse("f(2 + (3 + 4) + (5))"));
+        assert!(parse("(1)"));
+        assert!(parse("(((((((((1)))))))))"));
+        assert!(parse("(2 + 3)"));
+        assert!(parse("(4 * 5)"));
+        assert!(parse("(4 * (5))"));
+        assert!(parse("(2 + 3) * 5"));
     }
 
     #[test]
     fn test_reject() {
-        assert!(!parse("f()"));
-        assert!(!parse("f(a)"));
-        assert!(!parse("f(+)"));
-        assert!(!parse("f(2 +"));
-        assert!(!parse("2 + 3"));
-
-        assert!(!parse("f(1 + ())"));
-        assert!(!parse("f(((((((((((((((("));
+        assert!(!parse(""));
+        assert!(!parse("2 +"));
+        assert!(!parse("++++****"));
+        assert!(!parse("2 + + 3"));
+        assert!(!parse("4 * 5 +"));
+        assert!(!parse("("));
+        assert!(!parse(")"));
+        assert!(!parse("2 + ()"));
     }
 }

@@ -11,12 +11,12 @@ pub(crate) struct Dfa {
 }
 
 impl Dfa {
-    fn resolve_reduce_reduce_conflict(&mut self) {
-        // 同じ状態から複数の還元があるときは、最長のものを1つ選ぶ。
-        self.reduces
-            .sort_by_key(|r| (r.state, r.non_term, Reverse(r.count)));
-        self.reduces.dedup_by_key(|r| (r.state, r.non_term));
-    }
+    // fn resolve_reduce_reduce_conflict(&mut self) {
+    //     // 同じ状態から複数の還元があるときは、最長のものを1つ選ぶ。
+    //     self.reduces
+    //         .sort_by_key(|r| (r.state, r.look, r.non_term, Reverse(r.count)));
+    //     self.reduces.dedup_by_key(|r| (r.state, r.look, r.non_term));
+    // }
 
     fn resolve_accept_conflict(&mut self) {
         let accepts = self.accepts.clone();
@@ -33,8 +33,12 @@ impl Dfa {
     pub(crate) fn into_parse_table(mut self) -> ParseTable {
         let mut table = ParseTable::new(self.initial_state, self.state_count);
 
-        self.resolve_reduce_reduce_conflict();
+        // self.resolve_reduce_reduce_conflict();
         self.resolve_accept_conflict();
+
+        for &r in self.reduces.iter() {
+            table.add_reduce(r);
+        }
 
         for i in 0..self.edges.len() {
             for (&symbol, &next_state) in self.edges[i].iter() {
@@ -43,10 +47,6 @@ impl Dfa {
                     Symbol::NonTerm(non_term) => table.add_go(i, next_state, non_term),
                 }
             }
-        }
-
-        for r in self.reduces.iter() {
-            table.add_reduce(r.state, r.non_term, r.count);
         }
 
         for &state in self.accepts.iter() {

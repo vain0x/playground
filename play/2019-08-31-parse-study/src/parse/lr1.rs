@@ -28,12 +28,12 @@ type StateId = usize;
 type RuleId = usize;
 
 /// 還元動作
-#[derive(Clone, Debug)]
+#[derive(Clone, Copy, Debug)]
 pub(crate) struct Reduction {
     state: StateId,
     non_term: NonTerm,
     count: usize,
-    token: Token,
+    look: Token,
 }
 
 #[derive(Clone, Copy, Debug)]

@@ -91,7 +91,7 @@ impl Compiler {
 
     fn closure(&mut self, mut dot_rules: Vec<DotRule>) -> StateId {
         if let Some(state) = self.find_closure_from_memo(&mut dot_rules) {
-            eprintln!("reuse state");
+            // eprintln!("reuse state");
             return state;
         }
 
@@ -102,7 +102,7 @@ impl Compiler {
         let mut new_dot_rules = vec![];
 
         loop {
-            eprintln!("closure({:?})", dot_rules);
+            // eprintln!("closure({:?})", dot_rules);
 
             // for (X → α... ・Y β..., z) in i:
             for dot_rule in &dot_rules {
@@ -164,7 +164,7 @@ impl Compiler {
 
         let next_state = self.closure(dot_rules);
 
-        eprintln!("trans({} ->{:?} {})", i, y, next_state);
+        // eprintln!("trans({} ->{:?} {})", i, y, next_state);
 
         next_state
     }
@@ -232,7 +232,7 @@ impl Compiler {
                         state: i,
                         non_term: x,
                         count,
-                        token: z,
+                        look: z,
                     })
                 }
             }
