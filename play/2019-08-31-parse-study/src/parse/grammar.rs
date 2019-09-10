@@ -53,6 +53,12 @@ pub(crate) enum Token {
     Pub,
 }
 
+#[derive(Clone, Debug)]
+pub(crate) struct TokenData {
+    kind: Token,
+    span: (usize, usize),
+}
+
 /// 非終端記号
 #[derive(Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash)]
 pub(crate) struct NonTerm(&'static str);
@@ -146,6 +152,23 @@ impl Token {
 impl Debug for Token {
     fn fmt(&self, f: &mut Formatter) -> fmt::Result {
         f.write_str(self.as_str())
+    }
+}
+
+impl TokenData {
+    pub(crate) fn new(kind: Token, span: (usize, usize)) -> Self {
+        Self {
+            kind,
+            span,
+        }
+    }
+
+    pub(crate) fn kind(&self) -> Token {
+        self.kind
+    }
+
+    pub(crate) fn span(&self) -> (usize, usize) {
+        self.span
     }
 }
 
