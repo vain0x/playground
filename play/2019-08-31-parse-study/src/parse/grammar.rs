@@ -157,10 +157,7 @@ impl Debug for Token {
 
 impl TokenData {
     pub(crate) fn new(kind: Token, span: (usize, usize)) -> Self {
-        Self {
-            kind,
-            span,
-        }
+        Self { kind, span }
     }
 
     pub(crate) fn kind(&self) -> Token {

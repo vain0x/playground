@@ -35,13 +35,15 @@ impl<'a> Tokenizer<'a> {
         self.current += len;
     }
 
-    fn commit(&mut self, kind: Token) -> Token {
+    fn commit(&mut self, kind: Token) -> TokenData {
+        let span = (self.last, self.current);
+
         self.last = self.current;
-        kind
+        TokenData::new(kind, span)
     }
 }
 
-pub(crate) fn tokenize(text: &str) -> Vec<Token> {
+pub(crate) fn tokenize(text: &str) -> Vec<TokenData> {
     let mut t = Tokenizer::new(text);
     let mut tokens = vec![];
 
@@ -85,6 +87,7 @@ pub(crate) fn tokenize(text: &str) -> Vec<Token> {
             while t.next_char().is_whitespace() {
                 t.bump();
             }
+            // NOTE: 空白はトークン列に含めない。
             t.commit(Token::Eof);
             continue;
         }
@@ -132,6 +135,6 @@ pub(crate) fn tokenize(text: &str) -> Vec<Token> {
         panic!("invalid char {:?}", c)
     }
 
-    tokens.push(Token::Eof);
+    tokens.push(t.commit(Token::Eof));
     tokens
 }

@@ -426,9 +426,10 @@ impl Lr0Parser {
 
                     let next_state = match self.table.get(&(state, source)) {
                         Some(&Action::Go(next_state)) => next_state,
-                        action => {
-                            unreachable!("還元後の操作は Go でなければいけない ({:?})", action)
-                        }
+                        action => unreachable!(
+                            "還元後の操作は Go でなければいけない ({:?})",
+                            action
+                        ),
                     };
 
                     stack.push(next_state);
@@ -439,14 +440,21 @@ impl Lr0Parser {
                     );
                     continue;
                 }
-                Action::Go(..) => unreachable!("Go 操作は終端記号によっては引き起こされない"),
+                Action::Go(..) => {
+                    unreachable!("Go 操作は終端記号によっては引き起こされない")
+                }
             }
         }
     }
 }
 
-pub(crate) fn parse(tokens: Vec<Token>, root: NonTerm, grammar: Grammar) -> bool {
+pub(crate) fn parse(
+    tokens: impl IntoIterator<Item = Token>,
+    root: NonTerm,
+    grammar: Grammar,
+) -> bool {
     let compiler = Lr0ParserCompiler::new(root, grammar);
     let parser = compiler.compile();
+    let tokens = tokens.into_iter().collect::<Vec<_>>();
     parser.parse(&tokens)
 }

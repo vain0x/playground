@@ -52,11 +52,17 @@ fn parse(text: &str) -> bool {
 
     let tokens = tokenize(text);
     let (grammar, non_term) = make_grammar();
-    crate::parse::lr1::functions::parse(tokens, non_term, grammar)
+    crate::parse::lr1::functions::parse(text.to_string(), tokens, non_term, grammar).is_some()
 }
 
 pub(crate) fn test() -> bool {
-    parse("f(1)")
+    let text = "(2 + 3 * 4) * (7)";
+
+    let tokens = tokenize(text);
+    let (grammar, non_term) = make_grammar();
+    let tree = crate::parse::lr1::functions::parse(text.to_string(), tokens, non_term, grammar);
+    eprintln!("{:?}", tree);
+    true
 }
 
 #[cfg(test)]

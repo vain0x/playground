@@ -1,5 +1,4 @@
 use super::*;
-use std::cmp::Reverse;
 
 /// 文法から生成されたDFA
 pub(crate) struct Dfa {

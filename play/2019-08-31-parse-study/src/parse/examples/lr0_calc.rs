@@ -41,14 +41,14 @@ fn make_grammar() -> (Grammar, NonTerm) {
 
 #[allow(unused)]
 fn parse(text: &str) -> bool {
-    let tokens = tokenize(text);
+    let tokens = tokenize(text).into_iter().map(|token| token.kind());
     let (grammar, non_term) = make_grammar();
     crate::parse::lr0::parse(tokens, non_term, grammar)
 }
 
-pub(crate) fn test() -> bool {
-    parse("f(2 + 3 + 4)")
-}
+// pub(crate) fn test() -> bool {
+//     parse("f(2 + 3 + 4)")
+// }
 
 #[cfg(test)]
 mod tests {

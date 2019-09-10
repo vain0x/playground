@@ -45,7 +45,7 @@ fn make_grammar() -> (Grammar, NonTerm) {
 
 #[allow(unused)]
 fn parse(text: &str) {
-    let tokens = tokenize(text);
+    let tokens = tokenize(text).into_iter().map(|token| token.kind());
     let (grammar, non_term) = make_grammar();
     super::super::ll1::parse(tokens, non_term, &grammar);
 }

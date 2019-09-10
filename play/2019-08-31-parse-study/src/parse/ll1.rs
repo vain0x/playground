@@ -80,7 +80,7 @@ fn p_symbol(symbol: Symbol, g: &Grammar, p: &mut Ll1Parser) {
     }
 }
 
-pub(crate) fn parse(tokens: Vec<Token>, non_term: NonTerm, g: &Grammar) {
+pub(crate) fn parse(tokens: impl IntoIterator<Item = Token>, non_term: NonTerm, g: &Grammar) {
     let mut p = Ll1Parser::new(tokens.into_iter());
     p_non_term(non_term, g, &mut p);
     assert_eq!(p.next(), Token::Eof);

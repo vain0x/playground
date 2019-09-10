@@ -1,25 +1,32 @@
 use super::*;
 
+pub(crate) enum Event {
+    Shift,
+    Reduce(NonTerm, usize),
+}
+
 pub(crate) struct Parser {
-    tokens: Vec<Token>,
+    tokens: Vec<TokenData>,
     table: ParseTable,
     ti: usize,
     stack: Vec<StateId>,
+    events: Vec<Event>,
 
     // For debugging.
     symbols: Vec<Symbol>,
 }
 
 impl Parser {
-    pub(crate) fn new(tokens: Vec<Token>, table: ParseTable) -> Self {
+    pub(crate) fn new(tokens: Vec<TokenData>, table: ParseTable) -> Self {
         let stack = vec![table.initial_state()];
-        let symbols = vec![NonTerm::new("S'").into()];
+        let symbols = vec![NonTerm::new("root").into()];
 
         Parser {
             tokens,
             table,
             ti: 0,
             stack,
+            events: vec![],
             symbols,
         }
     }
@@ -34,7 +41,7 @@ impl Parser {
     fn current_token(&self) -> Token {
         match self.tokens.get(self.ti) {
             None => Token::Eof,
-            Some(&token) => token,
+            Some(token) => token.kind(),
         }
     }
 
@@ -51,10 +58,12 @@ impl Parser {
         }
 
         symbols.reverse();
-        eprintln!("    還元 {:?} → {:?}", symbols, non_term)
+        eprintln!("    還元 {:?} → {:?}", symbols, non_term);
+
+        self.events.push(Event::Reduce(non_term, count));
     }
 
-    pub(crate) fn parse(mut self) -> bool {
+    pub(crate) fn parse(mut self) -> Option<Vec<Event>> {
         loop {
             let state = self.current_state();
             let token = self.current_token();
@@ -68,14 +77,15 @@ impl Parser {
             match action {
                 Action::Error => {
                     eprintln!("構文エラー");
-                    return false;
+                    return None;
                 }
                 Action::Accept => {
-                    return true;
+                    return Some(self.events);
                 }
                 Action::Shift(next_state) => {
                     self.stack.push(next_state);
                     self.symbols.push(token.into());
+                    self.events.push(Event::Shift);
                     self.ti += 1;
                     continue;
                 }
@@ -92,7 +102,10 @@ impl Parser {
                             self.symbols.push(non_term.into());
                         }
                         action => {
-                            panic!("還元後の動作は Go でなければいけない ({:?})", action);
+                            panic!(
+                                "還元後の動作は Go でなければいけない ({:?})",
+                                action
+                            );
                         }
                     }
                     continue;
