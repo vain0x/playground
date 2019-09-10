@@ -51,7 +51,7 @@ impl FirstSet {
         for symbol in symbols {
             tokens.extend(self.first(symbol));
 
-            if self.is_nullable(symbol) {
+            if !self.is_nullable(symbol) {
                 break;
             }
         }
