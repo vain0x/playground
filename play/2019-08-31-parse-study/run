@@ -1,0 +1,4 @@
+#!/bin/bash
+
+cargo run >output.txt
+cat output.txt | grep error

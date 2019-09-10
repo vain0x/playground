@@ -10,6 +10,7 @@ macro_rules! vi {
 
 pub(crate) mod lr0_calc;
 pub(crate) mod lr1_calc;
+pub(crate) mod lr1_script;
 pub(crate) mod prefix_calc;
 pub(crate) mod tokenize;
 

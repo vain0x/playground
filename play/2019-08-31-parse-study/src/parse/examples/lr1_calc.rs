@@ -55,16 +55,6 @@ fn parse(text: &str) -> bool {
     crate::parse::lr1::functions::parse(text.to_string(), tokens, non_term, grammar).is_some()
 }
 
-pub(crate) fn test() -> bool {
-    let text = "(2 + 3 * 4) * (7)";
-
-    let tokens = tokenize(text);
-    let (grammar, non_term) = make_grammar();
-    let tree = crate::parse::lr1::functions::parse(text.to_string(), tokens, non_term, grammar);
-    eprintln!("{:?}", tree);
-    true
-}
-
 #[cfg(test)]
 mod tests {
     use super::*;
