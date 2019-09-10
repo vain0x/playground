@@ -105,5 +105,9 @@ impl FirstSet {
                 break;
             }
         }
+
+        // for (non_term, tokens) in self.inner.iter() {
+        //     eprintln!("first({:?}) = {:#?}", non_term, tokens);
+        // }
     }
 }

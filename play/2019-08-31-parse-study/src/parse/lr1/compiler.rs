@@ -84,7 +84,7 @@ impl Compiler {
         let state = self.states.len() - 1;
 
         self.closure_memo.insert(key, state);
-        eprintln!("State({:?}): {:?}", state, self.states[state]);
+        // eprintln!("State({:?}): {:?}", state, self.states[state]);
 
         state
     }
@@ -174,7 +174,7 @@ impl Compiler {
         let mut new_edges = vec![];
 
         loop {
-            eprintln!("generate1...");
+            // eprintln!("generate1...");
 
             let old_state_len = self.states.len();
 

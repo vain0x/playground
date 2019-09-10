@@ -42,6 +42,8 @@ impl Nullable {
 
                 modified |= self.inner.insert(s);
                 assert!(modified);
+
+                // eprintln!("nullable({:?})", s);
             }
 
             if !modified {
