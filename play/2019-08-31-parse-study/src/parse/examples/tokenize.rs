@@ -92,6 +92,15 @@ pub(crate) fn tokenize(text: &str) -> Vec<TokenData> {
             continue;
         }
 
+        if t.next_str().starts_with("//") {
+            while t.next_char() != '\n' && t.next_char() != '\0' {
+                t.bump();
+            }
+            // NOTE: コメント行はトークン列に含めない。
+            t.commit(Token::Eof);
+            continue;
+        }
+
         if c.is_ascii_digit() {
             while t.next_char().is_ascii_digit() {
                 t.bump();
