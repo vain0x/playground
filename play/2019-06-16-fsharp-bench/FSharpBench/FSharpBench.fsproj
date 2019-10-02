@@ -6,6 +6,9 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <Compile Include="MapBenchAssoc.fs" />
+    <Compile Include="MapBench.fs" />
+    <Compile Include="StringConcatBench.fs" />
     <Compile Include="Program.fs" />
   </ItemGroup>
 

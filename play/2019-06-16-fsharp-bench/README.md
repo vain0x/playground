@@ -30,3 +30,24 @@ LaunchCount=1  WarmupCount=3
 |  TokenListRenderWithArena | 1,914.7 us |    57.61 us |  3.158 us |
 |          StringBuilderBad | 2,806.1 us | 1,041.31 us | 57.078 us |
 |       StringListConcatBad | 4,481.5 us |   124.96 us |  6.850 us |
+
+## 連想配列
+
+- Map: `Map<K, V>`
+- AssocMap: ハッシュ値で分類した連想リスト (ハッシュ関数によって変わる)
+
+``` ini
+BenchmarkDotNet=v0.11.5, OS=ubuntu 18.04
+Intel Core i3-7100 CPU 3.90GHz (Kaby Lake), 1 CPU, 4 logical and 2 physical cores
+.NET Core SDK=2.1.802
+  [Host]     : .NET Core 2.1.13 (CoreCLR 4.6.28008.01, CoreFX 4.6.28008.01), 64bit RyuJIT DEBUG
+  QuickRough : .NET Core 2.1.13 (CoreCLR 4.6.28008.01, CoreFX 4.6.28008.01), 64bit RyuJIT
+
+Job=QuickRough  MaxRelativeError=0.1  IterationCount=3
+LaunchCount=1  WarmupCount=3
+```
+
+|   Method |       Mean |    Error |   StdDev |
+|--------- |-----------:|---------:|---------:|
+|      Map |   136.2 ms | 250.1 ms | 13.71 ms |
+| AssocMap | 1,054.1 ms | 233.2 ms | 12.78 ms |
