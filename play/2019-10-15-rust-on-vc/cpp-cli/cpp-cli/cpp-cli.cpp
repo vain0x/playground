@@ -3,12 +3,16 @@
 
 extern "C" void rlib_initialize();
 
+extern "C" void rlib_start();
+
 extern "C" void rlib_drop();
 
 extern "C" int rlib_add(int x);
 
 int main() {
 	rlib_initialize();
+
+	rlib_start();
 
 	int x;
 	std::cout << "Input an integer:" << std::endl;
