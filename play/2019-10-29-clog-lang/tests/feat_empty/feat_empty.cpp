@@ -1,0 +1,1 @@
+Expr { kind: RootDecl, children: [Expr { kind: RuleDecl, children: [Token(Token { kind: Rule, text: rule }), Expr { kind: Name, children: [Token(Token { kind: Ident, text: main })] }, Token(Token { kind: ParenL, text: ( }), Token(Token { kind: ParenR, text: ) }), Expr { kind: Block, children: [Token(Token { kind: BraceL, text: { }), Token(Token { kind: BraceR, text: } })] }] }] }

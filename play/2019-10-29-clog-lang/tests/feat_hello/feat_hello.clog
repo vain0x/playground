@@ -1,0 +1,5 @@
+rule hello(Hello) {}
+
+rule main() {
+    hello(Hello)
+}

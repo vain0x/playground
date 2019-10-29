@@ -1,0 +1,11 @@
+#!/bin/bash
+
+function f() {
+    name=$1
+    dir="tests/$name"
+    entry="$dir/$name".clog
+
+    cargo run --bin clogc -- $entry >"$dir/$name".cpp
+}
+
+f "feat_empty"
