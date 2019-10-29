@@ -1,0 +1,9 @@
+rule view [_ "Hello, world!"]
+
+rule main {
+    std::browser::program {
+        init
+        update
+        view
+    }
+}

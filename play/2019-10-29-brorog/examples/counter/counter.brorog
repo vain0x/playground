@@ -1,0 +1,45 @@
+// Simple counter app.
+
+rule init [
+    0       // Initial count.
+    []      // No commands.
+]
+
+rule update [count Inc new_count []] {
+    new_count match $(count + 1)
+}
+
+rule update [count Dec new_count []] {
+    new_count match $(count - 1)
+}
+
+rule view [
+    count
+    form [
+        h2 {
+            count
+        }
+        button {
+            onclick: Inc
+        } [
+            "+"
+        ]
+        button {
+            onclick: Dec
+        } [
+            "-"
+        ]
+    ]
+]
+
+rule main {
+    std::browser::program {
+        init
+        update
+        view
+    }
+}
+
+test "It increments" [
+    update [0 Inc 1]
+}

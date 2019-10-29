@@ -1,0 +1,107 @@
+// Counter app that communicates with an API server.
+
+// API server:
+//  GET /api/get
+//          Returns the current count.
+//
+//  POST /api/set
+//          Updates the current count.
+
+rule init [
+    Model {
+        loading: true
+        count: 0
+    }
+    [FetchCount]
+]
+
+rule decode_api_get [json msg] {
+    json match { count }
+    msg match GotCount { count }
+}
+
+rule decode_api_set [_ Pass]
+
+rule update [
+    model
+    FetchCount
+    $(model)
+    [fetch_cmd]
+] {
+    model match Model { count }
+    fetch_cmd match Fetch {
+        url: "/api/get"
+        query {
+            count
+        }
+        decode: decode_api_get
+    }
+}
+
+rule update [
+    _
+    GotCount { count }
+    Model {
+        loading: false
+        count: new_count
+    }
+    []
+]
+
+rule update [
+    model
+    Inc
+    new_model
+    [fetch_cmd]
+] {
+    model match Model { count }
+    new_count match $(count + 1)
+    new_model match Model {
+        ...model
+        count: new_count
+    }
+
+    fetch_cmd match Fetch {
+        url: "/api/set"
+        body {
+            count: new_count
+        }
+        decode: decode_api_set
+    }
+}
+
+rule update [model Pass model []]
+
+rule view [
+    Model {
+        loading: true
+    }
+    div [
+        "Now loading..."
+    ]
+]
+
+rule view [
+    Model {
+        loading: false
+        count
+    }
+    form [
+        h2 [
+            count
+        ]
+        button {
+            onclick: Inc
+        } [
+            "+"
+        ]
+    ]
+]
+
+rule main {
+    std::browser::program {
+        init
+        update
+        view
+    }
+}
