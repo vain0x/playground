@@ -16,9 +16,9 @@ rule update [count Dec new_count []] {
 rule view [
     count
     form [
-        h2 {
+        h2 [
             count
-        }
+        ]
         button {
             onclick: Inc
         } [
@@ -40,6 +40,6 @@ rule main {
     }
 }
 
-test "It increments" [
+test "It increments" {
     update [0 Inc 1]
 }
