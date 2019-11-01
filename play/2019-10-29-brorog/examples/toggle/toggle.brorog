@@ -1,0 +1,21 @@
+rule init [
+    Like
+    _
+]
+
+rule update [
+    Like
+    Toggle
+    Dislike
+]
+
+rule update [
+    Dislike
+    Toggle
+    Like
+]
+
+rule view [
+    msg
+    button [$msg]
+]
