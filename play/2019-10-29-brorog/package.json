@@ -17,8 +17,9 @@
     "webpack-dev-server": "^3.9.0"
   },
   "scripts": {
-    "build": "webpack --mode development --watch",
-    "dev": "webpack-dev-server dist",
+    "dev": "run-p dev:*",
+    "dev:build": "webpack --mode development --watch",
+    "dev:serve": "webpack-dev-server",
     "test": "ava"
   },
   "ava": {

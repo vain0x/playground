@@ -7,15 +7,19 @@ rule update [
     Like
     Toggle
     Dislike
+    _
 ]
 
 rule update [
     Dislike
     Toggle
     Like
+    _
 ]
 
 rule view [
     msg
-    button [$msg]
+    button [
+        msg
+    ]
 ]

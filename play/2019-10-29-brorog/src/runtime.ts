@@ -14,14 +14,32 @@ const freshId = (() => {
   return () => i++
 })()
 
-const termIsVar = (term: Term) => {
-  return !term.name.match(/^[A-Z]/)
-}
+const freshName = (name: string) => name + freshId()
+
+const termIsVar = (term: Term) =>
+  !term.name.match(/^[A-Z]/) && term.children.length === 0
 
 const termFresh = (): Term => ({
-  name: "?" + freshId(),
+  name: freshName("?"),
   children: [],
 })
+
+const termDoRefresh = (term: Term, rename: Map<string, string>): Term => {
+  if (termIsVar(term)) {
+    const name =
+      rename.get(term.name)
+      || rename.set(term.name, freshName(term.name)).get(term.name)!
+    return { name, children: [] }
+  }
+
+  return {
+    ...term,
+    children: term.children.map(child => termDoRefresh(child, rename)),
+  }
+}
+
+const termRefresh = (term: Term) =>
+  termDoRefresh(term, new Map<string, string>())
 
 // -----------------------------------------------
 // Inference system
@@ -83,7 +101,12 @@ const unify = (first: Term, second: Term): boolean => {
 }
 
 const query = (term: Term) => {
-
+  const rules = knowledge.get(term.name) || []
+  for (const rule of rules) {
+    if (unify(term, termRefresh(rule))) {
+      break
+    }
+  }
 }
 
 // -----------------------------------------------
@@ -127,7 +150,25 @@ const evalRoot = (root: Ast) => {
 // -----------------------------------------------
 
 const HTML_TAGS = [
+  "a",
+  "article",
+  "b",
   "button",
+  "div",
+  "h1",
+  "h2",
+  "h3",
+  "h4",
+  "h5",
+  "h6",
+  "i",
+  "input",
+  "li",
+  "section",
+  "span",
+  "ol",
+  "textarea",
+  "ul",
 ]
 
 const termToNode = (term: Term): Node => {
@@ -148,15 +189,12 @@ export const start = () => {
   const errorsElement = document.getElementById("errors")!
   const appElement = document.getElementById("app")!
 
-  srcElement.addEventListener("input", () => {
+  const reload = () => {
     const text = srcElement.value
 
     const [root, errors] = parse(text)
     rootElement.textContent = JSON.stringify(root, undefined, 2)
-    if (errors.length !== 0) {
-      errorsElement.textContent = errors.join("\n")
-      return
-    }
+    errorsElement.textContent = errors.join("\n")
 
     knowledge.clear()
     env.clear()
@@ -173,6 +211,23 @@ export const start = () => {
       ],
     })
 
+    const update = (msgTerm: Term) => {
+      const nextModelTerm = termFresh()
+
+      query({
+        name: "update",
+        children: [
+          modelTerm,
+          msgTerm,
+          nextModelTerm,
+          termFresh(),
+        ],
+      })
+
+      modelTerm = subst(nextModelTerm)
+      render()
+    }
+
     const render = () => {
       const htmlTerm = termFresh()
 
@@ -184,32 +239,55 @@ export const start = () => {
         ],
       })
 
-      appElement.innerHTML = ""
-      appElement.appendChild(termToNode(subst(htmlTerm)))
-    }
-
-    appElement.addEventListener("click", ev => {
-      ev.preventDefault()
-
-      const nextModelTerm = termFresh()
-
-      query({
-        name: "update",
-        children: [
-          modelTerm,
-          {
-            name: "Toggle",
-            children: [],
-          },
-          nextModelTerm,
-          termFresh(),
-        ],
+      const termElement = termToNode(subst(htmlTerm))
+      termElement.addEventListener("click", ev => {
+        ev.preventDefault()
+        update({ name: "Toggle", children: [] })
       })
 
-      modelTerm = subst(nextModelTerm)
-      render()
-    })
+      appElement.innerHTML = ""
+      appElement.appendChild(termElement)
+    }
 
     render()
+  }
+
+  let id = 0
+  srcElement.addEventListener("input", () => {
+    const theId = ++id
+
+    setTimeout(() => {
+      if (id === theId) {
+        reload()
+      }
+    }, 100)
   })
+
+  srcElement.value = `rule init [
+    Like
+    _
+]
+
+rule update [
+    Like
+    Toggle
+    Dislike
+    _
+]
+
+rule update [
+    Dislike
+    Toggle
+    Like
+    _
+]
+
+rule view [
+    msg
+    button [
+        msg
+    ]
+]`
+
+  reload()
 }

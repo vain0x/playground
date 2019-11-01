@@ -73,7 +73,7 @@ class Parser {
   }
 
   private nextChar() {
-    return this._text[this._index]
+    return this._text[this._index] || "\0"
   }
 
   private bumpChar() {
@@ -164,7 +164,10 @@ class Parser {
   }
 
   addError(msg: string) {
-    this._errors.push(msg)
+    const index = this.nextToken().start
+    const [row, col] = this.locate(index)
+
+    this._errors.push(`ERROR: ${msg} (${row + 1}:${col + 1} ${this.next()})`)
   }
 }
 
@@ -182,7 +185,7 @@ const eatInlineSpaces = (p: Parser) => {
   }
 }
 
-/// Returns true if EOL skipped.
+/// Returns true if a line is over.
 const eatSpaces = (p: Parser) => {
   let eol = false
 
@@ -201,7 +204,7 @@ const eatSpaces = (p: Parser) => {
     break
   }
 
-  return eol
+  return eol || p.next() === "Eof"
 }
 
 const eatEof = (p: Parser) => {
@@ -244,25 +247,28 @@ const parseTerm = (p: Parser): Ast => {
     name = p.bump().text
   }
 
-  eatInlineSpaces(p)
-
   let children: Ast[] = []
+
+  eatInlineSpaces(p)
   if (p.next() === "[") {
     p.bump()
 
-    while (p.next() !== "]" && !tokenKindIsFirstOfStmt(p.next())) {
+    while (true) {
       eatSpaces(p)
 
+      if (!tokenKindIsFirstOfTerm(p.next())) {
+        break
+      }
       children.push(parseTerm(p))
 
       eatInlineSpaces(p)
       if (p.next() === "]") {
         break
       }
-
       eatComma(p)
     }
 
+    eatSpaces(p)
     if (p.next() === "]") {
       p.bump()
     } else {
@@ -302,9 +308,9 @@ const parseStmt = (p: Parser): Ast | null => {
 const parseRoot = (p: Parser): Ast => {
   const stmts: Ast[] = []
 
-  eatSpaces(p)
-
   while (true) {
+    eatSpaces(p)
+
     if (p.next() === "Eof") {
       break
     }
@@ -327,9 +333,9 @@ const parseRoot = (p: Parser): Ast => {
     if (stmt !== null) {
       stmts.push(stmt)
     }
-    eatSpaces(p)
   }
 
+  eatSpaces(p)
   eatEof(p)
 
   return {
