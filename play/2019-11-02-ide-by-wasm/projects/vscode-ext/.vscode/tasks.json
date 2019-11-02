@@ -1,0 +1,32 @@
+{
+    "version": "2.0.0",
+    "tasks": [
+        {
+            "label": "lsp:build",
+            "type": "shell",
+            "command": "bash",
+            "args": [
+                "-c",
+                "dev"
+            ],
+            "options": {
+                "cwd": "../lsp"
+            },
+            "group": "build"
+        },
+        {
+            "label": "ext:build",
+            "type": "shell",
+            "command": "npm",
+            "args": [
+                "run",
+                "build"
+            ],
+            "group": {
+                "kind": "build",
+                "isDefault": true
+            },
+            "dependsOn": "compiler:build"
+        }
+    ]
+}
