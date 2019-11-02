@@ -1,6 +1,5 @@
-out/picomet
-out/extension.js
-out/extension.js.map
+out/*.js
+out/*.js.map
 
 
 

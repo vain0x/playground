@@ -4,11 +4,7 @@
         {
             "label": "lsp:build",
             "type": "shell",
-            "command": "bash",
-            "args": [
-                "-c",
-                "dev"
-            ],
+            "command": "./dev",
             "options": {
                 "cwd": "../lsp"
             },
@@ -17,16 +13,12 @@
         {
             "label": "ext:build",
             "type": "shell",
-            "command": "npm",
-            "args": [
-                "run",
-                "build"
-            ],
+            "command": "npm run build",
             "group": {
                 "kind": "build",
                 "isDefault": true
             },
-            "dependsOn": "compiler:build"
+            "dependsOn": "lsp:build"
         }
     ]
 }

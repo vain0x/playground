@@ -2,8 +2,14 @@
 
 set -eux
 
-(cd projects/demo; npm ci)
+# demo
+# (cd projects/demo; npm ci)
 
+# lsp
 rustup target add wasm32-unknown-unknown
+cargo install wasm-pack
+
+# vscode-ext
+(cd projects/vscode-ext; npm ci)
 
 ./dev

@@ -3,49 +3,78 @@
  * Licensed under the MIT License. See License.txt in the project root for license information.
  * ------------------------------------------------------------------------------------------ */
 
-// Entry point of the VSCode extension.
+// Based on <https://github.com/microsoft/vscode-extension-samples/tree/351c1a4/lsp-sample>
 
-import { ExtensionContext, workspace, commands } from "vscode"
+import * as path from "path"
+import {
+  ExtensionContext,
+  workspace,
+} from "vscode"
 import {
   LanguageClient,
   LanguageClientOptions,
   ServerOptions,
+  TransportKind,
 } from "vscode-languageclient"
 
 let client: LanguageClient
 
-const startLspClient = (context: ExtensionContext) => {
-  const lspPath = context.asAbsolutePath("./out/lsp.js")
-  let serverOptions: ServerOptions = {
-    command: "node",
-    args: [lspPath],
+export const activate = (context: ExtensionContext) => {
+  const serverModule = context.asAbsolutePath(path.join("./out/lsp.js"))
+
+  // The debug options for the server
+  // --inspect=6009: runs the server in Node's Inspector mode so VS Code can attach to the server for debugging
+  const debugOptions = {
+    execArgv: [
+      "--nolazy",
+      "--inspect=6009",
+    ],
   }
 
-  let clientOptions: LanguageClientOptions = {
+  // If the extension is launched in debug mode then the debug server options are used
+  // Otherwise the run options are used
+  const serverOptions: ServerOptions = {
+    run: {
+      module: serverModule,
+      transport: TransportKind.ipc,
+    },
+    debug: {
+      module: serverModule,
+      transport: TransportKind.ipc,
+      options: debugOptions,
+    },
+  }
+
+  // Options to control the language client
+  const clientOptions: LanguageClientOptions = {
+    // Register the server for plain text documents
     documentSelector: [
-      { scheme: "file", language: "noupper-lang" },
+      {
+        scheme: "file",
+        language: "noupper-lang",
+      },
     ],
     synchronize: {
+      // Notify the server about file changes to .clientrc files contained in the workspace
       fileEvents: workspace.createFileSystemWatcher("**/.clientrc"),
     },
   }
 
-  // Start language server and client.
+  // Create the language client and start the client.
   client = new LanguageClient(
-    "noupper-lang",
-    "noupper-lang LSP",
+    "noupper-lang-lsp",
+    "noupper-lang-lsp",
     serverOptions,
-    clientOptions
+    clientOptions,
   )
+
+  // Start the client. This will also launch the server
   client.start()
 }
 
-export function activate(context: ExtensionContext) {
-  startLspClient(context)
-}
-
-export function deactivate(): Thenable<void> | undefined {
-  if (client) {
-    return client.stop()
+export const deactivate = (): Thenable<void> | undefined => {
+  if (!client) {
+    return undefined
   }
+  return client.stop()
 }

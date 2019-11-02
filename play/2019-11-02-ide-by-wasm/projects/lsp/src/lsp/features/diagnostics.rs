@@ -1,6 +1,6 @@
 use lsp_types::*;
 
-const DIAGNOSTIC_SOURCE: &str = "Example LSP";
+const DIAGNOSTIC_SOURCE: &str = "noupper-lang-lsp";
 
 fn msg_to_diagnostic(start: (usize, usize), end: (usize, usize)) -> Diagnostic {
     let (ly, lx) = start;
