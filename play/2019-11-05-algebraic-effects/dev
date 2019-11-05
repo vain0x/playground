@@ -1,0 +1,3 @@
+#!/bin/bash
+
+node src/effects_tutorial.js
