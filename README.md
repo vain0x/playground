@@ -33,7 +33,7 @@ examples ディレクトリを参照。
             Accepted
         </label>
 
-        <button type="button" ${accepted ? "disabled": ""}>
+        <button type="button" ${accepted ? "": "disabled"}>
             OK
         </button>
     `
