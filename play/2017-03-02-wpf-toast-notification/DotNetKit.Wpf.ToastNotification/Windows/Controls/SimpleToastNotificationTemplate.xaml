@@ -1,0 +1,59 @@
+﻿<ResourceDictionary
+    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:controls="clr-namespace:DotNetKit.Windows.Controls"
+    >
+    <DataTemplate DataType="{x:Type controls:SimpleToastNotification}">
+        <Grid>
+            <Button
+                Width="{Binding Width}"
+                Command="{Binding Command}"
+                CommandParameter="{Binding}"
+                >
+                <Button.Template>
+                    <ControlTemplate TargetType="Button">
+                        <Border
+                            BorderBrush="Black"
+                            BorderThickness="1"
+                            CornerRadius="3"
+                            Background="{Binding Theme.Background}"
+                            >
+                            <DockPanel Margin="5">
+                                <Grid DockPanel.Dock="Left">
+                                    <Path
+                                        Width="38"
+                                        Height="38"
+                                        Stretch="Fill"
+                                        Fill="White"
+                                        Data="{Binding Theme.Icon}"
+                                        />
+                                </Grid>
+
+                                <StackPanel Margin="5">
+                                    <TextBlock
+                                        FontSize="{Binding Theme.TitleFontSize}"
+                                        Foreground="{Binding Theme.Foreground}"
+                                        TextWrapping="Wrap"
+                                        Text="{Binding Title}"
+                                        />
+                                    <TextBlock
+                                        FontSize="{Binding Theme.MessageFontSize}"
+                                        Foreground="{Binding Theme.Foreground}"
+                                        TextWrapping="Wrap"
+                                        Text="{Binding Message}"
+                                        />
+                                </StackPanel>
+                            </DockPanel>
+                        </Border>
+                    </ControlTemplate>
+                </Button.Template>
+            </Button>
+
+            <ContentPresenter
+                Content="{x:Static controls:ToastNotificationCloseCommand.Instance}"
+                HorizontalAlignment="Right"
+                VerticalAlignment="Top"
+                />
+        </Grid>
+    </DataTemplate>
+</ResourceDictionary>
