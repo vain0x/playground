@@ -1,0 +1,13 @@
+#!/bin/bash
+
+set -eu
+
+if [[ "$1" = 'restore' ]]
+then
+    dotnet restore
+fi
+
+if [[ "$1" = 'test' ]]
+then
+    dotnet test TomlHummerTests -c Release --no-restore
+fi
