@@ -1,0 +1,19 @@
+﻿<UserControl
+    x:Class="DotNetKit.Wpf.Sample.MinimumSampleControl"
+    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006" 
+    xmlns:d="http://schemas.microsoft.com/expression/blend/2008" 
+    xmlns:recordGrid="clr-namespace:DotNetKit.Wpf;assembly=DotNetKit.Wpf.RecordGrid"
+    mc:Ignorable="d" 
+    d:DesignWidth="300"
+    d:DesignHeight="300"
+    >
+    <recordGrid:RecordGrid>
+        <TextBlock Text="Name" />
+        <TextBlock Text="{Binding Name}" />
+
+        <TextBlock Text="Age" />
+        <TextBlock Text="{Binding Age}" />
+    </recordGrid:RecordGrid>
+</UserControl>

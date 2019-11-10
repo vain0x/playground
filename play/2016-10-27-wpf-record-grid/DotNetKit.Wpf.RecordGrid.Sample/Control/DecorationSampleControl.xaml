@@ -1,0 +1,59 @@
+﻿<UserControl
+    x:Class="DotNetKit.Wpf.Sample.DecorationSampleControl"
+    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006" 
+    xmlns:d="http://schemas.microsoft.com/expression/blend/2008" 
+    xmlns:recordGrid="clr-namespace:DotNetKit.Wpf;assembly=DotNetKit.Wpf.RecordGrid"
+    mc:Ignorable="d" 
+    d:DesignWidth="300"
+    d:DesignHeight="300"
+    >
+    <!--
+        RecordGrid with paddings, grid borders, and alternate backgrounds.
+
+        BorderBrush: DimGray
+        Background for even items: LightGray
+        Background for "odd" items: WhiteSmoke 
+    -->
+    <recordGrid:RecordGrid
+        BorderBrush="DimGray"
+        BorderThickness="0,0,1,1"
+        Background="LightGray"
+        HorizontalAlignment="Center"
+        VerticalAlignment="Center"
+        >
+        <recordGrid:RecordGrid.CellStyle>
+            <Style TargetType="{x:Type recordGrid:RecordGridCell}">
+                <Setter Property="BorderBrush" Value="DimGray" />
+                <Setter Property="BorderThickness" Value="1,1,0,0" />
+                <Setter Property="Padding" Value="10,5,10,5" />
+                <Style.Triggers>
+                    <!-- Set styles for record labels. -->
+                    <Trigger Property="IsLabel" Value="True">
+                        <Setter Property="TextElement.FontWeight" Value="Bold" />
+                    </Trigger>
+                    <!-- Set styles for odd-th cells. -->
+                    <Trigger Property="IsOdd" Value="True">
+                        <Setter Property="Background" Value="WhiteSmoke" />
+                    </Trigger>
+                </Style.Triggers>
+            </Style>
+        </recordGrid:RecordGrid.CellStyle>
+
+        <TextBlock Text="Name" />
+        <TextBlock Text="{Binding Name}" />
+
+        <TextBlock Text="Age" />
+        <TextBlock Text="{Binding Age}" />
+
+        <TextBlock Text="Gender" />
+        <TextBlock Text="{Binding Gender}" />
+
+        <TextBlock Text="Birthday" />
+        <TextBlock Text="{Binding Birthday}" />
+
+        <TextBlock Text="Masterpiece" />
+        <TextBlock Text="{Binding Masterpiece}" />
+    </recordGrid:RecordGrid>
+</UserControl>

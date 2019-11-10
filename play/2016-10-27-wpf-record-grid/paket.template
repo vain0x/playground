@@ -1,0 +1,5 @@
+type project
+authors DotNetKit authors
+projectUrl https://github.com/DotNetKit/DotNetKit.Wpf.RecordGrid
+licenseUrl http://opensource.org/licenses/MIT
+copyright (C) 2016 DotNetKit authors
