@@ -1,0 +1,79 @@
+; Top-most EditorConfig file
+root = true
+
+
+
+; .NET
+[*.sln]
+indent_style = tab
+indent_size = 4
+charset = utf-8
+trim_trailing_whitespace = true
+insert_final_newline = true
+
+[App.config]
+indent_style = space
+indent_size = 4
+charset = utf-8
+trim_trailing_whitespace = true
+insert_final_newline = false
+
+[packages.config]
+indent_style = space
+indent_size = 2
+charset = utf-8
+trim_trailing_whitespace = true
+insert_final_newline = false
+
+[*.{csproj,fsproj}]
+indent_style = space
+indent_size = 2
+charset = utf-8
+trim_trailing_whitespace = true
+insert_final_newline = true
+
+[*.{cs,csx,xaml}]
+indent_style = space
+indent_size = 4
+charset = utf-8
+trim_trailing_whitespace = true
+insert_final_newline = true
+
+[*.{fs,fsi,fsl,fsy}]
+indent_style = space
+indent_size = 2
+charset = utf-8
+trim_trailing_whitespace = true
+insert_final_newline = true
+
+; PowerShell
+[*.ps1]
+indent_style = space
+indent_size = 4
+charset = utf-8-bom
+trim_trailing_whitespace = true
+insert_final_newline = true
+
+; ASP.NET
+[*.cshtml]
+indent_style = space
+indent_size = 2
+charset = utf-8-bom
+trim_trailing_whitespace = true
+insert_final_newline = true
+
+; NuGet
+[*.nuspec]
+indent_style = space
+indent_size = 2
+charset = utf-8
+trim_trailing_whitespace = true
+insert_final_newline = true
+
+; Paket
+[*paket.*]
+indent_style = space
+indent_size = 2
+charset = utf-8
+trim_trailing_whitespace = true
+insert_final_newline = true
