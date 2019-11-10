@@ -1,0 +1,22 @@
+html,
+body {
+    margin: 0;
+    padding: 0;
+    height: 100vh;
+
+    display: flex;
+    flex-flow: column nowrap;
+    align-items: center;
+    justify-content: center;
+}
+
+#app {
+    max-width: 320px;
+
+    display: flex;
+    flex-flow: column nowrap;
+}
+
+#app > * {
+    margin: 8px;
+}
