@@ -1,0 +1,26 @@
+﻿[
+  {
+    "id": "BcgCompleteConstructorGeneration",
+    "sevirity": "Hidden",
+    "line": 7,
+    "column": 14,
+    "path": "Sample.cs",
+    "message-args": [ "EmptyClass" ]
+  },
+  {
+    "id": "BcgCompleteConstructorGeneration",
+    "sevirity": "Hidden",
+    "line": 11,
+    "column": 15,
+    "path": "Sample.cs",
+    "message-args": [ "EmptyStruct" ]
+  },
+  {
+    "id": "BcgCompleteConstructorGeneration",
+    "sevirity": "Hidden",
+    "line": 15,
+    "column": 14,
+    "path": "Sample.cs",
+    "message-args": [ "ClassWithIgnoredMembers" ]
+  }
+]
