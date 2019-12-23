@@ -108,8 +108,13 @@ let queryCompute db compute =
   let q, _, db = dbNewQuery db compute
   q, db
 
-[<EntryPoint>]
-let main _ =
+let queryRec db compute =
+  let queryCell = ref Unchecked.defaultof<_>
+  let q, _, db = dbNewQuery db (compute queryCell)
+  queryCell := q
+  q, db
+
+let basicExample () =
   let db = dbEmpty ()
 
   let x, setX, db =
@@ -161,4 +166,58 @@ let main _ =
     |> show "tan" tan
     |> show "tan" tan
 
+  ()
+
+type Ast =
+  | Int
+    of int
+  | Add
+    of Ast * Ast
+
+let evaluateExample () =
+  let db = dbEmpty ()
+
+  let evaluate, db =
+    queryRec db (fun evaluateRec db (ast: Ast) ->
+      eprintfn "TRACE: evaluate %A" ast
+      match ast with
+      | Int value ->
+        value, db
+
+      | Add (first, second) ->
+        let first, db = (! evaluateRec) db first
+        let second, db = (! evaluateRec) db second
+        first + second, db
+    )
+
+  let show ast db =
+    let value, db = evaluate db ast
+    eprintfn "%A #=> %d" ast value
+    db
+
+  db
+  |> show (Add (Int 1, Int 1))
+  |> show (Add (Add (Int 1, Int 1), Int 2))
+  |> show (Add (Add (Int 1, Int 1), (Add (Int 2, Int 3))))
+  |> ignore
+
+[<EntryPoint>]
+let main _ =
+  // basicExample ()
+  evaluateExample ()
   0
+
+(*
+
+TRACE: evaluate Add (Int 1,Int 1)
+TRACE: evaluate Int 1
+Add (Int 1,Int 1) #=> 2
+TRACE: evaluate Add (Add (Int 1,Int 1),Int 2)
+TRACE: evaluate Int 2
+Add (Add (Int 1,Int 1),Int 2) #=> 4
+TRACE: evaluate Add (Add (Int 1,Int 1),Add (Int 2,Int 3))
+TRACE: evaluate Add (Int 2,Int 3)
+TRACE: evaluate Int 3
+Add (Add (Int 1,Int 1),Add (Int 2,Int 3)) #=> 7
+
+*)
