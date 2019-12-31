@@ -1,0 +1,12 @@
+fn inc(ref x) {
+    x = x + 1;
+}
+
+fn main() {
+    let a = 1;
+    assert(a == 1);
+    inc(ref a);
+    assert(a == 2);
+    inc(ref a);
+    assert(a == 3);
+}
