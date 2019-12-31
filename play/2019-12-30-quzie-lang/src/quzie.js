@@ -56,19 +56,27 @@ class QuzieConstRef {
   }
 }
 
-class QuzieArray {
+class QuzieCollection {
   constructor(parent) {
-    this.inner = []
     this.diff = []
     this.parent = parent
   }
 
-  get length() {
-    return this.inner.length
-  }
-
   drainDiff() {
     return this.diff.splice(0, this.diff.length)
+  }
+
+}
+
+class QuzieArray extends QuzieCollection {
+  constructor(parent) {
+    super(parent)
+
+    this.inner = []
+  }
+
+  get size() {
+    return this.inner.length
   }
 
   push(value) {
@@ -76,6 +84,31 @@ class QuzieArray {
 
     this.inner.push(value)
     this.diff.push(["D_ARRAY_INSERT", index, value])
+    this.parent.mark()
+  }
+}
+
+class QuzieObject extends QuzieCollection {
+  constructor(parent) {
+    super(parent)
+
+    this.inner = new Map()
+  }
+
+  get size() {
+    return this.inner.size
+  }
+
+  set(key, value) {
+    const current = this.inner.get(key)
+    if (current === value) {
+      return
+    }
+
+    const delta = current ? "D_OBJECT_SET" : "D_OBJECT_ADD"
+    this.diff.push([delta, index, value])
+    this.inner.set(key, value)
+
     this.parent.mark()
   }
 }
@@ -96,6 +129,10 @@ export class QuzieRuntime {
     this.subscriptions = []
   }
 
+  newBool(value) {
+    return new QuzieConstRef(value)
+  }
+
   newString(value) {
     return new QuzieConstRef(value)
   }
@@ -104,8 +141,14 @@ export class QuzieRuntime {
     return new QuzieConstRef(new QuzieArray(QUZIE_ROOT))
   }
 
-  newLocal(name) {
-    return new QuzieLocal(name)
+  newObject() {
+    return new QuzieConstRef(new QuzieObject(QUZIE_ROOT))
+  }
+
+  newLocal(name, valueRef) {
+    const local = new QuzieLocal(name)
+    this.setValue(local, valueRef)
+    return local
   }
 
   subscribe(valueRef, callback) {
@@ -119,7 +162,7 @@ export class QuzieRuntime {
       }
 
       const value = valueRef.compute()
-      if (value instanceof QuzieArray) {
+      if (value instanceof QuzieCollection) {
         for (const delta of value.drainDiff()) {
           callback(delta)
         }
@@ -144,6 +187,19 @@ export class QuzieRuntime {
     const value = valueRef.compute()
 
     array.push(value)
+    this.didUpdate()
+  }
+
+  setEntry(objectRef, keyRef, valueRef) {
+    const object = objectRef.compute()
+    if (!(object instanceof QuzieObject)) {
+      throw new Error("type error")
+    }
+
+    const key = keyRef.compute()
+    const value = valueRef.compute()
+
+    object.set(key, value)
     this.didUpdate()
   }
 }
