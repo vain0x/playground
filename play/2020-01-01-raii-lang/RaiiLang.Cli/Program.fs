@@ -1,8 +1,11 @@
-﻿// Learn more about F# at http://fsharp.org
+﻿module RaiiLang.Cli.Program
 
 open System
+open System.IO
+open RaiiLang.SyntaxParse
 
 [<EntryPoint>]
-let main argv =
-    printfn "Hello World from F#!"
-    0 // return an integer exit code
+let main _ =
+  let sourceCode = File.ReadAllText("tests/inc/inc.raii")
+  sourceCode |> parse |> printfn "%A"
+  0

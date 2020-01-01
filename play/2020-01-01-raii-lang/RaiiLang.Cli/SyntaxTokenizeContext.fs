@@ -25,9 +25,10 @@ type TokenizeContext(sourceCode: string) =
     assertInvariants ()
 
   let isFollowedBy (text: string) =
-    sourceCode
-    |> strSlice currentIndex (currentIndex + text.Length)
-    |> (=) text
+    currentIndex + text.Length <= sourceCode.Length
+    && sourceCode
+      |> strSlice currentIndex (currentIndex + text.Length)
+      |> (=) text
 
   let currentText () =
     sourceCode |> strSlice lastIndex currentIndex

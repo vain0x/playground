@@ -1,5 +1,7 @@
 module rec RaiiLang.Syntax
 
+open RaiiLang.Helpers
+
 type TextLength = int
 
 [<Struct>]
@@ -58,7 +60,6 @@ type Node =
   | LiteralNode
   | GroupNode
   | BlockNode
-  | ArgNode
   | CallNode
   | BinNode
   | ExprNode
@@ -89,17 +90,19 @@ type ABin =
   | AAddBin
   | AAssignBin
 
+[<Struct>]
 type AName =
   | AName
     of string option * NodeData
 
+[<Struct>]
 type AArg =
-  | ARefArg
-    of AName option * NodeData
+  | AArg
+    of CallBy * ATerm option * NodeData
 
 type ATerm =
   | AIntLiteral
-    of NodeData
+    of text:string option * NodeData
 
   | ANameTerm
     of AName
@@ -124,7 +127,7 @@ type AStmt =
     of ATerm option * ATerm option * NodeData
 
   | AFnStmt
-    of AName option * AArg list * AStmt option * NodeData
+    of AName option * AArg list * ATerm option * NodeData
 
   | ASemiStmt
     of AStmt list * NodeData

@@ -103,9 +103,14 @@ let parseCallTerm (p: P) =
 
   while p.Next = LeftParenToken do
     p.StartNodeWithPrevious()
-    p.StartNode()
-    parseGroupTerm p
-    p.EndNode(ArgNode)
+    p.Eat(LeftParenToken) |> is true
+
+    while p.Next |> tokenIsParamFirst do
+      parseParam p
+
+    if p.Eat(RightParenToken) |> not then
+      p.AddError(ExpectedError "右カッコ")
+
     p.EndNode(CallNode)
 
 let parseAddTerm (p: P) =
@@ -113,6 +118,7 @@ let parseAddTerm (p: P) =
 
   while p.Next = PlusToken do
     p.StartNodeWithPrevious()
+    p.Eat(PlusToken) |> is true
     parseCallTerm p
     p.EndNode(BinNode)
 
@@ -121,6 +127,7 @@ let parseEqTerm (p: P) =
 
   while p.Next = EqualEqualToken do
     p.StartNodeWithPrevious()
+    p.Eat(EqualEqualToken) |> is true
     parseAddTerm p
     p.EndNode(BinNode)
 
@@ -129,6 +136,7 @@ let parseAssignTerm (p: P) =
 
   if p.Next = EqualToken then
     p.StartNodeWithPrevious()
+    p.Eat(EqualToken) |> is true
     parseAssignTerm p
     p.EndNode(BinNode)
 
@@ -139,7 +147,7 @@ let parseParam (p: P) =
   p.StartNode()
 
   p.Eat(RefToken) |> ignore
-  p.Eat(IdentToken) |> ignore
+  parseTerm p
 
   p.EndNode(ParamNode)
 
@@ -149,8 +157,10 @@ let parseStmt (p: P) =
     p.StartNode()
     p.Eat(LetToken) |> is true
 
-    if p.Eat(IdentToken) |> not then
-      p.AddError(ExpectedError "識別子")
+    if p.Next = IdentToken then
+      parseAtomTerm p
+    else
+      p.AddError(ExpectedError "変数名")
 
     if p.Eat(EqualToken) |> not then
       p.AddError(ExpectedError "=")
@@ -167,7 +177,9 @@ let parseStmt (p: P) =
     p.StartNode()
     p.Eat(FnToken) |> is true
 
-    if p.Eat(IdentToken) |> not then
+    if p.Next = IdentToken then
+      parseNameTerm p
+    else
       p.AddError(ExpectedError "関数名")
 
     // 引数リスト
@@ -193,6 +205,7 @@ let parseStmt (p: P) =
 
     p.StartNode()
     parseTerm p
+    p.Eat(SemiToken) |> ignore
     p.EndNode(ExprNode)
 
 let parseSemi (p: P) =
@@ -219,3 +232,42 @@ let parseRoot (p: P) =
 
   if p.Eat(EofToken) |> not then
     p.AddError(ExpectedError "anything but EOF")
+
+let parse (sourceCode: string) =
+  let tokens = SyntaxTokenize.tokenize sourceCode
+  let p = ParseContext(tokens)
+  parseRoot p
+  p.Finish()
+
+let nodeToSnapshot (node: NodeData) =
+  let w = System.Text.StringBuilder()
+
+  let writeIndent depth =
+    for _ in 0..(depth - 1) do
+      w.Append("  ") |> ignore
+
+  let writeToken depth (token: TokenData) =
+    writeIndent depth
+    w.AppendFormat("T({0}) `{1}`\n", token.Token, token.Text) |> ignore
+
+  let rec writeNode depth (node: NodeData) =
+    writeIndent depth
+    w.AppendFormat("N({0}) [\n", node.Node) |> ignore
+
+    for child in node.Children do
+      match child with
+      | TokenElement token ->
+        writeToken (depth + 1) token
+
+      | NodeElement child ->
+        writeNode (depth + 1) child
+
+      | ErrorElement error ->
+        writeIndent (depth + 1)
+        w.AppendFormat("E({0})\n", error) |> ignore
+
+    writeIndent depth
+    w.Append("]\n") |> ignore
+
+  writeNode 0 node
+  w.ToString()

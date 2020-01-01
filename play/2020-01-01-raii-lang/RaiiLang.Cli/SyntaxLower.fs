@@ -3,6 +3,9 @@ module rec RaiiLang.SyntaxLower
 open RaiiLang.Helpers
 open RaiiLang.Syntax
 
+let tokenToText (token: TokenData) =
+  token.Text
+
 let tokenAsBin (token: Token) =
   match token with
   | EqualEqualToken ->
@@ -16,6 +19,15 @@ let tokenAsBin (token: Token) =
 
   | _ ->
     None
+
+let tokenAsCallBy (token: Token) =
+  match token with
+  | RefToken ->
+    Some ByRef
+
+  | _ ->
+    None
+
 
 let nodeIsTerm (node: Node) =
   match node with
@@ -34,7 +46,8 @@ let nodeIsStmt (node: Node) =
   match node with
   | ExprNode
   | LetNode
-  | FnNode ->
+  | FnNode
+  | SemiNode ->
     true
 
   | _ ->
@@ -71,20 +84,31 @@ let nodeToFilterNode pred (node: NodeData) =
   )
   |> Seq.toList
 
-let lowerArg (node: NodeData) =
-  assert (node.Node = ArgNode)
+let lowerParam (node: NodeData) =
+  assert (node.Node = ParamNode)
 
-  let name =
+  let callBy =
     node
-    |> nodeToFirstNode ((=) NameNode)
-    |> Option.map lowerName
+    |> nodeToFirstToken (tokenAsCallBy >> Option.isSome)
+    |> Option.bind (fun token -> tokenAsCallBy token.Token)
+    |> Option.defaultValue ByMove
 
-  ARefArg (name, node)
+  let term =
+    node
+    |> nodeToFirstNode nodeIsTerm
+    |> Option.map lowerTerm
+
+  AArg (callBy, term, node)
 
 let lowerLiteral (node: NodeData) =
   assert (node.Node = LiteralNode)
 
-  AIntLiteral node
+  let intToken =
+    node
+    |> nodeToFirstToken ((=) IntToken)
+    |> Option.map tokenToText
+
+  AIntLiteral (intToken, node)
 
 let lowerName (node: NodeData) =
   assert (node.Node = NameNode)
@@ -130,8 +154,8 @@ let lowerCall (node: NodeData) =
 
   let args =
     node
-    |> nodeToFilterNode ((=) ArgNode)
-    |> List.map lowerArg
+    |> nodeToFilterNode ((=) ParamNode)
+    |> List.map lowerParam
 
   ACallTerm (cal, args, node)
 
@@ -181,6 +205,8 @@ let lowerTerm (node: NodeData) =
     failwith "NEVER: nodeIsTerm bug"
 
 let lowerStmt (node: NodeData) =
+  assert (node.Node |> nodeIsStmt)
+
   match node.Node with
   | ExprNode ->
     let term =
@@ -209,18 +235,28 @@ let lowerStmt (node: NodeData) =
 
     let args =
       node
-      |> nodeToFilterNode ((=) ArgNode)
-      |> List.map lowerArg
+      |> nodeToFilterNode ((=) ParamNode)
+      |> List.map lowerParam
 
     let body =
       node
-      |> nodeToFirstNode nodeIsStmt
-      |> Option.map lowerStmt
+      |> nodeToFirstNode ((=) BlockNode)
+      |> Option.map lowerTerm
 
     AFnStmt (name, args, body, node)
+
+  | SemiNode ->
+    let stmts =
+      node
+      |> nodeToFilterNode nodeIsStmt
+      |> List.map lowerStmt
+
+    ASemiStmt (stmts, node)
 
   | _ ->
     failwith "NEVER: nodeIsStmt bug"
 
 let lower (node: NodeData) =
+  assert (node.Node = SemiNode)
+
   lowerStmt node

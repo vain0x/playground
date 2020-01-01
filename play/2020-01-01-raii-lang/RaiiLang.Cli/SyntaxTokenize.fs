@@ -87,3 +87,25 @@ let tokenizeAll (t: T) =
     tokenizeOther t
 
     assert (state <> t.CurrentState())
+
+let tokenize (sourceCode: string) =
+  let t = TokenizeContext(sourceCode)
+  tokenizeAll t
+  t.Finish()
+
+let tokensToSnapshot (tokens: #seq<TokenFat>) =
+  let w = System.Text.StringBuilder()
+
+  let writeToken prefix (t: TokenData) =
+    w.AppendFormat("{0}{1} `{2}`\n", prefix, t.Token, t.Text) |> ignore
+
+  for token in tokens do
+    for trivia in token.Leading do
+      writeToken "  v " trivia
+
+    writeToken "" token.Token
+
+    for trivia in token.Trailing do
+      writeToken "  ^ " trivia
+
+  w.ToString()

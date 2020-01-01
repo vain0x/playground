@@ -1,6 +1,29 @@
 module RaiiLang.Helpers
 
+type HashMap<'K, 'V> = System.Collections.Generic.Dictionary<'K, 'V>
+
+type CallBy =
+  | ByMove
+  | ByRef
+
+let eol = "\n"
+
 let inline cons head tail = head :: tail
+
+let freshName =
+  let map = HashMap()
+
+  fun name ->
+    match map.TryGetValue(name) with
+    | true, lastId ->
+      let lastId = lastId + 1
+      map.[name] <- lastId
+      sprintf "%s_%d" name lastId
+
+    | false, _ ->
+      let lastId = 1
+      map.[name] <- lastId
+      name
 
 // -----------------------------------------------
 // Char

@@ -74,7 +74,6 @@ type ParseContext(tokens: TokenList) =
     next ()
 
   member _.Bump() =
-    assert (currentIndex + 1 < tokens.Count)
     doBump ()
 
   member _.Eat(token: Token) =
@@ -98,9 +97,8 @@ type ParseContext(tokens: TokenList) =
     endNode node
 
   member _.Finish() =
-    assert (currentIndex = tokens.Count - 1)
+    assert (currentIndex = tokens.Count)
     assert (stack.Count = 1)
     assert ((top ()).Node = SemiNode)
 
-    doBump ()
     popNode SemiNode

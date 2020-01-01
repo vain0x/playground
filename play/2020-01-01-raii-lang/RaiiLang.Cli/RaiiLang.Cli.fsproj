@@ -7,17 +7,17 @@
 
   <ItemGroup>
     <Compile Include="Helpers.fs" />
-    <Compile Include="Cir.fs" />
-    <Compile Include="CirDump.fs" />
-    <Compile Include="CirGen.fs" />
-    <Compile Include="Kir.fs" />
-    <Compile Include="KirGen.fs" />
     <Compile Include="Syntax.fs" />
     <Compile Include="SyntaxTokenizeContext.fs" />
     <Compile Include="SyntaxTokenize.fs" />
     <Compile Include="SyntaxParseContext.fs" />
     <Compile Include="SyntaxParse.fs" />
     <Compile Include="SyntaxLower.fs" />
+    <Compile Include="Kir.fs" />
+    <Compile Include="KirGen.fs" />
+    <Compile Include="Cir.fs" />
+    <Compile Include="CirDump.fs" />
+    <Compile Include="CirGen.fs" />
     <Compile Include="Program.fs" />
   </ItemGroup>
 

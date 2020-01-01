@@ -1,1 +1,5 @@
-module Program = let [<EntryPoint>] main _ = 0
+module RaiiLang.Tests.Program
+
+[<EntryPoint>]
+let main _ =
+  0
