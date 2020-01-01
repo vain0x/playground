@@ -1,5 +1,7 @@
 module RaiiLang.Helpers
 
+type HashSet<'K> = System.Collections.Generic.HashSet<'K>
+
 type HashMap<'K, 'V> = System.Collections.Generic.Dictionary<'K, 'V>
 
 type CallBy =
