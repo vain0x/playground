@@ -12,6 +12,7 @@ type KPrim =
   | KEqPrim
   | KAddPrim
   | KAssignPrim
+  | KAssertEqPrim
 
 [<Struct>]
 type KParam =

@@ -28,7 +28,6 @@ let tokenAsCallBy (token: Token) =
   | _ ->
     None
 
-
 let nodeIsTerm (node: Node) =
   match node with
   | LiteralNode

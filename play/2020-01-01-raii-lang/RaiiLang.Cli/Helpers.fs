@@ -12,7 +12,7 @@ let eol = "\n"
 
 let inline cons head tail = head :: tail
 
-let freshName =
+let freshNameFun () =
   let map = HashMap()
 
   fun name ->
