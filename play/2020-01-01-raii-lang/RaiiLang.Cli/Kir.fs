@@ -3,6 +3,11 @@ module rec RaiiLang.Kir
 open RaiiLang.Helpers
 open RaiiLang.Syntax
 
+type KTy =
+  | KIntTy
+  | KFunTy
+    of (CallBy * KTy) list
+
 type KPrim =
   | KEqPrim
   | KAddPrim

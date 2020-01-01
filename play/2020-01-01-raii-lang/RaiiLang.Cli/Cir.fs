@@ -19,6 +19,8 @@ type CTy =
   | CIntTy
   | CPtrTy
     of CTy
+  | CFunTy
+    of CTy list * CTy
 
 [<Struct>]
 type CParam =

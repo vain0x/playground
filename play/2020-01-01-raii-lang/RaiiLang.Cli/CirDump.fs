@@ -12,6 +12,17 @@ type CBindingPower =
   | CSuffixBp
   | CAtomBp
 
+let cTyToFunTy ty =
+  match ty with
+  | CFunTy _ ->
+    Some ty
+
+  | CPtrTy innerTy ->
+    cTyToFunTy innerTy
+
+  | _ ->
+    None
+
 let cBinToBp bin =
   match bin with
   | CEqBin ->
@@ -33,6 +44,36 @@ let cdTy ty acc =
 
   | CPtrTy itemTy ->
     acc |> cdTy itemTy |> cons "*"
+
+  | CFunTy _ ->
+    failwithf "NEVER: %A" ty
+
+let cdTyList tys acc =
+  tys |> List.fold (fun (sep, acc) ty ->
+    let acc =
+      acc
+      |> cons sep
+      |> cdTy ty
+    ", ", acc
+  ) ("", acc)
+  |> snd
+
+let cdVarDecl name ty acc =
+  match ty |> cTyToFunTy with
+  | Some (CFunTy (paramTys, resultTy)) ->
+    acc
+    |> cdTy resultTy
+    |> cons " (*"
+    |> cons name
+    |> cons ")("
+    |> cdTyList paramTys
+    |> cons ")"
+
+  | _ ->
+    acc
+    |> cdTy ty
+    |> cons " "
+    |> cons name
 
 let cdUni uni acc =
   match uni with
@@ -58,9 +99,7 @@ let cdParamList paramList acc =
     let acc =
       acc
       |> cons sep
-      |> cdTy ty
-      |> cons " "
-      |> cons name
+      |> cdVarDecl name ty
     ", ", acc
   ) ("", acc)
   |> snd
@@ -127,9 +166,7 @@ let cdStmt stmt acc =
 
   | CLocalStmt (name, ty, body) ->
     acc
-    |> cdTy ty
-    |> cons " "
-    |> cons name
+    |> cdVarDecl name ty
     |> cons " = "
     |> cdTerm body CMinBp
     |> cons ";"
@@ -161,9 +198,7 @@ let cdDecl decl indent acc =
 
     let acc =
       acc
-      |> cdTy resultTy
-      |> cons " "
-      |> cons name
+      |> cdVarDecl name resultTy
       |> cons "("
       |> cdParamList paramList
       |> cons ") {"

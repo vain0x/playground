@@ -4,15 +4,18 @@ open RaiiLang.Cir
 open RaiiLang.Helpers
 open RaiiLang.Kir
 open RaiiLang.KirGen
+open RaiiLang.KirInfer
 
 type CirGenContext =
   {
+    TyMap: HashMap<string, KTy>
     Stmts: ResizeArray<CStmt>
     Decls: ResizeArray<CDecl>
   }
 
 let cgContextNew (): CirGenContext =
   {
+    TyMap = HashMap()
     Stmts = ResizeArray()
     Decls = ResizeArray()
   }
@@ -24,6 +27,23 @@ let cgContextDerive (context: CirGenContext) =
   }
 
 let neverTerm = CName "__never__"
+
+let kTyToCTy ty =
+  match ty with
+  | KIntTy ->
+    CIntTy
+
+  | KFunTy paramList ->
+    let paramList =
+      paramList |> List.map (fun (callBy, ty) ->
+        match callBy with
+        | ByMove ->
+          ty |> kTyToCTy
+
+        | ByRef ->
+          ty |> kTyToCTy |> CPtrTy
+      )
+    CFunTy (paramList, CVoidTy)
 
 let kPrimIsPure prim =
   match prim with
@@ -45,13 +65,21 @@ let kPrimToCBin prim =
   | KAssignPrim ->
     CAssignBin
 
-let cgParam _context (KParam (callBy, arg)) =
+let cgParam (context: CirGenContext) (KParam (callBy, arg)) =
+  let ty =
+    match context.TyMap.TryGetValue(arg) with
+    | true, ty ->
+      ty |> kTyToCTy
+
+    | false, _ ->
+      CIntTy
+
   match callBy with
   | ByMove ->
-    CParam (arg, CIntTy)
+    CParam (arg, ty)
 
   | ByRef ->
-    CParam (arg, CPtrTy CIntTy)
+    CParam (arg, CPtrTy ty)
 
 let cgArg context (KArg (callBy, arg)) =
   let arg = cgTerm context arg
@@ -117,6 +145,12 @@ let cgNode context (node: KNode) =
     cgTerm context node |> ignore
 
 let cirGen (node: KNode) =
-  let context = cgContextNew ()
+  let tyContext = kirInfer node
+
+  let context =
+    { cgContextNew () with
+        TyMap = tyContext.TyMap
+    }
+
   cgNode context node
   context.Decls |> Seq.toList
