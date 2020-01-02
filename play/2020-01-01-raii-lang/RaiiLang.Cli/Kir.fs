@@ -6,7 +6,7 @@ open RaiiLang.Syntax
 type KTy =
   | KIntTy
   | KFunTy
-    of (CallBy * KTy) list
+    of (Mode * KTy) list
 
 type KPrim =
   | KEqPrim
@@ -18,12 +18,12 @@ type KPrim =
 [<Struct>]
 type KParam =
   | KParam
-    of callBy:CallBy * name:string
+    of Mode * name:string
 
 [<Struct>]
 type KArg =
   | KArg
-    of callBy:CallBy * node:KNode
+    of PassBy * node:KNode
 
 type KNode =
   | KInt
@@ -47,6 +47,31 @@ type KNode =
       * paramList:KParam list
       * body:KNode
       * next:KNode
+
+let kPrimFromBin bin =
+  match bin with
+  | AEqBin ->
+    KEqPrim
+
+  | AAddBin ->
+    KAddPrim
+
+  | AAssignBin ->
+    KAssignPrim
+
+let kPrimToSig prim =
+  match prim with
+  | KEqPrim ->
+    [ByIn; ByIn]
+
+  | KAddPrim ->
+    [ByMove; ByMove]
+
+  | KAssignPrim ->
+    [ByRef; ByMove]
+
+  | KExternFnPrim _ ->
+    failwith "NEVER"
 
 let kPrimToString prim =
   match prim with

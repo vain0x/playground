@@ -4,8 +4,43 @@ type HashSet<'K> = System.Collections.Generic.HashSet<'K>
 
 type HashMap<'K, 'V> = System.Collections.Generic.Dictionary<'K, 'V>
 
-type CallBy =
+/// 間接性
+type Indirection =
+  /// ポインタを介さない。
+  | Direct
+
+  /// ポインタ (参照) を介す。
+  | Indirect
+
+/// 可変性
+type Mutability =
+  /// 読み取り専用
+  | ReadOnly
+
+  /// 読み書き可能
+  | ReadWrite
+
+type Mode =
+  /// indirect, read-only
+  | InMode
+
+  /// direct, read-write
+  | MutMode
+
+  /// indirect, read-write
+  | RefMode
+
+  /// direct, read-only
+  | ValMode
+
+type PassBy =
+  /// indirect, read-only
+  | ByIn
+
+  /// direct
   | ByMove
+
+  /// indirect, read-write
   | ByRef
 
 let eol = "\n"
@@ -66,3 +101,61 @@ let strSlice (start: int) (endIndex: int) (s: string): string =
     ""
   else
     s.[start..endIndex - 1]
+
+// -----------------------------------------------
+// Mode
+// -----------------------------------------------
+
+let modeToString mode =
+  match mode with
+  | InMode ->
+    "in"
+
+  | MutMode ->
+    "mut"
+
+  | RefMode ->
+    "ref"
+
+  | ValMode ->
+    "val"
+
+let modeToPassBy mode =
+  match mode with
+  | InMode ->
+    ByIn
+
+  | MutMode ->
+    ByMove
+
+  | RefMode ->
+    ByRef
+
+  | ValMode ->
+    ByMove
+
+// -----------------------------------------------
+// PassBy
+// -----------------------------------------------
+
+let passByToString passBy =
+  match passBy with
+  | ByIn ->
+    "in"
+
+  | ByMove ->
+    "move"
+
+  | ByRef ->
+    "ref"
+
+let passByToMode passBy =
+  match passBy with
+  | ByIn ->
+    InMode
+
+  | ByMove ->
+    MutMode
+
+  | ByRef ->
+    RefMode

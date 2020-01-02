@@ -20,8 +20,28 @@ let tokenAsBin (token: Token) =
   | _ ->
     None
 
-let tokenAsCallBy (token: Token) =
+let tokenAsMode (token: Token) =
   match token with
+  | InToken ->
+    Some InMode
+
+  | MutToken ->
+    Some MutMode
+
+  | RefToken ->
+    Some RefMode
+
+  | _ ->
+    None
+
+let tokenAsPassBy (token: Token) =
+  match token with
+  | InToken ->
+    Some ByIn
+
+  | MoveToken ->
+    Some ByMove
+
   | RefToken ->
     Some ByRef
 
@@ -84,21 +104,37 @@ let nodeToFilterNode pred (node: NodeData) =
   )
   |> Seq.toList
 
-let lowerParam (node: NodeData) =
-  assert (node.Node = ParamNode)
+let lowerArg (node: NodeData) =
+  assert (node.Node = ArgNode)
 
-  let callBy =
+  let passBy =
     node
-    |> nodeToFirstToken (tokenAsCallBy >> Option.isSome)
-    |> Option.bind (fun token -> tokenAsCallBy token.Token)
-    |> Option.defaultValue ByMove
+    |> nodeToFirstToken (tokenAsPassBy >> Option.isSome)
+    |> Option.bind (fun token -> tokenAsPassBy token.Token)
+    |> Option.defaultValue ByIn
 
   let term =
     node
     |> nodeToFirstNode nodeIsTerm
     |> Option.map lowerTerm
 
-  AArg (callBy, term, node)
+  AArg (passBy, term, node)
+
+let lowerParam (node: NodeData) =
+  assert (node.Node = ParamNode)
+
+  let mode =
+    node
+    |> nodeToFirstToken (tokenAsMode >> Option.isSome)
+    |> Option.bind (fun token -> tokenAsMode token.Token)
+    |> Option.defaultValue ValMode
+
+  let name =
+    node
+    |> nodeToFirstNode ((=) NameNode)
+    |> Option.map lowerName
+
+  AParam (mode, name, node)
 
 let lowerLiteral (node: NodeData) =
   assert (node.Node = LiteralNode)
@@ -112,6 +148,7 @@ let lowerLiteral (node: NodeData) =
 
 let lowerName (node: NodeData) =
   assert (node.Node = NameNode)
+
   let ident =
     node
     |> nodeToFirstToken ((=) IdentToken)
@@ -154,8 +191,8 @@ let lowerCall (node: NodeData) =
 
   let args =
     node
-    |> nodeToFilterNode ((=) ParamNode)
-    |> List.map lowerParam
+    |> nodeToFilterNode ((=) ArgNode)
+    |> List.map lowerArg
 
   ACallTerm (cal, args, node)
 

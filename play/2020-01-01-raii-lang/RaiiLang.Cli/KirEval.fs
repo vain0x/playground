@@ -30,53 +30,57 @@ let keContextNew (): KirEvalContext =
     Output = StringBuilder()
   }
 
-let keDeref value =
-  match value with
-  | KRefValue r ->
-    !r |> keDeref
+let keDeref arg =
+  match arg with
+  | KRefValue arg ->
+    !arg |> keDeref
 
   | _ ->
-    value
+    arg
 
-let keArg (context: KirEvalContext) (KArg (callBy, arg)) =
+let keRef arg =
+  match arg with
+  | KRefValue arg ->
+    match !arg with
+    | KRefValue _ as arg ->
+      arg |> keRef
+
+    | _ ->
+      arg
+
+  | _ ->
+    ref arg
+
+let keArg (context: KirEvalContext) (KArg (passBy, arg)) =
   let arg = arg |> keNode context
 
-  match callBy, arg with
-  | ByMove, _ ->
-    arg |> keDeref |> ref
+  match passBy with
+  | ByMove ->
+    // FIXME: move out
+    arg |> keDeref
 
-  | ByRef, KRefValue r ->
-    r
-
-  | ByRef, _ ->
-    failwithf "expected a reference but %A" arg
+  | ByIn
+  | ByRef ->
+    arg
 
 let kePrim context prim args =
   match prim, args with
-  | KAddPrim, [first; second] ->
-    match !first, !second with
-    | KIntValue first, KIntValue second ->
-      first + second |> KIntValue |> ref
+  | KAddPrim, [KIntValue first; KIntValue second] ->
+    first + second |> KIntValue
 
-    | _ ->
-      failwith "(+) type error"
+  | KEqPrim, [KRefValue first; KRefValue second] ->
+    let value = if !first = !second then 1 else 0
 
-  | KEqPrim, [first; second] ->
-    let value =
-      if first = second || !first = !second then
-        1
-      else
-        0
+    value |> KIntValue
 
-    value |> KIntValue |> ref
+  | KAssignPrim, [KRefValue first; second] ->
+    first := second
+    KRefValue first
 
-  | KAssignPrim, [first; second] ->
-    first := !second
-    first
-
-  | KExternFnPrim "assert_eq", [first; second] ->
+  | KExternFnPrim "assert_eq", [KRefValue first; KRefValue second] ->
     context.Output.AppendFormat("assert_eq({0}, {1})\n", !first, !second) |> ignore
-    first
+
+    KRefValue first
 
   | _ ->
     failwithf "can't evaluate prim %A" (prim, args)
@@ -89,7 +93,7 @@ let keCall context onError cal args =
       let funEnv =
         Seq.zip paramList args
         |> Seq.fold (fun env (KParam (_, param), arg) ->
-          env |> Map.add param arg
+          env |> Map.add param (arg |> keRef)
         ) funEnv
 
       context.Env <- funEnv
@@ -104,10 +108,11 @@ let keCall context onError cal args =
   | false, _ ->
     onError ()
 
-let keNode context (node: KNode) =
+let keNode context (node: KNode): KValue =
   match node with
   | KInt text ->
-    text |> int |> KIntValue
+    // FIXME: in 1 を動作させるために参照を挟む。
+    text |> int |> KIntValue |> ref |> KRefValue
 
   | KName name ->
     match context.Env.TryGetValue(name) with
@@ -121,9 +126,14 @@ let keNode context (node: KNode) =
     let args = args |> List.map (keArg context)
 
     let value = kePrim context prim args
-    context.Env <- context.Env |> Map.add res value
+    context.Env <- context.Env |> Map.add res (ref value)
 
     next |> keNode context
+
+  | KApp (cal, args) ->
+    let args = args |> List.map (keArg context)
+
+    keCall context (fun () -> failwithf "can't call %s" cal) cal args
 
   | KFix (name, paramList, body, next) ->
     let r = KFunValue (paramList, body, context.Env) |> ref
@@ -132,12 +142,14 @@ let keNode context (node: KNode) =
 
     next |> keNode context
 
-  | KApp (cal, args) ->
-    let args = args |> List.map (keArg context)
-    keCall context (fun () -> failwithf "can't call %s" cal) cal args
-
 let rec kirEval (node: KNode) =
   let context = keContextNew ()
+
   node |> keNode context |> ignore
-  keCall context (fun () -> context.Output.Append("No main function.") |> ignore; KIntValue 0) "main" [ref KExitValue] |> ignore
+
+  keCall context (fun () ->
+    context.Output.Append("No main function.") |> ignore
+    KIntValue 0
+  ) "main" [KExitValue] |> ignore
+
   context.Output.ToString()

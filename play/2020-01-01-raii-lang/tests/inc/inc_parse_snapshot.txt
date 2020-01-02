@@ -10,7 +10,7 @@ N(SemiNode) [
       ]
       T(LeftParenToken) `(`
       N(ParamNode) [
-        T(RefToken) `ref`
+        T(InToken) `in`
         T(SpaceToken) ` `
         N(NameNode) [
           T(IdentToken) `actual`
@@ -19,7 +19,7 @@ N(SemiNode) [
       T(CommaToken) `,`
       T(SpaceToken) ` `
       N(ParamNode) [
-        T(RefToken) `ref`
+        T(InToken) `in`
         T(SpaceToken) ` `
         N(NameNode) [
           T(IdentToken) `expected`
@@ -124,14 +124,14 @@ N(SemiNode) [
                 T(IdentToken) `assert_eq`
               ]
               T(LeftParenToken) `(`
-              N(ParamNode) [
+              N(ArgNode) [
                 N(NameNode) [
                   T(IdentToken) `a`
                 ]
               ]
               T(CommaToken) `,`
               T(SpaceToken) ` `
-              N(ParamNode) [
+              N(ArgNode) [
                 N(LiteralNode) [
                   T(IntToken) `1`
                 ]
@@ -149,7 +149,7 @@ N(SemiNode) [
                 T(IdentToken) `inc`
               ]
               T(LeftParenToken) `(`
-              N(ParamNode) [
+              N(ArgNode) [
                 T(RefToken) `ref`
                 T(SpaceToken) ` `
                 N(NameNode) [
@@ -169,14 +169,14 @@ N(SemiNode) [
                 T(IdentToken) `assert_eq`
               ]
               T(LeftParenToken) `(`
-              N(ParamNode) [
+              N(ArgNode) [
                 N(NameNode) [
                   T(IdentToken) `a`
                 ]
               ]
               T(CommaToken) `,`
               T(SpaceToken) ` `
-              N(ParamNode) [
+              N(ArgNode) [
                 N(LiteralNode) [
                   T(IntToken) `2`
                 ]
@@ -194,7 +194,7 @@ N(SemiNode) [
                 T(IdentToken) `inc`
               ]
               T(LeftParenToken) `(`
-              N(ParamNode) [
+              N(ArgNode) [
                 T(RefToken) `ref`
                 T(SpaceToken) ` `
                 N(NameNode) [
@@ -214,14 +214,14 @@ N(SemiNode) [
                 T(IdentToken) `assert_eq`
               ]
               T(LeftParenToken) `(`
-              N(ParamNode) [
+              N(ArgNode) [
                 N(NameNode) [
                   T(IdentToken) `a`
                 ]
               ]
               T(CommaToken) `,`
               T(SpaceToken) ` `
-              N(ParamNode) [
+              N(ArgNode) [
                 N(LiteralNode) [
                   T(IntToken) `3`
                 ]

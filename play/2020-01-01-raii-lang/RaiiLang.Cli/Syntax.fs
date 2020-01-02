@@ -25,7 +25,10 @@ type Token =
   | AssertToken
   | ExternToken
   | FnToken
+  | InToken
   | LetToken
+  | MoveToken
+  | MutToken
   | RefToken
 
   // 記号類
@@ -58,7 +61,7 @@ type TokenFat =
   }
 
 type Node =
-  // 式
+  // 項
   | NameNode
   | LiteralNode
   | GroupNode
@@ -66,10 +69,13 @@ type Node =
   | CallNode
   | BinNode
 
+  // 引数
+  | ParamNode
+  | ArgNode
+
   // 文
   | ExprNode
   | LetNode
-  | ParamNode
   | ExternFnNode
   | FnNode
   | SemiNode
@@ -104,7 +110,12 @@ type AName =
 [<Struct>]
 type AArg =
   | AArg
-    of CallBy * ATerm option * NodeData
+    of PassBy * ATerm option * NodeData
+
+[<Struct>]
+type AParam =
+  | AParam
+    of Mode * AName option * NodeData
 
 type ATerm =
   | AIntLiteral
@@ -133,10 +144,10 @@ type AStmt =
     of ATerm option * ATerm option * NodeData
 
   | AExternFnStmt
-    of AName option * AArg list * NodeData
+    of AName option * AParam list * NodeData
 
   | AFnStmt
-    of AName option * AArg list * ATerm option * NodeData
+    of AName option * AParam list * ATerm option * NodeData
 
   | ASemiStmt
     of AStmt list * NodeData
@@ -146,6 +157,9 @@ let keywords =
     AssertToken, "assert"
     ExternToken, "extern"
     FnToken, "fn"
+    InToken, "in"
+    MoveToken, "move"
+    MutToken, "mut"
     LetToken, "let"
     RefToken, "ref"
   ]

@@ -16,17 +16,6 @@ let kgContextNew (): KirGenContext =
     FreshName = freshNameFun ()
   }
 
-let aBinToPrim bin =
-  match bin with
-  | AEqBin ->
-    KEqPrim, ByRef, ByRef
-
-  | AAddBin ->
-    KAddPrim, ByMove, ByMove
-
-  | AAssignBin ->
-    KAssignPrim, ByRef, ByMove
-
 let kgTerm (context: KirGenContext) exit term =
   match term with
   | AIntLiteral (Some intText, _) ->
@@ -53,10 +42,10 @@ let kgTerm (context: KirGenContext) exit term =
       | [] ->
         exit []
 
-      | AArg (callBy, Some arg, _) :: args ->
+      | AArg (passBy, Some arg, _) :: args ->
         arg |> kgTerm context (fun arg ->
           args |> go (fun args ->
-            KArg (callBy, arg) :: args |> exit
+            KArg (passBy, arg) :: args |> exit
           ))
 
       | _ :: args ->
@@ -66,23 +55,21 @@ let kgTerm (context: KirGenContext) exit term =
       let args = KArg (ByMove, KName ret) :: args
       KFix (
         ret,
-        [KParam (ByMove, res)],
+        [KParam (MutMode, res)],
         exit (KName res),
         KApp (funName, args)
       ))
 
   | ABinTerm (Some bin, Some first, Some second, _) ->
-    let prim, firstCallBy, secondCallBy = aBinToPrim bin
+    let prim = kPrimFromBin bin
     let name = prim |> kPrimToString
     let res = context.FreshName (sprintf "%s_res" name)
 
     first |> kgTerm context (fun first ->
       second |> kgTerm context (fun second ->
         let args =
-          [
-            KArg (firstCallBy, first)
-            KArg (secondCallBy, second)
-          ]
+          List.zip (kPrimToSig prim) [first; second]
+          |> List.map KArg
 
         KPrim (prim, args, res, exit (KName res))
       ))
@@ -101,14 +88,15 @@ let kgStmt context exit stmt =
     // 計算結果を引数に渡して next にジャンプする。
 
     let funName = context.FreshName (sprintf "%s_next" varName)
-    let callBy = ByMove // call-by を指定する構文がまだない
+    let mode = MutMode
+    let passBy = ByMove
 
     body |> kgTerm context (fun body ->
       KFix (
         funName,
-        [KParam (callBy, varName)],
+        [KParam (mode, varName)],
         (exit (KName varName)),
-        KApp (funName, [KArg (callBy, body)])
+        KApp (funName, [KArg (passBy, body)])
     ))
 
   | AExternFnStmt (Some (AName (Some funName, _)), args, _) ->
@@ -122,21 +110,21 @@ let kgStmt context exit stmt =
     let paramList =
       args |> List.choose (fun arg ->
         match arg with
-        | AArg (callBy, Some (ANameTerm (AName (Some name, _))), _) ->
-          KParam (callBy, context.FreshName name) |> Some
+        | AParam (mode, Some (AName (Some name, _)), _) ->
+          KParam (mode, context.FreshName name) |> Some
 
         | _ ->
           None
       )
 
     let args =
-      paramList |> List.map (fun (KParam (callBy, name)) ->
-        KArg (callBy, KName name)
+      paramList |> List.map (fun (KParam (mode, name)) ->
+        KArg (mode |> modeToPassBy, KName name)
       )
 
     KFix (
       funName,
-      (KParam (ByMove, ret)) :: paramList,
+      (KParam (MutMode, ret)) :: paramList,
       KPrim (
         KExternFnPrim funName,
         args,
@@ -159,7 +147,7 @@ let kgStmt context exit stmt =
     let args =
       args |> List.choose (fun arg ->
         match arg with
-        | AArg (callBy, Some (ANameTerm (AName (Some name, _))), _) ->
+        | AParam (callBy, Some (AName (Some name, _)), _) ->
           KParam (callBy, context.FreshName name) |> Some
 
         | _ ->
@@ -168,7 +156,7 @@ let kgStmt context exit stmt =
 
     KFix (
       funName,
-      (KParam (ByMove, ret)) :: args,
+      (KParam (MutMode, ret)) :: args,
       kgTerm
         context
         (fun res -> KApp (ret, [KArg (ByMove, res)]))

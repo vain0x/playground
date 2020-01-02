@@ -3,19 +3,11 @@ module rec RaiiLang.KirDump
 open RaiiLang.Helpers
 open RaiiLang.Kir
 
-let callByToString callBy =
-  match callBy with
-  | ByMove ->
-    "move"
-
-  | ByRef ->
-    "ref"
-
 let kdParam param _indent acc =
   match param with
-  | KParam (callBy, name) ->
+  | KParam (mode, name) ->
     acc
-    |> cons (callByToString callBy)
+    |> cons (modeToString mode)
     |> cons " "
     |> cons name
 
@@ -36,9 +28,9 @@ let kdParamList paramList indent acc =
 
 let kdArg arg indent acc =
   match arg with
-  | KArg (callBy, node) ->
+  | KArg (passBy, node) ->
     acc
-    |> cons (callByToString callBy)
+    |> cons (passByToString passBy)
     |> cons " "
     |> kdNode node indent
 

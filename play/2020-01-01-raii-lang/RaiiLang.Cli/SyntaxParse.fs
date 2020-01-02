@@ -34,8 +34,20 @@ let tokenIsAtomFirst token =
 let tokenIsTermFirst token =
   tokenIsAtomFirst token
 
+let tokenIsArgFirst token =
+  match token with
+  | InToken
+  | MoveToken
+  | RefToken ->
+    true
+
+  | _ ->
+    tokenIsTermFirst token
+
 let tokenIsParamFirst token =
   match token with
+  | InToken
+  | MutToken
   | RefToken ->
     true
 
@@ -105,8 +117,9 @@ let parseCallTerm (p: P) =
     p.StartNodeWithPrevious()
     p.Eat(LeftParenToken) |> is true
 
-    while p.Next |> tokenIsParamFirst do
-      parseParam p
+    while p.Next |> tokenIsParamFirst
+      || p.Next = CommaToken do
+      parseArg p
       p.Eat(CommaToken) |> ignore
 
     if p.Eat(RightParenToken) |> not then
@@ -144,10 +157,18 @@ let parseAssignTerm (p: P) =
 let parseTerm (p: P) =
   parseAssignTerm p
 
+let parseArg (p: P) =
+  p.StartNode()
+
+  (p.Eat(InToken) || p.Eat(MutToken) || p.Eat(RefToken)) |> ignore
+  parseTerm p
+
+  p.EndNode(ArgNode)
+
 let parseParam (p: P) =
   p.StartNode()
 
-  p.Eat(RefToken) |> ignore
+  (p.Eat(InToken) || p.Eat(MutToken) || p.Eat(RefToken)) |> ignore
   parseTerm p
 
   p.EndNode(ParamNode)
@@ -166,7 +187,8 @@ let parseFnHead (p: P) =
   if p.Eat(LeftParenToken) |> not then
     p.AddError(ExpectedError "左カッコ")
 
-  while p.Next |> tokenIsParamFirst do
+  while p.Next |> tokenIsParamFirst
+    || p.Next = CommentToken do
     parseParam p
     p.Eat(CommaToken) |> ignore
 
