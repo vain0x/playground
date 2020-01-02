@@ -14,6 +14,7 @@
     <Compile Include="SyntaxParse.fs" />
     <Compile Include="SyntaxLower.fs" />
     <Compile Include="Kir.fs" />
+    <Compile Include="KirDump.fs" />
     <Compile Include="KirEval.fs" />
     <Compile Include="KirGen.fs" />
     <Compile Include="Program.fs" />

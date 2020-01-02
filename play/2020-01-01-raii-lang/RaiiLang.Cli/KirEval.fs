@@ -51,6 +51,36 @@ let keArg (context: KirEvalContext) (KArg (callBy, arg)) =
   | ByRef, _ ->
     failwithf "expected a reference but %A" arg
 
+let kePrim context prim args =
+  match prim, args with
+  | KAddPrim, [first; second] ->
+    match !first, !second with
+    | KIntValue first, KIntValue second ->
+      first + second |> KIntValue |> ref
+
+    | _ ->
+      failwith "(+) type error"
+
+  | KEqPrim, [first; second] ->
+    let value =
+      if first = second || !first = !second then
+        1
+      else
+        0
+
+    value |> KIntValue |> ref
+
+  | KAssignPrim, [first; second] ->
+    first := !second
+    first
+
+  | KExternFnPrim "assert_eq", [first; second] ->
+    context.Output.AppendFormat("assert_eq({0}, {1})\n", !first, !second) |> ignore
+    first
+
+  | _ ->
+    failwithf "can't evaluate prim %A" (prim, args)
+
 let keCall context onError cal args =
   match context.Env.TryGetValue(cal) with
   | true, r ->
@@ -87,46 +117,12 @@ let keNode context (node: KNode) =
     | false, _ ->
       failwithf "name '%s' not found" name
 
-  | KPrim (prim, [first; second], result, next) ->
-    let first = first |> keNode context
-    let second = second |> keNode context
+  | KPrim (prim, args, res, next) ->
+    let args = args |> List.map (keArg context)
 
-    let value =
-      match prim with
-      | KAddPrim ->
-        match keDeref first, keDeref second with
-        | KIntValue first, KIntValue second ->
-          first + second |> KIntValue
+    let value = kePrim context prim args
+    context.Env <- context.Env |> Map.add res value
 
-        | _ ->
-          failwith "(+) type error"
-
-      | KEqPrim ->
-        let value =
-          if keDeref first = keDeref second then
-            1
-          else
-            0
-
-        KIntValue value
-
-      | KAssignPrim ->
-        match first with
-        | KRefValue r ->
-          r := keDeref second
-
-        | _ ->
-          failwith "(=) expected reference"
-
-        first
-
-      | KAssertEqPrim ->
-        let first = first |> keDeref
-        let second = second |> keDeref
-        context.Output.AppendFormat("assert_eq({0}, {1})\n", first, second) |> ignore
-        second
-
-    context.Env <- context.Env |> Map.add result (ref value)
     next |> keNode context
 
   | KFix (name, paramList, body, next) ->
@@ -139,9 +135,6 @@ let keNode context (node: KNode) =
   | KApp (cal, args) ->
     let args = args |> List.map (keArg context)
     keCall context (fun () -> failwithf "can't call %s" cal) cal args
-
-  | _ ->
-    failwithf "can't evaluate %A" node
 
 let rec kirEval (node: KNode) =
   let context = keContextNew ()

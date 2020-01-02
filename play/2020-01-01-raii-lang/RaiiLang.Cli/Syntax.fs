@@ -23,11 +23,13 @@ type Token =
   // キーワード類
   | IdentToken
   | AssertToken
+  | ExternToken
   | FnToken
   | LetToken
   | RefToken
 
   // 記号類
+  | CommaToken
   | EqualEqualToken
   | EqualToken
   | LeftBraceToken
@@ -56,15 +58,19 @@ type TokenFat =
   }
 
 type Node =
+  // 式
   | NameNode
   | LiteralNode
   | GroupNode
   | BlockNode
   | CallNode
   | BinNode
+
+  // 文
   | ExprNode
   | LetNode
   | ParamNode
+  | ExternFnNode
   | FnNode
   | SemiNode
 
@@ -126,6 +132,9 @@ type AStmt =
   | ALetStmt
     of ATerm option * ATerm option * NodeData
 
+  | AExternFnStmt
+    of AName option * AArg list * NodeData
+
   | AFnStmt
     of AName option * AArg list * ATerm option * NodeData
 
@@ -135,6 +144,7 @@ type AStmt =
 let keywords =
   [
     AssertToken, "assert"
+    ExternToken, "extern"
     FnToken, "fn"
     LetToken, "let"
     RefToken, "ref"
@@ -142,6 +152,7 @@ let keywords =
 
 let punctuations =
   [
+    CommaToken, ","
     EqualEqualToken, "=="
     EqualToken, "="
     LeftBraceToken, "{"

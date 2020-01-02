@@ -16,16 +16,16 @@ let kgContextNew (): KirGenContext =
     FreshName = freshNameFun ()
   }
 
-let binToPrim bin =
+let aBinToPrim bin =
   match bin with
   | AEqBin ->
-    KEqPrim
+    KEqPrim, ByRef, ByRef
 
   | AAddBin ->
-    KAddPrim
+    KAddPrim, ByMove, ByMove
 
   | AAssignBin ->
-    KAssignPrim
+    KAssignPrim, ByRef, ByMove
 
 let kgTerm (context: KirGenContext) exit term =
   match term with
@@ -41,55 +41,51 @@ let kgTerm (context: KirGenContext) exit term =
   | ABlockTerm (stmts, _) ->
     kgStmts context exit stmts
 
-  | ACallTerm (Some (ANameTerm (AName (Some "assert", _))), [AArg (_, Some arg, _)], _) ->
-    match arg with
-    | ABinTerm (Some AEqBin, Some first, Some second, _) ->
-      // assert(first == second) ==> assert_eq(first, second)
-      let res = context.FreshName "assert_eq_res"
-      first |> kgTerm context (fun first ->
-        second |> kgTerm context (fun second ->
-          KPrim (KAssertEqPrim, [first; second], res, exit (KName res))
-        ))
-
-    | _ ->
-      // assert(cond) ==> assert_eq(cond, true)
-      let res = context.FreshName "assert_res"
-      arg |> kgTerm context (fun arg ->
-        let trueTerm = KInt "1"
-        KPrim (KAssertEqPrim, [arg; trueTerm], res, exit (KName res))
-      )
-
-  | ACallTerm (Some (ANameTerm (AName (Some funName, _))), [AArg (callBy, Some arg, _)], _) ->
-    // 各引数を評価する。
+  | ACallTerm (Some (ANameTerm (AName (Some funName, _))), args, _) ->
     // 関数から戻ってきた後の計算を中間関数 ret と定める。
     // ret を追加の引数として渡して、関数にジャンプする。
-    let ret = context.FreshName (sprintf "%s_ret" funName)
-    let res = context.FreshName (sprintf "%s_res" funName)
 
-    arg |> kgTerm context (fun arg ->
+    let res = context.FreshName (sprintf "%s_res" funName)
+    let ret = context.FreshName (sprintf "%s_ret" funName)
+
+    let rec go exit args =
+      match args with
+      | [] ->
+        exit []
+
+      | AArg (callBy, Some arg, _) :: args ->
+        arg |> kgTerm context (fun arg ->
+          args |> go (fun args ->
+            KArg (callBy, arg) :: args |> exit
+          ))
+
+      | _ :: args ->
+        go exit args
+
+    args |> go (fun args ->
+      let args = KArg (ByMove, KName ret) :: args
       KFix (
-        ret, [KParam (callBy, res)], exit (KName res),
-        KApp (
-          funName,
-          [
-            KArg (ByMove, KName ret)
-            KArg (callBy, arg)
-          ])
+        ret,
+        [KParam (ByMove, res)],
+        exit (KName res),
+        KApp (funName, args)
       ))
 
   | ABinTerm (Some bin, Some first, Some second, _) ->
-    // 演算結果を中間変数 res に束縛して、継続に中間変数を渡す。
-    let prim = binToPrim bin
-    let res = context.FreshName (string prim)
+    let prim, firstCallBy, secondCallBy = aBinToPrim bin
+    let name = prim |> kPrimToString
+    let res = context.FreshName (sprintf "%s_res" name)
 
     first |> kgTerm context (fun first ->
       second |> kgTerm context (fun second ->
-        KPrim (
-          prim,
-          [first; second],
-          res,
-          exit (KName res)
-        )))
+        let args =
+          [
+            KArg (firstCallBy, first)
+            KArg (secondCallBy, second)
+          ]
+
+        KPrim (prim, args, res, exit (KName res))
+      ))
 
   | _ ->
     failwithf "unimpl %A" term
@@ -115,6 +111,43 @@ let kgStmt context exit stmt =
         KApp (funName, [KArg (callBy, body)])
     ))
 
+  | AExternFnStmt (Some (AName (Some funName, _)), args, _) ->
+    // extern fn f(params);
+    // ==> fn f(params) { extern_fn"f"(params) }
+    // ==> fix f(ret, params) { let res = extern_fn"f"(params); ret(res) }
+
+    let res = context.FreshName (sprintf "%s_res" funName)
+    let ret = context.FreshName (sprintf "%s_ret" funName)
+
+    let paramList =
+      args |> List.choose (fun arg ->
+        match arg with
+        | AArg (callBy, Some (ANameTerm (AName (Some name, _))), _) ->
+          KParam (callBy, context.FreshName name) |> Some
+
+        | _ ->
+          None
+      )
+
+    let args =
+      paramList |> List.map (fun (KParam (callBy, name)) ->
+        KArg (callBy, KName name)
+      )
+
+    KFix (
+      funName,
+      (KParam (ByMove, ret)) :: paramList,
+      KPrim (
+        KExternFnPrim funName,
+        args,
+        res,
+        KApp (
+          ret,
+          [KArg (ByMove, KName res)]
+        )),
+      exit unitNode
+    )
+
   | AFnStmt (Some (AName (Some funName, _)), args, Some body, _) ->
     // 関数を fix で定義して、後続の計算を行う。
 
@@ -128,6 +161,7 @@ let kgStmt context exit stmt =
         match arg with
         | AArg (callBy, Some (ANameTerm (AName (Some name, _))), _) ->
           KParam (callBy, context.FreshName name) |> Some
+
         | _ ->
           None
       )

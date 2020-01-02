@@ -1,12 +1,14 @@
+extern fn assert_eq(ref actual, ref expected);
+
 fn inc(ref x) {
     x = x + 1;
 }
 
 fn main() {
     let a = 1;
-    assert(a == 1);
+    assert_eq(a, 1);
     inc(ref a);
-    assert(a == 2);
+    assert_eq(a, 2);
     inc(ref a);
-    assert(a == 3);
+    assert_eq(a, 3);
 }

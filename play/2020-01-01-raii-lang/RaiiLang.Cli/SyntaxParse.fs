@@ -11,6 +11,7 @@ let inline is actual expected =
 
 let tokenIsStmtKeyword token =
   match token with
+  | ExternToken
   | LetToken
   | FnToken ->
     true
@@ -35,12 +36,11 @@ let tokenIsTermFirst token =
 
 let tokenIsParamFirst token =
   match token with
-  | IdentToken
   | RefToken ->
     true
 
   | _ ->
-    false
+    tokenIsTermFirst token
 
 let tokenIsStmtFirst token =
   tokenIsStmtKeyword token
@@ -107,6 +107,7 @@ let parseCallTerm (p: P) =
 
     while p.Next |> tokenIsParamFirst do
       parseParam p
+      p.Eat(CommaToken) |> ignore
 
     if p.Eat(RightParenToken) |> not then
       p.AddError(ExpectedError "右カッコ")
@@ -151,6 +152,27 @@ let parseParam (p: P) =
 
   p.EndNode(ParamNode)
 
+// `fn name(param*)`
+let parseFnHead (p: P) =
+  if p.Eat(FnToken) |> not then
+    p.AddError(ExpectedError "fn")
+
+  if p.Next = IdentToken then
+    parseNameTerm p
+  else
+    p.AddError(ExpectedError "関数名")
+
+  // 引数リスト
+  if p.Eat(LeftParenToken) |> not then
+    p.AddError(ExpectedError "左カッコ")
+
+  while p.Next |> tokenIsParamFirst do
+    parseParam p
+    p.Eat(CommaToken) |> ignore
+
+  if p.Eat(RightParenToken) |> not then
+    p.AddError(ExpectedError "右カッコ")
+
 let parseStmt (p: P) =
   match p.Next with
   | LetToken ->
@@ -173,24 +195,18 @@ let parseStmt (p: P) =
     p.Eat(SemiToken) |> ignore
     p.EndNode(LetNode)
 
+  | ExternToken ->
+    p.StartNode()
+
+    p.Eat(ExternToken) |> is true
+    parseFnHead p
+    p.Eat(SemiToken) |> ignore
+
+    p.EndNode(ExternFnNode)
+
   | FnToken ->
     p.StartNode()
-    p.Eat(FnToken) |> is true
-
-    if p.Next = IdentToken then
-      parseNameTerm p
-    else
-      p.AddError(ExpectedError "関数名")
-
-    // 引数リスト
-    if p.Eat(LeftParenToken) |> not then
-      p.AddError(ExpectedError "左カッコ")
-
-    if p.Next |> tokenIsParamFirst then
-      parseParam p
-
-    if p.Eat(RightParenToken) |> not then
-      p.AddError(ExpectedError "右カッコ")
+    parseFnHead p
 
     // 本体
     if p.Next = LeftBraceToken then

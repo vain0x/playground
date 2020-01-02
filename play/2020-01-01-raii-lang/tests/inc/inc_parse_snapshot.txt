@@ -1,6 +1,38 @@
 N(SemiNode) [
   N(SemiNode) [
+    N(ExternFnNode) [
+      T(ExternToken) `extern`
+      T(SpaceToken) ` `
+      T(FnToken) `fn`
+      T(SpaceToken) ` `
+      N(NameNode) [
+        T(IdentToken) `assert_eq`
+      ]
+      T(LeftParenToken) `(`
+      N(ParamNode) [
+        T(RefToken) `ref`
+        T(SpaceToken) ` `
+        N(NameNode) [
+          T(IdentToken) `actual`
+        ]
+      ]
+      T(CommaToken) `,`
+      T(SpaceToken) ` `
+      N(ParamNode) [
+        T(RefToken) `ref`
+        T(SpaceToken) ` `
+        N(NameNode) [
+          T(IdentToken) `expected`
+        ]
+      ]
+      T(RightParenToken) `)`
+      T(SemiToken) `;`
+    ]
     N(FnNode) [
+      T(EolToken) `
+`
+      T(EolToken) `
+`
       T(FnToken) `fn`
       T(SpaceToken) ` `
       N(NameNode) [
@@ -89,20 +121,19 @@ N(SemiNode) [
                 T(EolToken) `
 `
                 T(SpaceToken) `    `
-                T(AssertToken) `assert`
+                T(IdentToken) `assert_eq`
               ]
               T(LeftParenToken) `(`
               N(ParamNode) [
-                N(BinNode) [
-                  N(NameNode) [
-                    T(IdentToken) `a`
-                    T(SpaceToken) ` `
-                  ]
-                  T(EqualEqualToken) `==`
-                  T(SpaceToken) ` `
-                  N(LiteralNode) [
-                    T(IntToken) `1`
-                  ]
+                N(NameNode) [
+                  T(IdentToken) `a`
+                ]
+              ]
+              T(CommaToken) `,`
+              T(SpaceToken) ` `
+              N(ParamNode) [
+                N(LiteralNode) [
+                  T(IntToken) `1`
                 ]
               ]
               T(RightParenToken) `)`
@@ -135,20 +166,19 @@ N(SemiNode) [
                 T(EolToken) `
 `
                 T(SpaceToken) `    `
-                T(AssertToken) `assert`
+                T(IdentToken) `assert_eq`
               ]
               T(LeftParenToken) `(`
               N(ParamNode) [
-                N(BinNode) [
-                  N(NameNode) [
-                    T(IdentToken) `a`
-                    T(SpaceToken) ` `
-                  ]
-                  T(EqualEqualToken) `==`
-                  T(SpaceToken) ` `
-                  N(LiteralNode) [
-                    T(IntToken) `2`
-                  ]
+                N(NameNode) [
+                  T(IdentToken) `a`
+                ]
+              ]
+              T(CommaToken) `,`
+              T(SpaceToken) ` `
+              N(ParamNode) [
+                N(LiteralNode) [
+                  T(IntToken) `2`
                 ]
               ]
               T(RightParenToken) `)`
@@ -181,20 +211,19 @@ N(SemiNode) [
                 T(EolToken) `
 `
                 T(SpaceToken) `    `
-                T(AssertToken) `assert`
+                T(IdentToken) `assert_eq`
               ]
               T(LeftParenToken) `(`
               N(ParamNode) [
-                N(BinNode) [
-                  N(NameNode) [
-                    T(IdentToken) `a`
-                    T(SpaceToken) ` `
-                  ]
-                  T(EqualEqualToken) `==`
-                  T(SpaceToken) ` `
-                  N(LiteralNode) [
-                    T(IntToken) `3`
-                  ]
+                N(NameNode) [
+                  T(IdentToken) `a`
+                ]
+              ]
+              T(CommaToken) `,`
+              T(SpaceToken) ` `
+              N(ParamNode) [
+                N(LiteralNode) [
+                  T(IntToken) `3`
                 ]
               ]
               T(RightParenToken) `)`

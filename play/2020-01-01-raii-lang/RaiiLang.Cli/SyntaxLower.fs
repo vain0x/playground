@@ -45,6 +45,7 @@ let nodeIsStmt (node: Node) =
   match node with
   | ExprNode
   | LetNode
+  | ExternFnNode
   | FnNode
   | SemiNode ->
     true
@@ -225,6 +226,19 @@ let lowerStmt (node: NodeData) =
     let second = terms |> List.tryItem 1
 
     ALetStmt (first, second, node)
+
+  | ExternFnNode ->
+    let name =
+      node
+      |> nodeToFirstNode ((=) NameNode)
+      |> Option.map lowerName
+
+    let args =
+      node
+      |> nodeToFilterNode ((=) ParamNode)
+      |> List.map lowerParam
+
+    AExternFnStmt (name, args, node)
 
   | FnNode ->
     let name =

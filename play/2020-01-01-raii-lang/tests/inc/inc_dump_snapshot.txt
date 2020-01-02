@@ -1,0 +1,67 @@
+fix assert_eq(move assert_eq_ret, ref actual, ref expected) {
+  let assert_eq_res = extern_assert_eq(
+    ref actual
+    ref expected
+  )
+  assert_eq_ret(move assert_eq_res)
+}
+
+fix inc(move inc_ret, ref x) {
+  let prim_add_res = prim_add(
+    move x
+    move 1
+  )
+  let prim_assign_res = prim_assign(
+    ref x
+    move prim_add_res
+  )
+  inc_ret(move prim_assign_res)
+}
+
+fix main(move main_ret) {
+  fix a_next(move a) {
+    fix assert_eq_ret_2(move assert_eq_res_2) {
+      fix inc_ret_2(move inc_res) {
+        fix assert_eq_ret_3(move assert_eq_res_3) {
+          fix inc_ret_3(move inc_res_2) {
+            fix assert_eq_ret_4(move assert_eq_res_4) {
+              main_ret(move assert_eq_res_4)
+            }
+
+            assert_eq(
+              move assert_eq_ret_4
+              move a
+              move 3
+            )
+          }
+
+          inc(
+            move inc_ret_3
+            ref a
+          )
+        }
+
+        assert_eq(
+          move assert_eq_ret_3
+          move a
+          move 2
+        )
+      }
+
+      inc(
+        move inc_ret_2
+        ref a
+      )
+    }
+
+    assert_eq(
+      move assert_eq_ret_2
+      move a
+      move 1
+    )
+  }
+
+  a_next(move 1)
+}
+
+0

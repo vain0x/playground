@@ -12,7 +12,8 @@ type KPrim =
   | KEqPrim
   | KAddPrim
   | KAssignPrim
-  | KAssertEqPrim
+  | KExternFnPrim
+    of string
 
 [<Struct>]
 type KParam =
@@ -28,14 +29,14 @@ type KNode =
   | KInt
     of intText:string
 
-  | KName
-    of name:string
-
   | KPrim
     of prim:KPrim
-      * args:KNode list
+      * args:KArg list
       * result:string
       * next:KNode
+
+  | KName
+    of name:string
 
   | KApp
     of cal:string
@@ -46,3 +47,17 @@ type KNode =
       * paramList:KParam list
       * body:KNode
       * next:KNode
+
+let kPrimToString prim =
+  match prim with
+  | KEqPrim ->
+    "prim_eq"
+
+  | KAddPrim ->
+    "prim_add"
+
+  | KAssignPrim ->
+    "prim_assign"
+
+  | KExternFnPrim name ->
+    sprintf "extern_%s" name

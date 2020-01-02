@@ -2,8 +2,9 @@ module Tests
 
 open System
 open System.IO
-open RaiiLang.KirGen
+open RaiiLang.KirDump
 open RaiiLang.KirEval
+open RaiiLang.KirGen
 open RaiiLang.SyntaxLower
 open RaiiLang.SyntaxParse
 open RaiiLang.SyntaxTokenize
@@ -49,6 +50,7 @@ let snapshotTest (name: string) =
   |> tee "parse" ".txt" nodeToSnapshot
   |> lower
   |> kirGen
+  |> tee "dump" ".txt" kirDump
   |> tee "eval" ".txt" kirEval
   |> ignore
 
