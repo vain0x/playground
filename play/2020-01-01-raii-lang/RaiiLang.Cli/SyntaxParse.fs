@@ -176,7 +176,7 @@ let parseTerm (p: P) =
 let parseArg (p: P) =
   p.StartNode()
 
-  (p.Eat(InToken) || p.Eat(MutToken) || p.Eat(RefToken)) |> ignore
+  (p.Eat(InToken) || p.Eat(MoveToken) || p.Eat(RefToken)) |> ignore
   parseTerm p
 
   p.EndNode(ArgNode)

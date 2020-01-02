@@ -19,6 +19,27 @@ N(SemiNode) [
       T(RightParenToken) `)`
       T(SemiToken) `;`
     ]
+    N(ExternFnNode) [
+      T(EolToken) `
+`
+      T(ExternToken) `extern`
+      T(SpaceToken) ` `
+      T(FnToken) `fn`
+      T(SpaceToken) ` `
+      N(NameNode) [
+        T(IdentToken) `string_clone`
+      ]
+      T(LeftParenToken) `(`
+      N(ParamNode) [
+        T(InToken) `in`
+        T(SpaceToken) ` `
+        N(NameNode) [
+          T(IdentToken) `s`
+        ]
+      ]
+      T(RightParenToken) `)`
+      T(SemiToken) `;`
+    ]
     N(FnNode) [
       T(EolToken) `
 `
@@ -50,10 +71,21 @@ N(SemiNode) [
             T(EqualToken) `=`
             T(SpaceToken) ` `
             N(ArgNode) [
-              N(StrLiteralNode) [
-                T(StrStartToken) `"`
-                T(StrVerbatimToken) `hello`
-                T(StrEndToken) `"`
+              T(MoveToken) `move`
+              T(SpaceToken) ` `
+              N(CallNode) [
+                N(NameNode) [
+                  T(IdentToken) `string_clone`
+                ]
+                T(LeftParenToken) `(`
+                N(ArgNode) [
+                  N(StrLiteralNode) [
+                    T(StrStartToken) `"`
+                    T(StrVerbatimToken) `hello`
+                    T(StrEndToken) `"`
+                  ]
+                ]
+                T(RightParenToken) `)`
               ]
             ]
             T(SemiToken) `;`
@@ -79,6 +111,10 @@ N(SemiNode) [
             T(SemiToken) `;`
           ]
         ]
+        T(EolToken) `
+`
+        T(SpaceToken) `    `
+        T(CommentToken) `// drop(ref s);`
         T(EolToken) `
 `
         T(RightBraceToken) `}`

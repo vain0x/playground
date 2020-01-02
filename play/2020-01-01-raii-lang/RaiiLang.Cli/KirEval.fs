@@ -96,6 +96,9 @@ let kePrim context prim args =
 
     unitValue
 
+  | KExternFnPrim "string_clone", [KRefValue first] ->
+    !first
+
   | _ ->
     failwithf "can't evaluate prim %A" (prim, args)
 

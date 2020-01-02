@@ -1,6 +1,8 @@
 extern fn print(in s);
+extern fn string_clone(in s);
 
 fn main() {
-    let s = "hello";
+    let s = move string_clone("hello");
     print(in s);
+    // drop(ref s);
 }

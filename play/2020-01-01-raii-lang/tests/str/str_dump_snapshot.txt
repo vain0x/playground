@@ -3,19 +3,31 @@ fix print(mut print_ret, in s) {
   print_ret(move print_res)
 }
 
+fix string_clone(mut string_clone_ret, in s_2) {
+  let string_clone_res = extern_string_clone(in s_2)
+  string_clone_ret(move string_clone_res)
+}
+
 fix main(mut main_ret) {
-  fix s_next(val s) {
-    fix print_ret_2(mut print_res_2) {
-      main_ret(move print_res_2)
+  fix string_clone_ret_2(mut string_clone_res_2) {
+    fix s_next(val s) {
+      fix print_ret_2(mut print_res_2) {
+        main_ret(move print_res_2)
+      }
+
+      print(
+        move print_ret_2
+        in s
+      )
     }
 
-    print(
-      move print_ret_2
-      in s
-    )
+    s_next(move string_clone_res_2)
   }
 
-  s_next(in "hello")
+  string_clone(
+    move string_clone_ret_2
+    in "hello"
+  )
 }
 
 0
