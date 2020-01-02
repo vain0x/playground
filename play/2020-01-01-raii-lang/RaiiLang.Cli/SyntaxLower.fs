@@ -261,8 +261,8 @@ let lowerStmt (node: NodeData) =
 
     let second =
       node
-      |> nodeToFirstNode nodeIsTerm
-      |> Option.map lowerTerm
+      |> nodeToFirstNode ((=) ArgNode)
+      |> Option.map lowerArg
 
     ALetStmt (first, second, node)
 

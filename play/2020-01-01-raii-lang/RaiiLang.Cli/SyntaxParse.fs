@@ -209,8 +209,8 @@ let parseStmt (p: P) =
     if p.Eat(EqualToken) |> not then
       p.AddError(ExpectedError "=")
 
-    if p.Next |> tokenIsTermFirst then
-      parseTerm p
+    if p.Next |> tokenIsArgFirst then
+      parseArg p
     else
       p.AddError(ExpectedError "式")
 

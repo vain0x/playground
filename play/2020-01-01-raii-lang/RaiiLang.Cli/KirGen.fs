@@ -82,13 +82,17 @@ let kgStmt context exit stmt =
   | ATermStmt (Some term, _) ->
     kgTerm context exit term
 
-  | ALetStmt (Some (AParam (mode, Some (AName (Some varName, _)), _)), Some body, _) ->
+  | ALetStmt
+      (
+        Some (AParam (mode, Some (AName (Some varName, _)), _)),
+        Some (AArg (passBy, Some body, _)),
+        _
+      ) ->
     // 右辺を計算する。
     // 後続の計算を行う中間関数 next を定義する。
     // 計算結果を引数に渡して next にジャンプする。
 
     let funName = context.FreshName (sprintf "%s_next" varName)
-    let passBy = ByMove
 
     body |> kgTerm context (fun body ->
       KFix (

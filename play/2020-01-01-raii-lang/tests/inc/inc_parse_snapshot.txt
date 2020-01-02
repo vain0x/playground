@@ -114,8 +114,10 @@ N(SemiNode) [
             ]
             T(EqualToken) `=`
             T(SpaceToken) ` `
-            N(LiteralNode) [
-              T(IntToken) `1`
+            N(ArgNode) [
+              N(LiteralNode) [
+                T(IntToken) `1`
+              ]
             ]
             T(SemiToken) `;`
           ]

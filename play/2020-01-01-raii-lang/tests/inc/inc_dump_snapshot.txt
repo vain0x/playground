@@ -61,7 +61,7 @@ fix main(mut main_ret) {
     )
   }
 
-  a_next(move 1)
+  a_next(in 1)
 }
 
 0
