@@ -141,7 +141,7 @@ type AStmt =
     of ATerm option * NodeData
 
   | ALetStmt
-    of ATerm option * ATerm option * NodeData
+    of AParam option * ATerm option * NodeData
 
   | AExternFnStmt
     of AName option * AParam list * NodeData

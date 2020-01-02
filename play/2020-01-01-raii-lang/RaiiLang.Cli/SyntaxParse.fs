@@ -169,7 +169,7 @@ let parseParam (p: P) =
   p.StartNode()
 
   (p.Eat(InToken) || p.Eat(MutToken) || p.Eat(RefToken)) |> ignore
-  parseTerm p
+  parseCallTerm p
 
   p.EndNode(ParamNode)
 
@@ -201,10 +201,10 @@ let parseStmt (p: P) =
     p.StartNode()
     p.Eat(LetToken) |> is true
 
-    if p.Next = IdentToken then
-      parseAtomTerm p
+    if p.Next |> tokenIsParamFirst then
+      parseParam p
     else
-      p.AddError(ExpectedError "変数名")
+      p.AddError(ExpectedError "変数")
 
     if p.Eat(EqualToken) |> not then
       p.AddError(ExpectedError "=")

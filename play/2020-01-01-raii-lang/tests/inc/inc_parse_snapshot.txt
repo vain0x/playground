@@ -104,9 +104,13 @@ N(SemiNode) [
             T(SpaceToken) `    `
             T(LetToken) `let`
             T(SpaceToken) ` `
-            N(NameNode) [
-              T(IdentToken) `a`
+            N(ParamNode) [
+              T(MutToken) `mut`
               T(SpaceToken) ` `
+              N(NameNode) [
+                T(IdentToken) `a`
+                T(SpaceToken) ` `
+              ]
             ]
             T(EqualToken) `=`
             T(SpaceToken) ` `

@@ -34,7 +34,7 @@
 
     write_line("hello");
 
-    fn assign(x ref, y) {
+    fn assign(ref x: string, y: string) {
         x = y;
     }
 

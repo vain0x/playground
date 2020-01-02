@@ -5,7 +5,7 @@ fn inc(ref x) {
 }
 
 fn main() {
-    let a = 1;
+    let mut a = 1;
     assert_eq(a, 1);
     inc(ref a);
     assert_eq(a, 2);

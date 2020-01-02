@@ -254,13 +254,15 @@ let lowerStmt (node: NodeData) =
     ATermStmt (term, node)
 
   | LetNode ->
-    let terms =
+    let first =
       node
-      |> nodeToFilterNode nodeIsTerm
-      |> List.map lowerTerm
+      |> nodeToFirstNode ((=) ParamNode)
+      |> Option.map lowerParam
 
-    let first = terms |> List.tryItem 0
-    let second = terms |> List.tryItem 1
+    let second =
+      node
+      |> nodeToFirstNode nodeIsTerm
+      |> Option.map lowerTerm
 
     ALetStmt (first, second, node)
 
