@@ -1,0 +1,6 @@
+extern fn print(in s);
+
+fn main() {
+    let s = "hello";
+    print(in s);
+}

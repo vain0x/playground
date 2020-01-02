@@ -6,9 +6,6 @@ open RaiiLang.SyntaxParseContext
 
 type P = ParseContext
 
-let inline is actual expected =
-  assert (actual = expected)
-
 let tokenIsStmtKeyword token =
   match token with
   | ExternToken
@@ -22,6 +19,7 @@ let tokenIsStmtKeyword token =
 let tokenIsAtomFirst token =
   match token with
   | IntToken
+  | StrStartToken
   | IdentToken
   | AssertToken
   | LeftParenToken
@@ -58,10 +56,25 @@ let tokenIsStmtFirst token =
   tokenIsStmtKeyword token
   || tokenIsTermFirst token
 
-let parseLiteralTerm (p: P) =
+let parseIntLiteralTerm (p: P) =
+  assert (p.Next = IntToken)
+
   p.StartNode()
-  p.Eat(IntToken) |> is true
-  p.EndNode(LiteralNode)
+  p.Bump()
+  p.EndNode(IntLiteralNode)
+
+let parseStrLiteralTerm (p: P) =
+  assert (p.Next = StrStartToken)
+
+  p.StartNode()
+  p.Bump()
+
+  while p.Eat(StrVerbatimToken) do
+    ()
+
+  p.Eat(StrEndToken) |> is true
+
+  p.EndNode(StrLiteralNode)
 
 let parseNameTerm (p: P) =
   p.StartNode()
@@ -95,7 +108,10 @@ let parseBlockTerm (p: P) =
 let parseAtomTerm (p: P) =
   match p.Next with
   | IntToken ->
-    parseLiteralTerm p
+    parseIntLiteralTerm p
+
+  | StrStartToken ->
+    parseStrLiteralTerm p
 
   | IdentToken
   | AssertToken ->

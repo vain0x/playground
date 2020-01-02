@@ -1,0 +1,21 @@
+fix print(mut print_ret, in s) {
+  let print_res = extern_print(in s)
+  print_ret(move print_res)
+}
+
+fix main(mut main_ret) {
+  fix s_next(val s) {
+    fix print_ret_2(mut print_res_2) {
+      main_ret(move print_res_2)
+    }
+
+    print(
+      move print_ret_2
+      in s
+    )
+  }
+
+  s_next(in "hello")
+}
+
+0

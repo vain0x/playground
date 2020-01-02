@@ -20,6 +20,10 @@ type Token =
 
   | IntToken
 
+  | StrStartToken
+  | StrVerbatimToken
+  | StrEndToken
+
   // キーワード類
   | IdentToken
   | AssertToken
@@ -63,7 +67,8 @@ type TokenFat =
 type Node =
   // 項
   | NameNode
-  | LiteralNode
+  | IntLiteralNode
+  | StrLiteralNode
   | GroupNode
   | BlockNode
   | CallNode
@@ -120,6 +125,9 @@ type AParam =
 type ATerm =
   | AIntLiteral
     of text:string option * NodeData
+
+  | AStrLiteral
+    of StrSegment list * NodeData
 
   | ANameTerm
     of AName

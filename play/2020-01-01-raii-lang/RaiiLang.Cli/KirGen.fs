@@ -21,6 +21,9 @@ let kgTerm (context: KirGenContext) exit term =
   | AIntLiteral (Some intText, _) ->
     KInt intText |> exit
 
+  | AStrLiteral (segments, _) ->
+    KStr segments |> exit
+
   | ANameTerm (AName (Some name, _)) ->
     KName name |> exit
 

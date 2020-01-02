@@ -63,6 +63,18 @@ let kdNode node indent acc =
   | KInt intText ->
     acc |> cons intText
 
+  | KStr segments ->
+    let acc = acc |> cons "\""
+
+    let acc =
+      segments |> List.fold (fun acc segment ->
+        match segment with
+        | StrVerbatim text ->
+          acc |> cons text
+      ) acc
+
+    acc |> cons "\""
+
   | KName name ->
     acc |> cons name
 

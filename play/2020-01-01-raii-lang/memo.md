@@ -21,7 +21,6 @@
 ```fs
     let x = ...;
     let mut y = ...;
-    let mut z = ...;
 ```
 
 関数
@@ -51,6 +50,8 @@
     }
 
     x && y
+
+    x || y
 
     cond then {
         body

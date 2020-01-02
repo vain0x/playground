@@ -12,6 +12,8 @@ let charIsPun (c: char) =
 let charIsAny (c: char) =
   charIsEol c
   || charIsSpace c
+  || c = '#'
+  || c = '"'
   || charIsIdent c
   || charIsPun c
 
@@ -45,6 +47,19 @@ let tokenizeInt (t: T) =
       t.Bump()
 
     t.Commit(IntToken)
+
+let tokenizeStr (t: T) =
+  if t.Next = '"' then
+    t.Eat("\"") |> is true
+    t.Commit(StrStartToken)
+
+    while not t.AtEof && t.Next <> '"' && t.Next |> charIsEol |> not do
+      t.Bump()
+
+    t.Commit(StrVerbatimToken)
+
+    t.Eat("\"") |> ignore
+    t.Commit(StrEndToken)
 
 let tokenizeIdent (t: T) =
   if t.Next |> charIsIdentFirst then
@@ -82,6 +97,7 @@ let tokenizeAll (t: T) =
     tokenizeSpace t
     tokenizeComment t
     tokenizeInt t
+    tokenizeStr t
     tokenizeIdent t
     tokenizePun t
     tokenizeOther t

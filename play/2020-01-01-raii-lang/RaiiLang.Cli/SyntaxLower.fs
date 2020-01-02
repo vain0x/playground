@@ -50,7 +50,8 @@ let tokenAsPassBy (token: Token) =
 
 let nodeIsTerm (node: Node) =
   match node with
-  | LiteralNode
+  | IntLiteralNode
+  | StrLiteralNode
   | NameNode
   | GroupNode
   | BlockNode
@@ -82,6 +83,17 @@ let nodeToFirstToken pred (node: NodeData) =
     | _ ->
       None
   )
+
+let nodeToFilterToken pred (node: NodeData) =
+  node.Children |> Seq.choose (fun element ->
+    match element with
+    | TokenElement t when pred t.Token ->
+      Some t
+
+    | _ ->
+      None
+  )
+  |> Seq.toList
 
 let nodeToFirstNode pred (node: NodeData) =
   node.Children |> Seq.tryPick (fun element ->
@@ -136,8 +148,8 @@ let lowerParam (node: NodeData) =
 
   AParam (mode, name, node)
 
-let lowerLiteral (node: NodeData) =
-  assert (node.Node = LiteralNode)
+let lowerIntLiteral (node: NodeData) =
+  assert (node.Node = IntLiteralNode)
 
   let intToken =
     node
@@ -145,6 +157,16 @@ let lowerLiteral (node: NodeData) =
     |> Option.map tokenToText
 
   AIntLiteral (intToken, node)
+
+let lowerStrLiteral (node: NodeData) =
+  assert (node.Node = StrLiteralNode)
+
+  let segments =
+    node
+    |> nodeToFilterToken ((=) StrVerbatimToken)
+    |> List.map (tokenToText >> StrVerbatim)
+
+  AStrLiteral (segments, node)
 
 let lowerName (node: NodeData) =
   assert (node.Node = NameNode)
@@ -220,8 +242,11 @@ let lowerTerm (node: NodeData) =
   assert (node.Node |> nodeIsTerm)
 
   match node.Node with
-  | LiteralNode ->
-    lowerLiteral node
+  | IntLiteralNode ->
+    lowerIntLiteral node
+
+  | StrLiteralNode ->
+    lowerStrLiteral node
 
   | NameNode ->
     lowerName node |> ANameTerm

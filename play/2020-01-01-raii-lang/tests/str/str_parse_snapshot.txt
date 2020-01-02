@@ -1,0 +1,91 @@
+N(SemiNode) [
+  N(SemiNode) [
+    N(ExternFnNode) [
+      T(ExternToken) `extern`
+      T(SpaceToken) ` `
+      T(FnToken) `fn`
+      T(SpaceToken) ` `
+      N(NameNode) [
+        T(IdentToken) `print`
+      ]
+      T(LeftParenToken) `(`
+      N(ParamNode) [
+        T(InToken) `in`
+        T(SpaceToken) ` `
+        N(NameNode) [
+          T(IdentToken) `s`
+        ]
+      ]
+      T(RightParenToken) `)`
+      T(SemiToken) `;`
+    ]
+    N(FnNode) [
+      T(EolToken) `
+`
+      T(EolToken) `
+`
+      T(FnToken) `fn`
+      T(SpaceToken) ` `
+      N(NameNode) [
+        T(IdentToken) `main`
+      ]
+      T(LeftParenToken) `(`
+      T(RightParenToken) `)`
+      T(SpaceToken) ` `
+      N(BlockNode) [
+        T(LeftBraceToken) `{`
+        N(SemiNode) [
+          N(LetNode) [
+            T(EolToken) `
+`
+            T(SpaceToken) `    `
+            T(LetToken) `let`
+            T(SpaceToken) ` `
+            N(ParamNode) [
+              N(NameNode) [
+                T(IdentToken) `s`
+                T(SpaceToken) ` `
+              ]
+            ]
+            T(EqualToken) `=`
+            T(SpaceToken) ` `
+            N(ArgNode) [
+              N(StrLiteralNode) [
+                T(StrStartToken) `"`
+                T(StrVerbatimToken) `hello`
+                T(StrEndToken) `"`
+              ]
+            ]
+            T(SemiToken) `;`
+          ]
+          N(ExprNode) [
+            N(CallNode) [
+              N(NameNode) [
+                T(EolToken) `
+`
+                T(SpaceToken) `    `
+                T(IdentToken) `print`
+              ]
+              T(LeftParenToken) `(`
+              N(ArgNode) [
+                T(InToken) `in`
+                T(SpaceToken) ` `
+                N(NameNode) [
+                  T(IdentToken) `s`
+                ]
+              ]
+              T(RightParenToken) `)`
+            ]
+            T(SemiToken) `;`
+          ]
+        ]
+        T(EolToken) `
+`
+        T(RightBraceToken) `}`
+      ]
+    ]
+  ]
+  T(EolToken) `
+`
+  T(EofToken) ``
+]

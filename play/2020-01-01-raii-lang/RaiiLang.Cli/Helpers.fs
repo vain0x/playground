@@ -4,6 +4,11 @@ type HashSet<'K> = System.Collections.Generic.HashSet<'K>
 
 type HashMap<'K, 'V> = System.Collections.Generic.Dictionary<'K, 'V>
 
+[<Struct>]
+type StrSegment =
+  | StrVerbatim
+    of string
+
 /// 間接性
 type Indirection =
   /// ポインタを介さない。
@@ -44,6 +49,9 @@ type PassBy =
   | ByRef
 
 let eol = "\n"
+
+let inline is< ^T when ^T : equality> (actual: ^T) (expected: ^T) =
+  assert (actual = expected)
 
 let inline cons head tail = head :: tail
 

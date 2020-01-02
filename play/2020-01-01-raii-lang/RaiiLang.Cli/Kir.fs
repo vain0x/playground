@@ -29,6 +29,9 @@ type KNode =
   | KInt
     of intText:string
 
+  | KStr
+    of StrSegment list
+
   | KPrim
     of prim:KPrim
       * args:KArg list

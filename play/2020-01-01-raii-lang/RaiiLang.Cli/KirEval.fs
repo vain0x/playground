@@ -10,6 +10,9 @@ type KValue =
   | KIntValue
     of intValue:int
 
+  | KStrValue
+    of strValue:string
+
   | KRefValue
     of refValue:KValue ref
 
@@ -23,6 +26,8 @@ type KirEvalContext =
     mutable Env: KEnv
     Output: StringBuilder
   }
+
+let unitValue = KIntValue 0
 
 let keContextNew (): KirEvalContext =
   {
@@ -70,7 +75,6 @@ let kePrim context prim args =
 
   | KEqPrim, [KRefValue first; KRefValue second] ->
     let value = if !first = !second then 1 else 0
-
     value |> KIntValue
 
   | KAssignPrim, [KRefValue first; second] ->
@@ -80,7 +84,17 @@ let kePrim context prim args =
   | KExternFnPrim "assert_eq", [KRefValue first; KRefValue second] ->
     context.Output.AppendFormat("assert_eq({0}, {1})\n", !first, !second) |> ignore
 
-    KRefValue first
+    unitValue
+
+  | KExternFnPrim "print", [KRefValue first] ->
+    match !first with
+    | KStrValue text ->
+      context.Output.AppendFormat("{0}\n", text) |> ignore
+
+    | _ ->
+      context.Output.Append(sprintf "%A\n" !first) |> ignore
+
+    unitValue
 
   | _ ->
     failwithf "can't evaluate prim %A" (prim, args)
@@ -113,6 +127,14 @@ let keNode context (node: KNode): KValue =
   | KInt text ->
     // FIXME: in 1 を動作させるために参照を挟む。
     text |> int |> KIntValue |> ref |> KRefValue
+
+  | KStr segments ->
+    segments
+    |> List.map (fun (StrVerbatim text) -> text)
+    |> String.concat ""
+    |> KStrValue
+    |> ref
+    |> KRefValue
 
   | KName name ->
     match context.Env.TryGetValue(name) with
