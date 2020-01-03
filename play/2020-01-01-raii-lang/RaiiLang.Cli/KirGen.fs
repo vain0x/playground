@@ -18,6 +18,9 @@ let kgContextNew (): KirGenContext =
 
 let kgTerm (context: KirGenContext) exit term =
   match term with
+  | ABoolLiteral (value, _) ->
+    KBool value |> exit
+
   | AIntLiteral (Some intText, _) ->
     KInt intText |> exit
 

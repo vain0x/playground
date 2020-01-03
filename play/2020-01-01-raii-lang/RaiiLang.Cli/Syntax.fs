@@ -28,12 +28,14 @@ type Token =
   | IdentToken
   | AssertToken
   | ExternToken
+  | FalseToken
   | FnToken
   | InToken
   | LetToken
   | MoveToken
   | MutToken
   | RefToken
+  | TrueToken
 
   // 記号類
   | CommaToken
@@ -67,6 +69,7 @@ type TokenFat =
 type Node =
   // 項
   | NameNode
+  | BoolLiteralNode
   | IntLiteralNode
   | StrLiteralNode
   | GroupNode
@@ -123,6 +126,9 @@ type AParam =
     of Mode * AName option * NodeData
 
 type ATerm =
+  | ABoolLiteral
+    of bool * NodeData
+
   | AIntLiteral
     of text:string option * NodeData
 
@@ -164,12 +170,14 @@ let keywords =
   [
     AssertToken, "assert"
     ExternToken, "extern"
+    FalseToken, "false"
     FnToken, "fn"
     InToken, "in"
     MoveToken, "move"
     MutToken, "mut"
     LetToken, "let"
     RefToken, "ref"
+    TrueToken, "true"
   ]
 
 let punctuations =

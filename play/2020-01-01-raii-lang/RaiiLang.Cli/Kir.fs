@@ -26,6 +26,9 @@ type KArg =
     of PassBy * node:KNode
 
 type KNode =
+  | KBool
+    of bool
+
   | KInt
     of intText:string
 

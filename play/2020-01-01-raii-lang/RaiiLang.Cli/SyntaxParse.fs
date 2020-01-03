@@ -18,6 +18,8 @@ let tokenIsStmtKeyword token =
 
 let tokenIsAtomFirst token =
   match token with
+  | FalseToken
+  | TrueToken
   | IntToken
   | StrStartToken
   | IdentToken
@@ -56,6 +58,13 @@ let tokenIsStmtFirst token =
   tokenIsStmtKeyword token
   || tokenIsTermFirst token
 
+let parseBoolLiteralTerm (p: P) =
+  assert (p.Next = FalseToken || p.Next = TrueToken)
+
+  p.StartNode()
+  (p.Eat(FalseToken) || p.Eat(TrueToken)) |> is true
+  p.EndNode(BoolLiteralNode)
+
 let parseIntLiteralTerm (p: P) =
   assert (p.Next = IntToken)
 
@@ -78,7 +87,7 @@ let parseStrLiteralTerm (p: P) =
 
 let parseNameTerm (p: P) =
   p.StartNode()
-  (p.Eat(IdentToken) || p.Eat(AssertToken)) |> is true
+  (p.Eat(IdentToken) || p.Eat(FalseToken) || p.Eat(TrueToken) || p.Eat(AssertToken)) |> is true
   p.EndNode(NameNode)
 
 let parseGroupTerm (p: P) =
@@ -107,6 +116,10 @@ let parseBlockTerm (p: P) =
 
 let parseAtomTerm (p: P) =
   match p.Next with
+  | FalseToken
+  | TrueToken ->
+    parseBoolLiteralTerm p
+
   | IntToken ->
     parseIntLiteralTerm p
 

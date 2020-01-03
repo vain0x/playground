@@ -1,0 +1,37 @@
+fix assert_eq(mut assert_eq_ret, in actual, in expected) {
+  let assert_eq_res = extern_assert_eq(
+    in actual
+    in expected
+  )
+  assert_eq_ret(move assert_eq_res)
+}
+
+fix main(mut main_ret) {
+  fix f_next(val f) {
+    fix t_next(val t) {
+      fix assert_eq_ret_2(mut assert_eq_res_2) {
+        fix assert_eq_ret_3(mut assert_eq_res_3) {
+          main_ret(move assert_eq_res_3)
+        }
+
+        assert_eq(
+          move assert_eq_ret_3
+          in t
+          in true
+        )
+      }
+
+      assert_eq(
+        move assert_eq_ret_2
+        in f
+        in false
+      )
+    }
+
+    t_next(in true)
+  }
+
+  f_next(in false)
+}
+
+0

@@ -60,6 +60,12 @@ let kdArgList args indent acc =
 
 let kdNode node indent acc =
   match node with
+  | KBool false ->
+    acc |> cons "false"
+
+  | KBool true ->
+    acc |> cons "true"
+
   | KInt intText ->
     acc |> cons intText
 

@@ -7,6 +7,9 @@ open RaiiLang.Kir
 type KEnv = Map<string, KValue ref>
 
 type KValue =
+  | KBoolValue
+    of boolValue:bool
+
   | KIntValue
     of intValue:int
 
@@ -127,6 +130,9 @@ let keCall context onError cal args =
 
 let keNode context (node: KNode): KValue =
   match node with
+  | KBool value ->
+    value |> KBoolValue |> ref |> KRefValue
+
   | KInt text ->
     // FIXME: in 1 を動作させるために参照を挟む。
     text |> int |> KIntValue |> ref |> KRefValue

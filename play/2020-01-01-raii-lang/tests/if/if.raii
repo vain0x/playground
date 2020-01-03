@@ -1,0 +1,9 @@
+extern fn assert_eq(in actual, in expected);
+
+fn main() {
+    let f = false;
+    let t = true;
+
+    assert_eq(f, false);
+    assert_eq(t, true);
+}

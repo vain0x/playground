@@ -50,6 +50,7 @@ let tokenAsPassBy (token: Token) =
 
 let nodeIsTerm (node: Node) =
   match node with
+  | BoolLiteralNode
   | IntLiteralNode
   | StrLiteralNode
   | NameNode
@@ -148,6 +149,17 @@ let lowerParam (node: NodeData) =
 
   AParam (mode, name, node)
 
+let lowerBoolLiteral (node: NodeData) =
+  assert (node.Node = BoolLiteralNode)
+
+  let value =
+    node
+    |> nodeToFirstToken (fun token -> token = FalseToken || token = TrueToken)
+    |> Option.map (fun token -> token.Token = TrueToken)
+    |> Option.defaultValue false
+
+  ABoolLiteral (value, node)
+
 let lowerIntLiteral (node: NodeData) =
   assert (node.Node = IntLiteralNode)
 
@@ -242,6 +254,9 @@ let lowerTerm (node: NodeData) =
   assert (node.Node |> nodeIsTerm)
 
   match node.Node with
+  | BoolLiteralNode ->
+    lowerBoolLiteral node
+
   | IntLiteralNode ->
     lowerIntLiteral node
 
