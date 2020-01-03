@@ -54,6 +54,15 @@ let tokenIsParamFirst token =
   | _ ->
     tokenIsTermFirst token
 
+/// パイプラインのセグメントの先頭になるトークンか？
+let tokenIsSegmentFirst token =
+  match token with
+  | ThenToken ->
+    true
+
+  | _ ->
+    false
+
 let tokenIsStmtFirst token =
   tokenIsStmtKeyword token
   || tokenIsTermFirst token
@@ -174,17 +183,64 @@ let parseEqTerm (p: P) =
     parseAddTerm p
     p.EndNode(BinNode)
 
-let parseAssignTerm (p: P) =
+let parseHeadTerm (p: P) =
   parseEqTerm p
 
-  if p.Next = EqualToken then
-    p.StartNodeWithPrevious()
-    p.Eat(EqualToken) |> is true
-    parseAssignTerm p
-    p.EndNode(BinNode)
+let parseIfSegmentContent (p: P) =
+  assert (p.Next = ThenToken)
+
+  p.StartNode()
+  p.Eat(ThenToken) |> is true
+  if p.Next = LeftBraceToken then
+    parseBlockTerm p
+  else
+    p.AddError(ExpectedError "ブロック")
+  p.EndNode(ThenNode)
+
+  if p.Next = ElseToken then
+    p.StartNode()
+    p.Bump()
+    if p.Eat(IfToken) then
+      parseHeadTerm p
+
+      if p.Next = ThenToken then
+        p.StartNodeWithPrevious()
+        parseIfSegmentContent p
+        p.EndNode(IfNode)
+      else
+        p.AddError(ExpectedError "then")
+    else
+      if p.Next = LeftBraceToken then
+        parseBlockTerm p
+      else
+        p.AddError(ExpectedError "ブロック")
+    p.EndNode(ElseNode)
+
+let parseSegmentContent (p: P) =
+  assert (p.Next |> tokenIsSegmentFirst)
+
+  match p.Next with
+  | ThenToken ->
+    parseIfSegmentContent p
+    IfNode
+
+  | _ ->
+    failwith "tokenIsSegmentFirst bug"
 
 let parseTerm (p: P) =
-  parseAssignTerm p
+  parseHeadTerm p
+
+  if p.Next |> tokenIsSegmentFirst then
+    while p.Next |> tokenIsSegmentFirst do
+      p.StartNodeWithPrevious()
+      let node = parseSegmentContent p
+      p.EndNode(node)
+
+  else if p.Next = EqualToken then
+    p.StartNodeWithPrevious()
+    p.Eat(EqualToken) |> is true
+    parseTerm p
+    p.EndNode(BinNode)
 
 let parseArg (p: P) =
   p.StartNode()

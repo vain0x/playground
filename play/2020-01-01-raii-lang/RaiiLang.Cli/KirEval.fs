@@ -77,8 +77,8 @@ let kePrim context prim args =
     first + second |> KIntValue
 
   | KEqPrim, [KRefValue first; KRefValue second] ->
-    let value = if !first = !second then 1 else 0
-    value |> KIntValue
+    let value = !first = !second
+    value |> KBoolValue
 
   | KAssignPrim, [KRefValue first; second] ->
     first := second
@@ -165,6 +165,17 @@ let keNode context (node: KNode): KValue =
     let args = args |> List.map (keArg context)
 
     keCall context (fun () -> failwithf "can't call %s" cal) cal args
+
+  | KIf (cond, body, alt) ->
+    match cond |> keNode context |> keDeref with
+    | KBoolValue true ->
+      body |> keNode context
+
+    | KBoolValue false ->
+      alt |> keNode context
+
+    | t ->
+      failwithf "condition %A not bool" t
 
   | KFix (name, paramList, body, next) ->
     let r = KFunValue (paramList, body, context.Env) |> ref

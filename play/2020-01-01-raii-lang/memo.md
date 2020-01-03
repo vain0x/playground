@@ -60,6 +60,11 @@
     }
     // ==> cond match { true => body; false => alt }
 
+    cond then {
+        body
+    } else if alt
+    // ==> cond then body else { alt }
+
     cond else {
         alt
     }
@@ -162,3 +167,7 @@
 - T は型。
 - C は Copy トレイトを満たす型 (i64 など)。
 - x は変数。
+
+## CPS
+
+- [コンパイラの作り方 (詳解)](https://www.is.s.u-tokyo.ac.jp/vu/96/cad/compilerresume/)

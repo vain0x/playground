@@ -27,14 +27,17 @@ type Token =
   // キーワード類
   | IdentToken
   | AssertToken
+  | ElseToken
   | ExternToken
   | FalseToken
   | FnToken
+  | IfToken
   | InToken
   | LetToken
   | MoveToken
   | MutToken
   | RefToken
+  | ThenToken
   | TrueToken
 
   // 記号類
@@ -75,6 +78,9 @@ type Node =
   | GroupNode
   | BlockNode
   | CallNode
+  | IfNode
+  | ThenNode
+  | ElseNode
   | BinNode
 
   // 引数
@@ -150,6 +156,9 @@ type ATerm =
   | ABinTerm
     of ABin option * ATerm option * ATerm option * NodeData
 
+  | AIfTerm
+    of ATerm option * ATerm option * ATerm option * NodeData
+
 type AStmt =
   | ATermStmt
     of ATerm option * NodeData
@@ -169,14 +178,17 @@ type AStmt =
 let keywords =
   [
     AssertToken, "assert"
+    ElseToken, "else"
     ExternToken, "extern"
     FalseToken, "false"
     FnToken, "fn"
+    IfToken, "if"
     InToken, "in"
     MoveToken, "move"
     MutToken, "mut"
     LetToken, "let"
     RefToken, "ref"
+    ThenToken, "then"
     TrueToken, "true"
   ]
 

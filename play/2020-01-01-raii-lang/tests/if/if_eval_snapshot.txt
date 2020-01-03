@@ -1,2 +1,3 @@
-assert_eq(KBoolValue false, KBoolValue false)
-assert_eq(KBoolValue true, KBoolValue true)
+0 == 0
+0 != 1
+x == 2

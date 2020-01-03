@@ -28,6 +28,27 @@ N(SemiNode) [
       T(RightParenToken) `)`
       T(SemiToken) `;`
     ]
+    N(ExternFnNode) [
+      T(EolToken) `
+`
+      T(ExternToken) `extern`
+      T(SpaceToken) ` `
+      T(FnToken) `fn`
+      T(SpaceToken) ` `
+      N(NameNode) [
+        T(IdentToken) `print`
+      ]
+      T(LeftParenToken) `(`
+      N(ParamNode) [
+        T(InToken) `in`
+        T(SpaceToken) ` `
+        N(NameNode) [
+          T(IdentToken) `s`
+        ]
+      ]
+      T(RightParenToken) `)`
+      T(SemiToken) `;`
+    ]
     N(FnNode) [
       T(EolToken) `
 `
@@ -44,7 +65,185 @@ N(SemiNode) [
       N(BlockNode) [
         T(LeftBraceToken) `{`
         N(SemiNode) [
+          N(ExprNode) [
+            N(IfNode) [
+              N(BinNode) [
+                N(IntLiteralNode) [
+                  T(EolToken) `
+`
+                  T(SpaceToken) `    `
+                  T(IntToken) `0`
+                  T(SpaceToken) ` `
+                ]
+                T(EqualEqualToken) `==`
+                T(SpaceToken) ` `
+                N(IntLiteralNode) [
+                  T(IntToken) `0`
+                  T(SpaceToken) ` `
+                ]
+              ]
+              N(ThenNode) [
+                T(ThenToken) `then`
+                T(SpaceToken) ` `
+                N(BlockNode) [
+                  T(LeftBraceToken) `{`
+                  N(SemiNode) [
+                    N(ExprNode) [
+                      N(CallNode) [
+                        N(NameNode) [
+                          T(EolToken) `
+`
+                          T(SpaceToken) `        `
+                          T(IdentToken) `print`
+                        ]
+                        T(LeftParenToken) `(`
+                        N(ArgNode) [
+                          N(StrLiteralNode) [
+                            T(StrStartToken) `"`
+                            T(StrVerbatimToken) `0 == 0`
+                            T(StrEndToken) `"`
+                          ]
+                        ]
+                        T(RightParenToken) `)`
+                      ]
+                      T(SemiToken) `;`
+                    ]
+                  ]
+                  T(EolToken) `
+`
+                  T(SpaceToken) `    `
+                  T(RightBraceToken) `}`
+                  T(SpaceToken) ` `
+                ]
+              ]
+              N(ElseNode) [
+                T(ElseToken) `else`
+                T(SpaceToken) ` `
+                N(BlockNode) [
+                  T(LeftBraceToken) `{`
+                  N(SemiNode) [
+                    N(ExprNode) [
+                      N(CallNode) [
+                        N(NameNode) [
+                          T(EolToken) `
+`
+                          T(SpaceToken) `        `
+                          T(IdentToken) `print`
+                        ]
+                        T(LeftParenToken) `(`
+                        N(ArgNode) [
+                          N(StrLiteralNode) [
+                            T(StrStartToken) `"`
+                            T(StrVerbatimToken) `0 != 0`
+                            T(StrEndToken) `"`
+                          ]
+                        ]
+                        T(RightParenToken) `)`
+                      ]
+                      T(SemiToken) `;`
+                    ]
+                  ]
+                  T(EolToken) `
+`
+                  T(SpaceToken) `    `
+                  T(RightBraceToken) `}`
+                ]
+              ]
+            ]
+            T(SemiToken) `;`
+          ]
+          N(ExprNode) [
+            N(IfNode) [
+              N(BinNode) [
+                N(IntLiteralNode) [
+                  T(EolToken) `
+`
+                  T(EolToken) `
+`
+                  T(SpaceToken) `    `
+                  T(IntToken) `0`
+                  T(SpaceToken) ` `
+                ]
+                T(EqualEqualToken) `==`
+                T(SpaceToken) ` `
+                N(IntLiteralNode) [
+                  T(IntToken) `1`
+                  T(SpaceToken) ` `
+                ]
+              ]
+              N(ThenNode) [
+                T(ThenToken) `then`
+                T(SpaceToken) ` `
+                N(BlockNode) [
+                  T(LeftBraceToken) `{`
+                  N(SemiNode) [
+                    N(ExprNode) [
+                      N(CallNode) [
+                        N(NameNode) [
+                          T(EolToken) `
+`
+                          T(SpaceToken) `        `
+                          T(IdentToken) `print`
+                        ]
+                        T(LeftParenToken) `(`
+                        N(ArgNode) [
+                          N(StrLiteralNode) [
+                            T(StrStartToken) `"`
+                            T(StrVerbatimToken) `0 == 1`
+                            T(StrEndToken) `"`
+                          ]
+                        ]
+                        T(RightParenToken) `)`
+                      ]
+                      T(SemiToken) `;`
+                    ]
+                  ]
+                  T(EolToken) `
+`
+                  T(SpaceToken) `    `
+                  T(RightBraceToken) `}`
+                  T(SpaceToken) ` `
+                ]
+              ]
+              N(ElseNode) [
+                T(ElseToken) `else`
+                T(SpaceToken) ` `
+                N(BlockNode) [
+                  T(LeftBraceToken) `{`
+                  N(SemiNode) [
+                    N(ExprNode) [
+                      N(CallNode) [
+                        N(NameNode) [
+                          T(EolToken) `
+`
+                          T(SpaceToken) `        `
+                          T(IdentToken) `print`
+                        ]
+                        T(LeftParenToken) `(`
+                        N(ArgNode) [
+                          N(StrLiteralNode) [
+                            T(StrStartToken) `"`
+                            T(StrVerbatimToken) `0 != 1`
+                            T(StrEndToken) `"`
+                          ]
+                        ]
+                        T(RightParenToken) `)`
+                      ]
+                      T(SemiToken) `;`
+                    ]
+                  ]
+                  T(EolToken) `
+`
+                  T(SpaceToken) `    `
+                  T(RightBraceToken) `}`
+                ]
+              ]
+            ]
+            T(SemiToken) `;`
+          ]
           N(LetNode) [
+            T(EolToken) `
+`
             T(EolToken) `
 `
             T(SpaceToken) `    `
@@ -52,89 +251,157 @@ N(SemiNode) [
             T(SpaceToken) ` `
             N(ParamNode) [
               N(NameNode) [
-                T(IdentToken) `f`
+                T(IdentToken) `x`
                 T(SpaceToken) ` `
               ]
             ]
             T(EqualToken) `=`
             T(SpaceToken) ` `
             N(ArgNode) [
-              N(BoolLiteralNode) [
-                T(FalseToken) `false`
+              N(IntLiteralNode) [
+                T(IntToken) `2`
               ]
             ]
             T(SemiToken) `;`
           ]
-          N(LetNode) [
-            T(EolToken) `
+          N(ExprNode) [
+            N(IfNode) [
+              N(BinNode) [
+                N(NameNode) [
+                  T(EolToken) `
 `
-            T(SpaceToken) `    `
-            T(LetToken) `let`
-            T(SpaceToken) ` `
-            N(ParamNode) [
-              N(NameNode) [
-                T(IdentToken) `t`
+                  T(SpaceToken) `    `
+                  T(IdentToken) `x`
+                  T(SpaceToken) ` `
+                ]
+                T(EqualEqualToken) `==`
                 T(SpaceToken) ` `
+                N(IntLiteralNode) [
+                  T(IntToken) `1`
+                  T(SpaceToken) ` `
+                ]
               ]
-            ]
-            T(EqualToken) `=`
-            T(SpaceToken) ` `
-            N(ArgNode) [
-              N(BoolLiteralNode) [
-                T(TrueToken) `true`
-              ]
-            ]
-            T(SemiToken) `;`
-          ]
-          N(ExprNode) [
-            N(CallNode) [
-              N(NameNode) [
-                T(EolToken) `
+              N(ThenNode) [
+                T(ThenToken) `then`
+                T(SpaceToken) ` `
+                N(BlockNode) [
+                  T(LeftBraceToken) `{`
+                  N(SemiNode) [
+                    N(ExprNode) [
+                      N(CallNode) [
+                        N(NameNode) [
+                          T(EolToken) `
 `
-                T(EolToken) `
+                          T(SpaceToken) `        `
+                          T(IdentToken) `print`
+                        ]
+                        T(LeftParenToken) `(`
+                        N(ArgNode) [
+                          N(StrLiteralNode) [
+                            T(StrStartToken) `"`
+                            T(StrVerbatimToken) `0 == 1`
+                            T(StrEndToken) `"`
+                          ]
+                        ]
+                        T(RightParenToken) `)`
+                      ]
+                      T(SemiToken) `;`
+                    ]
+                  ]
+                  T(EolToken) `
 `
-                T(SpaceToken) `    `
-                T(IdentToken) `assert_eq`
-              ]
-              T(LeftParenToken) `(`
-              N(ArgNode) [
-                N(NameNode) [
-                  T(IdentToken) `f`
+                  T(SpaceToken) `    `
+                  T(RightBraceToken) `}`
+                  T(SpaceToken) ` `
                 ]
               ]
-              T(CommaToken) `,`
-              T(SpaceToken) ` `
-              N(ArgNode) [
-                N(BoolLiteralNode) [
-                  T(FalseToken) `false`
-                ]
-              ]
-              T(RightParenToken) `)`
-            ]
-            T(SemiToken) `;`
-          ]
-          N(ExprNode) [
-            N(CallNode) [
-              N(NameNode) [
-                T(EolToken) `
+              N(ElseNode) [
+                T(ElseToken) `else`
+                T(SpaceToken) ` `
+                T(IfToken) `if`
+                T(SpaceToken) ` `
+                N(IfNode) [
+                  N(BinNode) [
+                    N(NameNode) [
+                      T(IdentToken) `x`
+                      T(SpaceToken) ` `
+                    ]
+                    T(EqualEqualToken) `==`
+                    T(SpaceToken) ` `
+                    N(IntLiteralNode) [
+                      T(IntToken) `2`
+                      T(SpaceToken) ` `
+                    ]
+                  ]
+                  N(ThenNode) [
+                    T(ThenToken) `then`
+                    T(SpaceToken) ` `
+                    N(BlockNode) [
+                      T(LeftBraceToken) `{`
+                      N(SemiNode) [
+                        N(ExprNode) [
+                          N(CallNode) [
+                            N(NameNode) [
+                              T(EolToken) `
 `
-                T(SpaceToken) `    `
-                T(IdentToken) `assert_eq`
-              ]
-              T(LeftParenToken) `(`
-              N(ArgNode) [
-                N(NameNode) [
-                  T(IdentToken) `t`
+                              T(SpaceToken) `        `
+                              T(IdentToken) `print`
+                            ]
+                            T(LeftParenToken) `(`
+                            N(ArgNode) [
+                              N(StrLiteralNode) [
+                                T(StrStartToken) `"`
+                                T(StrVerbatimToken) `x == 2`
+                                T(StrEndToken) `"`
+                              ]
+                            ]
+                            T(RightParenToken) `)`
+                          ]
+                          T(SemiToken) `;`
+                        ]
+                      ]
+                      T(EolToken) `
+`
+                      T(SpaceToken) `    `
+                      T(RightBraceToken) `}`
+                      T(SpaceToken) ` `
+                    ]
+                  ]
+                  N(ElseNode) [
+                    T(ElseToken) `else`
+                    T(SpaceToken) ` `
+                    N(BlockNode) [
+                      T(LeftBraceToken) `{`
+                      N(SemiNode) [
+                        N(ExprNode) [
+                          N(CallNode) [
+                            N(NameNode) [
+                              T(EolToken) `
+`
+                              T(SpaceToken) `        `
+                              T(IdentToken) `print`
+                            ]
+                            T(LeftParenToken) `(`
+                            N(ArgNode) [
+                              N(StrLiteralNode) [
+                                T(StrStartToken) `"`
+                                T(StrVerbatimToken) `x != 1, x != 2`
+                                T(StrEndToken) `"`
+                              ]
+                            ]
+                            T(RightParenToken) `)`
+                          ]
+                          T(SemiToken) `;`
+                        ]
+                      ]
+                      T(EolToken) `
+`
+                      T(SpaceToken) `    `
+                      T(RightBraceToken) `}`
+                    ]
+                  ]
                 ]
               ]
-              T(CommaToken) `,`
-              T(SpaceToken) ` `
-              N(ArgNode) [
-                N(BoolLiteralNode) [
-                  T(TrueToken) `true`
-                ]
-              ]
-              T(RightParenToken) `)`
             ]
             T(SemiToken) `;`
           ]

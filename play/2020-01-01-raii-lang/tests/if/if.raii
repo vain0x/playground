@@ -1,9 +1,25 @@
 extern fn assert_eq(in actual, in expected);
+extern fn print(in s);
 
 fn main() {
-    let f = false;
-    let t = true;
+    0 == 0 then {
+        print("0 == 0");
+    } else {
+        print("0 != 0");
+    };
 
-    assert_eq(f, false);
-    assert_eq(t, true);
+    0 == 1 then {
+        print("0 == 1");
+    } else {
+        print("0 != 1");
+    };
+
+    let x = 2;
+    x == 1 then {
+        print("0 == 1");
+    } else if x == 2 then {
+        print("x == 2");
+    } else {
+        print("x != 1, x != 2");
+    };
 }

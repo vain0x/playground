@@ -57,7 +57,8 @@ let nodeIsTerm (node: Node) =
   | GroupNode
   | BlockNode
   | CallNode
-  | BinNode ->
+  | BinNode
+  | IfNode ->
     true
 
   | _ ->
@@ -230,6 +231,28 @@ let lowerCall (node: NodeData) =
 
   ACallTerm (cal, args, node)
 
+let lowerIf (node: NodeData) =
+  assert (node.Node = IfNode)
+
+  let cond =
+    node
+    |> nodeToFirstNode nodeIsTerm
+    |> Option.map lowerTerm
+
+  let body =
+    node
+    |> nodeToFirstNode ((=) ThenNode)
+    |> Option.bind (nodeToFirstNode nodeIsTerm)
+    |> Option.map lowerTerm
+
+  let alt =
+    node
+    |> nodeToFirstNode ((=) ElseNode)
+    |> Option.bind (nodeToFirstNode nodeIsTerm)
+    |> Option.map lowerTerm
+
+  AIfTerm (cond, body, alt, node)
+
 let lowerBin (node: NodeData) =
   assert (node.Node = BinNode)
 
@@ -274,6 +297,9 @@ let lowerTerm (node: NodeData) =
 
   | CallNode ->
     lowerCall node
+
+  | IfNode ->
+    lowerIf node
 
   | BinNode ->
     lowerBin node

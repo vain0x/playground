@@ -80,6 +80,31 @@ let kgTerm (context: KirGenContext) exit term =
         KPrim (prim, args, res, exit (KName res))
       ))
 
+  | AIfTerm (Some cond, body, alt, _) ->
+    // body または alt の結果を受け取って後続の計算を行う関数 if_next をおく。
+    // 条件式の結果に基づいて body または alt を計算して、
+    // その結果をもって if_next を呼ぶ。
+
+    let funName = context.FreshName "if_next"
+    let next res = KApp (funName, [KArg (ByMove, res)])
+
+    let res = context.FreshName "res"
+
+    cond |> kgTerm context (fun cond ->
+      KFix (
+        funName,
+        [KParam (MutMode, res)],
+        exit (KName res),
+        KIf (
+          cond,
+          body
+          |> Option.map (kgTerm context next)
+          |> Option.defaultWith (fun () -> next unitNode),
+          alt
+          |> Option.map (kgTerm context next)
+          |> Option.defaultWith (fun () -> next unitNode)
+        )))
+
   | _ ->
     failwithf "unimpl %A" term
 

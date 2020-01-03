@@ -99,6 +99,22 @@ let kdNode node indent acc =
     |> cons cal
     |> kdArgList args indent
 
+  | KIf (cond, body, alt) ->
+    let deepIndent = indent + "  "
+
+    acc
+    |> cons "if "
+    |> kdNode cond deepIndent
+    |> cons " {"
+    |> cons deepIndent
+    |> kdNode body deepIndent
+    |> cons indent
+    |> cons "} else {"
+    |> cons deepIndent
+    |> kdNode alt deepIndent
+    |> cons indent
+    |> cons "}"
+
   | KFix (funName, paramList, body, next) ->
     let deepIndent = indent + "  "
 

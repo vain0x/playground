@@ -48,6 +48,11 @@ type KNode =
     of cal:string
       * args:KArg list
 
+  | KIf
+    of cond:KNode
+      * body:KNode
+      * alt:KNode
+
   | KFix
     of name:string
       * paramList:KParam list
