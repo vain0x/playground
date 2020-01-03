@@ -135,7 +135,7 @@
     let mut a = [1, 2, 3];
     // T=int
     last(ref a) += 10;
-    assert(a[0] == 11);
+    assert_eq(a[0], 11);
 ```
 
 ## モード

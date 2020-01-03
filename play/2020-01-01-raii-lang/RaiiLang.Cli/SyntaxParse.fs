@@ -23,7 +23,6 @@ let tokenIsAtomFirst token =
   | IntToken
   | StrStartToken
   | IdentToken
-  | AssertToken
   | LeftParenToken
   | LeftBraceToken ->
     true
@@ -95,8 +94,10 @@ let parseStrLiteralTerm (p: P) =
   p.EndNode(StrLiteralNode)
 
 let parseNameTerm (p: P) =
+  assert (p.Next = IdentToken)
+
   p.StartNode()
-  (p.Eat(IdentToken) || p.Eat(FalseToken) || p.Eat(TrueToken) || p.Eat(AssertToken)) |> is true
+  p.Bump()
   p.EndNode(NameNode)
 
 let parseGroupTerm (p: P) =
@@ -135,8 +136,7 @@ let parseAtomTerm (p: P) =
   | StrStartToken ->
     parseStrLiteralTerm p
 
-  | IdentToken
-  | AssertToken ->
+  | IdentToken ->
     parseNameTerm p
 
   | LeftParenToken ->

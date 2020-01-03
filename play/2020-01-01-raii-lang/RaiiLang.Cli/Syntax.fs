@@ -26,7 +26,6 @@ type Token =
 
   // キーワード類
   | IdentToken
-  | AssertToken
   | ElseToken
   | ExternToken
   | FalseToken
@@ -177,7 +176,6 @@ type AStmt =
 
 let keywords =
   [
-    AssertToken, "assert"
     ElseToken, "else"
     ExternToken, "extern"
     FalseToken, "false"

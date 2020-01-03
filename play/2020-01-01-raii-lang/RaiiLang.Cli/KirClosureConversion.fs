@@ -223,7 +223,6 @@ let kccTransformNode context node =
 
 let kirClosureConversion (node: KNode) =
   let context = kccContextNew ()
-  context |> kccContextAddKnown "assert"
 
   node |> kccAnalyzeNode context
   context |> kccContextMakeFixPoint

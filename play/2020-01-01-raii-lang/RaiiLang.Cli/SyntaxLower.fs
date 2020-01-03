@@ -187,12 +187,7 @@ let lowerName (node: NodeData) =
   let ident =
     node
     |> nodeToFirstToken ((=) IdentToken)
-    |> Option.map (fun ident -> ident.Text)
-    |> Option.orElseWith (fun () ->
-      node
-      |> nodeToFirstToken ((=) AssertToken)
-      |> Option.map (fun _ -> "assert")
-    )
+    |> Option.map tokenToText
 
   AName (ident, node)
 
