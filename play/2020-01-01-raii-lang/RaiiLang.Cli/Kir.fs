@@ -9,6 +9,7 @@ type KTy =
     of (Mode * KTy) list
 
 type KPrim =
+  | KIdPrim
   | KEqPrim
   | KAddPrim
   | KAssignPrim
@@ -72,6 +73,9 @@ let kPrimFromBin bin =
 
 let kPrimToSig prim =
   match prim with
+  | KIdPrim ->
+    [ByMove]
+
   | KEqPrim ->
     [ByIn; ByIn]
 
@@ -86,6 +90,9 @@ let kPrimToSig prim =
 
 let kPrimToString prim =
   match prim with
+  | KIdPrim ->
+    "prim_id"
+
   | KEqPrim ->
     "prim_eq"
 

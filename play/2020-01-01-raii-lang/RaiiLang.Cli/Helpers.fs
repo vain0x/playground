@@ -70,6 +70,12 @@ let freshNameFun () =
       map.[name] <- lastId
       name
 
+let vecPop (a: ResizeArray<_>) =
+  let i = a.Count - 1
+  let item = a.[i]
+  a.RemoveAt(i)
+  item
+
 // -----------------------------------------------
 // Char
 // -----------------------------------------------

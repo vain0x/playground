@@ -26,6 +26,8 @@ type Token =
 
   // キーワード類
   | IdentToken
+  | BreakToken
+  | ContinueToken
   | ElseToken
   | ExternToken
   | FalseToken
@@ -33,6 +35,7 @@ type Token =
   | IfToken
   | InToken
   | LetToken
+  | LoopToken
   | MoveToken
   | MutToken
   | RefToken
@@ -76,6 +79,9 @@ type Node =
   | StrLiteralNode
   | GroupNode
   | BlockNode
+  | BreakNode
+  | ContinueNode
+  | LoopNode
   | CallNode
   | IfNode
   | ThenNode
@@ -149,6 +155,15 @@ type ATerm =
   | ABlockTerm
     of AStmt list * NodeData
 
+  | ABreakTerm
+    of NodeData
+
+  | AContinueTerm
+    of NodeData
+
+  | ALoopTerm
+    of ATerm option * NodeData
+
   | ACallTerm
     of ATerm option * AArg list * NodeData
 
@@ -176,15 +191,18 @@ type AStmt =
 
 let keywords =
   [
+    BreakToken, "break"
+    ContinueToken, "continue"
     ElseToken, "else"
     ExternToken, "extern"
     FalseToken, "false"
     FnToken, "fn"
     IfToken, "if"
     InToken, "in"
+    LetToken, "let"
+    LoopToken, "loop"
     MoveToken, "move"
     MutToken, "mut"
-    LetToken, "let"
     RefToken, "ref"
     ThenToken, "then"
     TrueToken, "true"

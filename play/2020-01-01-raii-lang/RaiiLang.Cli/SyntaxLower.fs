@@ -56,6 +56,9 @@ let nodeIsTerm (node: Node) =
   | NameNode
   | GroupNode
   | BlockNode
+  | BreakNode
+  | ContinueNode
+  | LoopNode
   | CallNode
   | BinNode
   | IfNode ->
@@ -211,6 +214,26 @@ let lowerBlock (node: NodeData) =
 
   ABlockTerm (item, node)
 
+let lowerBreak (node: NodeData) =
+  assert (node.Node = BreakNode)
+
+  ABreakTerm node
+
+let lowerContinue (node: NodeData) =
+  assert (node.Node = ContinueNode)
+
+  AContinueTerm node
+
+let lowerLoop (node: NodeData) =
+  assert (node.Node = LoopNode)
+
+  let body =
+    node
+    |> nodeToFirstNode nodeIsTerm
+    |> Option.map lowerTerm
+
+  ALoopTerm (body, node)
+
 let lowerCall (node: NodeData) =
   assert (node.Node = CallNode)
 
@@ -289,6 +312,15 @@ let lowerTerm (node: NodeData) =
 
   | BlockNode ->
     lowerBlock node
+
+  | BreakNode ->
+    lowerBreak node
+
+  | ContinueNode ->
+    lowerContinue node
+
+  | LoopNode ->
+    lowerLoop node
 
   | CallNode ->
     lowerCall node

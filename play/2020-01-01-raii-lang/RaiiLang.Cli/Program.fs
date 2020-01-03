@@ -10,6 +10,6 @@ open RaiiLang.KirGen
 
 [<EntryPoint>]
 let main _ =
-  let sourceCode = File.ReadAllText("tests/inc/inc.raii")
+  let sourceCode = File.ReadAllText("tests/loop/loop.raii")
   sourceCode |> parse |> lower |> kirGen |> kirEval |> ignore
   0

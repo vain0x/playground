@@ -73,6 +73,9 @@ let keArg (context: KirEvalContext) (KArg (passBy, arg)) =
 
 let kePrim context prim args =
   match prim, args with
+  | KIdPrim, [arg] ->
+    arg
+
   | KAddPrim, [KIntValue first; KIntValue second] ->
     first + second |> KIntValue
 

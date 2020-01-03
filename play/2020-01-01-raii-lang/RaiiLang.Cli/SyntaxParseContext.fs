@@ -7,12 +7,6 @@ type TokenIndex = int
 
 type TokenList = ResizeArray<TokenFat>
 
-let vecPop (a: ResizeArray<_>) =
-  let i = a.Count - 1
-  let item = a.[i]
-  a.RemoveAt(i)
-  item
-
 type ParseContext(tokens: TokenList) =
   let mutable currentIndex = 0
 

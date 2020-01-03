@@ -6,14 +6,23 @@ open RaiiLang.Syntax
 
 let unitNode = KInt "0"
 
+[<Struct>]
+type KirGenLoop =
+  {
+    BreakFun: string
+    ContinueFun: string
+  }
+
 type KirGenContext =
   {
     FreshName: string -> string
+    mutable LoopStack: KirGenLoop list
   }
 
 let kgContextNew (): KirGenContext =
   {
     FreshName = freshNameFun ()
+    LoopStack = []
   }
 
 let kgTerm (context: KirGenContext) exit term =
@@ -35,6 +44,55 @@ let kgTerm (context: KirGenContext) exit term =
 
   | ABlockTerm (stmts, _) ->
     kgStmts context exit stmts
+
+  | ABreakTerm _ ->
+    match context.LoopStack with
+    | [] ->
+      failwith "break out of loop"
+
+    | { BreakFun = breakFun } :: _ ->
+      KApp (breakFun, [])
+
+  | AContinueTerm _ ->
+    match context.LoopStack with
+    | [] ->
+      failwith "continue out of loop"
+
+    | { ContinueFun = continueFun } :: _ ->
+      KApp (continueFun, [])
+
+  | ALoopTerm (Some body, _) ->
+    // loop { body }; k
+    // ==> fix break() { k }
+    //     fix continue() { let _ = body; continue() }
+    //     continue()
+
+    let breakFun = context.FreshName "break"
+    let continueFun = context.FreshName "continue"
+    let continueNode = KApp (continueFun, [])
+
+    let loopStack = context.LoopStack
+    context.LoopStack <-
+      {
+        BreakFun = breakFun
+        ContinueFun = continueFun
+      } :: loopStack
+
+    let onBreak = exit unitNode
+    let onContinue = body |> kgTerm context (fun _ -> continueNode)
+
+    context.LoopStack <- loopStack
+
+    KFix (
+      breakFun,
+      [],
+      onBreak,
+      KFix (
+        continueFun,
+        [],
+        onContinue,
+        KApp (continueFun, [])
+      ))
 
   | ACallTerm (Some (ANameTerm (AName (Some funName, _))), args, _) ->
     // 関数から戻ってきた後の計算を中間関数 ret と定める。

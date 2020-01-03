@@ -23,6 +23,9 @@ let tokenIsAtomFirst token =
   | IntToken
   | StrStartToken
   | IdentToken
+  | BreakToken
+  | ContinueToken
+  | LoopToken
   | LeftParenToken
   | LeftBraceToken ->
     true
@@ -100,6 +103,32 @@ let parseNameTerm (p: P) =
   p.Bump()
   p.EndNode(NameNode)
 
+let parseBreakTerm (p: P) =
+  assert (p.Next = BreakToken)
+
+  p.StartNode()
+  p.Bump()
+  p.EndNode(BreakNode)
+
+let parseContinueTerm (p: P) =
+  assert (p.Next = ContinueToken)
+
+  p.StartNode()
+  p.Bump()
+  p.EndNode(ContinueNode)
+
+let parseLoopTerm (p: P) =
+  assert (p.Next = LoopToken)
+
+  p.StartNode()
+  p.Bump()
+
+  if p.Next = LeftBraceToken then
+    parseBlockTerm p
+  else
+    p.AddError(ExpectedError "ブロック")
+  p.EndNode(LoopNode)
+
 let parseGroupTerm (p: P) =
   p.StartNode()
 
@@ -144,6 +173,15 @@ let parseAtomTerm (p: P) =
 
   | LeftBraceToken ->
     parseBlockTerm p
+
+  | BreakToken ->
+    parseBreakTerm p
+
+  | ContinueToken ->
+    parseContinueTerm p
+
+  | LoopToken ->
+    parseLoopTerm p
 
   | _ ->
     p.Next |> tokenIsAtomFirst |> is false
