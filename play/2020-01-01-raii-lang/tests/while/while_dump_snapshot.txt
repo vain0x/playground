@@ -1,0 +1,73 @@
+fix assert_eq(mut assert_eq_ret, in actual, in expected) {
+  let assert_eq_res = extern_assert_eq(
+    in actual
+    in expected
+  )
+  assert_eq_ret(move assert_eq_res)
+}
+
+fix main(mut main_ret) {
+  fix ok_next(mut ok) {
+    fix a_next(mut a) {
+      fix break() {
+        fix assert_eq_ret_2(mut assert_eq_res_2) {
+          main_ret(move assert_eq_res_2)
+        }
+
+        assert_eq(
+          move assert_eq_ret_2
+          in a
+          in 5
+        )
+      }
+
+      fix continue() {
+        if ok {
+          fix assert_eq_ret_3(mut assert_eq_res_3) {
+            let prim_add_res = prim_add(
+              move a
+              move 1
+            )
+            let prim_assign_res = prim_assign(
+              ref a
+              move prim_add_res
+            )
+            let prim_eq_res = prim_eq(
+              in a
+              in 5
+            )
+            fix if_next(mut res) {
+              continue()
+            }
+
+            if prim_eq_res {
+              let prim_assign_res_2 = prim_assign(
+                ref ok
+                move false
+              )
+              if_next(move prim_assign_res_2)
+            } else {
+              if_next(move 0)
+            }
+          }
+
+          assert_eq(
+            move assert_eq_ret_3
+            in a
+            in a
+          )
+        } else {
+          break()
+        }
+      }
+
+      continue()
+    }
+
+    a_next(in 0)
+  }
+
+  ok_next(in true)
+}
+
+0

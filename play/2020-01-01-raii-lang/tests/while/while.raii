@@ -1,0 +1,14 @@
+extern fn assert_eq(in actual, in expected);
+
+fn main() {
+    let mut ok = true;
+    let mut a = 0;
+    ok while {
+        assert_eq(a, a);
+        a = a + 1;
+        a == 5 then {
+            ok = false;
+        };
+    };
+    assert_eq(a, 5);
+}

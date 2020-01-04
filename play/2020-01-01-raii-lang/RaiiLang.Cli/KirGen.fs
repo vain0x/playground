@@ -25,6 +25,42 @@ let kgContextNew (): KirGenContext =
     LoopStack = []
   }
 
+/// bodyFun: ループの残りの部分を生成する関数を受け取って、ループの本体を返す関数
+let kgLoop context exit bodyFun =
+  // loop { body }; k
+  // ==> fix break() { k }
+  //     fix continue() { let _ = body; continue() }
+  //     continue()
+
+  let breakFun = context.FreshName "break"
+  let continueFun = context.FreshName "continue"
+
+  let breakNode = KApp (breakFun, [])
+  let continueNode = KApp (continueFun, [])
+
+  let loopStack = context.LoopStack
+  context.LoopStack <-
+    {
+      BreakFun = breakFun
+      ContinueFun = continueFun
+    } :: loopStack
+
+  let onBreak = exit unitNode
+  let onContinue = bodyFun breakNode continueNode (fun (_: KNode) -> continueNode)
+
+  context.LoopStack <- loopStack
+
+  KFix (
+    breakFun,
+    [],
+    onBreak,
+    KFix (
+      continueFun,
+      [],
+      onContinue,
+      continueNode
+    ))
+
 let kgTerm (context: KirGenContext) exit term =
   match term with
   | ABoolLiteral (value, _) ->
@@ -62,37 +98,7 @@ let kgTerm (context: KirGenContext) exit term =
       KApp (continueFun, [])
 
   | ALoopTerm (Some body, _) ->
-    // loop { body }; k
-    // ==> fix break() { k }
-    //     fix continue() { let _ = body; continue() }
-    //     continue()
-
-    let breakFun = context.FreshName "break"
-    let continueFun = context.FreshName "continue"
-    let continueNode = KApp (continueFun, [])
-
-    let loopStack = context.LoopStack
-    context.LoopStack <-
-      {
-        BreakFun = breakFun
-        ContinueFun = continueFun
-      } :: loopStack
-
-    let onBreak = exit unitNode
-    let onContinue = body |> kgTerm context (fun _ -> continueNode)
-
-    context.LoopStack <- loopStack
-
-    KFix (
-      breakFun,
-      [],
-      onBreak,
-      KFix (
-        continueFun,
-        [],
-        onContinue,
-        KApp (continueFun, [])
-      ))
+    kgLoop context exit (fun _ _ k -> body |> kgTerm context k)
 
   | ACallTerm (Some (ANameTerm (AName (Some funName, _))), args, _) ->
     // 関数から戻ってきた後の計算を中間関数 ret と定める。
@@ -148,6 +154,16 @@ let kgTerm (context: KirGenContext) exit term =
 
     let res = context.FreshName "res"
 
+    let bodyFun next =
+      body
+      |> Option.map (kgTerm context next)
+      |> Option.defaultWith (fun () -> next unitNode)
+
+    let altFun next =
+      alt
+      |> Option.map (kgTerm context next)
+      |> Option.defaultWith (fun () -> next unitNode)
+
     cond |> kgTerm context (fun cond ->
       KFix (
         funName,
@@ -155,12 +171,20 @@ let kgTerm (context: KirGenContext) exit term =
         exit (KName res),
         KIf (
           cond,
-          body
-          |> Option.map (kgTerm context next)
-          |> Option.defaultWith (fun () -> next unitNode),
-          alt
-          |> Option.map (kgTerm context next)
-          |> Option.defaultWith (fun () -> next unitNode)
+          bodyFun next,
+          altFun next
+        )))
+
+  | AWhileTerm (Some cond, Some body, _) ->
+    // cond while { body }
+    // ==> loop { cond then { body } else { break } }
+
+    kgLoop context exit (fun breakNode _ bodyExit ->
+      cond |> kgTerm context (fun cond ->
+        KIf (
+          cond,
+          body |> kgTerm context bodyExit,
+          breakNode
         )))
 
   | _ ->

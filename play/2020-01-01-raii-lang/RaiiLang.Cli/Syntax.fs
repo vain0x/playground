@@ -41,6 +41,7 @@ type Token =
   | RefToken
   | ThenToken
   | TrueToken
+  | WhileToken
 
   // 記号類
   | CommaToken
@@ -82,6 +83,7 @@ type Node =
   | BreakNode
   | ContinueNode
   | LoopNode
+  | WhileNode
   | CallNode
   | IfNode
   | ThenNode
@@ -171,7 +173,10 @@ type ATerm =
     of ABin option * ATerm option * ATerm option * NodeData
 
   | AIfTerm
-    of ATerm option * ATerm option * ATerm option * NodeData
+    of cond:ATerm option * body:ATerm option * alt:ATerm option * NodeData
+
+  | AWhileTerm
+    of cond:ATerm option * body:ATerm option * NodeData
 
 type AStmt =
   | ATermStmt
@@ -206,6 +211,7 @@ let keywords =
     RefToken, "ref"
     ThenToken, "then"
     TrueToken, "true"
+    WhileToken, "while"
   ]
 
 let punctuations =

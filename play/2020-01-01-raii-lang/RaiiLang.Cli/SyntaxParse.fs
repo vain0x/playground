@@ -59,7 +59,8 @@ let tokenIsParamFirst token =
 /// パイプラインのセグメントの先頭になるトークンか？
 let tokenIsSegmentFirst token =
   match token with
-  | ThenToken ->
+  | ThenToken
+  | WhileToken ->
     true
 
   | _ ->
@@ -254,6 +255,16 @@ let parseIfSegmentContent (p: P) =
         p.AddError(ExpectedError "ブロック")
     p.EndNode(ElseNode)
 
+let parseWhileSegmentContent (p: P) =
+  assert (p.Next = WhileToken)
+
+  p.Eat(WhileToken) |> is true
+
+  if p.Next = LeftBraceToken then
+    parseBlockTerm p
+  else
+    p.AddError(ExpectedError "ブロック")
+
 let parseSegmentContent (p: P) =
   assert (p.Next |> tokenIsSegmentFirst)
 
@@ -261,6 +272,10 @@ let parseSegmentContent (p: P) =
   | ThenToken ->
     parseIfSegmentContent p
     IfNode
+
+  | WhileToken ->
+    parseWhileSegmentContent p
+    WhileNode
 
   | _ ->
     failwith "tokenIsSegmentFirst bug"

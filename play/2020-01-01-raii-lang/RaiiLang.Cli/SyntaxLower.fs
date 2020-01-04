@@ -61,7 +61,8 @@ let nodeIsTerm (node: Node) =
   | LoopNode
   | CallNode
   | BinNode
-  | IfNode ->
+  | IfNode
+  | WhileNode ->
     true
 
   | _ ->
@@ -271,6 +272,20 @@ let lowerIf (node: NodeData) =
 
   AIfTerm (cond, body, alt, node)
 
+let lowerWhile (node: NodeData) =
+  assert (node.Node = WhileNode)
+
+  let terms =
+    node
+    |> nodeToFilterNode nodeIsTerm
+    |> List.map lowerTerm
+
+  // while キーワードの左と右からそれぞれ探す方がいい。
+  let cond = terms |> List.tryItem 0
+  let body = terms |> List.tryItem 1
+
+  AWhileTerm (cond, body, node)
+
 let lowerBin (node: NodeData) =
   assert (node.Node = BinNode)
 
@@ -325,11 +340,14 @@ let lowerTerm (node: NodeData) =
   | CallNode ->
     lowerCall node
 
+  | BinNode ->
+    lowerBin node
+
   | IfNode ->
     lowerIf node
 
-  | BinNode ->
-    lowerBin node
+  | WhileNode ->
+    lowerWhile node
 
   | _ ->
     failwith "NEVER: nodeIsTerm bug"
