@@ -10,7 +10,10 @@ import {
   Hover,
   window,
 } from "vscode"
-import { tagging, TaggingResult } from "./tt"
+import {
+  positionInRange,
+  tagging,
+} from "./tt"
 
 const doHover = async (document: TextDocument, position: Position, token: CancellationToken) => {
   await new Promise<void>(resolve => setTimeout(resolve, 300))
@@ -26,13 +29,18 @@ const doHover = async (document: TextDocument, position: Position, token: Cancel
     return null
   }
 
-  const contents = [result.output]
+  const word = result.output.find(word => positionInRange(position, word.range))
+  if (!word) {
+    return null
+  }
+
+  const contents = [word.kind]
 
   if (!result.stderr) {
     contents.push(result.stderr)
   }
 
-  return new Hover(contents)
+  return new Hover(contents, word.range)
 }
 
 class MyHoverProvider implements HoverProvider {
