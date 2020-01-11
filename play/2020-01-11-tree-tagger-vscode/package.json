@@ -1,0 +1,27 @@
+{
+    "name": "tree-tagger-vscode",
+    "version": "1.0.0",
+    "description": "",
+    "engines": {
+        "vscode": "^1.22.0"
+    },
+    "keywords": [],
+    "author": "vain0x <vainzerox@gmail.com>",
+    "license": "MIT",
+    "activationEvents": [
+        "onLanguage:plaintext",
+        "onLanguage:markdown"
+    ],
+    "main": "./out/src/extension",
+    "scripts": {
+        "build": "tsc -b",
+        "postinstall": "node ./node_modules/vscode/bin/install"
+    },
+    "devDependencies": {
+        "@types/node": "^13.1.6",
+        "typescript": "^3.7.4"
+    },
+    "dependencies": {
+        "vscode": "^1.1.36"
+    }
+}
