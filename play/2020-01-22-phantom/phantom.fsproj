@@ -1,0 +1,16 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <TargetFramework>netcoreapp3.1</TargetFramework>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <Compile Include="Core.fs" />
+    <Compile Include="SpaceExclude.fs" />
+    <Compile Include="SpaceCheck.fs" />
+    <Compile Include="ExSignedI64.fs" />
+    <Compile Include="Program.fs" />
+  </ItemGroup>
+
+</Project>
