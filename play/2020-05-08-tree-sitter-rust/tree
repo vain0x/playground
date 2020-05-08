@@ -1,0 +1,12 @@
+#!/bin/bash
+
+# EXAMPLES:
+# Regenerate parsers:
+#       ./tree generate
+# Feed input to the parser:
+#       ./tree parse input.txt
+# Test (in test/corpus):
+#       ./tree test
+#       ./tree test -f 'test name'
+
+./node_modules/.bin/tree-sitter "$@"

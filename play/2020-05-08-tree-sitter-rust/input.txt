@@ -1,0 +1,11 @@
+atomic_pat =
+    IDENT
+    | '[' pat ']'
+    | '{' pat '}'
+    ;
+
+pat = atomic_pat? ('|' atomic_pat?)*;
+
+rule_decl = IDENT '::=' pat ';';
+
+program = rule_decl*;

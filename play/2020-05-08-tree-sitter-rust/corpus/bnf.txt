@@ -1,0 +1,20 @@
+========
+BNF
+========
+
+atomic_pat =
+    IDENT
+    | '[' pat ']'
+    | '{' pat '}'
+    ;
+
+pat = atomic_pat? ('|' atomic_pat?)*;
+
+rule_decl = IDENT '::=' pat ';';
+
+program = rule_decl*;
+
+--------
+
+(source_file (rule (identifier) (alt_pattern (alt_pattern (lit_pattern (identifier)) (seq_pattern
+(seq_pattern (lit_pattern (single_quote)) (lit_pattern (identifier))) (lit_pattern (single_quote)))) (seq_pattern (seq_pattern (lit_pattern (single_quote)) (lit_pattern (identifier))) (lit_pattern (single_quote))))) (rule (identifier) (seq_pattern (rep_pattern (lit_pattern (identifier))) (rep_pattern (group (seq_pattern (lit_pattern (single_quote)) (rep_pattern (lit_pattern (identifier)))))))) (rule (identifier) (seq_pattern (seq_pattern (seq_pattern (lit_pattern (identifier)) (lit_pattern (single_quote))) (lit_pattern (identifier))) (lit_pattern (single_quote)))) (rule (identifier) (rep_pattern (lit_pattern (identifier)))))
