@@ -1,11 +1,32 @@
-atomic_pat =
-    IDENT
-    | '[' pat ']'
-    | '{' pat '}'
-    ;
+let x = a;
+let y = b;
 
-pat = atomic_pat? ('|' atomic_pat?)*;
+let block_init_1 = {
+    let z = c;
+    z
+}
 
-rule_decl = IDENT '::=' pat ';';
+let block_init_2 = {
+    let w = d;
+    w
+}
 
-program = rule_decl*;
+let match_init = match k {
+    p => match q {}
+    r => r,
+    _ => _
+}
+
+{
+    let f = fn() d;
+    let g = fn() f
+    let h = fn() -> i32 {
+        zero;
+        zero
+    }
+
+    let a = b
+    c;
+
+    d
+}

@@ -1,0 +1,14 @@
+========
+match
+========
+
+match cond {
+    p1 => e1,
+    p2 => e2,
+    p3 => fn() {}
+    p4 => e4
+}
+
+--------
+
+(source_file (match_expr (IDENT) (arm_open (IDENT) (IDENT)) (arm_open (IDENT) (IDENT)) (arm_closed (IDENT) (fn_expr_closed (block))) (arm_open (IDENT) (IDENT))))

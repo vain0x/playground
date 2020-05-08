@@ -2,7 +2,7 @@ use std::io::{self, Write};
 use tree_sitter::{Language, Node, Parser, Point, Range, Tree};
 
 extern "C" {
-    fn tree_sitter_sbnf() -> Language;
+    fn tree_sitter_jacco() -> Language;
 }
 
 fn write_indent(indent: usize, out: &mut Vec<u8>) -> io::Result<()> {
@@ -74,7 +74,7 @@ fn dump_node(text: &str, node: &Node) -> String {
 fn main() {
     let mut parser = Parser::new();
 
-    let language = unsafe { tree_sitter_sbnf() };
+    let language = unsafe { tree_sitter_jacco() };
     parser.set_language(language).unwrap();
 
     let source_code = {
@@ -91,5 +91,7 @@ fn main() {
     assert_eq!(root_node.start_position().column, 0);
 
     let s = dump_node(&source_code, &root_node);
+    println!("# See grammar.json for the grammar definition.");
+    println!("# See input.txt for the source code.");
     println!("{}", s);
 }

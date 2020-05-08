@@ -1,0 +1,65 @@
+ty = IDENT;
+
+pat = IDENT;
+
+group_expr = '(' expr ')';
+
+arm_open = pat '=>' expr_open;
+
+arm_closed = pat '=>' expr_closed;
+
+arms1 =
+    | arm_open (',' arms1)?
+    | arm_closed arms1?
+    ;
+
+match_expr = 'match' cond '{' arms1? '}';
+
+fn_expr_open = 'fn' '(' ')' expr_open;
+
+fn_expr_closed = 'fn' '(' ')' ('->' ty block | expr_closed);
+
+expr_open =
+    | IDENT
+    | group_expr
+    | fn_expr_open
+    ;
+
+expr_closed =
+    | block
+    | match_expr
+    | fn_expr_closed
+    ;
+
+expr =
+    | expr_open
+    | expr_closed
+    ;
+
+cond = expr;
+
+let_decl_open = 'let' pat '=' expr_open;
+
+let_decl_closed = 'let' pat '=' expr_closed;
+
+fn_decl = 'fn' IDENT '(' ')' block;
+
+decl_open =
+    | let_decl_open
+    | expr_open
+    ;
+
+decl_closed =
+    | let_decl_closed
+    | fn_decl
+    | expr_closed
+    ;
+
+semi =
+    | decl_open (';'+ semi | ';'*)
+    | decl_closed ';'* semi?
+    ;
+
+block = '{' ';'* semi? '}';
+
+program = ';'* semi?;

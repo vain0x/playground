@@ -1,0 +1,13 @@
+========
+let_decls
+========
+
+let f = fn() a;
+
+let g = fn() {
+    b
+}
+
+----
+
+(source_file (let_decl_open (IDENT) (fn_expr_open (IDENT))) (let_decl_closed (IDENT) (fn_expr_closed (block (IDENT)))))

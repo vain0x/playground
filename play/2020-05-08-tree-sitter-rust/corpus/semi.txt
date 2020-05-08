@@ -1,0 +1,25 @@
+========
+semi
+========
+
+;;
+
+fn() {
+    ;;
+    a;;
+    b;;
+    c
+}
+
+;;
+
+fn() {
+    ;;
+    let x = y;;
+}
+
+;;
+
+--------
+
+(source_file (fn_expr_closed (block (IDENT) (IDENT) (IDENT))) (fn_expr_closed (block (let_decl_open (IDENT) (IDENT)))))

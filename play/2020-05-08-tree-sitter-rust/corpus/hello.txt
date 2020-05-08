@@ -1,9 +1,0 @@
-=================
-HELLO
-=================
-
-hello = 'hello';
-
------------------
-
-(source_file (rule (identifier) (lit_pattern (single_quote))))

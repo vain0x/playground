@@ -1,0 +1,40 @@
+========
+complicated
+========
+
+let x = a;
+let y = b;
+
+let block_init_1 = {
+    let z = c;
+    z
+}
+
+let block_init_2 = {
+    let w = d;
+    w
+}
+
+let match_init = match k {
+    p => match q {}
+    r => r,
+    _ => _
+}
+
+--------
+
+(source_file
+    (let_decl_open (IDENT) (IDENT))
+    (let_decl_open (IDENT) (IDENT))
+    (let_decl_closed (IDENT) (block
+        (let_decl_open (IDENT) (IDENT))
+        (IDENT)))
+    (let_decl_closed (IDENT) (block
+        (let_decl_open (IDENT) (IDENT))
+        (IDENT)))
+    (let_decl_closed (IDENT) (match_expr
+        (IDENT)
+        (arm_closed (IDENT) (match_expr (IDENT)))
+        (arm_open (IDENT) (IDENT))
+        (arm_open (IDENT) (IDENT)))
+    ))

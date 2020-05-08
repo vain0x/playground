@@ -1,0 +1,9 @@
+=================
+let_decl_open
+=================
+
+let x = a
+
+-----------------
+
+(source_file (let_decl_open (IDENT) (IDENT)))
