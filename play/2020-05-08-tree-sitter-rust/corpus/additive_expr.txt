@@ -1,0 +1,19 @@
+========
+additive_expr
+========
+
+a + b - c + d;
+
+x * y + z / w;
+
+--------
+
+(source_file
+    (add_expr_open
+        (sub_expr_open
+            (add_expr_open (IDENT) (IDENT))
+            (IDENT))
+        (IDENT))
+    (add_expr_open
+        (mul_expr_open (IDENT) (IDENT))
+        (div_expr_open (IDENT) (IDENT))))

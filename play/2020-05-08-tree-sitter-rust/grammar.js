@@ -29,6 +29,7 @@ module.exports = grammar({
       $._atomic_expr_open,
     ),
 
+    // 左辺は closed でもいいけど、いまのところ multitive_expr は closed にならない。
     mul_expr_open: $ => seq($._multitive_expr, '*', $._suffix_expr_open),
 
     div_expr_open: $ => seq($._multitive_expr, '/', $._suffix_expr_open),
@@ -37,6 +38,16 @@ module.exports = grammar({
       $.mul_expr_open,
       $.div_expr_open,
       $._suffix_expr_open,
+    ),
+
+    add_expr_open: $ => seq($._additive_expr, '+', $._multitive_expr),
+
+    sub_expr_open: $ => seq($._additive_expr, '-', $._multitive_expr),
+
+    _additive_expr: $ => choice(
+      $.add_expr_open,
+      $.sub_expr_open,
+      $._multitive_expr,
     ),
 
     arm_open: $ => seq($._pat, '=>', $._expr_open),
@@ -60,7 +71,7 @@ module.exports = grammar({
       )),
 
     _expr_open: $ => choice(
-      $._multitive_expr,
+      $._additive_expr,
       $.fn_expr_open,
     ),
 

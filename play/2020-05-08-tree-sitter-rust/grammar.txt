@@ -38,6 +38,16 @@ multitive_expr =
     | suffix_expr_open
     ;
 
+add_expr_open = additive_expr '+' multitive_expr;
+
+sub_expr_open = additive_expr '-' multitive_expr;
+
+additive_expr =
+    | add_expr_open
+    | sub_expr_open
+    | multitive_expr
+    ;
+
 arm_open = pat '=>' expr_open;
 
 arm_closed = pat '=>' expr_closed;
@@ -54,7 +64,7 @@ fn_expr_open = 'fn' '(' ')' expr_open;
 fn_expr_closed = 'fn' '(' ')' ('->' ty block | expr_closed);
 
 expr_open =
-    | multitive_expr
+    | additive_expr
     | fn_expr_open
     ;
 
