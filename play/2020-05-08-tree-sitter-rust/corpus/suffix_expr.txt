@@ -1,0 +1,9 @@
+========
+suffix_expr
+========
+
+(f)()()
+
+--------
+
+(source_file (call_expr (call_expr (group_expr (IDENT)))))

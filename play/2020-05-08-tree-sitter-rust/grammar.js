@@ -17,6 +17,18 @@ module.exports = grammar({
 
     group_expr: $ => seq('(', $._expr, ')'),
 
+    _atomic_expr_open: $ => choice(
+      $.IDENT,
+      $.group_expr,
+    ),
+
+    call_expr: $ => seq($._suffix_expr_open, '(', ')'),
+
+    _suffix_expr_open: $ => choice(
+      $.call_expr,
+      $._atomic_expr_open,
+    ),
+
     arm_open: $ => seq($._pat, '=>', $._expr_open),
 
     arm_closed: $ => seq($._pat, '=>', $._expr_closed),
@@ -38,8 +50,7 @@ module.exports = grammar({
       )),
 
     _expr_open: $ => choice(
-      $.IDENT,
-      $.group_expr,
+      $._suffix_expr_open,
       $.fn_expr_open,
     ),
 

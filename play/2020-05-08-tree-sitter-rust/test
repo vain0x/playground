@@ -1,0 +1,4 @@
+#!/bin/bash
+
+./tree generate &&
+    ./tree test

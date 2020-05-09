@@ -4,6 +4,18 @@ pat = IDENT;
 
 group_expr = '(' expr ')';
 
+atomic_expr_open =
+    | IDENT
+    | group_expr
+    ;
+
+call_expr = suffix_expr_open '(' ')';
+
+suffix_expr_open =
+    | call_expr
+    | atomic_expr_open
+    ;
+
 arm_open = pat '=>' expr_open;
 
 arm_closed = pat '=>' expr_closed;
@@ -20,8 +32,7 @@ fn_expr_open = 'fn' '(' ')' expr_open;
 fn_expr_closed = 'fn' '(' ')' ('->' ty block | expr_closed);
 
 expr_open =
-    | IDENT
-    | group_expr
+    | suffix_expr_open
     | fn_expr_open
     ;
 

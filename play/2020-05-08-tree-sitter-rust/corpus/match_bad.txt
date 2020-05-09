@@ -1,5 +1,5 @@
 ========
-match
+match_bad
 ========
 
 match cond {
@@ -11,4 +11,4 @@ match cond {
 
 --------
 
-(source_file (match_expr (IDENT) (ERROR (arm_open (IDENT) (IDENT)) (arm_open (IDENT) (IDENT))) (arm_closed (IDENT) (block)) (arm_closed (IDENT) (fn_expr_closed (block)))))
+(source_file (match_expr (IDENT) (arm_closed (IDENT) (ERROR (IDENT) (IDENT) (IDENT) (IDENT)) (block)) (arm_closed (IDENT) (fn_expr_closed (block)))))
