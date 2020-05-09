@@ -1,3 +1,15 @@
+# Jacco 言語
+# ブロック {} の直後のセミコロンを省略できる Rust 風の文法
+# (処理系: <https://github.com/vain0x/languages/tree/master/jacco-lang)
+
+# ブロックで終わる場合を closed 、終わらない場合を open と呼ぶことにする。
+# 末尾が '}' になるかどうかで規則を分けている。
+
+# Rust と違って、if などの式は式のトップレベルとして出現する。
+# 例えば `if {} + x` のように、二項演算の直下に if 式が出現する式は NG。
+# 代わりに、`(if {}) + x` のようにカッコをつかえば、カッコの内側は式のトップレベルなので OK になる。
+# なお、`x + if {}` のように if 式が末尾に来るケースは許可するようにしたい。
+
 ty = IDENT;
 
 pat = IDENT;
@@ -16,6 +28,16 @@ suffix_expr_open =
     | atomic_expr_open
     ;
 
+mul_expr_open = multitive_expr '*' suffix_expr_open;
+
+div_expr_open = multitive_expr '/' suffix_expr_open;
+
+multitive_expr =
+    | mul_expr_open
+    | div_expr_open
+    | suffix_expr_open
+    ;
+
 arm_open = pat '=>' expr_open;
 
 arm_closed = pat '=>' expr_closed;
@@ -32,7 +54,7 @@ fn_expr_open = 'fn' '(' ')' expr_open;
 fn_expr_closed = 'fn' '(' ')' ('->' ty block | expr_closed);
 
 expr_open =
-    | suffix_expr_open
+    | multitive_expr
     | fn_expr_open
     ;
 

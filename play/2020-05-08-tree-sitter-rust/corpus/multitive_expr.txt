@@ -1,0 +1,17 @@
+========
+multitive_expr
+========
+
+a * b / c;
+
+x / y * z();
+
+--------
+
+(source_file
+  (div_expr_open
+    (mul_expr_open (IDENT) (IDENT))
+    (IDENT))
+  (mul_expr_open
+    (div_expr_open (IDENT) (IDENT))
+    (call_expr (IDENT))))

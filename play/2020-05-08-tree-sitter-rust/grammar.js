@@ -29,6 +29,16 @@ module.exports = grammar({
       $._atomic_expr_open,
     ),
 
+    mul_expr_open: $ => seq($._multitive_expr, '*', $._suffix_expr_open),
+
+    div_expr_open: $ => seq($._multitive_expr, '/', $._suffix_expr_open),
+
+    _multitive_expr: $ => choice(
+      $.mul_expr_open,
+      $.div_expr_open,
+      $._suffix_expr_open,
+    ),
+
     arm_open: $ => seq($._pat, '=>', $._expr_open),
 
     arm_closed: $ => seq($._pat, '=>', $._expr_closed),
@@ -50,7 +60,7 @@ module.exports = grammar({
       )),
 
     _expr_open: $ => choice(
-      $._suffix_expr_open,
+      $._multitive_expr,
       $.fn_expr_open,
     ),
 
