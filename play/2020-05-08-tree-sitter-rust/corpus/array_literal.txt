@@ -1,0 +1,11 @@
+========
+array_literal
+========
+
+let fib = [a, b, c, d, e];
+
+let five = [f() + g(); len()];
+
+--------
+
+(source_file (let_decl_open (IDENT) (array_list_expr (IDENT) (IDENT) (IDENT) (IDENT) (IDENT))) (let_decl_open (IDENT) (array_replicate_expr (add_expr_open (call_expr (IDENT)) (call_expr (IDENT))) (call_expr (IDENT)))))

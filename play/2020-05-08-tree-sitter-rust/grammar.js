@@ -17,9 +17,32 @@ module.exports = grammar({
 
     group_expr: $ => seq('(', $._expr, ')'),
 
+    array_list_expr: $ => seq(
+      '[',
+      optional(seq(
+        $._expr,
+        repeat(seq(
+          ',',
+          $._expr,
+        )),
+        optional(','),
+      )),
+      ']',
+    ),
+
+    array_replicate_expr: $ => seq(
+      '[',
+      $._expr,
+      ';',
+      $._expr,
+      ']'
+    ),
+
     _atomic_expr_open: $ => choice(
       $.IDENT,
       $.group_expr,
+      $.array_list_expr,
+      $.array_replicate_expr,
     ),
 
     call_expr: $ => seq($._suffix_expr_open, '(', ')'),

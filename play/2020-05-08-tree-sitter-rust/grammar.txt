@@ -16,9 +16,15 @@ pat = IDENT;
 
 group_expr = '(' expr ')';
 
+array_list_expr = '[' (expr (',' expr)* ','?)? ']';
+
+array_replicate_expr = '[' expr ';' expr ']';
+
 atomic_expr_open =
     | IDENT
     | group_expr
+    | array_list_expr
+    | array_replicate_expr
     ;
 
 call_expr = suffix_expr_open '(' ')';
