@@ -9,7 +9,7 @@ module.exports = grammar({
       optional($._semi),
     ),
 
-    IDENT: $ => /[A-Za-z_][0-9A-Za-z_-]*/,
+    IDENT: _ => /[A-Za-z_][0-9A-Za-z_-]*/,
 
     _ty: $ => $.IDENT,
 
