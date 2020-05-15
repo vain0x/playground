@@ -38,11 +38,28 @@ module.exports = grammar({
       ']'
     ),
 
+    struct_expr: $ => seq(
+      $.IDENT,
+      '{',
+      repeat(seq(
+        choice(
+          $._expr,
+          seq(
+            $.IDENT,
+            ':',
+            $._ty,
+          )),
+        ',',
+      )),
+      '}',
+    ),
+
     _atomic_expr_open: $ => choice(
       $.IDENT,
       $.group_expr,
       $.array_list_expr,
       $.array_replicate_expr,
+      // $.struct_expr,
     ),
 
     call_expr: $ => seq($._suffix_expr_open, '(', ')'),
