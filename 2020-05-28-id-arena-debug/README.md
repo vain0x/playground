@@ -1,6 +1,6 @@
 # ID Arena + Debug
 
-Conceptually same as [id-arena](https://github.com/fitzgen/id-arena) but `Arena::Id` from this crate implements `Debug` trait to print the *contents of the object* rather than just an integer ID.
+Conceptually same as [id-arena](https://github.com/fitzgen/id-arena) but `Arena::Id` from this crate implements `Debug` trait to print the *contents of the object* rather than just an integer ID for improved print debugging experience.
 
 ## Illustration
 
