@@ -1,0 +1,32 @@
+
+list.[id == theId].done = true
+
+fn is_blank(item) {
+    item == ""
+}
+
+query fn todo_list_with_empty(todo_list) {
+    [
+        for item in todo_list {
+            item!
+        }
+
+        if list.last().any(is_blank) {
+            { text: "" }!
+        }
+    ]
+}
+
+query fn render(items) {
+    Html::Ul.[
+        for item in items {
+            Html::Li.{
+                onChange: fn(ev) {
+                    item.text = ev.target.value;
+                }
+            }.[
+                item,
+            ]
+        }
+    ]
+}

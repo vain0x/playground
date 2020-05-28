@@ -1,0 +1,19 @@
+{
+  "name": "quzie_js",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "author": "vain0x <vainzerox@gmail.com>",
+  "license": "MIT",
+  "devDependencies": {
+    "webpack": "^4.41.5",
+    "webpack-cli": "^3.3.10",
+    "webpack-dev-server": "^3.10.1"
+  },
+  "scripts": {
+    "build": "webpack --mode production",
+    "dev": "npm run dev:build",
+    "dev:build": "webpack-dev-server --mode development",
+    "test": "echo \"Error: no test specified\" && exit 1"
+  }
+}
