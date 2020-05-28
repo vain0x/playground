@@ -7,7 +7,6 @@ use std::{
     fmt,
     hash::{Hash, Hasher},
     marker::PhantomData,
-    ops::Index,
 };
 
 pub(crate) struct Id<T, D: ArenaDebug> {
@@ -33,6 +32,10 @@ impl<T, D: ArenaDebug<Item = T>> Id<T, D> {
 
     pub(crate) fn of(self, arena: &VecArena<T, D>) -> &T {
         arena.get(self)
+    }
+
+    pub(crate) fn of_mut<'a>(&'_ mut self, arena: &'a mut VecArena<T, D>) -> &'a mut T {
+        arena.get_mut(*self)
     }
 }
 
@@ -88,11 +91,14 @@ impl<T: fmt::Debug> fmt::Debug for Id<T, NullArenaDebug<T>> {
 
 impl<T: fmt::Debug> fmt::Debug for Id<T, DefaultArenaDebug<T>> {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        if let Some(value) = self.debug.borrow(self.id) {
-            fmt::Debug::fmt(value, f)
-        } else {
-            write!(f, "#{}", self.id)
+        if self.debug.enter(self.id) {
+            let value = self.debug.get(self.id);
+            fmt::Debug::fmt(value, f)?;
+            self.debug.leave(self.id);
+            return Ok(());
         }
+
+        write!(f, "#{}", self.id)
     }
 }
 

@@ -50,3 +50,22 @@ pub(crate) fn main_test() {
         r##"NodeData { name: "Alice", left_opt: None, right_opt: None }"##
     );
 }
+
+#[test]
+pub(crate) fn test_recursive_data() {
+    let mut nodes = NodeArena::new();
+
+    let mut alice = nodes.insert(NodeData::new_leaf("Alice"));
+    let mut bob = nodes.insert(NodeData::new_leaf("Bob"));
+
+    // alice -> bob
+    alice.of_mut(&mut nodes).left_opt = Some(bob);
+    // bob -> alice
+    bob.of_mut(&mut nodes).right_opt = Some(alice);
+
+    // Recursive ID prints to `#N` (N: ID of integer).
+    assert_eq!(
+        format!("{:?}", alice),
+        r##"NodeData { name: "Alice", left_opt: Some(NodeData { name: "Bob", left_opt: None, right_opt: Some(#0) }), right_opt: None }"##
+    );
+}
