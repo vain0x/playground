@@ -5,6 +5,8 @@ CXX = g++
 SDL_LIB = -L/usr/local/lib -lSDL2 -Wl,-rpath=/usr/local/lib
 SDL_INCLUDE = -I/usr/local/include
 
+OBJS = subscription.o main.o
+SRCS = src/subscription.c src/main.c
 CXXFLAGS = -Wall -c -std=c++17 $(SDL_INCLUDE)
 LDFLAGS = $(SDL_LIB)
 EXE = app
@@ -14,12 +16,8 @@ all: run
 run: build
 	./$(EXE)
 
-build: $(EXE)
-
-$(EXE): main.o
-	$(CXX) $< $(LDFLAGS) -o $@
-
-main.o: src/main.c
-	$(CXX) $(CXXFLAGS) $< -o $@
+build: $(SRCS)
+	$(CXX) $(CXXFLAGS) $(SRCS)
+	$(CXX) -Wl,--start-group $(OBJS) -Wl,--end-group $(LDFLAGS) -o $(EXE)
 
 .PHONY: all clean
