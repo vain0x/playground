@@ -1,0 +1,23 @@
+# clang-format (C++ フォーマッタ) の設定ファイル
+# 参考: https://clang.llvm.org/docs/ClangFormatStyleOptions.html
+
+Language: Cpp
+
+# スペース4つ分ずつ字下げする。
+IndentWidth: 4
+
+# 字下げにハードタブを使う。
+UseTab: ForIndentation
+TabWidth: 4
+
+# include を整列しない。(#include "pch.h" は先頭にしかおけないため。)
+IncludeBlocks: Preserve
+
+# コメントを自動で改行しない。
+ReflowComments: false
+
+# 関数や if 文などの開始のブロックの `{` を行末に置く。
+BreakBeforeBraces: Attach
+
+# ポインターや参照の記号は左に寄せる。(T* など)
+PointerAlignment: Right
