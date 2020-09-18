@@ -40,8 +40,49 @@ int main() {
 	subscription_push(&subscription, "DestroyRenderer", renderer,
 	                  (void (*)(void *))SDL_DestroyRenderer);
 
+	// surface: ピクセルの集まり
+	SDL_Surface *surface =
+	    SDL_CreateRGBSurface(0, SCREEN_WIDTH, SCREEN_HEIGHT, 32, 0, 0, 0, 0);
+	if (!surface) {
+		app_abort("SDL_CreateRGBSurface", &subscription);
+	}
+	subscription_push(&subscription, "FreeSurface", surface,
+	                  (void (*)(void *))SDL_FreeSurface);
+
+	// 緑で塗る。
+	int status = SDL_FillRect(surface, NULL,
+	                          SDL_MapRGB(surface->format, 0x21, 0xfa, 0x21));
+	if (status != 0) {
+		app_abort("SDL_FillRect", &subscription);
+	}
+
+	// texture: ピクセルデータを表すもの (具体的な表現はドライバによる)
+	SDL_Texture *texture = SDL_CreateTextureFromSurface(renderer, surface);
+	if (!texture) {
+		app_abort("SDL_CreateTextureFromSurface", &subscription);
+	}
+	subscription_push(&subscription, "DestroyTexture", texture,
+	                  (void (*)(void *))SDL_DestroyTexture);
+
+	// 描画対象をクリアする。
+	status = SDL_RenderClear(renderer);
+	if (status != 0) {
+		app_abort("SDL_RenderClear", &subscription);
+	}
+
+	// テクスチャを描画対象に貼り付ける。(NULL はコピーの範囲を制限しないことを表している。)
+	status = SDL_RenderCopy(renderer, texture, NULL, NULL);
+	if (status != 0) {
+		app_abort("SDL_RenderCopy", &subscription);
+	}
+
+	// 描画した内容をウィンドウに反映する。
+	SDL_RenderPresent(renderer);
+
+	// 正しく描画できたか見るために5秒待つ。
 	SDL_Delay(5 * 1000);
 
+	fprintf(stderr, "OK\n");
 	subscription_dispose(&subscription);
 	SDL_Quit();
 	return 0;
