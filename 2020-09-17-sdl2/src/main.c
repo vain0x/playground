@@ -1,4 +1,5 @@
 #include <SDL2/SDL.h>
+#include <stdbool.h>
 #include <stdio.h>
 #include <stdlib.h>
 
@@ -79,8 +80,36 @@ int main() {
 	// 描画した内容をウィンドウに反映する。
 	SDL_RenderPresent(renderer);
 
-	// 正しく描画できたか見るために5秒待つ。
-	SDL_Delay(5 * 1000);
+	// // 正しく描画できたか見るために5秒待つ。
+	// SDL_Delay(5 * 1000);
+
+	// メインループ
+	bool is_running = true;
+	while (is_running) {
+		// マウスやキーボードなどのイベントを処理する。
+		SDL_Event e = {};
+		while (SDL_PollEvent(&e)) {
+			switch (e.type) {
+			case SDL_QUIT: {
+				fprintf(stderr, "quitting...\n");
+				is_running = false;
+				continue;
+			}
+			case SDL_KEYDOWN: {
+				fprintf(stderr, "[TRACE] KEYDOWN key=%d\n", e.key.keysym.sym);
+				continue;
+			}
+			default:
+				// ignore
+				continue;
+			}
+		}
+
+		// TODO: 再描画
+
+		// 60 FPS
+		SDL_Delay(1000 / 60);
+	}
 
 	fprintf(stderr, "OK\n");
 	subscription_dispose(&subscription);
