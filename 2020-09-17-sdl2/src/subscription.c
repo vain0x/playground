@@ -1,4 +1,5 @@
 #include <assert.h>
+#include <stdbool.h>
 #include <stddef.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -11,19 +12,33 @@ Subscription subscription_new() {
 	};
 }
 
-void subscription_push(Subscription *self, const char *hint, void *ptr,
-                       void (*fun)(void *)) {
+void subscription_push0(Subscription *self, const char *hint,
+                        void (*fn)(void)) {
 	assert(self != NULL);
 
-	SubscriptionEntry *next =
+	SubscriptionEntry *entry =
 	    (SubscriptionEntry *)malloc(sizeof(SubscriptionEntry));
-	*next = (SubscriptionEntry){
-	    .hint = hint,
-	    .ptr = ptr,
-	    .fun = fun,
-	    .next = self->head,
-	};
-	self->head = next;
+	entry->hint = hint;
+	entry->arity = 0;
+	entry->fn0 = fn;
+	entry->next = self->head;
+
+	self->head = entry;
+}
+
+void subscription_push(Subscription *self, const char *hint, void *ptr,
+                       void (*fn)(void *)) {
+	assert(self != NULL);
+
+	SubscriptionEntry *entry =
+	    (SubscriptionEntry *)malloc(sizeof(SubscriptionEntry));
+	entry->hint = hint;
+	entry->arity = 1;
+	entry->fn1 = fn;
+	entry->ptr = ptr;
+	entry->next = self->head;
+
+	self->head = entry;
 }
 
 void subscription_dispose(Subscription *self) {
@@ -33,7 +48,19 @@ void subscription_dispose(Subscription *self) {
 	while (sub != 0) {
 		fprintf(stderr, "[TRACE] %s\n", sub->hint);
 
-		(*sub->fun)(sub->ptr);
+		switch (sub->arity) {
+		case 0:
+			(sub->fn0)();
+			break;
+
+		case 1:
+			(sub->fn1)(sub->ptr);
+			break;
+
+		default:
+			assert(false && "invalid arity");
+		}
+
 		SubscriptionEntry *next = sub->next;
 
 		free(sub);

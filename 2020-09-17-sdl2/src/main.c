@@ -1,27 +1,54 @@
 #include <SDL2/SDL.h>
+#include <SDL2/SDL_ttf.h>
+
 #include <stdbool.h>
 #include <stdio.h>
 #include <stdlib.h>
 
 #include "subscription.h"
 
+const char *font_file = "JetBrainsMono-Regular.ttf";
+
 const int SCREEN_WIDTH = 640;
 const int SCREEN_HEIGHT = 480;
 
 SDL_NORETURN
 void app_abort(const char *msg, Subscription *subscription) {
-	fprintf(stderr, "[ERROR] %s %s\n", msg, SDL_GetError());
+	fprintf(stderr, "[ERROR] %s\n", msg);
+
+	const char *sdl_error = SDL_GetError();
+	if (sdl_error != NULL) {
+		fprintf(stderr, "   SDL: %s\n", sdl_error);
+	}
+
+	const char *ttf_error = TTF_GetError();
+	if (ttf_error != NULL) {
+		fprintf(stderr, "   TTF: %s\n", ttf_error);
+	}
+
 	subscription_dispose(subscription);
-	SDL_Quit();
-	abort();
+	exit(1);
 }
 
 int main() {
 	Subscription subscription = subscription_new();
 
 	if (SDL_Init(SDL_INIT_EVERYTHING) != 0) {
-		app_abort("SDL_init", &subscription);
+		app_abort("SDL_Init", &subscription);
 	}
+	subscription_push0(&subscription, "SDL_Quit", SDL_Quit);
+
+	if (TTF_Init() != 0) {
+		app_abort("TTF_Init", &subscription);
+	}
+	subscription_push0(&subscription, "TTF_Quit", TTF_Quit);
+
+	TTF_Font *font = TTF_OpenFont(font_file, 24);
+	if (font == NULL) {
+		app_abort("TTF_OpenFont", &subscription);
+	}
+	subscription_push(&subscription, "TTF_CloseFont", font,
+	                  (void (*)(void *))TTF_CloseFont);
 
 	const int px = 100;
 	const int py = 100;
@@ -50,9 +77,12 @@ int main() {
 	subscription_push(&subscription, "FreeSurface", surface,
 	                  (void (*)(void *))SDL_FreeSurface);
 
-	// 緑で塗る。
-	int status = SDL_FillRect(surface, NULL,
-	                          SDL_MapRGB(surface->format, 0x21, 0xfa, 0x21));
+	// 背景色で塗る。
+	SDL_Color background_color = {0x66, 0x21, 0x66};
+	int status =
+	    SDL_FillRect(surface, NULL,
+	                 SDL_MapRGB(surface->format, background_color.r,
+	                            background_color.g, background_color.b));
 	if (status != 0) {
 		app_abort("SDL_FillRect", &subscription);
 	}
@@ -74,6 +104,34 @@ int main() {
 	// テクスチャを描画対象に貼り付ける。(NULL はコピーの範囲を制限しないことを表している。)
 	status = SDL_RenderCopy(renderer, texture, NULL, NULL);
 	if (status != 0) {
+		app_abort("SDL_RenderCopy", &subscription);
+	}
+
+	// 文字列を描画する。
+	SDL_Color white = {0xfa, 0xfa, 0xfa};
+	SDL_Surface *text_surface =
+	    TTF_RenderText_Blended(font, "Hello, world!", white);
+	if (text_surface == NULL) {
+		app_abort("TTF_RenderText_Blended", &subscription);
+	}
+
+	SDL_Texture *text_texture =
+	    SDL_CreateTextureFromSurface(renderer, text_surface);
+	if (text_texture == NULL) {
+		app_abort("SDL_CreateTextureFromSurface", &subscription);
+	}
+
+	SDL_Rect text_rect = {};
+	if (SDL_QueryTexture(text_texture, NULL, NULL, &text_rect.w,
+	                     &text_rect.h) != 0) {
+		app_abort("SDL_QueryTexture", &subscription);
+	}
+	fprintf(stderr, "[TRACE] text size = (%d, %d)\n", text_rect.w, text_rect.h);
+
+	text_rect.x = (SCREEN_WIDTH - text_rect.w) / 2;
+	text_rect.y = (SCREEN_HEIGHT - text_rect.h) / 2;
+
+	if (SDL_RenderCopy(renderer, text_texture, NULL, &text_rect) != 0) {
 		app_abort("SDL_RenderCopy", &subscription);
 	}
 
@@ -113,6 +171,5 @@ int main() {
 
 	fprintf(stderr, "OK\n");
 	subscription_dispose(&subscription);
-	SDL_Quit();
 	return 0;
 }
