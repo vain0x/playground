@@ -1,0 +1,19 @@
+#!/bin/sh
+
+set -eu
+
+GTK_URL='https://download.gnome.org/sources/gtk+/3.24/gtk+-3.24.0.tar.xz'
+
+(
+    curl -L "$GTK_URL" | tar -xJ -C /tmp
+    cd /tmp/gtk+-3.24.0
+    ./configure
+    make
+)
+
+# No package 'glib-2.0' found
+# No package 'atk' found
+# No package 'pango' found
+# No package 'cairo' found
+# No package 'cairo-gobject' found
+# No package 'gdk-pixbuf-2.0' found
