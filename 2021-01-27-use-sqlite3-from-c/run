@@ -1,0 +1,18 @@
+#!/bin/sh
+
+set -eux
+
+rm -rf target/temp.db
+
+target/app target/temp.db "$(cat init.sql)"
+
+QUERY='select * from items;'
+target/app target/temp.db "$QUERY"
+
+# Possible output:
+#
+# item_id = 1
+# name = a
+#
+# item_id = 2
+# name = b

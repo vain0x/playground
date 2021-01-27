@@ -1,0 +1,11 @@
+#!/bin/sh
+
+set -eu
+
+mkdir -p target
+
+gcc -std=c11 -O2 \
+    vendor/sqlite3/sqlite3.o \
+    main.c \
+    -o target/app \
+    -lpthread -ldl

@@ -1,0 +1,9 @@
+#!/bin/sh
+
+set -eu
+
+mkdir -p vendor
+
+URL='https://sqlite.org/2021/sqlite-amalgamation-3340100.zip'
+busybox wget "$URL" -O - | busybox unzip -
+mv 'sqlite-amalgamation-3340100' vendor/sqlite3
