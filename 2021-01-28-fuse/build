@@ -1,0 +1,10 @@
+#!/bin/sh
+
+set -eu
+
+mkdir -p target
+
+gcc -std=gnu11 -g -Wall -Wextra \
+    main.c \
+    $(pkg-config fuse3 --cflags --libs) \
+    -o target/app

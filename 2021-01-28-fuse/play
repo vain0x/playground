@@ -1,0 +1,11 @@
+#!/bin/sh
+
+set -eu
+
+mkdir -p target
+
+gcc -std=gnu11 -g -Wall -Wextra \
+    play.c \
+    -o target/play
+
+target/play
