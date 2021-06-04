@@ -1,0 +1,47 @@
+* {
+    box-sizing: border-box;
+}
+
+html {
+    font-size: 62.5%;
+}
+
+body {
+    font-family: "You Gothic Medium", sans-serif;
+    font-size: 1.8rem;
+    line-height: 1.5;
+}
+
+code,
+pre,
+textarea {
+    font-family: "JetBrains Mono", "monospace", monospace;
+}
+
+pre {
+    margin: 0;
+}
+
+
+
+html,
+body {
+    margin: 0;
+    padding: 0;
+    height: 100vh;
+
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+}
+
+body {
+    padding: 4rem;
+    align-items: center;
+}
+
+#editor {
+    width: 800px;
+    height: 658px;
+    border: 2px solid #9d9d9d;
+}
