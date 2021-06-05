@@ -1,0 +1,19 @@
+{
+  "compilerOptions": {
+    "target": "ES2017",
+    "lib": [
+      "DOM",
+      "ES2017"
+    ],
+    "module": "CommonJS",
+    "moduleResolution": "Node",
+    "esModuleInterop": true,
+    "jsx": "react",
+    "baseUrl": ".",
+    "rootDir": "src",
+    "outDir": "target",
+    "strict": true,
+    "sourceMap": true,
+    "preserveWatchOutput": true
+  }
+}
