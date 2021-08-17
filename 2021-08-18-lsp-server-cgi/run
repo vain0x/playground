@@ -1,0 +1,9 @@
+#!/bin/sh
+
+set -eu
+
+./req <<END | cargo run
+{"jsonrpc":"2.0","method":"initialize","params":{
+    "capabilities":{}
+},"id":1}
+END
