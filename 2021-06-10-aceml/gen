@@ -1,0 +1,4 @@
+#!/bin/sh
+
+find examples -name '*.aceml' | \
+    xargs -I{} sh -c 'node src/parse.js --format html <{} >$(dirname {})/$(basename {} .aceml)-generated.html'

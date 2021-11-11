@@ -1,0 +1,65 @@
+root =
+    __ head:body? __ tail:(bad body?)* __
+    {
+        const children = tail.reduce((current, [bad, item]) => [...current, bad, ...item??[]], head??[])
+        return { kind: "root", children, loc: location() }
+    }
+
+bad =
+  text:[\\:}]
+  { return { kind: "bad", text, loc: location() } }
+
+
+
+// colon is disallowed
+attrNode = element / backtick / escaped / tag
+
+attr =
+    head:attrNode tail:(spaces:spaces attrNode)*
+    { return tail.reduce((current, pair) => [...current, ...pair], [head]) }
+
+// colon is allowed
+bodyNode = element / backtick / escaped / verbatim
+
+body =
+    head:bodyNode tail:(spaces:spaces bodyNode)*
+    { return tail.reduce((current, pair) => [...current, ...pair], [head]) }
+
+element =
+    "{" __ body:attr? __ "}"
+    { return { kind: "element", tag: undefined, attr: [], children: body, loc: location() } }
+    / "{" tag:tag? __ attr:attr? __ ":" __ body:body? __ "}"
+    { return { kind: "element", tag, attr, children: body, loc: location() } }
+
+
+
+// colon is disallowed
+tag = $ ([^ \t\r\n{}`:\\]+)
+
+verbatim = $ ([^ \t\r\n{}`\\]+)
+
+backtick =
+    "```" body:$ ((! "```" [^`]+)*) "```"?
+    { return { kind: "quoted", text: body, loc: location() } }
+    / "`" body:$ ([^`\r\n]*) "`"?
+    { return { kind: "quoted", text: body, loc: location() } }
+
+escaped =
+    text:$ (
+        "\\" [ux] "{" hex:[0-9a-fA-F_]+ "}"
+        / "\\" [ux] hex:[0-9a-fA-F]+
+        / "\\" [^ \t\r\n]
+    )
+    { return { kind: "escaped", text, loc: location() } }
+
+
+
+comment = $ ("%%" [^\r\n]*) { return }
+
+spaces "spaces" =
+    beforeEscape:$ ([ \t]* comment? ("\r"? "\n" [ \t]* comment?)*)
+    backslash:("\\" (& [ \t\r\n]))?
+    afterEscape:$ ([ \t]* comment? ("\r"? "\n" [ \t]* comment?)*)
+    { return backslash ? beforeEscape : `${beforeEscape}${afterEscape}` }
+
+__ "spaces" = spaces { return }
