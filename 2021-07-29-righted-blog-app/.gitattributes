@@ -1,0 +1,4 @@
+* text=auto eol=lf
+
+*.LICENSE.txt linguist-generated
+dist/static/sakura.css linguist-vendored

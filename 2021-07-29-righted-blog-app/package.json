@@ -1,0 +1,53 @@
+{
+  "name": "righted-blog-app",
+  "version": "0.1.0",
+  "description": "an example of small blog app inspired with righting software book",
+  "main": "target/server/index.js",
+  "scripts": {
+    "server-run": "node target/server/index.js",
+    "server-watch": "node src/server/index_dev.js",
+    "tsc-build": "tsc -b",
+    "tsc-watch": "tsc --watch",
+    "webpack-build": "webpack --mode production",
+    "webpack-watch": "webpack --mode development --watch",
+    "dev": "npm run build; run-p server-watch tsc-watch webpack-watch",
+    "build": "run-p tsc-build webpack-build",
+    "start": "npm run server-run"
+  },
+  "keywords": [],
+  "author": "vain0x <vainzerox@gmail.com>",
+  "license": "CC0-1.0",
+  "devDependencies": {
+    "@types/node": "^15.6.0",
+    "@typescript-eslint/eslint-plugin": "^4.24.0",
+    "@typescript-eslint/parser": "^4.24.0",
+    "abortcontroller-polyfill": "^1.7.3",
+    "chokidar": "^3.5.1",
+    "eslint": "^7.26.0",
+    "npm-run-all": "^4.1.5",
+    "source-map-loader": "^3.0.0",
+    "ts-loader": "^9.2.1",
+    "typescript": "^4.2.4",
+    "webpack": "^5.37.1",
+    "webpack-cli": "^4.7.0"
+  },
+  "dependencies": {
+    "@types/compression": "^1.7.0",
+    "@types/cookie-session": "^2.0.42",
+    "@types/express": "^4.17.11",
+    "@types/morgan": "^1.9.2",
+    "@types/multer": "^1.4.5",
+    "@types/react": "^17.0.6",
+    "@types/react-dom": "^17.0.5",
+    "body-parser": "^1.19.0",
+    "compression": "^1.7.4",
+    "cookie-session": "^1.4.0",
+    "dotenv": "^9.0.2",
+    "express": "^4.17.1",
+    "helmet": "^4.6.0",
+    "morgan": "^1.10.0",
+    "multer": "^1.4.2",
+    "react": "^17.0.2",
+    "react-dom": "^17.0.2"
+  }
+}

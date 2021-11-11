@@ -1,0 +1,17 @@
+#!/bin/sh
+
+set -eu
+
+if test ! -d node_modules/.bin
+then
+    echo 'dev: 初回起動なのでnode_modulesを復元します。'
+    npm ci
+fi
+
+if test ! -f target/server/index.js
+then
+    echo 'dev: 初回起動なので、コンパイルを待機します。'
+    npm run tsc-build
+fi
+
+exec npm run dev
