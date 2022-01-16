@@ -16,11 +16,6 @@ let private context hint action =
   with
   | ex -> raise (exn (hint, ex))
 
-module private String =
-  let startsWith (prefix: string) (s: string) = s.StartsWith(prefix)
-  let contains (infix: string) (s: string) = s.Contains(infix)
-  let replace (infix: string) (subst: string) (s: string) = s.Replace(infix, subst)
-
 let private dirname (s: string) = Path.GetDirectoryName(s)
 let private basename (s: string) = Path.GetFileName(s)
 let private getStem (s: string) = Path.GetFileNameWithoutExtension(s)
@@ -153,13 +148,17 @@ let private cmdBuild () : unit =
     |> List.map (fun (filename, contents) ->
       let page = parsePageFile filename contents
 
+      let meta, contents = page.Contents |> Markdown.parse
+
+      let contents = Markdown.toHtml contents
+
       let outputFile =
         basedPath outputDir (getStem filename + "/index.html")
 
       let contents =
         let p: PageRenderParams =
           { Title = getStem page.Input
-            Contents = page.Contents }
+            Contents = contents }
 
         renderHtml p
 
