@@ -1,0 +1,19 @@
+{
+  "name": "ts-iter-loop",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "run": "npm run tsc-build && npm run start",
+    "start": "node --expose-gc target/bench.js",
+    "tsc-build": "tsc --build",
+    "tsc-watch": "tsc --build --watch --preserveWatchOutput"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "devDependencies": {
+    "@types/node": "^17.0.9",
+    "typescript": "^4.5.4"
+  }
+}
