@@ -7,3 +7,7 @@ dev:
 
 run:
 	dotnet run -- build
+
+# npm i -g http-server
+serve:
+	npx http-server ./dist

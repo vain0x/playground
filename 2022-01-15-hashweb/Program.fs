@@ -102,9 +102,15 @@ module private Sources =
     |> List.collect id
 
 [<RequireQualifiedAccess>]
-type private Page = { Input: string; Contents: string }
+type private Page =
+  { Title: string
+    Slug: string
+    Contents: string }
 
-let private parsePageFile filename text : Page = { Input = filename; Contents = text }
+let private parsePageFile filename text : Page =
+  { Title = getStem filename
+    Slug = getStem filename
+    Contents = text }
 
 [<RequireQualifiedAccess>]
 type private PageRenderParams = { Title: string; Contents: string }
@@ -143,22 +149,63 @@ let private cmdBuild () : unit =
     |> List.filter (fun filename -> getExt filename = ".md")
     |> List.map (fun filename -> filename, readText filename)
 
-  let outputFiles =
+  let inputPages =
     inputFiles
     |> List.map (fun (filename, contents) ->
       let page = parsePageFile filename contents
 
-      let meta, contents = page.Contents |> Markdown.parse
+      let meta, markdownContents = page.Contents |> Markdown.parse
 
-      let contents = Markdown.toHtml contents
+      let page =
+        { page with Contents = Markdown.toHtml markdownContents }
 
+      let page =
+        meta
+        |> List.fold
+             (fun (page: Page) (key, value) ->
+               match key with
+               | "title" -> { page with Title = value }
+               | "slug" -> { page with Slug = value }
+               | _ ->
+                 eprintfn "WARN: %s Unknown property '%s'." filename key
+                 page)
+             page
+
+      page)
+
+  let indexPage =
+    let markdown =
+      inputPages
+      |> List.sortByDescending (fun (page: Page) -> page.Slug)
+      |> List.map (fun (page: Page) -> sprintf "- [%s](./%s)\n" page.Title page.Slug)
+      |> String.concat ""
+
+    let htmlContents =
+      let _, markdownContents = Markdown.parse markdown
+      Markdown.toHtml markdownContents
+
+    let page: Page =
+      { Title = "My Site"
+        Slug = ""
+        Contents = htmlContents }
+
+    page
+
+  let pages = indexPage :: inputPages
+
+  let outputFiles =
+    pages
+    |> List.map (fun (page: Page) ->
       let outputFile =
-        basedPath outputDir (getStem filename + "/index.html")
+        if page.Slug = "" then
+          basedPath outputDir "index.html"
+        else
+          basedPath outputDir (page.Slug + "/index.html")
 
       let contents =
         let p: PageRenderParams =
-          { Title = getStem page.Input
-            Contents = contents }
+          { Title = page.Title
+            Contents = page.Contents }
 
         renderHtml p
 
