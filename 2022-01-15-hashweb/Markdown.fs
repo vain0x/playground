@@ -9,6 +9,10 @@ let private toLines (s: string) =
   (s |> normalizeLf).TrimEnd().Split("\n")
   |> Array.toList
 
+// -----------------------------------------------
+// Front matter
+// -----------------------------------------------
+
 let private extractFrontMatter (text: string) =
   let isSep s = s |> String.startsWith "---"
 
@@ -71,19 +75,104 @@ let private parseFrontMatter (text: string) =
 
   front, text
 
+// -----------------------------------------------
+// Hash tag
+// -----------------------------------------------
+
+let private tokenize (text: string) =
+  let isSpace = System.Char.IsWhiteSpace
+  let len = text.Length
+
+  let rec skipSpaces (i: int) =
+    if i < len && isSpace text.[i] then
+      i + 1
+    else
+      i
+
+  let rec skipWord (i: int) =
+    if i = len || isSpace text.[i] then
+      i
+    else
+      skipWord (i + 1)
+
+  let rec go acc i =
+    if i < len then
+      let r =
+        if isSpace text.[i] then
+          skipSpaces i
+        else
+          skipWord i
+
+      assert (i < r && r <= len)
+      go ((i, r) :: acc) r
+    else
+      List.rev acc
+
+  go [] 0
+
+let private preprocessHashTags (text: string) =
+  let lines, _ =
+    text
+    |> toLines
+    |> List.mapFold
+         (fun inFence line ->
+           if line |> String.startsWith "```" then
+             (true, line), not inFence
+           else
+             (inFence, line), inFence)
+         false
+
+  let lines, acc =
+    lines
+    |> List.mapFold
+         (fun acc (inFence, line) ->
+           if inFence then
+             line, acc
+           else
+             let words, acc =
+               line
+               |> tokenize
+               |> List.mapFold
+                    (fun acc (l, r) ->
+                      assert (0 <= l && l < r && r <= line.Length)
+
+                      if r - l >= 2
+                         && line.[l] = '#'
+                         && line.[l + 1] <> '#' then
+                        let word =
+                          let i = l + 1
+                          line.Substring(i, r - i)
+
+                        "{{#" + word + "#}}", word :: acc
+
+                      else
+                        line.Substring(l, r - l), acc)
+                    acc
+
+             let line = words |> String.concat ""
+             line, acc)
+         []
+
+  String.concat "\n" lines, acc
+
+// -----------------------------------------------
+// Contents
+// -----------------------------------------------
+
 let private settings =
   let s = CommonMarkSettings.Default
   s.AdditionalFeatures <- CommonMarkAdditionalFeatures.StrikethroughTilde
   s.RenderSoftLineBreaksAsLineBreaks <- false
   s
 
-let parse (text: string) =
-  let front, text = parseFrontMatter text
+let parse (markdown: string) =
+  let front, text = parseFrontMatter markdown
+  let text, hashTags = text |> preprocessHashTags
 
   let contents =
     CommonMark.CommonMarkConverter.Parse(text, settings)
 
-  front, contents
+  front, hashTags, contents
 
 let toHtml (block: Syntax.Block) : string =
   use buf = new StringWriter()

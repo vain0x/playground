@@ -6,3 +6,7 @@ Markdown is processed. **Bold**, *italic*, `code`.
 let inline code () =
   ()
 ```
+
+See also #about .
+
+- This is #dangling hashtag.

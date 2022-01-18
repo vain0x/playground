@@ -105,11 +105,13 @@ module private Sources =
 type private Page =
   { Title: string
     Slug: string
+    HashTags: string list
     Contents: string }
 
 let private parsePageFile filename text : Page =
   { Title = getStem filename
     Slug = getStem filename
+    HashTags = []
     Contents = text }
 
 [<RequireQualifiedAccess>]
@@ -154,10 +156,12 @@ let private cmdBuild () : unit =
     |> List.map (fun (filename, contents) ->
       let page = parsePageFile filename contents
 
-      let meta, markdownContents = page.Contents |> Markdown.parse
+      let meta, hashTags, markdownContents = page.Contents |> Markdown.parse
 
       let page =
-        { page with Contents = Markdown.toHtml markdownContents }
+        { page with
+            HashTags = hashTags
+            Contents = Markdown.toHtml markdownContents }
 
       let page =
         meta
@@ -173,6 +177,29 @@ let private cmdBuild () : unit =
 
       page)
 
+  let titleMap =
+    inputPages
+    |> List.map (fun (page: Page) -> page.Slug, page.Title)
+    |> Map.ofList
+
+  let inputPages =
+    inputPages
+    |> List.map (fun (page: Page) ->
+      let contents =
+        page.HashTags
+        |> List.fold
+             (fun contents hashTag ->
+               let link =
+                 match titleMap |> Map.tryFind hashTag with
+                 | None -> "<span style='color: red'>#" + hashTag + "</span>"
+                 | Some title -> "<a href='../" + hashTag + "'>" + title + "</a>"
+
+               let pattern = "{{#" + hashTag + "#}}"
+               contents |> String.replace pattern link)
+             page.Contents
+
+      { page with Contents = contents })
+
   let indexPage =
     let markdown =
       inputPages
@@ -181,12 +208,13 @@ let private cmdBuild () : unit =
       |> String.concat ""
 
     let htmlContents =
-      let _, markdownContents = Markdown.parse markdown
+      let _, _, markdownContents = Markdown.parse markdown
       Markdown.toHtml markdownContents
 
     let page: Page =
       { Title = "My Site"
         Slug = ""
+        HashTags = []
         Contents = htmlContents }
 
     page
