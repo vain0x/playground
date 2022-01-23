@@ -16,6 +16,21 @@ let private context hint action =
   with
   | ex -> raise (exn (hint, ex))
 
+module private Multimap =
+  let find key multimap =
+    multimap
+    |> Map.tryFind key
+    |> Option.defaultValue []
+
+  let add key value multimap =
+    multimap
+    |> Map.add
+         key
+         (value
+          :: (multimap
+              |> Map.tryFind key
+              |> Option.defaultValue []))
+
 let private dirname (s: string) = Path.GetDirectoryName(s)
 let private basename (s: string) = Path.GetFileName(s)
 let private getStem (s: string) = Path.GetFileNameWithoutExtension(s)
@@ -110,7 +125,7 @@ type private Page =
 
 let private parsePageFile filename text : Page =
   { Title = getStem filename
-    Slug = getStem filename
+    Slug = getStem filename |> String.toLower
     HashTags = []
     Contents = text }
 
@@ -169,7 +184,7 @@ let private cmdBuild () : unit =
              (fun (page: Page) (key, value) ->
                match key with
                | "title" -> { page with Title = value }
-               | "slug" -> { page with Slug = value }
+               | "slug" -> { page with Slug = value |> String.toLower }
                | _ ->
                  eprintfn "WARN: %s Unknown property '%s'." filename key
                  page)
@@ -183,16 +198,47 @@ let private cmdBuild () : unit =
     |> Map.ofList
 
   let inputPages =
+    let revMap =
+      inputPages
+      |> List.fold
+           (fun rev (page: Page) ->
+             page.HashTags
+             |> List.fold
+                  (fun rev hashTag ->
+                    rev
+                    |> Multimap.add (String.toLower hashTag) (page.Title, page.Slug))
+                  rev)
+           Map.empty
+
+    inputPages
+    |> List.map (fun (page: Page) ->
+      match revMap |> Map.tryFind page.Slug with
+      | None -> page
+
+      | Some edges ->
+        let contents =
+          page.Contents
+          + "\n<hr><p><h3>Hash tags</h3><ul>\n"
+          + (edges
+             |> List.map (fun (title, slug) -> sprintf "<li><a href='../%s'>%s</a></li>\n" (String.toLower slug) title)
+             |> String.concat "")
+          + "</ul></p>\n"
+
+        { page with Contents = contents })
+
+  let inputPages =
     inputPages
     |> List.map (fun (page: Page) ->
       let contents =
         page.HashTags
         |> List.fold
              (fun contents hashTag ->
+               let lower = String.toLower hashTag
+
                let link =
-                 match titleMap |> Map.tryFind hashTag with
+                 match titleMap |> Map.tryFind lower with
                  | None -> "<span style='color: red'>#" + hashTag + "</span>"
-                 | Some title -> "<a href='../" + hashTag + "'>" + title + "</a>"
+                 | Some title -> "<a href='../" + lower + "'>" + title + "</a>"
 
                let pattern = "{{#" + hashTag + "#}}"
                contents |> String.replace pattern link)
