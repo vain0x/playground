@@ -51,7 +51,7 @@ let private parseYamlSimple (lines: string list) =
       None
     else
       let key = s.Substring(0, i).Trim()
-      let value = s.Substring(i + 1, s.Length).Trim()
+      let value = s.Substring(i + 1).Trim()
 
       let value =
         if value |> String.startsWith "'"
