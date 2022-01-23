@@ -7,6 +7,6 @@ let inline code () =
   ()
 ```
 
-See also #about .
+See also #About .
 
-- This is #dangling hashtag.
+- This is #Dangling hashtag.
