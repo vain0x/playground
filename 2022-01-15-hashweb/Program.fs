@@ -212,17 +212,36 @@ let private cmdBuild () : unit =
 
     inputPages
     |> List.map (fun (page: Page) ->
-      match revMap |> Map.tryFind page.Slug with
-      | None -> page
+      let tags =
+        page.HashTags
+        |> List.filter (fun forwardTag -> String.toLower forwardTag <> page.Slug)
+        |> List.map (fun forwardTag ->
+          match revMap |> Map.tryFind (String.toLower forwardTag) with
+          | None -> forwardTag, []
 
-      | Some edges ->
+          | Some edges ->
+            let edges =
+              edges
+              |> List.filter (fun (_, slug) -> slug <> page.Slug)
+
+            forwardTag, edges)
+        |> List.filter (fun (_, edges) -> edges |> List.isEmpty |> not)
+        |> List.map (fun (forwardTag, edges) ->
+          sprintf
+            "<li>#%s<ul>%s</ul></li>"
+            forwardTag
+            (edges
+             |> List.map (fun (title, slug) -> sprintf "<li><a href='../%s'>%s</a></li>\n" (String.toLower slug) title)
+             |> String.concat ""))
+
+      if tags |> List.isEmpty then
+        page
+      else
         let contents =
           page.Contents
-          + "\n<hr><p><h3>Hash tags</h3><ul>\n"
-          + (edges
-             |> List.map (fun (title, slug) -> sprintf "<li><a href='../%s'>%s</a></li>\n" (String.toLower slug) title)
-             |> String.concat "")
-          + "</ul></p>\n"
+          + "\n<hr><p><h3>Hash tags</h3>\n"
+          + (tags |> String.concat "")
+          + "</p>\n"
 
         { page with Contents = contents })
 
