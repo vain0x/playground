@@ -1,0 +1,27 @@
+#!/bin/sh
+
+# prerequisites
+# sudo apt install build-essentials cmake libjansson-dev
+
+AVRO_URL=https://dlcdn.apache.org/avro/avro-1.11.0/avro-src-1.11.0.tar.gz
+AVRO_DIR=$PWD/$(basename $AVRO_SRC .tar.gz)
+
+PREFIX=$PWD/vendor
+mkdir -p $PREFIX
+
+BUILD_DIR=$PREFIX/avro-build
+mkdir -p $BUILD_DIR
+
+curl -sL $AVRO_URL -o $(basename $AVRO_URL)
+tar xf $(basename $AVRO_URL)
+rm $(basename $AVRO_URL)
+
+(
+    cd $BUILD_DIR
+    cmake $AVRO_DIR/lang/c \
+        -DCMAKE_INSTALL_PREFIX=$PREFIX \
+        -DCMAKE_BUILD_TYPE=RelWithDebInfo
+    make
+    make test
+    make install   
+)
