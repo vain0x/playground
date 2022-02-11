@@ -3,7 +3,7 @@ default: run
 .PHONY: build default dev restore run
 
 dev:
-	dotnet watch -- build --nologo --no-restore
+	dotnet watch -- run -- build
 
 run:
 	dotnet run -- build
