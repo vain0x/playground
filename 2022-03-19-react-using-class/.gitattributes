@@ -1,0 +1,5 @@
+.editorconfig           linguist-generated
+.gitignore              linguist-generated
+*.generated.md          linguist-generated
+next.d.ts               linguist-generated
+package-lock.json       linguist-generated
