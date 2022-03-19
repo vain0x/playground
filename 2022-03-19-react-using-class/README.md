@@ -25,6 +25,8 @@ UIにReactを使い、データの表現としてイミュータブルクラス�
         entries: { 時刻, タスク }[]
     }
 
+![screenshot](docs/images/screenshot.png)
+
 ## 関連リンク
 
 - [💣Webフロントエンドにおける関数型「風」プログラミングに関する個人的まとめ](https://qiita.com/u83unlimited/items/834131fba97438323706)
