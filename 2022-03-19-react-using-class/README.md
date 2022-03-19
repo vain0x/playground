@@ -1,34 +1,16 @@
-This is a [Next.js](https://nextjs.org/) project bootstrapped with [`create-next-app`](https://github.com/vercel/next.js/tree/canary/packages/create-next-app).
+# React with Classes
 
-## Getting Started
+UIにReactを使い、データの表現としてイミュータブルクラスを使う、という構成のウェブアプリのサンプル
 
-First, run the development server:
+- Reactは関数コンポーネントとHooksを使う (クラスコンポーネントは使わない)
 
-```bash
-npm run dev
-# or
-yarn dev
-```
+## モチベーション
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+- 状態の表現にプレインなオブジェクト (`{}` で表現される型) を使うとカプセル化がなく、あらゆる場所でデータの操作ができてしまう
+    - データの変更操作は非破壊更新なのでローカルであるが、データがどういう操作をされるのかというのが把握しづらくなる
+- これはクラスのフィールドをすべてpublicにしてプログラミングするのと同じ状況に陥る
+- データの表現にイミュータブルなクラスを使うことで表現の隠蔽を行い、データの流れを把握しやすくする
 
-You can start editing the page by modifying `pages/index.tsx`. The page auto-updates as you edit the file.
+## 関連リンク
 
-[API routes](https://nextjs.org/docs/api-routes/introduction) can be accessed on [http://localhost:3000/api/hello](http://localhost:3000/api/hello). This endpoint can be edited in `pages/api/hello.ts`.
-
-The `pages/api` directory is mapped to `/api/*`. Files in this directory are treated as [API routes](https://nextjs.org/docs/api-routes/introduction) instead of React pages.
-
-## Learn More
-
-To learn more about Next.js, take a look at the following resources:
-
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
-
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js/) - your feedback and contributions are welcome!
-
-## Deploy on Vercel
-
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
-
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/deployment) for more details.
+- [💣Webフロントエンドにおける関数型「風」プログラミングに関する個人的まとめ](https://qiita.com/u83unlimited/items/834131fba97438323706)
