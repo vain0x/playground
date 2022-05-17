@@ -1,0 +1,25 @@
+push "item" (0:0)
+push "price" (0:1)
+push "remark" (0:2)
+commit
+push "apple" (1:0)
+push "100" (1:1)
+push "red" (1:2)
+commit
+push "" (2:0)
+push "" (2:1)
+push "" (2:2)
+commit
+push "orange" (3:0)
+push "200" (3:1)
+push "delicious" (3:2)
+commit
+push "comma , included" (4:0)
+push "" (4:1)
+push "quote " escaped" (4:2)
+commit
+push "newline
+in a quote" (5:0)
+push "" (5:1)
+push "" (5:2)
+commit

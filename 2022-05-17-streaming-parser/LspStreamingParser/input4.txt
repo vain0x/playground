@@ -1,0 +1,6 @@
+Content-Length: 3
+
+{}
+Content-Length: 16
+
+{"jsonrpc":2.0}

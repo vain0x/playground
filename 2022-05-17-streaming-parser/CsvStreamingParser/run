@@ -1,0 +1,5 @@
+#!/bin/sh
+
+set -eu
+
+cat input.csv | dotnet run

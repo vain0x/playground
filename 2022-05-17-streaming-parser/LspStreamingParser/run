@@ -1,0 +1,13 @@
+#!/bin/sh
+
+set -eu
+
+dotnet build -nologo --no-restore && (
+    set -x
+    cat input1.txt | dotnet run --no-build
+    cat input2.txt | dotnet run --no-build
+    cat input3.txt | dotnet run --no-build
+    cat input4.txt | dotnet run --no-build
+    cat input1.txt | sed -r 's;$;\r;' | dotnet run --no-build
+    set +x
+)

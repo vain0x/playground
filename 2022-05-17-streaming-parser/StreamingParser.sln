@@ -1,0 +1,28 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio Version 16
+VisualStudioVersion = 16.0.30114.105
+MinimumVisualStudioVersion = 10.0.40219.1
+Project("{F2A71F9B-5D33-465A-A702-920D77279786}") = "CsvStreamingParser", "CsvStreamingParser\CsvStreamingParser.fsproj", "{A4AE8F7F-DDA5-46A0-B2D2-1A68B2A207AB}"
+EndProject
+Project("{F2A71F9B-5D33-465A-A702-920D77279786}") = "LspStreamingParser", "LspStreamingParser\LspStreamingParser.fsproj", "{98FA6BF3-ABEE-453E-BCDA-7295E642E985}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Release|Any CPU = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{A4AE8F7F-DDA5-46A0-B2D2-1A68B2A207AB}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{A4AE8F7F-DDA5-46A0-B2D2-1A68B2A207AB}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{A4AE8F7F-DDA5-46A0-B2D2-1A68B2A207AB}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{A4AE8F7F-DDA5-46A0-B2D2-1A68B2A207AB}.Release|Any CPU.Build.0 = Release|Any CPU
+		{98FA6BF3-ABEE-453E-BCDA-7295E642E985}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{98FA6BF3-ABEE-453E-BCDA-7295E642E985}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{98FA6BF3-ABEE-453E-BCDA-7295E642E985}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{98FA6BF3-ABEE-453E-BCDA-7295E642E985}.Release|Any CPU.Build.0 = Release|Any CPU
+	EndGlobalSection
+EndGlobal
