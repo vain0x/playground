@@ -1,0 +1,4 @@
+#!/bin/sh
+
+set -eu
+cat lex.txt | dotnet run --project Pcc --no-restore
