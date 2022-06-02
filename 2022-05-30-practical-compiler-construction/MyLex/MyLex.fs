@@ -95,7 +95,7 @@ let private parseChars (text: string) i =
       raise (ParseTermException("Expected ']'", i))
 
   let exclude, i =
-    if i < text.Length && text.[i] = '^' then
+    if i + 1 < text.Length && text.[i + 1] = '^' then
       true, i + 1
     else
       false, i
