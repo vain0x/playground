@@ -86,7 +86,7 @@ let private parseChars (text: string) i =
           raise (ParseTermException("Invalid char range", i))
 
         go
-          (List.init (int (r - l)) (fun i -> l + byte i)
+          (List.init (int (r - l) + 1) (fun i -> l + byte i)
            :: acc)
           (i + 3)
 
@@ -168,7 +168,6 @@ let parseLexer (text: string) =
       raise (ParseLexerException("Expected rule", row, 0))
 
     let name = line.[.. k - 1]
-    printfn "%s: term '%s'" name line.[k + 1 ..]
 
     let term =
       try
@@ -178,3 +177,156 @@ let parseLexer (text: string) =
 
     name, term)
   |> Seq.toList
+
+// -----------------------------------------------
+// NFA
+// -----------------------------------------------
+
+let private getMulti key map =
+  Map.tryFind key map |> Option.defaultValue []
+
+let private addMulti key value map =
+  Map.add key (value :: (getMulti key map)) map
+
+let private eps = 0uy
+
+[<RequireQualifiedAccess; NoEquality; NoComparison>]
+type private NTerm =
+  | AnyOf of byte []
+  | Conj of NTerm * NTerm
+  | Rep of NTerm
+
+let rec private lower term =
+  match term with
+  | Term.String s ->
+    let rec go (l: int) r =
+      assert (l < r)
+
+      if r = l + 1 then
+        NTerm.AnyOf [| byte s.[l] |]
+      else
+        let m = (l + r) / 2
+        NTerm.Conj(go l m, go m r)
+
+    assert (s.Length <> 0)
+    go 0 s.Length
+
+  | Term.AnyOf chars -> NTerm.AnyOf chars
+
+  | Term.NoneOf chars ->
+    NTerm.AnyOf [| for c in 1uy .. 255uy do
+                     if Array.contains c chars |> not then c |]
+
+  | Term.Rep t -> NTerm.Rep(lower t)
+
+  | Term.Rep1 t ->
+    let t = lower t
+    NTerm.Conj(t, NTerm.Rep t)
+
+let private lowerTerms terms =
+  let rec go acc terms =
+    match terms with
+    | term :: terms -> go (NTerm.Conj(acc, lower term)) terms
+
+    | [] -> acc
+
+  match terms with
+  | term :: terms -> go (lower term) terms
+  | _ -> failwith "NEVER"
+
+let generateNfa (rules: (string * Term list) list) =
+  let fresh (map, last) = last + 1, (map, last + 1)
+  let connect (c: byte) (u: int) (v: int) (map, last) = addMulti (u, c) v map, last
+
+  let rec go (u: int) b term =
+    match term with
+    | NTerm.AnyOf chars ->
+      let v, b = fresh b
+      let b = chars |> Array.fold (fun b c -> connect c u v b) b
+      v, b
+
+    | NTerm.Conj (l, r) ->
+      let v, b = go u b l
+      go v b r
+
+    | NTerm.Rep t ->
+      //      ε
+      // ->u ---> ((v)) <------+
+      //            |          | ε
+      //            |          |
+      //            +-> [t] -> w
+
+      let v, b = fresh b
+      let w, b = go v b t
+      let b = b |> connect eps u v |> connect eps w v
+      v, b
+
+  let u = 1 // start state
+  let b = Map.empty, u
+
+  let b, accepts =
+    rules
+    |> List.fold
+         (fun (b, accepts) (name, terms) ->
+           // ->u --[terms]--> ((v))
+           let v, b = go u b (lowerTerms terms)
+
+           // Remember accept state and its name.
+           let accepts = accepts |> Map.add v name
+
+           b, accepts)
+         (b, Map.empty)
+
+  let map, _ = b
+  u, map, accepts
+
+let private computeClosure (s: Set<int>) trans =
+  let enhance s =
+    s
+    |> Set.fold
+         (fun (modified, s) u ->
+           getMulti (u, eps) trans
+           |> List.fold
+                (fun (modified, s) v ->
+                  if Set.contains v s |> not then
+                    true, Set.add v s
+                  else
+                    modified, s)
+                (modified, s))
+         (false, s)
+
+  let rec go s =
+    let modified, s = enhance s
+    if modified then go s else s
+
+  go s
+
+let computeDfaEdge (d: Set<int>) (c: byte) trans =
+  d
+  |> Set.fold
+       (fun x s ->
+         let e = getMulti (s, c) trans |> Set.ofList
+         Set.union x (computeClosure e trans))
+       Set.empty
+
+let emulateNfa (input: string) nfa : string option =
+  let u, map, accepts = nfa
+
+  let d =
+    input.ToCharArray()
+    |> Array.fold
+         (fun (d: Set<int>) (c: char) ->
+           let c = byte c
+           computeDfaEdge d c map)
+         (Set.singleton u)
+
+  d
+  |> Set.fold
+       (fun opt v ->
+         match opt with
+         | Some _ -> opt
+         | None ->
+           match accepts |> Map.tryFind v with
+           | (Some _) as opt -> opt
+           | None -> None)
+       None
