@@ -23,20 +23,43 @@ let main _ =
   let u, trans, accepts = nfa
   printfn "%d\n%A\n%A" u trans accepts
 
-  let em (input: string) =
-    printf "input: %A    -> " input
-    let result = MyLex.emulateNfa input nfa
-    printfn "%A" result
+  // let em (input: string) =
+  //   printf "input: %A    -> " input
+  //   let result = MyLex.emulateNfa input nfa
+  //   printfn "%A" result
 
-  em "42"
-  // em "-123"
-  em "a"
-  em "_Az09"
-  em "if"
-  em "iff"
-  em "\"\""
-  em "\"...\""
-  em "\"Hello, world!\""
-  em ";"
-  em "<="
+  // em "42"
+  // // em "-123"
+  // em "a"
+  // em "_Az09"
+  // em "if"
+  // em "iff"
+  // em "\"\""
+  // em "\"...\""
+  // em "\"Hello, world!\""
+  // em ";"
+  // em "<="
+
+  let tok (input: string) =
+    printfn "tokenize: %A" input
+
+    let result =
+      try
+        MyLex.tokenizeWithNfa input nfa
+      with
+      | MyLex.TokenizeException index ->
+        printfn "ERROR: Tokenize failed at %d\n" index
+        printfn "  %s" input
+        printfn "  %s^" (String.replicate index " ")
+        exit 1
+
+    result
+    |> List.map (fun (kind, len) -> sprintf "%s(%d)" kind len)
+    |> String.concat " "
+    |> printfn "  %s"
+
+  tok "a"
+  tok "if"
+  tok "if (x == 0) { sprint \"Hello, world!\"; }"
+
   0

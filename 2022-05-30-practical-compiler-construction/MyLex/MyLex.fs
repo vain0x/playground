@@ -1,5 +1,7 @@
 module MyLex
 
+type private Dictionary<'K, 'T> = System.Collections.Generic.Dictionary<'K, 'T>
+
 // -----------------------------------------------
 // Parse
 // -----------------------------------------------
@@ -148,6 +150,7 @@ let private parseTerm (text: string) i =
 
   go [] i
 
+// see lex.txt for example
 let parseLexer (text: string) =
   let lines =
     let text =
@@ -179,16 +182,10 @@ let parseLexer (text: string) =
   |> Seq.toList
 
 // -----------------------------------------------
-// NFA
+// NTerm
 // -----------------------------------------------
 
-let private getMulti key map =
-  Map.tryFind key map |> Option.defaultValue []
-
-let private addMulti key value map =
-  Map.add key (value :: (getMulti key map)) map
-
-let private eps = 0uy
+// Term -> NTerm
 
 [<RequireQualifiedAccess; NoEquality; NoComparison>]
 type private NTerm =
@@ -227,16 +224,28 @@ let private lowerTerms terms =
   let rec go acc terms =
     match terms with
     | term :: terms -> go (NTerm.Conj(acc, lower term)) terms
-
     | [] -> acc
 
   match terms with
   | term :: terms -> go (lower term) terms
   | _ -> failwith "NEVER"
 
+// -----------------------------------------------
+// NFA
+// -----------------------------------------------
+
+let private getMulti key map =
+  Map.tryFind key map |> Option.defaultValue []
+
+let private addMulti key value map =
+  Map.add key (value :: (getMulti key map)) map
+
+/// Label of ε-transition.
+let private eps = 0uy
+
 let generateNfa (rules: (string * Term list) list) =
-  let fresh (map, last) = last + 1, (map, last + 1)
-  let connect (c: byte) (u: int) (v: int) (map, last) = addMulti (u, c) v map, last
+  let fresh (trans, last) = last + 1, (trans, last + 1)
+  let connect (c: byte) (u: int) (v: int) (trans, last) = addMulti (u, c) v trans, last
 
   let rec go (u: int) b term =
     match term with
@@ -277,8 +286,12 @@ let generateNfa (rules: (string * Term list) list) =
            b, accepts)
          (b, Map.empty)
 
-  let map, _ = b
-  u, map, accepts
+  let trans, _ = b
+  u, trans, accepts
+
+// -----------------------------------------------
+// NFA
+// -----------------------------------------------
 
 let private computeClosure (s: Set<int>) trans =
   let enhance s =
@@ -301,7 +314,7 @@ let private computeClosure (s: Set<int>) trans =
 
   go s
 
-let computeDfaEdge (d: Set<int>) (c: byte) trans =
+let private computeDfaEdge (d: Set<int>) (c: byte) trans =
   d
   |> Set.fold
        (fun x s ->
@@ -310,14 +323,14 @@ let computeDfaEdge (d: Set<int>) (c: byte) trans =
        Set.empty
 
 let emulateNfa (input: string) nfa : string option =
-  let u, map, accepts = nfa
+  let u, trans, accepts = nfa
 
   let d =
     input.ToCharArray()
     |> Array.fold
          (fun (d: Set<int>) (c: char) ->
            let c = byte c
-           computeDfaEdge d c map)
+           computeDfaEdge d c trans)
          (Set.singleton u)
 
   d
@@ -330,3 +343,103 @@ let emulateNfa (input: string) nfa : string option =
            | (Some _) as opt -> opt
            | None -> None)
        None
+
+exception TokenizeException of index: int
+
+let tokenizeWithNfa (input: string) nfa : (string * int) list =
+  let u, trans, accepts = nfa
+
+  let setRev = ResizeArray()
+  let setMemo = Dictionary<Set<int>, int>()
+  let edgeMemo = Dictionary<int * byte, int>()
+  let acceptMemo = ResizeArray()
+
+  let internSet (d: Set<int>) =
+    match setMemo.TryGetValue(d) with
+    | true, it -> it
+    | false, _ ->
+      let n = setRev.Count
+      setRev.Add(d)
+      setMemo.Add(d, n)
+      eprintfn "set %d -> %A" n d
+      n
+
+  // state -> labelOpt
+  let accept (d: int) : string option =
+    if d >= acceptMemo.Count then
+      for e in acceptMemo.Count .. d do
+        let labelOpt =
+          setRev.[e]
+          |> Set.fold
+               (fun opt v ->
+                 match opt with
+                 | Some _ -> opt
+                 | None -> accepts |> Map.tryFind v)
+               None
+
+        eprintfn "accept %d -> %A" e labelOpt
+        acceptMemo.Add(labelOpt)
+
+    acceptMemo.[d]
+
+  // state -> c -> nextState
+  let getDfaEdge (d: int) (c: byte) : int =
+    match edgeMemo.TryGetValue((d, c)) with
+    | true, it -> it
+    | false, _ ->
+      let e = computeDfaEdge setRev.[d] c trans
+      let n = internSet e
+      edgeMemo.Add((d, c), n)
+      eprintfn "edge %d,%d -> %A" d c n
+      n
+
+  let emptyState = internSet Set.empty
+  assert (emptyState = 0)
+  let initialState = internSet (Set.singleton u)
+  assert (initialState = 1)
+
+  let input = input.ToCharArray()
+  let mutable tick = 0
+
+  let rec tokenizeLoop acc l =
+    if l < input.Length then
+      let rec go last d i =
+        tick <- tick + 1
+
+        if d <> emptyState && i < input.Length then
+          let d = getDfaEdge d (byte input.[i])
+
+          let last =
+            match accept d with
+            | Some label -> Some(label, i + 1)
+            | None -> last
+
+          if d <> emptyState && i + 1 < input.Length then
+            eprintfn "gogo d:%d i:%d -> %A" d i last
+
+          go last d (i + 1)
+        else
+          last
+
+      match go None initialState l with
+      | Some (label, r) when l < r -> tokenizeLoop ((label, r - l) :: acc) r
+      | _ -> raise (TokenizeException l)
+    else
+      List.rev acc
+
+  let result = tokenizeLoop [] 0
+
+  eprintfn
+    "stats set:%d,%d edge:%d accept:%d tick:%d\n  cost:%d"
+    setRev.Count
+    setMemo.Count
+    edgeMemo.Count
+    acceptMemo.Count
+    tick
+    (setRev.Count
+     + setMemo.Count
+     + edgeMemo.Count
+     + acceptMemo.Count
+     + tick)
+
+  result
