@@ -1,0 +1,85 @@
+%nonassoc EQ NEQ GT LT GE LE
+%left PLUS MINUS
+%left TIMES DIV
+%nonassoc UMINUS
+
+%start
+prog : stmt
+     ;
+
+ty : INT                 %name IntTyp
+   | INT LS NUM RS       %name ArrayTyp
+   | ID                  %name NameTyp
+   ;
+
+decs : dec decs         %name DecsCons
+     | /* empty */      %name DecsNil
+     ;
+
+dec : ty ids SEMI                   %name VarDec
+    | TYPE ID ASSIGN ty SEMI        %name TypeDec
+    | ty ID LP fargs_opt RP block   %name FuncDec
+    | VOID ID LP fargs_opt RP block %name VoidFuncDec
+    ;
+
+ids : ids COMMA ID      %name IdsCons
+    | ID                %name IdsSingle
+    ;
+
+fargs_opt : /* empty */     %name FArgsOptNone
+          | fargs           %name FArgsOptSome
+          ;
+
+fargs : fargs COMMA ty ID   %name FArgsCons
+      | ty ID               %name FArgsSingle
+      ;
+
+stmts : stmts stmt          %name StmtsCons
+      | stmt                %name StmtsSingle
+      ;
+
+stmt : ID ASSIGN expr SEMI              %name AssignStmt
+     | ID LS expr RS ASSIGN expr SEMI   %name IndexAssignStmt
+     | IF LP cond RP stmt               %name IfStmt
+     | IF LP cond RP stmt ELSE stmt     %name IfElseStmt
+     | WHILE LP cond RP stmt            %name WhileStmt
+     | SPRINT LP STR RP SEMI            %name SPrintStmt
+     | IPRINT LP expr RP SEMI           %name IPrintStmt
+     | SCAN LP ID RP SEMI               %name ScanStmt
+     | NEW LP ID RP SEMI                %name NewStmt
+     | ID LP aargs_opt RP SEMI          %name CallProcStmt
+     | RETURN expr SEMI                 %name ReturnStmt
+     | block                            %name BlockStmt
+     | SEMI                             %name NilStmt
+     ;
+
+aargs_opt : /* empty */ %name AArgsNone
+          | aargs       %name AArgsSome
+          ;
+
+aargs : aargs COMMA expr    %name AArgsCons
+      | expr                %name AArgsSingle
+      ;
+
+block : LB decs stmts RB
+      ;
+
+expr : NUM                  %name NumExpr
+     | ID                   %name NameExpr
+     | ID LP aargs_opt RP   %name CallExpr
+     | ID LS expr RS        %name IndexExpr
+     | expr PLUS expr       %name PlusExpr
+     | expr MINUS expr      %name MinusExpr
+     | expr TIMES expr      %name TimesExpr
+     | expr DIV expr        %name DivExpr
+     | MINUS expr           %name UMinusExpr %prec UMINUS
+     | LP expr RP           %name ParenExpr
+     ;
+
+cond : expr EQ expr     %name EqCond
+     | expr NEQ expr    %name NeqCond
+     | expr GT expr     %name GtCond
+     | expr LT expr     %name LtCond
+     | expr GE expr     %name GeCond
+     | expr LE expr     %name LeCond
+     ;
