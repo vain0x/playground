@@ -11,6 +11,7 @@
 
   <ItemGroup>
     <ProjectReference Include="..\MyLex\MyLex.fsproj" />
+    <ProjectReference Include="..\MyYacc\MyYacc.fsproj" />
   </ItemGroup>
 
 </Project>
