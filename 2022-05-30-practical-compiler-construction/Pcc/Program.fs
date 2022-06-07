@@ -63,7 +63,7 @@ let main _ =
   // tok "if (x == 0) { sprint \"Hello, world!\"; }"
 
   try
-    MyYacc.parseAndDump input
+    MyYacc.dump input
   with
   | MyYacc.ParseGrammarException (msg, i) -> eprintfn "ERROR: %s at %d" msg i
 

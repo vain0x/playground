@@ -9,41 +9,28 @@ module MyLex = MyLex
 exception ParseGrammarException of msg: string * index: int
 
 [<RequireQualifiedAccess; NoEquality; NoComparison>]
-type private Term =
+type private ParsedTerm =
   | Token of string
   | Node of string
 
 [<RequireQualifiedAccess; NoEquality; NoComparison>]
-type private Branch =
-  { Terms: Term list
+type private ParsedBranch =
+  { Terms: ParsedTerm list
     NameOpt: string option
     PrecOpt: string option }
 
-type private Rule = string * Branch list
+type private ParsedRule = string * ParsedBranch list
 
 [<RequireQualifiedAccess; NoEquality; NoComparison>]
-type private Prec =
+type Prec =
   | Left
   | NonAssoc
 
 [<RequireQualifiedAccess; NoEquality; NoComparison>]
 type private Grammar =
-  { Rules: Rule list
+  { Rules: ParsedRule list
     StartOpt: string option
     Prec: (Prec * string list) list }
-
-let private addRule rule beingStart (g: Grammar) =
-  { g with
-      Rules = rule :: g.Rules
-      StartOpt =
-        if beingStart then
-          let name, _ = rule
-          Some name
-        else
-          g.StartOpt }
-
-let private addPrec prec tokens (g: Grammar) =
-  { g with Prec = (prec, tokens) :: g.Prec }
 
 let private occursAt (infix: string) (text: string) i =
   i + infix.Length <= text.Length
@@ -118,9 +105,9 @@ let private parseBranch (text: string) i =
 
         let term =
           (if System.Char.IsUpper(name.[0]) then
-             Term.Token
+             ParsedTerm.Token
            else
-             Term.Node)
+             ParsedTerm.Node)
             name
 
         go (term :: acc) i
@@ -147,7 +134,7 @@ let private parseBranch (text: string) i =
     else
       None, i
 
-  let b: Branch =
+  let b: ParsedBranch =
     { Terms = terms
       NameOpt = nameOpt
       PrecOpt = precOpt }
@@ -176,10 +163,22 @@ let private parseRule (text: string) i =
 
     go [] i
 
-  let rule: Rule = name, List.rev branches
+  let rule: ParsedRule = name, List.rev branches
 
   let i = expectText ";" text (skipSpaces text i)
   rule, i
+
+type private Acc =
+  { PrecAcc: (Prec * string list) list
+    RuleAcc: (bool * ParsedRule) list }
+
+let private emptyAcc: Acc = { PrecAcc = []; RuleAcc = [] }
+
+let private addRule item (acc: Acc) =
+  { acc with RuleAcc = item :: acc.RuleAcc }
+
+let private addPrec prec tokens (acc: Acc) =
+  { acc with PrecAcc = (prec, tokens) :: acc.PrecAcc }
 
 let private parseDirective acc (text: string) i =
   let onPrec prec i =
@@ -187,9 +186,9 @@ let private parseDirective acc (text: string) i =
     let tokens = line.Split(' ') |> List.ofArray
     addPrec prec tokens acc, i
 
-  let onRule start i =
+  let onRule beingStart i =
     let rule, i = parseRule text i
-    addRule rule start acc, i
+    addRule (beingStart, rule) acc, i
 
   match text.[i] with
   | '%' when i + 1 < text.Length ->
@@ -212,8 +211,16 @@ let private parseDirective acc (text: string) i =
     ParseGrammarException("Expected directive", i)
     |> raise
 
+[<RequireQualifiedAccess; NoEquality; NoComparison>]
+type private Term =
+  | Token of name: string
+  | Node of int * string
+
+type private Branch = int * string * (int * Prec) * Term list
+type private Rule = int * string * Branch list
+
 // see grammar.txt for example
-let private parseGrammar (text: string) =
+let private parseGrammar (text: string) : Rule list =
   let rec go acc i =
     if i < text.Length then
       let acc, i = parseDirective acc text i
@@ -221,41 +228,239 @@ let private parseGrammar (text: string) =
     else
       acc
 
-  let g: Grammar =
-    { Rules = []
-      StartOpt = None
-      Prec = [] }
+  let acc = go emptyAcc (skipSpaces text 0)
 
-  let g: Grammar = go g (skipSpaces text 0)
+  let parsedRules = List.rev acc.RuleAcc
 
-  { g with
-      Rules = List.rev g.Rules
-      Prec = List.rev g.Prec }
+  let _, precMap =
+    let ruleCount = List.length parsedRules
 
-let parseAndDump (text: string) =
+    List.rev acc.PrecAcc
+    |> List.fold
+         (fun (i, acc) (prec, tokens) ->
+           let acc =
+             tokens
+             |> List.fold (fun acc token -> acc |> Map.add token (i, prec)) acc
+
+           i + 1, acc)
+         (ruleCount, Map.empty)
+
+  let rules =
+    let ruleMap =
+      parsedRules
+      |> List.mapi (fun i (_, (name, _)) -> name, i)
+      |> Map.ofList
+
+    parsedRules
+    |> List.mapi (fun i (_, (name, branches)) ->
+      let branches: Branch list =
+        branches
+        |> List.mapi (fun i (b: ParsedBranch) ->
+          let name =
+            match b.NameOpt with
+            | Some name -> name
+            | None -> name + "_" + string (i + 1)
+
+          let prec =
+            match b.PrecOpt with
+            | Some prec ->
+              match precMap |> Map.tryFind prec with
+              | Some prec -> prec
+              | None -> failwithf "Unknown token specified by 'prec' (%s)" prec
+
+            | None ->
+              b.Terms
+              |> List.tryPick (fun t ->
+                match t with
+                | ParsedTerm.Token t -> precMap |> Map.tryFind t
+                | _ -> None)
+              |> Option.defaultValue (i, Prec.NonAssoc)
+
+          let terms =
+            b.Terms
+            |> List.map (fun t ->
+              match t with
+              | ParsedTerm.Token t -> Term.Token t
+              | ParsedTerm.Node node ->
+                match ruleMap |> Map.tryFind node with
+                | Some i -> Term.Node(i, node)
+                | None -> failwithf "Unknown node '%s'" name)
+
+          i, name, prec, terms)
+
+      i, name, branches)
+
+  rules
+
+// -----------------------------------------------
+// Nullable
+// -----------------------------------------------
+
+type private NodeId = int
+type private NullableSet = Set<int>
+
+let private computeNullableSet (rules: Rule list) : NullableSet =
+  let nullableSet, rules =
+    let isNode t =
+      match t with
+      | Term.Node _ -> true
+      | _ -> false
+
+    let nodeOnly b =
+      let _, _, _, terms = b
+      terms |> List.forall isNode
+
+    rules
+    |> List.fold
+         (fun (nullableSet, ruleAcc) rule ->
+           let i, _, branches = rule
+
+           if List.isEmpty branches then
+             Set.add i nullableSet, ruleAcc
+           else if List.exists nodeOnly branches then
+             nullableSet, rule :: ruleAcc
+           else
+             nullableSet, ruleAcc)
+         (Set.empty, [])
+
+  let update nullableSet rules =
+    rules
+    |> List.fold
+         (fun (modified, nullableSet, ruleAcc) rule ->
+           let i, _, branches = rule
+
+           let nullable =
+             branches
+             |> List.exists (fun (_, _, _, terms) ->
+               terms
+               |> List.forall (fun t ->
+                 match t with
+                 | Term.Node (i, _) -> Set.contains i nullableSet
+                 | Term.Token _ -> false))
+
+           if nullable then
+             true, Set.add i nullableSet, ruleAcc
+           else
+             modified, nullableSet, rule :: ruleAcc)
+         (false, nullableSet, [])
+
+  let rec makeClosure nullableSet rules =
+    let modified, nullableSet, rules = update nullableSet rules
+
+    if modified then
+      makeClosure nullableSet rules
+    else
+      nullableSet
+
+  makeClosure nullableSet rules
+
+// -----------------------------------------------
+// First
+// -----------------------------------------------
+
+type private FirstSet = Map<NodeId, Set<string>>
+
+let private computeFirstSet (nullableSet: NullableSet) (rules: Rule list) : FirstSet =
+  let isNullable i = nullableSet |> Set.contains i
+
+  let termsToFirst firstSet terms =
+    let rec go acc terms =
+      match terms with
+      | [] -> acc
+      | Term.Token t :: _ -> acc |> Set.add t
+
+      | Term.Node (i, _) :: terms ->
+        let acc =
+          firstSet
+          |> Map.tryFind i
+          |> Option.defaultValue Set.empty
+          |> Set.union acc
+
+        if isNullable i then
+          go acc terms
+        else
+          acc
+
+    go Set.empty terms
+
+  let update firstSet =
+    rules
+    |> List.fold
+         (fun (modified, firstSet) rule ->
+           let i, _, branches = rule
+
+           let prev =
+             firstSet
+             |> Map.tryFind i
+             |> Option.defaultValue Set.empty
+
+           let next =
+             branches
+             |> List.map (fun (_, _, _, terms) -> termsToFirst firstSet terms)
+             |> Set.unionMany
+
+           if prev <> next then
+             true, Map.add i next firstSet
+           else
+             modified, firstSet)
+         (false, firstSet)
+
+  let rec makeClosure firstSet =
+    let modified, firstSet = update firstSet
+
+    if modified then
+      makeClosure firstSet
+    else
+      firstSet
+
+  makeClosure Map.empty
+
+let dump text =
   let g = parseGrammar text
 
-  for name, branches in g.Rules do
-    printfn "rule %s:" name
+  let nullableSet = computeNullableSet g
+  let firstSet = computeFirstSet nullableSet g
+  // let followSet = computeFollowSet nullableSet firstSet g
 
-    for i, b in branches |> List.indexed do
-      let name =
-        match b.NameOpt with
-        | Some name -> name
-        | None -> name + "_" + string (i + 1)
+  let ruleMap =
+    g
+    |> List.map (fun (i, name, _) -> i, name)
+    |> Map.ofList
 
-      let terms =
-        let ofTerm t =
-          match t with
-          | Term.Token t -> "'" + t + "'"
-          | Term.Node n -> n
+  let ruleName i = ruleMap |> Map.find i
 
-        if List.isEmpty b.Terms |> not then
-          b.Terms |> List.map ofTerm |> String.concat " "
-        else
-          "ε"
+  printfn
+    "nullable %s"
+    (g
+     |> List.choose (fun (i, name, _) ->
+       if nullableSet |> Set.contains i then
+         Some name
+       else
+         None)
+     |> String.concat ", ")
 
-      printfn "  | %s = %s" name terms
+  printfn "first:"
 
-  printfn "start: %A" g.StartOpt
-  printfn "prec: %A" g.Prec
+  for i, name, _ in g do
+    let tokens =
+      firstSet
+      |> Map.tryFind i
+      |> Option.defaultValue Set.empty
+      |> Set.toList
+      |> List.sort
+      |> String.concat ", "
+
+    printfn "  %s: %s" name tokens
+
+// printfn "follow:"
+
+// for i, name, _ in g do
+//   let tokens =
+//     followSet
+//     |> Map.tryFind i
+//     |> Option.defaultValue Set.empty
+//     |> Set.toList
+//     |> List.sort
+//     |> String.concat ", "
+
+//   printfn "  %s: %s" name tokens
