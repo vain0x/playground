@@ -2,6 +2,51 @@ module MyYacc
 
 module MyLex = MyLex
 
+let private unwrapOr alt opt = Option.defaultValue alt opt
+
+let private getMultiset key map =
+  Map.tryFind key map
+  |> Option.defaultValue Set.empty
+
+let private addMultiset key value map =
+  Map.add key (Set.add value (getMultiset key map)) map
+
+// -----------------------------------------------
+// Types
+// -----------------------------------------------
+
+[<RequireQualifiedAccess; NoEquality; NoComparison>]
+type Prec =
+  | Left
+  | NonAssoc
+
+type private TermId = int
+type private TokenId = TermId
+type private NodeId = TermId
+
+[<RequireQualifiedAccess; NoEquality; NoComparison>]
+type private Term =
+  | Token of TermId * name: string
+  | Node of TermId * name: string
+
+type private TermMap = Map<TermId, Term>
+
+/// branchId, name, precedence, terms
+type private Branch = int * string * (int * Prec) * Term list
+/// nodeId, name, branches
+type private Rule = NodeId * string * Branch list
+
+module private Term =
+  let id term =
+    match term with
+    | Term.Token (i, _) -> i
+    | Term.Node (i, _) -> i
+
+  let toString term =
+    match term with
+    | Term.Token (_, t) -> t
+    | Term.Node (_, t) -> t
+
 // -----------------------------------------------
 // Parse Grammar
 // -----------------------------------------------
@@ -20,11 +65,6 @@ type private ParsedBranch =
     PrecOpt: string option }
 
 type private ParsedRule = string * ParsedBranch list
-
-[<RequireQualifiedAccess; NoEquality; NoComparison>]
-type Prec =
-  | Left
-  | NonAssoc
 
 [<RequireQualifiedAccess; NoEquality; NoComparison>]
 type private Grammar =
@@ -211,22 +251,6 @@ let private parseDirective acc (text: string) i =
     ParseGrammarException("Expected directive", i)
     |> raise
 
-type private TermId = int
-type private TokenId = TermId
-type private NodeId = TermId
-
-[<RequireQualifiedAccess; NoEquality; NoComparison>]
-type private Term =
-  | Token of TermId * name: string
-  | Node of TermId * name: string
-
-type private TermMap = Map<TermId, Term>
-
-/// branchId, name, precedence, terms
-type private Branch = int * string * (int * Prec) * Term list
-/// nodeId, name, branches
-type private Rule = NodeId * string * Branch list
-
 // see grammar.txt for example
 let private parseGrammar (text: string) : TermMap * Rule list =
   let rec go acc i =
@@ -245,9 +269,9 @@ let private parseGrammar (text: string) : TermMap * Rule list =
     let acc =
       parsedPrec
       |> List.fold
-           (fun acc (_, tokens) ->
-             tokens
-             |> List.fold (fun tokenAcc token -> Set.add (false, token) tokenAcc) acc)
+           (fun acc (_, ts) ->
+             ts
+             |> List.fold (fun acc t -> Set.add (false, t) acc) acc)
            Set.empty
 
     let acc =
@@ -255,7 +279,7 @@ let private parseGrammar (text: string) : TermMap * Rule list =
       |> List.fold
            (fun acc (_, rule) ->
              let name, branches = rule
-             let acc = Set.add (false, name) acc
+             let acc = Set.add (true, name) acc
 
              branches
              |> List.fold
@@ -287,7 +311,7 @@ let private parseGrammar (text: string) : TermMap * Rule list =
            i + 1, Map.add i term acc, Map.add t i rev)
          (1, Map.empty, Map.empty)
 
-  let idOf t = termRev |> Map.find t
+  let intern (t: string) : TermId = termRev |> Map.find t
 
   let _, precMap =
     // 明示的に設定された優先順位にはノードの番号より大きい数字を割り当てる
@@ -296,7 +320,7 @@ let private parseGrammar (text: string) : TermMap * Rule list =
          (fun (i, acc) (prec, tokens) ->
            let acc =
              tokens
-             |> List.fold (fun acc token -> acc |> Map.add (idOf token) (i, prec)) acc
+             |> List.fold (fun acc token -> acc |> Map.add (intern token) (i, prec)) acc
 
            i + 1, acc)
          (termCount, Map.empty)
@@ -304,7 +328,7 @@ let private parseGrammar (text: string) : TermMap * Rule list =
   let rules =
     let ruleMap =
       parsedRules
-      |> List.map (fun (_, (name, _)) -> name, idOf name)
+      |> List.map (fun (_, (name, _)) -> name, intern name)
       |> Map.ofList
 
     parsedRules
@@ -320,7 +344,7 @@ let private parseGrammar (text: string) : TermMap * Rule list =
           let prec =
             match b.PrecOpt with
             | Some prec ->
-              match precMap |> Map.tryFind (idOf prec) with
+              match precMap |> Map.tryFind (intern prec) with
               | Some prec -> prec
               | None -> failwithf "Unknown token specified by 'prec' (%s)" prec
 
@@ -328,15 +352,15 @@ let private parseGrammar (text: string) : TermMap * Rule list =
               b.Terms
               |> List.tryPick (fun t ->
                 match t with
-                | ParsedTerm.Token t -> precMap |> Map.tryFind (idOf t)
+                | ParsedTerm.Token t -> precMap |> Map.tryFind (intern t)
                 | _ -> None)
-              |> Option.defaultValue (i, Prec.NonAssoc)
+              |> unwrapOr (i, Prec.NonAssoc)
 
           let terms =
             b.Terms
             |> List.map (fun t ->
               match t with
-              | ParsedTerm.Token t -> Term.Token(idOf t, t)
+              | ParsedTerm.Token t -> Term.Token(intern t, t)
               | ParsedTerm.Node t ->
                 match ruleMap |> Map.tryFind t with
                 | Some i -> Term.Node(i, t)
@@ -344,7 +368,7 @@ let private parseGrammar (text: string) : TermMap * Rule list =
 
           i, name, prec, terms)
 
-      idOf name, name, branches)
+      intern name, name, branches)
 
   termMap, rules
 
@@ -433,16 +457,9 @@ let private computeFirstSet (termMap: TermMap) (nullableSet: NullableSet) (rules
       | [] -> acc
 
       | term :: terms ->
-        let i =
-          match term with
-          | Term.Token (i, _) -> i
-          | Term.Node (i, _) -> i
+        let i = Term.id term
 
-        let acc =
-          firstSet
-          |> Map.tryFind i
-          |> Option.defaultValue Set.empty
-          |> Set.union acc
+        let acc = firstSet |> getMultiset i |> Set.union acc
 
         if isNullable i then
           go acc terms
@@ -457,10 +474,7 @@ let private computeFirstSet (termMap: TermMap) (nullableSet: NullableSet) (rules
          (fun (modified, firstSet) rule ->
            let i, _, branches = rule
 
-           let prev =
-             firstSet
-             |> Map.tryFind i
-             |> Option.defaultValue Set.empty
+           let prev = firstSet |> getMultiset i
 
            let next =
              branches
@@ -483,12 +497,90 @@ let private computeFirstSet (termMap: TermMap) (nullableSet: NullableSet) (rules
 
   makeClosure firstSet
 
+// -----------------------------------------------
+// Follow
+// -----------------------------------------------
+
+type private FollowSet = Map<TermId, Set<TermId>>
+
+type private FollowAcc = bool * FollowSet
+
+let private computeFollowSet (nullableSet: NullableSet) (firstSet: FirstSet) (rules: Rule list) : FollowSet =
+  let isNullable i = nullableSet |> Set.contains i
+
+  let add (modified, acc) (i: TermId) (follower: TermId) =
+    if acc
+       |> getMultiset i
+       |> Set.contains follower
+       |> not then
+      true, addMultiset i follower acc
+    else
+      modified, acc
+
+  let extend acc (i: TermId) (followers: Set<TermId>) =
+    followers
+    |> Set.fold (fun acc follower -> add acc i follower) acc
+
+  let rec update followSet =
+    rules
+    |> List.fold
+         (fun acc (rule, _, branches) ->
+           branches
+           |> List.fold
+                (fun acc (_, _, _, terms) ->
+                  let acc =
+                    let rec go acc terms =
+                      match terms with
+                      | term :: ((next :: _) as terms) ->
+                        let acc =
+                          let next = getMultiset (Term.id next) firstSet
+                          extend acc (Term.id term) next
+
+                        go acc terms
+
+                      | _ -> acc
+
+                    go acc terms
+
+                  let acc =
+                    let followers =
+                      let _, followSet = acc
+                      getMultiset rule followSet
+
+                    let rec go acc terms =
+                      match terms with
+                      | t :: terms ->
+                        let acc = extend acc (Term.id t) followers
+
+                        if isNullable (Term.id t) then
+                          go acc terms
+                        else
+                          acc
+
+                      | [] -> acc
+
+                    go acc (List.rev terms)
+
+                  acc)
+                acc)
+         (false, followSet)
+
+  let rec makeClosure acc =
+    let modified, acc = update acc
+
+    if modified then
+      makeClosure acc
+    else
+      acc
+
+  makeClosure Map.empty
+
 let dump text =
   let termMap, rules = parseGrammar text
 
   let nullableSet = computeNullableSet rules
   let firstSet = computeFirstSet termMap nullableSet rules
-  // let followSet = computeFollowSet nullableSet firstSet g
+  let followSet = computeFollowSet nullableSet firstSet rules
 
   let ruleMap =
     rules
@@ -512,27 +604,23 @@ let dump text =
   for i, name, _ in rules do
     let tokens =
       firstSet
-      |> Map.tryFind i
-      |> Option.defaultValue Set.empty
+      |> getMultiset i
       |> Set.toList
-      |> List.sort
-      |> List.map (fun i ->
-        match termMap |> Map.find i with
-        | Term.Token (_, t) -> t
-        | Term.Node (_, t) -> t)
+      |> List.map (fun i -> termMap |> Map.find i |> Term.toString)
       |> String.concat ", "
 
     printfn "  %s: %s" name tokens
 
-// printfn "follow:"
+  printfn "follow:"
 
-// for i, name, _ in g do
-//   let tokens =
-//     followSet
-//     |> Map.tryFind i
-//     |> Option.defaultValue Set.empty
-//     |> Set.toList
-//     |> List.sort
-//     |> String.concat ", "
+  for i in termMap.Keys do
+    let name = termMap |> Map.find i |> Term.toString
 
-//   printfn "  %s: %s" name tokens
+    let tokens =
+      followSet
+      |> getMultiset i
+      |> Set.toList
+      |> List.map (fun i -> termMap |> Map.find i |> Term.toString)
+      |> String.concat ", "
+
+    printfn "  %s: %s" name tokens
