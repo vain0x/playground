@@ -2,6 +2,8 @@ module MyYacc
 
 module MyLex = MyLex
 
+type private Dictionary<'K, 'T> = System.Collections.Generic.Dictionary<'K, 'T>
+
 let private unwrapOr alt opt = Option.defaultValue alt opt
 
 let private getMultiset key map =
@@ -15,26 +17,37 @@ let private addMultiset key value map =
 // Types
 // -----------------------------------------------
 
+/// 結合性
 [<RequireQualifiedAccess; NoEquality; NoComparison>]
-type Prec =
+type Assoc =
   | Left
   | NonAssoc
 
+/// 開始規則ならtrue
+type private BeingStart = bool
+
+/// トークンの名前
+type private TokenText = string
+/// ノードの名前
+type private NodeText = string
+
+/// 項をインターン化したID
 type private TermId = int
 type private TokenId = TermId
 type private NodeId = TermId
 
 [<RequireQualifiedAccess; NoEquality; NoComparison>]
 type private Term =
-  | Token of TermId * name: string
-  | Node of TermId * name: string
+  | Token of TermId * name: TokenText
+  | Node of TermId * name: TokenText
 
 type private TermMap = Map<TermId, Term>
+type private TokenMemo = Map<TokenText, TokenId>
 
 /// branchId, name, precedence, terms
-type private Branch = int * string * (int * Prec) * Term list
+type private Branch = int * string * (int * Assoc) * Term list
 /// nodeId, name, branches
-type private Rule = NodeId * string * Branch list
+type private Rule = NodeId * Branch list
 
 module private Term =
   let id term =
@@ -42,10 +55,12 @@ module private Term =
     | Term.Token (i, _) -> i
     | Term.Node (i, _) -> i
 
-  let toString term =
+  let toString term : string =
     match term with
     | Term.Token (_, t) -> t
     | Term.Node (_, t) -> t
+
+let private Eof: TokenId = 0
 
 // -----------------------------------------------
 // Parse Grammar
@@ -55,22 +70,16 @@ exception ParseGrammarException of msg: string * index: int
 
 [<RequireQualifiedAccess; NoEquality; NoComparison>]
 type private ParsedTerm =
-  | Token of string
-  | Node of string
+  | Token of TokenText
+  | Node of NodeText
 
 [<RequireQualifiedAccess; NoEquality; NoComparison>]
 type private ParsedBranch =
   { Terms: ParsedTerm list
     NameOpt: string option
-    PrecOpt: string option }
+    PrecOpt: TokenText option }
 
-type private ParsedRule = string * ParsedBranch list
-
-[<RequireQualifiedAccess; NoEquality; NoComparison>]
-type private Grammar =
-  { Rules: ParsedRule list
-    StartOpt: string option
-    Prec: (Prec * string list) list }
+type private ParsedRule = NodeText * ParsedBranch list
 
 let private occursAt (infix: string) (text: string) i =
   i + infix.Length <= text.Length
@@ -208,9 +217,10 @@ let private parseRule (text: string) i =
   let i = expectText ";" text (skipSpaces text i)
   rule, i
 
+[<RequireQualifiedAccess; NoEquality; NoComparison>]
 type private Acc =
-  { PrecAcc: (Prec * string list) list
-    RuleAcc: (bool * ParsedRule) list }
+  { PrecAcc: (Assoc * TokenText list) list
+    RuleAcc: (BeingStart * ParsedRule) list }
 
 let private emptyAcc: Acc = { PrecAcc = []; RuleAcc = [] }
 
@@ -237,8 +247,8 @@ let private parseDirective acc (text: string) i =
     let i = skipSpaces text i
 
     match name with
-    | "nonassoc" -> onPrec Prec.NonAssoc i
-    | "left" -> onPrec Prec.Left i
+    | "nonassoc" -> onPrec Assoc.NonAssoc i
+    | "left" -> onPrec Assoc.Left i
     | "start" -> onRule true i
 
     | _ ->
@@ -252,7 +262,7 @@ let private parseDirective acc (text: string) i =
     |> raise
 
 // see grammar.txt for example
-let private parseGrammar (text: string) : TermMap * Rule list =
+let private parseGrammar (text: string) =
   let rec go acc i =
     if i < text.Length then
       let acc, i = parseDirective acc text i
@@ -260,18 +270,31 @@ let private parseGrammar (text: string) : TermMap * Rule list =
     else
       acc
 
-  let acc = go emptyAcc (skipSpaces text 0)
+  go emptyAcc (skipSpaces text 0)
 
-  let parsedPrec = List.rev acc.PrecAcc
-  let parsedRules = List.rev acc.RuleAcc
+// -----------------------------------------------
+// Lower
+// -----------------------------------------------
 
-  let termCount, termMap, termRev =
+/// パースの結果を中間表現に変形する
+let private lower (parsedAcc: Acc) =
+  let parsedPrec = List.rev parsedAcc.PrecAcc
+  let parsedRules = List.rev parsedAcc.RuleAcc
+
+  // 項の名前にIDを割り振る
+  let termArray = ResizeArray([ Term.Token(Eof, "$") ])
+  let termCount = 1
+
+  let termCount, tokenMemo, nodeMemo =
+    let BeingToken = false
+    let BeingNode = true
+
     let acc =
       parsedPrec
       |> List.fold
-           (fun acc (_, ts) ->
+           (fun acc (_, (ts: TokenText list)) ->
              ts
-             |> List.fold (fun acc t -> Set.add (false, t) acc) acc)
+             |> List.fold (fun acc t -> Set.add (BeingToken, t) acc) acc)
            Set.empty
 
     let acc =
@@ -279,98 +302,114 @@ let private parseGrammar (text: string) : TermMap * Rule list =
       |> List.fold
            (fun acc (_, rule) ->
              let name, branches = rule
-             let acc = Set.add (true, name) acc
+             let acc = Set.add (BeingNode, name) acc
 
              branches
              |> List.fold
                   (fun acc (b: ParsedBranch) ->
                     let acc =
                       match b.PrecOpt with
-                      | Some t -> Set.add (false, t) acc
+                      | Some t -> Set.add (BeingToken, t) acc
                       | None -> acc
 
                     b.Terms
                     |> List.fold
                          (fun acc term ->
                            match term with
-                           | ParsedTerm.Token t -> Set.add (false, t) acc
-                           | ParsedTerm.Node t -> Set.add (true, t) acc)
+                           | ParsedTerm.Token t -> Set.add (BeingToken, t) acc
+                           | ParsedTerm.Node t -> Set.add (BeingNode, t) acc)
                          acc)
                   acc)
            acc
 
     acc
     |> Set.fold
-         (fun ((i: TermId), acc, rev) (beingNode, t) ->
-           let term =
+         (fun ((i: TermId), tMemo, nMemo) (beingNode, t) ->
+           let term, tMemo, nMemo =
              if beingNode then
-               Term.Node(i, t)
+               Term.Node(i, t), tMemo, Map.add t i nMemo
              else
-               Term.Token(i, t)
+               Term.Token(i, t), Map.add t i tMemo, nMemo
 
-           i + 1, Map.add i term acc, Map.add t i rev)
-         (1, Map.empty, Map.empty)
+           termArray.Add(term)
+           i + 1, tMemo, nMemo)
+         (termCount, Map.empty, Map.empty)
 
-  let intern (t: string) : TermId = termRev |> Map.find t
+  let internToken (t: string) : TokenId = Map.find t tokenMemo
+  let internNode (t: NodeText) : NodeId = Map.find t nodeMemo
 
+  // 優先度指定に書かれたトークンのインターン化と、それらのトークンへの優先度の割り振りを行う。
+  // これらの優先度はすべての項IDより大きい値を設定することで暗黙的な優先順位より強くする
   let _, precMap =
-    // 明示的に設定された優先順位にはノードの番号より大きい数字を割り当てる
     parsedPrec
     |> List.fold
-         (fun (i, acc) (prec, tokens) ->
-           let acc =
-             tokens
-             |> List.fold (fun acc token -> acc |> Map.add (intern token) (i, prec)) acc
+         (fun (p, acc) (prec, ts) ->
+           let p = p + 1
 
-           i + 1, acc)
+           let acc =
+             ts
+             |> List.fold (fun acc t -> acc |> Map.add (internToken t) (p, prec)) acc
+
+           p, acc)
          (termCount, Map.empty)
 
-  let rules =
-    let ruleMap =
+  // ルールに書かれた項をインターン化する。
+  // ブランチへの名前の割り振り、優先度の決定などの導出計算も行う
+  let rules: Rule list =
+    let ruleMemo =
       parsedRules
-      |> List.map (fun (_, (name, _)) -> name, intern name)
+      |> List.map (fun (_, (name, _)) -> name, internNode name)
       |> Map.ofList
 
     parsedRules
-    |> List.map (fun (_, (name, branches)) ->
+    |> List.map (fun (_, (ruleName, branches)) ->
       let branches: Branch list =
         branches
-        |> List.mapi (fun i (b: ParsedBranch) ->
+        |> List.mapi (fun bi (b: ParsedBranch) ->
           let name =
             match b.NameOpt with
             | Some name -> name
-            | None -> name + "_" + string (i + 1)
+            | None -> ruleName + "_" + string (bi + 1)
 
           let prec =
             match b.PrecOpt with
             | Some prec ->
-              match precMap |> Map.tryFind (intern prec) with
+              match precMap |> Map.tryFind (internToken prec) with
               | Some prec -> prec
-              | None -> failwithf "Unknown token specified by 'prec' (%s)" prec
+              | None -> failwithf "Unknown token specified by '%%prec' (%s)" prec
 
             | None ->
               b.Terms
               |> List.tryPick (fun t ->
                 match t with
-                | ParsedTerm.Token t -> precMap |> Map.tryFind (intern t)
+                | ParsedTerm.Token t -> precMap |> Map.tryFind (internToken t)
                 | _ -> None)
-              |> unwrapOr (i, Prec.NonAssoc)
+              |> unwrapOr (bi, Assoc.NonAssoc)
 
           let terms =
             b.Terms
             |> List.map (fun t ->
               match t with
-              | ParsedTerm.Token t -> Term.Token(intern t, t)
+              | ParsedTerm.Token t -> Term.Token(internToken t, t)
               | ParsedTerm.Node t ->
-                match ruleMap |> Map.tryFind t with
+                match ruleMemo |> Map.tryFind t with
                 | Some i -> Term.Node(i, t)
                 | None -> failwithf "Undefined node '%s'" name)
 
-          i, name, prec, terms)
+          bi, name, prec, terms)
 
-      intern name, name, branches)
+      internNode ruleName, branches)
 
-  termMap, rules
+  let startRule =
+    let _, (ruleName, _) =
+      parsedRules
+      |> List.tryFind (fun (start, _) -> start)
+      |> Option.orElseWith (fun () -> List.tryLast parsedRules)
+      |> Option.defaultWith (fun () -> failwith "No rules")
+
+    internNode ruleName
+
+  termArray.ToArray(), tokenMemo, nodeMemo, startRule, rules
 
 // -----------------------------------------------
 // Nullable
@@ -392,7 +431,7 @@ let private computeNullableSet (rules: Rule list) : NullableSet =
     rules
     |> List.fold
          (fun (nullableSet, ruleAcc) rule ->
-           let i, _, branches = rule
+           let i, branches = rule
 
            if List.isEmpty branches then
              Set.add i nullableSet, ruleAcc
@@ -406,7 +445,7 @@ let private computeNullableSet (rules: Rule list) : NullableSet =
     rules
     |> List.fold
          (fun (modified, nullableSet, ruleAcc) rule ->
-           let i, _, branches = rule
+           let i, branches = rule
 
            let nullable =
              branches
@@ -439,46 +478,46 @@ let private computeNullableSet (rules: Rule list) : NullableSet =
 
 type private FirstSet = Map<TermId, Set<TokenId>>
 
-let private computeFirstSet (termMap: TermMap) (nullableSet: NullableSet) (rules: Rule list) : FirstSet =
-  let isNullable i = nullableSet |> Set.contains i
+let private computeFirstOf (nullableSet: NullableSet) (firstSet: FirstSet) (terms: Term list) =
+  let rec go acc terms =
+    match terms with
+    | [] -> acc
 
-  let firstSet =
-    termMap
-    |> Map.fold
-         (fun acc i term ->
+    | term :: terms ->
+      let i = Term.id term
+
+      let acc = firstSet |> getMultiset i |> Set.union acc
+
+      if Set.contains i nullableSet then
+        go acc terms
+      else
+        acc
+
+  go Set.empty terms
+
+let private computeFirstSet (termArray: Term array) (nullableSet: NullableSet) (rules: Rule list) : FirstSet =
+  let firstOf (acc: FirstSet) terms = computeFirstOf nullableSet acc terms
+
+  let firstSet: FirstSet =
+    termArray
+    |> Array.fold
+         (fun acc term ->
            match term with
-           | Term.Token (ti, _) -> Map.add i (Set.singleton ti) acc
+           | Term.Token (ti, _) -> Map.add ti (Set.singleton ti) acc
            | Term.Node _ -> acc)
          Map.empty
-
-  let termsToFirst firstSet terms =
-    let rec go acc terms =
-      match terms with
-      | [] -> acc
-
-      | term :: terms ->
-        let i = Term.id term
-
-        let acc = firstSet |> getMultiset i |> Set.union acc
-
-        if isNullable i then
-          go acc terms
-        else
-          acc
-
-    go Set.empty terms
 
   let update firstSet =
     rules
     |> List.fold
          (fun (modified, firstSet) rule ->
-           let i, _, branches = rule
+           let i, branches = rule
 
            let prev = firstSet |> getMultiset i
 
            let next =
              branches
-             |> List.map (fun (_, _, _, terms) -> termsToFirst firstSet terms)
+             |> List.map (fun (_, _, _, terms) -> firstOf firstSet terms)
              |> Set.unionMany
 
            if prev <> next then
@@ -524,7 +563,7 @@ let private computeFollowSet (nullableSet: NullableSet) (firstSet: FirstSet) (ru
   let rec update followSet =
     rules
     |> List.fold
-         (fun acc (rule, _, branches) ->
+         (fun acc (rule, branches) ->
            branches
            |> List.fold
                 (fun acc (_, _, _, terms) ->
@@ -575,52 +614,326 @@ let private computeFollowSet (nullableSet: NullableSet) (firstSet: FirstSet) (ru
 
   makeClosure Map.empty
 
-let dump text =
-  let termMap, rules = parseGrammar text
+// -----------------------------------------------
+// LR Parser Generation
+// -----------------------------------------------
+
+// type private NodeRef = Node
+
+/// Production rule (`X -> A B`.)
+type private BranchData = NodeId * Term list
+
+type private BranchId = int
+
+/// LR(1)-term
+type private Lr1Term = Lr1Term of BranchId * dotPos: int * lookahead: TokenId
+
+/// State of DFA for LR(1).
+type private Lr1State = Set<Lr1Term>
+
+/// Interned ID of state.
+type private StateId = int
+
+[<RequireQualifiedAccess; NoEquality; NoComparison>]
+type private LrAction =
+  | Shift of StateId
+  | Jump of StateId
+  | Reduce of NodeId * width: int
+
+[<RequireQualifiedAccess; NoEquality; NoComparison>]
+type LrParser =
+  private
+    { Table: Map<StateId * TermId, LrAction>
+      InitialState: StateId
+      AcceptSet: Set<StateId>
+      TermArray: Term array
+      TokenMemo: TokenMemo }
+
+let generateLrParser (grammarText: string) : LrParser =
+  let termArray, tokenMemo, nodeMemo, root, rules = parseGrammar grammarText |> lower
 
   let nullableSet = computeNullableSet rules
-  let firstSet = computeFirstSet termMap nullableSet rules
+  let firstSet = computeFirstSet termArray nullableSet rules
   let followSet = computeFollowSet nullableSet firstSet rules
 
-  let ruleMap =
-    rules
-    |> List.map (fun (i, name, _) -> i, name)
-    |> Map.ofList
+  let stateArray = ResizeArray<Lr1State>()
+  let stateMemo = Dictionary<Lr1State, StateId>()
+  let edgeMap = Dictionary<StateId * TermId, StateId>()
+  let generatedStateStack = System.Collections.Generic.Stack()
 
-  let ruleName i = ruleMap |> Map.find i
+  // let getTerm (termId: TermId) = termMap |> Map.find termId
+
+  let branchArray, branchPrec, ruleBranches =
+    let acc = ResizeArray()
+    let branchPrec = ResizeArray()
+    let ruleBranches = Array.replicate termArray.Length Array.empty
+
+    rules
+    |> List.fold
+         (fun bi (ruleId, branches) ->
+           let branchIds = ResizeArray()
+
+           let bi =
+             branches
+             |> List.fold
+                  (fun bi (b: Branch) ->
+                    let _, _, prec, terms = b
+                    acc.Add(ruleId, terms |> List.toArray)
+                    branchPrec.Add(prec)
+                    branchIds.Add(bi)
+                    bi + 1)
+                  bi
+
+           ruleBranches.[ruleId] <- branchIds.ToArray()
+           bi)
+         0
+    |> ignore
+
+    acc.ToArray(), branchPrec.ToArray(), ruleBranches
+
+  let computeFirstOf (terms: Term array) : Set<TokenId> =
+    let rec go state i =
+      if i < terms.Length then
+        let state =
+          match terms.[i] with
+          | Term.Node (nodeId, _) -> Set.union state (getMultiset nodeId firstSet)
+          | Term.Token (tokenId, _) -> Set.add tokenId state
+
+        let nullable =
+          match terms.[i] with
+          | Term.Node (nodeId, _) -> Set.contains nodeId nullableSet
+          | Term.Token _ -> false
+
+        if nullable then
+          go state (i + 1)
+        else
+          state
+      else
+        state
+
+    go Set.empty 0
+
+  let internState (s: Lr1State) =
+    match stateMemo.TryGetValue(s) with
+    | true, it -> it
+    | false, _ ->
+      let n = stateArray.Count
+      stateArray.Add(s)
+      stateMemo.Add(s, n)
+      generatedStateStack.Push(n)
+      n
+
+  // LR(1)項の集合の閉包をとることで、それらのLR(1)項を含むDFAの状態を生成する
+  let getClosure (seed: Lr1State) : StateId =
+    let addLt (modified, state) (lt: Lr1Term) =
+      if state |> Set.contains lt |> not then
+        true, Set.add lt state
+      else
+        modified, state
+
+    let rec go acc =
+      let _, state = acc
+
+      state
+      |> Set.fold
+           (fun acc (lt: Lr1Term) ->
+             let (Lr1Term (branchId, dot, lookahead)) = lt
+             let _, terms = branchArray.[branchId]
+
+             if dot < terms.Length then
+               match terms.[dot] with
+               | Term.Node (nodeId, _) ->
+                 let lookaheadSet =
+                   let rest = Array.append terms.[dot + 1 ..] [| termArray.[lookahead] |]
+                   computeFirstOf rest
+
+                 ruleBranches.[nodeId]
+                 |> Array.fold
+                      (fun acc bi ->
+                        lookaheadSet
+                        |> Set.fold
+                             (fun acc lookahead ->
+                               let lt = Lr1Term(bi, 0, lookahead)
+                               addLt acc lt)
+                             acc)
+                      acc
+
+               | Term.Token _ -> acc
+             else
+               acc)
+           acc
+
+    let rec makeClosure state =
+      let modified, state = go (false, state)
+
+      if modified then
+        makeClosure state
+      else
+        state
+
+    internState (makeClosure seed)
+
+  // 状態から出る辺と、遷移先の状態を生成する
+  let genAdjacentEdges (s: StateId) =
+    stateArray.[s]
+    |> Set.fold
+         (fun () (lt: Lr1Term) ->
+           // LR(1)項のドットを1つ右に進めて、その際に飛び越える項と、更新後のLR(1)項を得る
+           // ドットが右端だったらNone
+           let ltOpt =
+             let (Lr1Term (branchId, dot, lookahead)) = lt
+             let _, terms = branchArray.[branchId]
+
+             if dot + 1 <= terms.Length then
+               Some(Term.id terms.[dot], Lr1Term(branchId, dot + 1, lookahead))
+             else
+               None
+
+           match ltOpt with
+           | Some (termId, lt) ->
+             let nextState = getClosure (Set.singleton lt)
+             // check conflict; compare precedence of lt
+             edgeMap.Add((s, termId), nextState)
+             ()
+
+           | None ->
+             // check conflict; compare precedence of lt
+             ())
+         ()
+
+  // Generate DFA.
+  let initialState =
+    ruleBranches.[root]
+    |> Array.map (fun bi -> Lr1Term(bi, 0, Eof))
+    |> Set.ofArray
+    |> internState
+
+  while generatedStateStack.Count <> 0 do
+    let state = generatedStateStack.Pop()
+    genAdjacentEdges state
+
+  // Convert DFA to table.
+  let table = Dictionary<StateId * TermId, LrAction>()
+  let mutable acceptSet: Set<StateId> = Set.empty
+
+  for (KeyValue ((stateId, termId), nextStateId)) in edgeMap do
+    table.[(stateId, termId)] <-
+      match termArray.[termId] with
+      | Term.Token _ -> LrAction.Shift nextStateId
+      | Term.Node _ -> LrAction.Jump nextStateId
+
+  for stateId, state in stateArray |> Seq.indexed do
+    for lt in state do
+      let (Lr1Term (branchId, dot, lookahead)) = lt
+      let node, terms = branchArray.[branchId]
+
+      if dot = terms.Length then
+        if node = root then
+          acceptSet <- Set.add stateId acceptSet
+
+        table.[(stateId, lookahead)] <- LrAction.Reduce(node, terms.Length)
+
+  { Table =
+      table
+      |> Seq.map (fun (KeyValue (key, value)) -> key, value)
+      |> Map.ofSeq
+
+    InitialState = initialState
+    AcceptSet = acceptSet
+    TermArray = termArray
+    TokenMemo = tokenMemo }
+
+module LrParser =
+  let parse (tokens: string list) (p: LrParser) =
+    let tokenMemo = Array.append (Array.ofList tokens) [| "$"; "$$" |]
+
+    let tokens =
+      let tokens =
+        tokens
+        |> List.map (fun token ->
+          p.TokenMemo
+          |> Map.tryFind token
+          |> Option.defaultWith (fun () -> failwithf "Unknown token '%s'" token))
+
+      List.append tokens [ Eof; Eof ]
+
+    let mutable cursor = 0
+
+    let rec go state stack tokens =
+      match tokens with
+      | token :: tokenTail ->
+        match p.Table |> Map.tryFind (state, token) with
+        | Some (LrAction.Shift next) ->
+          eprintfn "shift %d:%s at %d" token (tokenMemo.[cursor]) cursor
+          cursor <- cursor + 1
+          go next (state :: stack) tokenTail
+
+        | Some (LrAction.Reduce (nodeId, width)) ->
+          let items, stack = List.splitAt width (state :: stack)
+          eprintfn "reduce %A -> %d" items nodeId
+
+          let state =
+            match stack with
+            | state :: _ -> state
+            | _ -> failwith "empty stack"
+
+          match p.Table |> Map.tryFind (state, nodeId) with
+          | Some (LrAction.Jump next) -> go next stack tokens
+          | _ -> failwith "invalid table: jump expected"
+
+        | _ ->
+          if Set.contains state p.AcceptSet then
+            eprintfn "accept"
+          else
+            failwithf "parse failed at %d:%A" cursor tokenMemo.[cursor]
+
+      | _ -> failwith "unreachable"
+
+    go p.InitialState [] tokens
+
+// -----------------------------------------------
+// Dump
+// -----------------------------------------------
+
+let dump text =
+  let termArray, tokenMemo, nodeMemo, startRule, rules = parseGrammar text |> lower
+
+  let nullableSet = computeNullableSet rules
+  let firstSet = computeFirstSet termArray nullableSet rules
+  let followSet = computeFollowSet nullableSet firstSet rules
+
+  let textOf termId = Term.toString termArray.[termId]
 
   printfn
     "nullable %s"
     (rules
-     |> List.choose (fun (i, name, _) ->
-       if nullableSet |> Set.contains i then
-         Some name
+     |> List.choose (fun (nodeId, _) ->
+       if nullableSet |> Set.contains nodeId then
+         Some(textOf nodeId)
        else
          None)
      |> String.concat ", ")
 
   printfn "first:"
 
-  for i, name, _ in rules do
+  for nodeId, _ in rules do
     let tokens =
       firstSet
-      |> getMultiset i
+      |> getMultiset nodeId
       |> Set.toList
-      |> List.map (fun i -> termMap |> Map.find i |> Term.toString)
+      |> List.map (fun tokenId -> Term.toString termArray.[tokenId])
       |> String.concat ", "
 
-    printfn "  %s: %s" name tokens
+    printfn "  %s: %s" (textOf nodeId) tokens
 
   printfn "follow:"
 
-  for i in termMap.Keys do
-    let name = termMap |> Map.find i |> Term.toString
-
+  for i in 0 .. termArray.Length - 1 do
     let tokens =
       followSet
       |> getMultiset i
       |> Set.toList
-      |> List.map (fun i -> termMap |> Map.find i |> Term.toString)
+      |> List.map textOf
       |> String.concat ", "
 
-    printfn "  %s: %s" name tokens
+    printfn "  %s: %s" (textOf i) tokens
