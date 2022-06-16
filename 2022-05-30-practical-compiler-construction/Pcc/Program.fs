@@ -62,9 +62,12 @@ let main _ =
   // tok "if"
   // tok "if (x == 0) { sprint \"Hello, world!\"; }"
 
-  try
-    MyYacc.dump input
-  with
-  | MyYacc.ParseGrammarException (msg, i) -> eprintfn "ERROR: %s at %d" msg i
+  // try
+  //   MyYacc.dump input
+  // with
+  // | MyYacc.ParseGrammarException (msg, i) -> eprintfn "ERROR: %s at %d" msg i
 
+  let parser = MyYacc.generateLrParser input
+  let tokens = [ "ID"; "ASSIGN"; "NUM"; "SEMI" ]
+  MyYacc.LrParser.parse tokens parser
   0

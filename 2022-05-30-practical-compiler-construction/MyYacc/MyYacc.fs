@@ -327,8 +327,10 @@ let private lower (parsedAcc: Acc) =
          (fun ((i: TermId), tMemo, nMemo) (beingNode, t) ->
            let term, tMemo, nMemo =
              if beingNode then
+               eprintfn "node %d:%s" i t
                Term.Node(i, t), tMemo, Map.add t i nMemo
              else
+               eprintfn "token %d:%s" i t
                Term.Token(i, t), Map.add t i tMemo, nMemo
 
            termArray.Add(term)
@@ -661,8 +663,6 @@ let generateLrParser (grammarText: string) : LrParser =
   let edgeMap = Dictionary<StateId * TermId, StateId>()
   let generatedStateStack = System.Collections.Generic.Stack()
 
-  // let getTerm (termId: TermId) = termMap |> Map.find termId
-
   let branchArray, branchPrec, ruleBranches =
     let acc = ResizeArray()
     let branchPrec = ResizeArray()
@@ -677,12 +677,28 @@ let generateLrParser (grammarText: string) : LrParser =
              branches
              |> List.fold
                   (fun bi (b: Branch) ->
-                    let _, _, prec, terms = b
+                    let _, name, prec, terms = b
+
+                    eprintfn
+                      "branch %d:%s %s -> %s"
+                      bi
+                      name
+                      (Term.toString termArray.[ruleId])
+                      (terms
+                       |> List.map Term.toString
+                       |> String.concat "")
+
                     acc.Add(ruleId, terms |> List.toArray)
                     branchPrec.Add(prec)
                     branchIds.Add(bi)
                     bi + 1)
                   bi
+
+           eprintfn
+             "rule-branches %d:%s -> %s"
+             ruleId
+             (Term.toString termArray.[ruleId])
+             (branchIds |> Seq.map string |> String.concat ", ")
 
            ruleBranches.[ruleId] <- branchIds.ToArray()
            bi)
@@ -720,6 +736,35 @@ let generateLrParser (grammarText: string) : LrParser =
       let n = stateArray.Count
       stateArray.Add(s)
       stateMemo.Add(s, n)
+
+      eprintfn
+        "state %d:[%s\n]"
+        n
+        (s
+         |> Set.toList
+         |> List.map (fun (lt: Lr1Term) ->
+           let (Lr1Term (bi, dot, lookahead)) = lt
+           let la = Term.toString termArray.[lookahead]
+           let node, terms = branchArray.[bi]
+
+           let rhs =
+             if dot < terms.Length then
+               terms
+               |> Array.mapi (fun i term ->
+                 if i = dot then
+                   "*" + Term.toString term
+                 else
+                   Term.toString term)
+               |> String.concat " "
+             else
+               (terms
+                |> Array.map Term.toString
+                |> String.concat " ")
+               + " *"
+
+           sprintf "\n  %s -> %s, %s" (Term.toString termArray.[node]) rhs la)
+         |> String.concat "")
+
       generatedStateStack.Push(n)
       n
 
@@ -792,8 +837,9 @@ let generateLrParser (grammarText: string) : LrParser =
            match ltOpt with
            | Some (termId, lt) ->
              let nextState = getClosure (Set.singleton lt)
+             eprintfn "edge s#%d, %d:%s -> s#%d" s termId (Term.toString termArray.[termId]) nextState
              // check conflict; compare precedence of lt
-             edgeMap.Add((s, termId), nextState)
+             edgeMap.[(s, termId)] <- nextState
              ()
 
            | None ->
@@ -806,7 +852,7 @@ let generateLrParser (grammarText: string) : LrParser =
     ruleBranches.[root]
     |> Array.map (fun bi -> Lr1Term(bi, 0, Eof))
     |> Set.ofArray
-    |> internState
+    |> getClosure
 
   while generatedStateStack.Count <> 0 do
     let state = generatedStateStack.Pop()
@@ -829,7 +875,17 @@ let generateLrParser (grammarText: string) : LrParser =
 
       if dot = terms.Length then
         if node = root then
+          eprintfn "accept %d" stateId
           acceptSet <- Set.add stateId acceptSet
+
+        eprintfn
+          "reduce %d, %d:%s to %d:%s (%d)"
+          stateId
+          lookahead
+          (Term.toString termArray.[lookahead])
+          node
+          (Term.toString termArray.[node])
+          terms.Length
 
         table.[(stateId, lookahead)] <- LrAction.Reduce(node, terms.Length)
 

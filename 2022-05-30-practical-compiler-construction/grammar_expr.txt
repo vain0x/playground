@@ -1,0 +1,20 @@
+%left PLUS MINUS
+%left TIMES DIV
+%nonassoc UMINUS
+
+%start
+prog : stmt
+     ;
+
+stmt : ID ASSIGN expr SEMI              %name AssignStmt
+     ;
+
+expr : NUM                  %name NumExpr
+     | ID                   %name NameExpr
+     | expr PLUS expr       %name PlusExpr
+     | expr MINUS expr      %name MinusExpr
+     | expr TIMES expr      %name TimesExpr
+     | expr DIV expr        %name DivExpr
+     | MINUS expr           %name UMinusExpr %prec UMINUS
+     | LP expr RP           %name ParenExpr
+     ;
