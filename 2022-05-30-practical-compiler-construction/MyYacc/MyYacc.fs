@@ -821,31 +821,27 @@ let generateLrParser (grammarText: string) : LrParser =
   // 状態から出る辺と、遷移先の状態を生成する
   let genAdjacentEdges (s: StateId) =
     stateArray.[s]
-    |> Set.fold
-         (fun () (lt: Lr1Term) ->
-           // LR(1)項のドットを1つ右に進めて、その際に飛び越える項と、更新後のLR(1)項を得る
-           // ドットが右端だったらNone
-           let ltOpt =
-             let (Lr1Term (branchId, dot, lookahead)) = lt
-             let _, terms = branchArray.[branchId]
+    |> Set.toList
+    |> List.choose (fun (lt: Lr1Term) ->
+      // LR(1)項のドットを1つ右に進めて、その際に飛び越える項と、更新後のLR(1)項を得る
+      // ドットが右端だったらNone
+      let (Lr1Term (branchId, dot, lookahead)) = lt
+      let _, terms = branchArray.[branchId]
 
-             if dot + 1 <= terms.Length then
-               Some(Term.id terms.[dot], Lr1Term(branchId, dot + 1, lookahead))
-             else
-               None
+      if dot + 1 <= terms.Length then
+        Some(Term.id terms.[dot], Lr1Term(branchId, dot + 1, lookahead))
+      else
+        None)
+    |> Seq.groupBy fst
+    |> Seq.map (fun (termId, group) ->
+      let nextState =
+        let ltList = group |> Seq.map snd |> Set.ofSeq
+        getClosure ltList
 
-           match ltOpt with
-           | Some (termId, lt) ->
-             let nextState = getClosure (Set.singleton lt)
-             eprintfn "edge s#%d, %d:%s -> s#%d" s termId (Term.toString termArray.[termId]) nextState
-             // check conflict; compare precedence of lt
-             edgeMap.[(s, termId)] <- nextState
-             ()
-
-           | None ->
-             // check conflict; compare precedence of lt
-             ())
-         ()
+      eprintfn "edge s#%d, %d:%s -> s#%d" s termId (Term.toString termArray.[termId]) nextState
+      // check conflict; compare precedence of lt
+      edgeMap.[(s, termId)] <- nextState)
+    |> Seq.iter ignore
 
   // Generate DFA.
   let initialState =
@@ -887,6 +883,7 @@ let generateLrParser (grammarText: string) : LrParser =
           (Term.toString termArray.[node])
           terms.Length
 
+        // check conflict; compare precedence of lt
         table.[(stateId, lookahead)] <- LrAction.Reduce(node, terms.Length)
 
   { Table =
