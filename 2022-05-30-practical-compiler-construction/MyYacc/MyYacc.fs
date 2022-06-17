@@ -640,7 +640,7 @@ type private StateId = int
 type private LrAction =
   | Shift of StateId
   | Jump of StateId
-  | Reduce of NodeId * width: int
+  | Reduce of NodeId * branchId: int * width: int
   | Accept
 
 [<RequireQualifiedAccess; NoEquality; NoComparison>]
@@ -650,7 +650,9 @@ type LrParser =
       InitialState: StateId
       AcceptSet: Set<StateId>
       TermArray: Term array
-      TokenMemo: TokenMemo }
+      TokenMemo: TokenMemo
+      // branchId -> name of reduced node
+      BranchArray: string array }
 
 let generateLrParser (grammarText: string) : LrParser =
   let termArray, tokenMemo, nodeMemo, root, rules = parseGrammar grammarText |> lower
@@ -663,6 +665,7 @@ let generateLrParser (grammarText: string) : LrParser =
   let stateMemo = Dictionary<Lr1State, StateId>()
   let edgeMap = Dictionary<StateId * TermId, StateId>()
   let generatedStateStack = System.Collections.Generic.Stack()
+  let branchNames = ResizeArray()
 
   let branchArray, branchPrec, ruleBranches =
     let acc = ResizeArray()
@@ -692,6 +695,7 @@ let generateLrParser (grammarText: string) : LrParser =
                     acc.Add(ruleId, terms |> List.toArray)
                     branchPrec.Add(prec)
                     branchIds.Add(bi)
+                    branchNames.Add(name)
                     bi + 1)
                   bi
 
@@ -881,7 +885,7 @@ let generateLrParser (grammarText: string) : LrParser =
           terms.Length
 
         // check conflict; compare precedence of lt
-        table.[(stateId, lookahead)] <- LrAction.Reduce(node, terms.Length)
+        table.[(stateId, lookahead)] <- LrAction.Reduce(node, branchId, terms.Length)
 
         if node = root then
           eprintfn "accept %d" stateId
@@ -896,7 +900,8 @@ let generateLrParser (grammarText: string) : LrParser =
     InitialState = initialState
     AcceptSet = acceptSet
     TermArray = termArray
-    TokenMemo = tokenMemo }
+    TokenMemo = tokenMemo
+    BranchArray = branchNames.ToArray() }
 
 module LrParser =
   let parse (tokens: string list) (p: LrParser) =
@@ -923,9 +928,9 @@ module LrParser =
           cursor <- cursor + 1
           go next (state :: stack) tokenTail
 
-        | Some (LrAction.Reduce (nodeId, width)) ->
+        | Some (LrAction.Reduce (nodeId, branchId, width)) ->
           let items, stack = List.splitAt width (state :: stack)
-          eprintfn "reduce (%d -> %A) => s#%d" nodeId items (List.head stack)
+          eprintfn "reduce %s(N%d -> %A) => s#%d" p.BranchArray.[branchId] nodeId items (List.head stack)
 
           let state =
             match stack with
