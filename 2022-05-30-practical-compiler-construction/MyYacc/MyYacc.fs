@@ -686,7 +686,7 @@ let generateLrParser (grammarText: string) : LrParser =
                       (Term.toString termArray.[ruleId])
                       (terms
                        |> List.map Term.toString
-                       |> String.concat "")
+                       |> String.concat " ")
 
                     acc.Add(ruleId, terms |> List.toArray)
                     branchPrec.Add(prec)
@@ -738,7 +738,7 @@ let generateLrParser (grammarText: string) : LrParser =
       stateMemo.Add(s, n)
 
       eprintfn
-        "state %d:[%s\n]"
+        "state s#%d:[%s\n]"
         n
         (s
          |> Set.toList
@@ -917,13 +917,13 @@ module LrParser =
       | token :: tokenTail ->
         match p.Table |> Map.tryFind (state, token) with
         | Some (LrAction.Shift next) ->
-          eprintfn "shift %d:%s at %d" token (tokenMemo.[cursor]) cursor
+          eprintfn "shift %d:%s at %d => s#%d" token (tokenMemo.[cursor]) cursor next
           cursor <- cursor + 1
           go next (state :: stack) tokenTail
 
         | Some (LrAction.Reduce (nodeId, width)) ->
           let items, stack = List.splitAt width (state :: stack)
-          eprintfn "reduce %A -> %d" items nodeId
+          eprintfn "reduce (%d -> %A) => s#%d" nodeId items (List.head stack)
 
           let state =
             match stack with
@@ -931,8 +931,11 @@ module LrParser =
             | _ -> failwith "empty stack"
 
           match p.Table |> Map.tryFind (state, nodeId) with
-          | Some (LrAction.Jump next) -> go next stack tokens
-          | _ -> failwith "invalid table: jump expected"
+          | Some (LrAction.Jump next) ->
+            eprintfn "jump => s#%d" next
+            go next stack tokens
+
+          | it -> failwithf "invalid table: jump expected %A" it
 
         | _ ->
           if Set.contains state p.AcceptSet then
