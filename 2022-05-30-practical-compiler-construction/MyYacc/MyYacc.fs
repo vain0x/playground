@@ -641,6 +641,7 @@ type private LrAction =
   | Shift of StateId
   | Jump of StateId
   | Reduce of NodeId * width: int
+  | Accept
 
 [<RequireQualifiedAccess; NoEquality; NoComparison>]
 type LrParser =
@@ -870,10 +871,6 @@ let generateLrParser (grammarText: string) : LrParser =
       let node, terms = branchArray.[branchId]
 
       if dot = terms.Length then
-        if node = root then
-          eprintfn "accept %d" stateId
-          acceptSet <- Set.add stateId acceptSet
-
         eprintfn
           "reduce %d, %d:%s to %d:%s (%d)"
           stateId
@@ -885,6 +882,11 @@ let generateLrParser (grammarText: string) : LrParser =
 
         // check conflict; compare precedence of lt
         table.[(stateId, lookahead)] <- LrAction.Reduce(node, terms.Length)
+
+        if node = root then
+          eprintfn "accept %d" stateId
+          acceptSet <- Set.add stateId acceptSet
+          table.[(stateId, Eof)] <- LrAction.Accept
 
   { Table =
       table
@@ -936,6 +938,8 @@ module LrParser =
             go next stack tokens
 
           | it -> failwithf "invalid table: jump expected %A" it
+
+        | Some LrAction.Accept -> eprintfn "accept!"
 
         | _ ->
           if Set.contains state p.AcceptSet then

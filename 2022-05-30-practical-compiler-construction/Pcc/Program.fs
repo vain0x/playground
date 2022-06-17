@@ -1,7 +1,12 @@
 module rec Pcc.Program
 
+open System.IO
+
 [<EntryPoint>]
 let main _ =
+  let args = System.Environment.GetCommandLineArgs()
+  let lexText = File.ReadAllText(args.[1])
+  let grammarText = File.ReadAllText(args.[2])
   let input = stdin.ReadToEnd()
 
   // let rules =
@@ -67,7 +72,7 @@ let main _ =
   // with
   // | MyYacc.ParseGrammarException (msg, i) -> eprintfn "ERROR: %s at %d" msg i
 
-  let parser = MyYacc.generateLrParser input
-  let tokens = [ "ID"; "ASSIGN"; "NUM"; "SEMI" ]
+  let parser = MyYacc.generateLrParser grammarText
+  let tokens = input.Trim().Split(' ') |> Array.toList
   MyYacc.LrParser.parse tokens parser
   0
