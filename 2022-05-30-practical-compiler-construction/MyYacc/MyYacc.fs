@@ -844,7 +844,6 @@ let generateLrParser (grammarText: string) : LrParser =
         getClosure ltList
 
       eprintfn "edge s#%d, %d:%s -> s#%d" s termId (Term.toString termArray.[termId]) nextState
-      // check conflict; compare precedence of lt
       edgeMap.[(s, termId)] <- nextState)
     |> Seq.iter ignore
 
@@ -861,7 +860,27 @@ let generateLrParser (grammarText: string) : LrParser =
 
   // Convert DFA to table.
   let table = Dictionary<StateId * TermId, LrAction>()
+  let tablePrec = Dictionary<StateId * TermId, int>()
   let mutable acceptSet: Set<StateId> = Set.empty
+
+  let computeEdgePrec stateId termId =
+    stateArray.[stateId]
+    |> Set.fold
+         (fun p (lt: Lr1Term) ->
+           let (Lr1Term (branchId, dot, _)) = lt
+           let _, terms = branchArray.[branchId]
+
+           if dot < terms.Length && Term.id terms.[dot] = termId then
+             let q, _ = branchPrec.[branchId]
+             max p q
+           else
+             p)
+         0
+
+  let precAt stateId termId =
+    match tablePrec.TryGetValue((stateId, termId)) with
+    | true, it -> it
+    | false, _ -> 0
 
   for (KeyValue ((stateId, termId), nextStateId)) in edgeMap do
     table.[(stateId, termId)] <-
@@ -869,10 +888,13 @@ let generateLrParser (grammarText: string) : LrParser =
       | Term.Token _ -> LrAction.Shift nextStateId
       | Term.Node _ -> LrAction.Jump nextStateId
 
+    tablePrec.[(stateId, termId)] <- computeEdgePrec stateId termId
+
   for stateId, state in stateArray |> Seq.indexed do
     for lt in state do
       let (Lr1Term (branchId, dot, lookahead)) = lt
       let node, terms = branchArray.[branchId]
+      let prec, _ = branchPrec.[branchId]
 
       if dot = terms.Length then
         eprintfn
@@ -884,13 +906,16 @@ let generateLrParser (grammarText: string) : LrParser =
           (Term.toString termArray.[node])
           terms.Length
 
-        // check conflict; compare precedence of lt
-        table.[(stateId, lookahead)] <- LrAction.Reduce(node, branchId, terms.Length)
+        if prec < precAt stateId lookahead then
+          eprintfn "  less priority"
+        else
+          table.[(stateId, lookahead)] <- LrAction.Reduce(node, branchId, terms.Length)
+          tablePrec.[(stateId, lookahead)] <- prec
 
-        if node = root then
-          eprintfn "accept %d" stateId
-          acceptSet <- Set.add stateId acceptSet
-          table.[(stateId, Eof)] <- LrAction.Accept
+          if node = root then
+            eprintfn "accept %d" stateId
+            acceptSet <- Set.add stateId acceptSet
+            table.[(stateId, Eof)] <- LrAction.Accept
 
   { Table =
       table

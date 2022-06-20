@@ -3,4 +3,4 @@
 set -eu
 
 # cat lex.txt | dotnet run --project Pcc --no-restore
-echo 'ID ASSIGN NUM PLUS NUM PLUS NUM SEMI' | dotnet run --project Pcc --no-restore -- "$PWD/lex.txt" "$PWD/grammar_expr.txt"
+echo 'ID ASSIGN NUM PLUS NUM TIMES NUM SEMI' | dotnet run --project Pcc --no-restore -- "$PWD/lex.txt" "$PWD/grammar_expr.txt"

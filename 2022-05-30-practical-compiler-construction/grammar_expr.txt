@@ -3,10 +3,10 @@
 %nonassoc UMINUS
 
 %start
-prog : stmt
+prog : stmt                 %name Root
      ;
 
-stmt : ID ASSIGN expr SEMI              %name AssignStmt
+stmt : ID ASSIGN expr SEMI  %name AssignStmt
      ;
 
 expr : NUM                  %name NumExpr
