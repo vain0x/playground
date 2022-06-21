@@ -641,7 +641,7 @@ type private LrAction =
   | Shift of StateId
   | Jump of StateId
   | Reduce of NodeId * branchId: int * width: int
-  | Accept
+  | Accept of branchId: int
 
 [<RequireQualifiedAccess; NoEquality; NoComparison>]
 type LrParser =
@@ -915,7 +915,7 @@ let generateLrParser (grammarText: string) : LrParser =
           if node = root then
             eprintfn "accept %d" stateId
             acceptSet <- Set.add stateId acceptSet
-            table.[(stateId, Eof)] <- LrAction.Accept
+            table.[(stateId, Eof)] <- LrAction.Accept branchId
 
   { Table =
       table
@@ -928,9 +928,37 @@ let generateLrParser (grammarText: string) : LrParser =
     TokenMemo = tokenMemo
     BranchArray = branchNames.ToArray() }
 
+[<RequireQualifiedAccess; NoEquality; NoComparison>]
+type ParseEvent =
+  | Token of index: int
+  | StartNode of name: string * count: int
+
 module LrParser =
   let parse (tokens: string list) (p: LrParser) =
     let tokenMemo = Array.append (Array.ofList tokens) [| "$"; "$$" |]
+
+    let builder = ResizeArray<ParseEvent list>()
+
+    let onShift (i: int) = builder.Add([ ParseEvent.Token i ])
+
+    let onReduce (name: string) (count: int) =
+      let index = builder.Count - count
+
+      let children =
+        builder.GetRange(index, count)
+        |> Seq.collect id
+        |> Seq.toList
+
+      builder.RemoveRange(index, count)
+      builder.Add(ParseEvent.StartNode(name, count) :: children)
+
+    let onAccept name =
+      for b in builder do
+        eprintfn "%A" b
+
+      let count = builder.Count
+      let children = builder |> Seq.collect id |> Seq.toList
+      ParseEvent.StartNode(name, count) :: children
 
     let tokens =
       let tokens =
@@ -950,12 +978,14 @@ module LrParser =
         match p.Table |> Map.tryFind (state, token) with
         | Some (LrAction.Shift next) ->
           eprintfn "shift %d:%s at %d => s#%d" token (tokenMemo.[cursor]) cursor next
+          onShift cursor
           cursor <- cursor + 1
           go next (state :: stack) tokenTail
 
         | Some (LrAction.Reduce (nodeId, branchId, width)) ->
           let items, stack = List.splitAt width (state :: stack)
           eprintfn "reduce %s(N%d -> %A) => s#%d" p.BranchArray.[branchId] nodeId items (List.head stack)
+          onReduce p.BranchArray.[branchId] width
 
           let state =
             match stack with
@@ -969,13 +999,11 @@ module LrParser =
 
           | it -> failwithf "invalid table: jump expected %A" it
 
-        | Some LrAction.Accept -> eprintfn "accept!"
+        | Some (LrAction.Accept branchId) ->
+          eprintfn "accept!"
+          onAccept p.BranchArray.[branchId]
 
-        | _ ->
-          if Set.contains state p.AcceptSet then
-            eprintfn "accept"
-          else
-            failwithf "parse failed at %d:%A" cursor tokenMemo.[cursor]
+        | _ -> failwithf "parse failed at %d:%A" cursor tokenMemo.[cursor]
 
       | _ -> failwith "unreachable"
 

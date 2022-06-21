@@ -73,6 +73,25 @@ let main _ =
   // | MyYacc.ParseGrammarException (msg, i) -> eprintfn "ERROR: %s at %d" msg i
 
   let parser = MyYacc.generateLrParser grammarText
-  let tokens = input.Trim().Split(' ') |> Array.toList
-  MyYacc.LrParser.parse tokens parser
+  let tokens = input.Trim().Split(' ')
+  let events = MyYacc.LrParser.parse (Array.toList tokens) parser
+
+  let rec go indent count events =
+    (match events with
+     | _ when count = 0 -> events
+
+     | MyYacc.ParseEvent.Token i :: events ->
+       eprintfn "%s%s %s" indent "token" tokens.[i]
+       go indent (count - 1) events
+
+     | MyYacc.ParseEvent.StartNode (name, childrenCount) :: events ->
+       eprintfn "%s%s %s (%d)" indent "node" name childrenCount
+       let events = go (indent + "  ") childrenCount events
+       go indent (count - 1) events
+
+     | [] -> failwith "unreachable")
+
+  let events = go "" 1 events
+  eprintfn "rest: %A" events
+
   0
