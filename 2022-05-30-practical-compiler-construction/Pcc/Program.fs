@@ -5,7 +5,7 @@ open System.IO
 /// Parse tree element.
 [<RequireQualifiedAccess; NoEquality; NoComparison>]
 type PElement =
-  | Token of name: string
+  | Token of name: string * text: string
   | Node of name: string * children: PElement list
 
 [<EntryPoint>]
@@ -48,6 +48,18 @@ let main _ =
       printfn "  %s^" (String.replicate index " ")
       exit 1
 
+  let tokens =
+    let t = ResizeArray()
+    let mutable cursor = 0
+
+    for kind, len in tokens do
+      if kind <> "SPACE" then
+        t.Add(kind, input.[cursor .. cursor + len - 1])
+
+      cursor <- cursor + len
+
+    t.ToArray()
+
   // let dumpTokens () =
   //   tokens
   //   |> List.map (fun (kind, len) -> sprintf "%s(%d)" kind len)
@@ -55,13 +67,9 @@ let main _ =
   //   |> printfn "  %s"
 
   // Parse.
-  let tokens =
-    tokens
-    |> Seq.map fst
-    |> Seq.filter (fun name -> name <> "SPACE")
-    |> Seq.toArray
-
-  let events = MyYacc.LrParser.parse (Array.toList tokens) parser
+  let events =
+    let tokens = tokens |> Array.map fst |> Array.toList
+    MyYacc.LrParser.parse tokens parser
 
   let dumpParseEvents events =
     let rec go indent count events =
@@ -69,7 +77,7 @@ let main _ =
       | _ when count = 0 -> events
 
       | MyYacc.ParseEvent.Token i :: events ->
-        eprintfn "%s%s %s" indent "token" tokens.[i]
+        eprintfn "%s%s %s" indent "token" (fst tokens.[i])
         go indent (count - 1) events
 
       | MyYacc.ParseEvent.StartNode (name, childrenCount) :: events ->
@@ -87,7 +95,9 @@ let main _ =
       match events with
       | _ when count = 0 -> List.rev acc, events
 
-      | MyYacc.ParseEvent.Token i :: events -> go (PElement.Token tokens.[i] :: acc) (count - 1) events
+      | MyYacc.ParseEvent.Token i :: events ->
+        let kind, text = tokens.[i]
+        go (PElement.Token(kind, text) :: acc) (count - 1) events
 
       | MyYacc.ParseEvent.StartNode (name, childrenCount) :: events ->
         let children, events = go [] childrenCount events
@@ -98,5 +108,4 @@ let main _ =
     go [] 1 events
 
   eprintfn "%A" root
-
   0
