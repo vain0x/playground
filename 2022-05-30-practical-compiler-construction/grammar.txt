@@ -61,7 +61,7 @@ aargs : aargs COMMA expr    %name AArgsCons
       | expr                %name AArgsSingle
       ;
 
-block : LB decs stmts RB
+block : LB decs stmts RB    %name Block
       ;
 
 expr : NUM                  %name NumExpr
