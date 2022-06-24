@@ -77,7 +77,7 @@ let private parseChars (text: string) i =
       match text.[i] with
       | ']' -> acc, i + 1
 
-      | '\\' when i + 1 < text.Length -> go ([ byte (unescape i text.[i + 1]) ] :: acc) (i + 1)
+      | '\\' when i + 1 < text.Length -> go ([ byte (unescape i text.[i + 1]) ] :: acc) (i + 2)
       | '\\' -> raise (ParseTermException("Invalid escape sequence", i))
 
       | c when i + 2 < text.Length && text.[i + 1] = '-' ->
