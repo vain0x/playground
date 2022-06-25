@@ -3,11 +3,69 @@ module rec Pcc.Program
 open System.IO
 open MyYacc
 
-/// Parse tree element.
+let inline private unreachable context = failwithf "unreachable: %A" context
+
+// -----------------------------------------------
+// ParseEvent
+// -----------------------------------------------
+
+let private dumpParseEvents (tokens: (string * int) array) events =
+  let rec go indent count events =
+    match events with
+    | _ when count = 0 -> events
+
+    | ParseEvent.Token i :: events ->
+      eprintfn "%s%s %s" indent "token" (fst tokens.[i])
+      go indent (count - 1) events
+
+    | ParseEvent.StartNode (name, childrenCount) :: events ->
+      eprintfn "%s%s %s (%d)" indent "node" name childrenCount
+      let events = go (indent + "  ") childrenCount events
+      go indent (count - 1) events
+
+    | [] -> failwith "unreachable"
+
+  let events = go "" 1 events
+  eprintfn "rest: %A" events
+
+// -----------------------------------------------
+// Parse Tree
+// -----------------------------------------------
+
+/// Element of parse tree.
 [<RequireQualifiedAccess; NoEquality; NoComparison>]
 type PElement =
   | Token of name: string * text: string
   | Node of name: string * children: PElement list
+
+let private genParseTree (tokens: (string * string) array) (events: ParseEvent list) : PElement =
+  let rec go acc count events =
+    match events with
+    | _ when count = 0 -> List.rev acc, events
+
+    | ParseEvent.Token i :: events ->
+      let kind, text = tokens.[i]
+      go (PElement.Token(kind, text) :: acc) (count - 1) events
+
+    | ParseEvent.StartNode (name, childrenCount) :: events ->
+      let children, events = go [] childrenCount events
+      go (PElement.Node(name, children) :: acc) (count - 1) events
+
+    | [] -> failwith "unreachable"
+
+  let children, events = go [] 1 events
+
+  if List.isEmpty events |> not then
+    eprintfn "rest = %A" events
+    assert false
+
+  children
+  |> List.tryExactlyOne
+  |> Option.defaultWith unreachable
+
+// -----------------------------------------------
+// AST
+// -----------------------------------------------
 
 [<RequireQualifiedAccess; NoEquality; NoComparison>]
 type Typ =
@@ -62,8 +120,6 @@ type Cond =
   | Lt of Expr * Expr
   | Ge of Expr * Expr
   | Le of Expr * Expr
-
-let inline private unreachable context = failwithf "unreachable: %A" context
 
 let private expectId token =
   match token with
@@ -209,7 +265,6 @@ let main _ =
   let args = System.Environment.GetCommandLineArgs()
   let lexText = File.ReadAllText(args.[1])
   let grammarText = File.ReadAllText(args.[2])
-  let input = stdin.ReadToEnd()
 
   // Generate lexer.
   let rules =
@@ -233,84 +288,60 @@ let main _ =
 
   // let dumpGrammar () = MyYacc.dump grammarText
 
-  // Tokenize.
-  let tokens =
-    try
-      MyLex.tokenizeWithNfa input nfa
-    with
-    | MyLex.TokenizeException index ->
-      printfn "ERROR: Tokenize failed at %d\n" index
-      printfn "  %s" input
-      printfn "  %s^" (String.replicate index " ")
-      exit 1
+  let parseString input =
+    // Tokenize.
+    let tokens =
+      try
+        MyLex.tokenizeWithNfa input nfa
+      with
+      | MyLex.TokenizeException index ->
+        printfn "ERROR: Tokenize failed at %d\n" index
+        printfn "  %s" input
+        printfn "  %s^" (String.replicate index " ")
+        exit 1
 
-  let tokens =
-    let t = ResizeArray()
-    let mutable cursor = 0
+    let tokens =
+      let t = ResizeArray()
+      let mutable cursor = 0
 
-    for kind, len in tokens do
-      if kind <> "SPACE" then
-        t.Add(kind, input.[cursor .. cursor + len - 1])
+      for kind, len in tokens do
+        if kind <> "SPACE" then
+          t.Add(kind, input.[cursor .. cursor + len - 1])
 
-      cursor <- cursor + len
+        cursor <- cursor + len
 
-    t.ToArray()
+      t.ToArray()
 
-  // let dumpTokens () =
-  //   tokens
-  //   |> List.map (fun (kind, len) -> sprintf "%s(%d)" kind len)
-  //   |> String.concat " "
-  //   |> printfn "  %s"
+    // let dumpTokens () =
+    //   tokens
+    //   |> List.map (fun (kind, len) -> sprintf "%s(%d)" kind len)
+    //   |> String.concat " "
+    //   |> printfn "  %s"
 
-  // Parse.
-  let events =
-    let tokens = tokens |> Array.map fst |> Array.toList
-    MyYacc.LrParser.parse tokens parser
+    // Parse.
+    let events =
+      let tokens = tokens |> Array.map fst |> Array.toList
+      LrParser.parse tokens parser
 
-  let dumpParseEvents events =
-    let rec go indent count events =
-      match events with
-      | _ when count = 0 -> events
+    let root = genParseTree tokens events
+    expectRoot root
 
-      | MyYacc.ParseEvent.Token i :: events ->
-        eprintfn "%s%s %s" indent "token" (fst tokens.[i])
-        go indent (count - 1) events
+  // let ast =
+  // eprintfn "%A" ast
 
-      | MyYacc.ParseEvent.StartNode (name, childrenCount) :: events ->
-        eprintfn "%s%s %s (%d)" indent "node" name childrenCount
-        let events = go (indent + "  ") childrenCount events
-        go indent (count - 1) events
+  for name in
+    [ "single_assignment"
+      "fizz_buzz"
+      "local_functions"
+      "multiple_statements" ] do
+    let pathname = $"tests/syntax/{name}.simple"
+    let input = File.ReadAllText(pathname)
+    let outputPathname = $"tests/syntax/{name}_ast.txt"
 
-      | [] -> failwith "unreachable"
+    eprintfn "------------------------"
+    eprintfn "file: %s" pathname
 
-    let events = go "" 1 events
-    eprintfn "rest: %A" events
+    let ast = parseString input
+    File.WriteAllText(outputPathname, string ast)
 
-  let root =
-    let rec go acc count events =
-      match events with
-      | _ when count = 0 -> List.rev acc, events
-
-      | MyYacc.ParseEvent.Token i :: events ->
-        let kind, text = tokens.[i]
-        go (PElement.Token(kind, text) :: acc) (count - 1) events
-
-      | MyYacc.ParseEvent.StartNode (name, childrenCount) :: events ->
-        let children, events = go [] childrenCount events
-        go (PElement.Node(name, children) :: acc) (count - 1) events
-
-      | [] -> failwith "unreachable"
-
-    let children, events = go [] 1 events
-
-    if List.isEmpty events |> not then
-      eprintfn "rest = %A" events
-      assert false
-
-    children
-    |> List.tryExactlyOne
-    |> Option.defaultWith unreachable
-
-  let ast = expectRoot root
-  eprintfn "%A" ast
   0

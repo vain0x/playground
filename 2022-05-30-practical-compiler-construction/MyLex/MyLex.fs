@@ -247,6 +247,8 @@ let generateNfa (rules: (string * Term list) list) =
   let fresh (trans, last) = last + 1, (trans, last + 1)
   let connect (c: byte) (u: int) (v: int) (trans, last) = addMulti (u, c) v trans, last
 
+  eprintfn "lex rules = %A" rules
+
   let rec go (u: int) b term =
     match term with
     | NTerm.AnyOf chars ->

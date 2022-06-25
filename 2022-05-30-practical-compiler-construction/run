@@ -3,4 +3,4 @@
 set -eu
 
 # cat lex.txt | dotnet run --project Pcc --no-restore
-echo 'x = 1 + 2 * 3;' | dotnet run --project Pcc --no-restore -- "$PWD/lex.txt" "$PWD/grammar_expr.txt"
+dotnet run --project Pcc --no-restore -- "$PWD/lex.txt" "$PWD/grammar.txt"
