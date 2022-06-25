@@ -797,16 +797,25 @@ let generateLrParser (grammarText: string) : LrParser =
                    let rest = Array.append terms.[dot + 1 ..] [| termArray.[lookahead] |]
                    computeFirstOf rest
 
-                 ruleBranches.[nodeId]
-                 |> Array.fold
-                      (fun acc bi ->
-                        lookaheadSet
-                        |> Set.fold
-                             (fun acc lookahead ->
-                               let lt = Lr1Term(bi, 0, lookahead)
-                               addLt acc lt)
-                             acc)
-                      acc
+                 let acc =
+                  ruleBranches.[nodeId]
+                  |> Array.fold
+                        (fun acc bi ->
+                          lookaheadSet
+                          |> Set.fold
+                              (fun acc lookahead ->
+                                let lt = Lr1Term(bi, 0, lookahead)
+                                addLt acc lt)
+                              acc)
+                        acc
+
+                 let acc =
+                  if nullableSet |> Set.contains nodeId then
+                    let lt = Lr1Term (branchId, dot + 1, lookahead)
+                    addLt acc lt
+                  else acc
+
+                 acc
 
                | Term.Token _ -> acc
              else
@@ -908,6 +917,8 @@ let generateLrParser (grammarText: string) : LrParser =
 
         if prec < precAt stateId lookahead then
           eprintfn "  less priority"
+        else if terms.Length = 0 then
+          eprintfn "  empty branch"
         else
           table.[(stateId, lookahead)] <- LrAction.Reduce(node, branchId, terms.Length)
           tablePrec.[(stateId, lookahead)] <- prec
