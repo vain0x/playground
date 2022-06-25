@@ -634,7 +634,9 @@ type private BranchData = NodeId * Term list
 type private BranchId = int
 
 /// LR(1)-term
-type private Lr1Term = Lr1Term of BranchId * dotPos: int * lookahead: TokenId
+///
+/// skip: the number of nullable nodes skipped
+type private Lr1Term = Lr1Term of BranchId * dotPos: int * skip: int * lookahead: TokenId
 
 /// State of DFA for LR(1).
 type private Lr1State = Set<Lr1Term>
@@ -754,7 +756,7 @@ let generateLrParser (grammarText: string) : LrParser =
         (s
          |> Set.toList
          |> List.map (fun (lt: Lr1Term) ->
-           let (Lr1Term (bi, dot, lookahead)) = lt
+           let (Lr1Term (bi, dot, _, lookahead)) = lt
            let la = Term.toString termArray.[lookahead]
            let node, terms = branchArray.[bi]
 
@@ -793,7 +795,7 @@ let generateLrParser (grammarText: string) : LrParser =
       state
       |> Set.fold
            (fun acc (lt: Lr1Term) ->
-             let (Lr1Term (branchId, dot, lookahead)) = lt
+             let (Lr1Term (branchId, dot, skip, lookahead)) = lt
              let _, terms = branchArray.[branchId]
 
              if dot < terms.Length then
@@ -804,22 +806,24 @@ let generateLrParser (grammarText: string) : LrParser =
                    computeFirstOf rest
 
                  let acc =
-                  ruleBranches.[nodeId]
-                  |> Array.fold
+                   ruleBranches.[nodeId]
+                   |> Array.fold
                         (fun acc bi ->
                           lookaheadSet
                           |> Set.fold
-                              (fun acc lookahead ->
-                                let lt = Lr1Term(bi, 0, lookahead)
-                                addLt acc lt)
-                              acc)
+                               (fun acc lookahead ->
+                                 let lt = Lr1Term(bi, 0, 0, lookahead)
+                                 addLt acc lt)
+                               acc)
                         acc
 
+                 // 空許容なノードを飛び越えた後の項を加える
                  let acc =
-                  if nullableSet |> Set.contains nodeId then
-                    let lt = Lr1Term (branchId, dot + 1, lookahead)
-                    addLt acc lt
-                  else acc
+                   if nullableSet |> Set.contains nodeId then
+                     let lt = Lr1Term(branchId, dot + 1, skip + 1, lookahead)
+                     addLt acc lt
+                   else
+                     acc
 
                  acc
 
@@ -845,11 +849,11 @@ let generateLrParser (grammarText: string) : LrParser =
     |> List.choose (fun (lt: Lr1Term) ->
       // LR(1)項のドットを1つ右に進めて、その際に飛び越える項と、更新後のLR(1)項を得る
       // ドットが右端だったらNone
-      let (Lr1Term (branchId, dot, lookahead)) = lt
+      let (Lr1Term (branchId, dot, skip, lookahead)) = lt
       let _, terms = branchArray.[branchId]
 
       if dot + 1 <= terms.Length then
-        Some(Term.id terms.[dot], Lr1Term(branchId, dot + 1, lookahead))
+        Some(Term.id terms.[dot], Lr1Term(branchId, dot + 1, skip, lookahead))
       else
         None)
     |> Seq.groupBy fst
@@ -865,7 +869,7 @@ let generateLrParser (grammarText: string) : LrParser =
   // Generate DFA.
   let initialState =
     ruleBranches.[root]
-    |> Array.map (fun bi -> Lr1Term(bi, 0, Eof))
+    |> Array.map (fun bi -> Lr1Term(bi, 0, 0, Eof))
     |> Set.ofArray
     |> getClosure
 
@@ -882,7 +886,7 @@ let generateLrParser (grammarText: string) : LrParser =
     stateArray.[stateId]
     |> Set.fold
          (fun p (lt: Lr1Term) ->
-           let (Lr1Term (branchId, dot, _)) = lt
+           let (Lr1Term (branchId, dot, _, _)) = lt
            let _, terms = branchArray.[branchId]
 
            if dot < terms.Length && Term.id terms.[dot] = termId then
@@ -907,7 +911,7 @@ let generateLrParser (grammarText: string) : LrParser =
 
   for stateId, state in stateArray |> Seq.indexed do
     for lt in state do
-      let (Lr1Term (branchId, dot, lookahead)) = lt
+      let (Lr1Term (branchId, dot, skip, lookahead)) = lt
       let node, terms = branchArray.[branchId]
       let prec, _ = branchPrec.[branchId]
 
@@ -919,14 +923,18 @@ let generateLrParser (grammarText: string) : LrParser =
           (Term.toString termArray.[lookahead])
           node
           (Term.toString termArray.[node])
-          terms.Length
+          (terms.Length - skip)
 
         if prec < precAt stateId lookahead then
           eprintfn "  less priority"
         else if terms.Length = 0 then
           eprintfn "  empty branch"
         else
-          table.[(stateId, lookahead)] <- LrAction.Reduce(node, branchId, terms.Length)
+          // スタックからポップする状態の個数
+          // スキップした空許容なノードに対応する状態がスタックに配置されてないので、スキップした数だけポップする数を減らす
+          let width = terms.Length - skip
+
+          table.[(stateId, lookahead)] <- LrAction.Reduce(node, branchId, width)
           tablePrec.[(stateId, lookahead)] <- prec
 
           if node = root then
