@@ -915,7 +915,11 @@ let generateLrParser (grammarText: string) : LrParser =
       let node, terms = branchArray.[branchId]
       let prec, _ = branchPrec.[branchId]
 
-      if dot = terms.Length then
+      let reducible =
+        terms[dot..]
+        |> Array.forall (fun term -> Set.contains (Term.id term) nullableSet)
+
+      if reducible then
         eprintfn
           "reduce %d, %d:%s to %d:%s (%d)"
           stateId
@@ -932,7 +936,7 @@ let generateLrParser (grammarText: string) : LrParser =
         else
           // スタックからポップする状態の個数
           // スキップした空許容なノードに対応する状態がスタックに配置されてないので、スキップした数だけポップする数を減らす
-          let width = terms.Length - skip
+          let width = dot - skip
 
           table.[(stateId, lookahead)] <- LrAction.Reduce(node, branchId, width)
           tablePrec.[(stateId, lookahead)] <- prec
