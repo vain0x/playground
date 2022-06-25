@@ -364,7 +364,7 @@ let private lower (parsedAcc: Acc) =
       |> Map.ofList
 
     parsedRules
-    |> List.map (fun (_, (ruleName, branches)) ->
+    |> List.map (fun (start, (ruleName, branches)) ->
       let branches: Branch list =
         branches
         |> List.mapi (fun bi (b: ParsedBranch) ->
@@ -397,6 +397,12 @@ let private lower (parsedAcc: Acc) =
                 match ruleMemo |> Map.tryFind t with
                 | Some i -> Term.Node(i, t)
                 | None -> failwithf "Undefined node '%s'" name)
+
+          let terms =
+            if start then
+              List.append terms [ Term.Token(Eof, "$") ]
+            else
+              terms
 
           bi, name, prec, terms)
 
@@ -947,10 +953,13 @@ type ParseEvent =
 module LrParser =
   let parse (tokens: string list) (p: LrParser) =
     let tokenMemo = Array.append (Array.ofList tokens) [| "$"; "$$" |]
+    let tokenCount = tokenMemo.Length - 2
 
     let builder = ResizeArray<ParseEvent list>()
 
-    let onShift (i: int) = builder.Add([ ParseEvent.Token i ])
+    let onShift (i: int) =
+      if i < tokenCount then
+        builder.Add([ ParseEvent.Token i ])
 
     let onReduce (name: string) (count: int) =
       let index = builder.Count - count
