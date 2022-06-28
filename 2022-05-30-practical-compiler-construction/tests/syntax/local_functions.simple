@@ -3,9 +3,10 @@
         return x + y;
     }
     
-    int x = 0;
+    int x;
+    x = 0;
     x = add(x, 3);
     x = add(x, 1);
     x = add(x, 4);
-    iprint (x); // 8
+    iprint (x);
 }

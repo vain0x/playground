@@ -1,4 +1,4 @@
-module Pcc.Ast
+module rec Pcc.Ast
 
 /// 型
 [<RequireQualifiedAccess; NoEquality; NoComparison>]
@@ -40,6 +40,7 @@ type Stmt =
 [<RequireQualifiedAccess; NoEquality; NoComparison>]
 type Expr =
   | Num of value: int
+  | Str of text: string
   | Name of id: string
   | Call of id: string * Expr list
   | Index of id: string * Expr
