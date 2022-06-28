@@ -4,14 +4,27 @@ module MyLex = MyLex
 
 type private Dictionary<'K, 'T> = System.Collections.Generic.Dictionary<'K, 'T>
 
-let private unwrapOr alt opt = Option.defaultValue alt opt
+let inline private unreachable () = failwith "unreachable"
 
+/// Gets a set of items from a multiset.
 let private getMultiset key map =
   Map.tryFind key map
   |> Option.defaultValue Set.empty
 
+/// Adds an item to a multiset.
 let private addMultiset key value map =
   Map.add key (Set.add value (getMultiset key map)) map
+
+// -----------------------------------------------
+// Trace
+// -----------------------------------------------
+
+// Set true to print trace logs.
+[<Literal>]
+let private Trace = false
+
+let private trace fmt =
+  Printf.kprintf (if Trace then eprintf "%s\n" else ignore) fmt
 
 // -----------------------------------------------
 // Types
@@ -36,6 +49,7 @@ type private TermId = int
 type private TokenId = TermId
 type private NodeId = TermId
 
+/// (生成規則の右辺の)項
 [<RequireQualifiedAccess; NoEquality; NoComparison>]
 type private Term =
   | Token of TermId * name: TokenText
@@ -45,7 +59,7 @@ type private TermMap = Map<TermId, Term>
 type private TokenMemo = Map<TokenText, TokenId>
 
 /// branchId, name, precedence, terms
-type private Branch = int * string * (int * Assoc) * Term list
+type private Branch = string * (int * Assoc) * Term list
 /// nodeId, name, branches
 type private Rule = NodeId * Branch list
 
@@ -60,6 +74,7 @@ module private Term =
     | Term.Token (_, t) -> t
     | Term.Node (_, t) -> t
 
+/// 終端トークンのID (`$`)
 let private Eof: TokenId = 0
 
 // -----------------------------------------------
@@ -327,10 +342,10 @@ let private lower (parsedAcc: Acc) =
          (fun ((i: TermId), tMemo, nMemo) (beingNode, t) ->
            let term, tMemo, nMemo =
              if beingNode then
-               eprintfn "node %d:%s" i t
+               trace "node %d:%s" i t
                Term.Node(i, t), tMemo, Map.add t i nMemo
              else
-               eprintfn "token %d:%s" i t
+               trace "token %d:%s" i t
                Term.Token(i, t), Map.add t i tMemo, nMemo
 
            termArray.Add(term)
@@ -386,7 +401,7 @@ let private lower (parsedAcc: Acc) =
                 match t with
                 | ParsedTerm.Token t -> precMap |> Map.tryFind (internToken t)
                 | _ -> None)
-              |> unwrapOr (bi, Assoc.NonAssoc)
+              |> Option.defaultValue (bi, Assoc.NonAssoc)
 
           let terms =
             b.Terms
@@ -404,7 +419,7 @@ let private lower (parsedAcc: Acc) =
             else
               terms
 
-          bi, name, prec, terms)
+          name, prec, terms)
 
       internNode ruleName, branches)
 
@@ -433,7 +448,7 @@ let private computeNullableSet (rules: Rule list) : NullableSet =
       | _ -> false
 
     let nodeOnly b =
-      let _, _, _, terms = b
+      let _, _, terms = b
       terms |> List.forall isNode
 
     rules
@@ -457,7 +472,7 @@ let private computeNullableSet (rules: Rule list) : NullableSet =
 
            let nullable =
              branches
-             |> List.exists (fun (_, _, _, terms) ->
+             |> List.exists (fun (_, _, terms) ->
                terms
                |> List.forall (fun t ->
                  match t with
@@ -525,7 +540,7 @@ let private computeFirstSet (termArray: Term array) (nullableSet: NullableSet) (
 
            let next =
              branches
-             |> List.map (fun (_, _, _, terms) -> firstOf firstSet terms)
+             |> List.map (fun (_, _, terms) -> firstOf firstSet terms)
              |> Set.unionMany
 
            if prev <> next then
@@ -547,6 +562,8 @@ let private computeFirstSet (termArray: Term array) (nullableSet: NullableSet) (
 // -----------------------------------------------
 // Follow
 // -----------------------------------------------
+
+// LRパースでFOLLOW集合は使わない。SLRでは使う
 
 type private FollowSet = Map<TermId, Set<TermId>>
 
@@ -574,7 +591,7 @@ let private computeFollowSet (nullableSet: NullableSet) (firstSet: FirstSet) (ru
          (fun acc (rule, branches) ->
            branches
            |> List.fold
-                (fun acc (_, _, _, terms) ->
+                (fun acc (_, _, terms) ->
                   let acc =
                     let rec go acc terms =
                       match terms with
@@ -626,8 +643,6 @@ let private computeFollowSet (nullableSet: NullableSet) (firstSet: FirstSet) (ru
 // LR Parser Generation
 // -----------------------------------------------
 
-// type private NodeRef = Node
-
 /// Production rule (`X -> A B`.)
 type private BranchData = NodeId * Term list
 
@@ -647,9 +662,11 @@ type private StateId = int
 [<RequireQualifiedAccess; NoEquality; NoComparison>]
 type private LrAction =
   | Shift of StateId
+  /// 還元後の遷移
   | Jump of StateId
-  | Reduce of NodeId * branchId: int * width: int
-  | Accept of branchId: int
+  /// `width`: ポップする状態の個数 (生成規則の右辺にある項の個数)
+  | Reduce of NodeId * BranchId * width: int
+  | Accept of BranchId
 
 [<RequireQualifiedAccess; NoEquality; NoComparison>]
 type LrParser =
@@ -663,11 +680,11 @@ type LrParser =
       BranchArray: string array }
 
 let generateLrParser (grammarText: string) : LrParser =
-  let termArray, tokenMemo, nodeMemo, root, rules = parseGrammar grammarText |> lower
+  let termArray, tokenMemo, _nodeMemo, root, rules = parseGrammar grammarText |> lower
 
   let nullableSet = computeNullableSet rules
   let firstSet = computeFirstSet termArray nullableSet rules
-  let followSet = computeFollowSet nullableSet firstSet rules
+  // let followSet = computeFollowSet nullableSet firstSet rules
 
   let stateArray = ResizeArray<Lr1State>()
   let stateMemo = Dictionary<Lr1State, StateId>()
@@ -689,9 +706,9 @@ let generateLrParser (grammarText: string) : LrParser =
              branches
              |> List.fold
                   (fun bi (b: Branch) ->
-                    let _, name, prec, terms = b
+                    let name, prec, terms = b
 
-                    eprintfn
+                    trace
                       "branch %d:%s %s -> %s"
                       bi
                       name
@@ -707,7 +724,7 @@ let generateLrParser (grammarText: string) : LrParser =
                     bi + 1)
                   bi
 
-           eprintfn
+           trace
              "rule-branches %d:%s -> %s"
              ruleId
              (Term.toString termArray.[ruleId])
@@ -750,7 +767,7 @@ let generateLrParser (grammarText: string) : LrParser =
       stateArray.Add(s)
       stateMemo.Add(s, n)
 
-      eprintfn
+      trace
         "state s#%d:[%s\n]"
         n
         (s
@@ -862,7 +879,7 @@ let generateLrParser (grammarText: string) : LrParser =
         let ltList = group |> Seq.map snd |> Set.ofSeq
         getClosure ltList
 
-      eprintfn "edge s#%d, %d:%s -> s#%d" s termId (Term.toString termArray.[termId]) nextState
+      trace "edge s#%d, %d:%s -> s#%d" s termId (Term.toString termArray.[termId]) nextState
       edgeMap.[(s, termId)] <- nextState)
     |> Seq.iter ignore
 
@@ -920,7 +937,7 @@ let generateLrParser (grammarText: string) : LrParser =
         |> Array.forall (fun term -> Set.contains (Term.id term) nullableSet)
 
       if reducible then
-        eprintfn
+        trace
           "reduce %d, %d:%s to %d:%s (%d)"
           stateId
           lookahead
@@ -930,9 +947,9 @@ let generateLrParser (grammarText: string) : LrParser =
           (terms.Length - skip)
 
         if prec < precAt stateId lookahead then
-          eprintfn "  less priority"
+          trace "  less priority"
         else if terms.Length = 0 then
-          eprintfn "  empty branch"
+          trace "  empty branch"
         else
           // スタックからポップする状態の個数
           // スキップした空許容なノードに対応する状態がスタックに配置されてないので、スキップした数だけポップする数を減らす
@@ -942,7 +959,7 @@ let generateLrParser (grammarText: string) : LrParser =
           tablePrec.[(stateId, lookahead)] <- prec
 
           if node = root then
-            eprintfn "accept %d" stateId
+            trace "accept %d" stateId
             acceptSet <- Set.add stateId acceptSet
             table.[(stateId, Eof)] <- LrAction.Accept branchId
 
@@ -986,7 +1003,7 @@ module LrParser =
 
     let onAccept name =
       for b in builder do
-        eprintfn "%A" b
+        trace "%A" b
 
       let count = builder.Count
       let children = builder |> Seq.collect id |> Seq.toList
@@ -1009,14 +1026,14 @@ module LrParser =
       | token :: tokenTail ->
         match p.Table |> Map.tryFind (state, token) with
         | Some (LrAction.Shift next) ->
-          eprintfn "shift %d:%s at %d => s#%d" token (tokenMemo.[cursor]) cursor next
+          trace "shift %d:%s at %d => s#%d" token (tokenMemo.[cursor]) cursor next
           onShift cursor
           cursor <- cursor + 1
           go next (state :: stack) tokenTail
 
         | Some (LrAction.Reduce (nodeId, branchId, width)) ->
           let items, stack = List.splitAt width (state :: stack)
-          eprintfn "reduce %s(N%d -> %A) => s#%d" p.BranchArray.[branchId] nodeId items (List.head stack)
+          trace "reduce %s(N%d -> %A) => s#%d" p.BranchArray.[branchId] nodeId items (List.head stack)
           onReduce p.BranchArray.[branchId] width
 
           let state =
@@ -1026,27 +1043,106 @@ module LrParser =
 
           match p.Table |> Map.tryFind (state, nodeId) with
           | Some (LrAction.Jump next) ->
-            eprintfn "jump => s#%d" next
+            trace "jump => s#%d" next
             go next stack tokens
 
           | it -> failwithf "invalid table: jump expected %A" it
 
         | Some (LrAction.Accept branchId) ->
-          eprintfn "accept!"
+          trace "accept!"
           onAccept p.BranchArray.[branchId]
 
         | _ -> failwithf "parse failed at %d:%A" cursor tokenMemo.[cursor]
 
-      | _ -> failwith "unreachable"
+      | _ -> unreachable ()
 
     go p.InitialState [] tokens
+
+// -----------------------------------------------
+// ParseEvent
+// -----------------------------------------------
+
+module ParseEvent =
+  let dump (tokens: (string * int) array) (events: ParseEvent list) =
+    let rec go indent count events =
+      match events with
+      | _ when count = 0 -> events
+
+      | ParseEvent.Token i :: events ->
+        printfn "%s%s %s" indent "token" (fst tokens.[i])
+        go indent (count - 1) events
+
+      | ParseEvent.StartNode (name, childrenCount) :: events ->
+        printfn "%s%s %s (%d)" indent "node" name childrenCount
+        let events = go (indent + "  ") childrenCount events
+        go indent (count - 1) events
+
+      | [] -> unreachable ()
+
+    let events = go "" 1 events
+    printfn "rest: %A" events
+
+// -----------------------------------------------
+// Parse Tree
+// -----------------------------------------------
+
+/// Element of parse tree.
+[<RequireQualifiedAccess; NoEquality; NoComparison>]
+type PElement =
+  | Token of name: string * text: string
+  | Node of name: string * children: PElement list
+
+module ParseTree =
+  let generate (tokens: (string * string) array) (events: ParseEvent list) : PElement =
+    let rec go acc count events =
+      match events with
+      | _ when count = 0 -> List.rev acc, events
+
+      | ParseEvent.Token i :: events ->
+        let kind, text = tokens.[i]
+        go (PElement.Token(kind, text) :: acc) (count - 1) events
+
+      | ParseEvent.StartNode (name, childrenCount) :: events ->
+        let children, events = go [] childrenCount events
+        go (PElement.Node(name, children) :: acc) (count - 1) events
+
+      | [] -> unreachable ()
+
+    let children, events = go [] 1 events
+
+    if List.isEmpty events |> not then
+      eprintfn "rest = %A" events
+      unreachable ()
+
+    children
+    |> List.tryExactlyOne
+    |> Option.defaultWith unreachable
+
+// -----------------------------------------------
+// Interface
+// -----------------------------------------------
+
+let generateParser grammarText =
+  try
+    generateLrParser grammarText
+  with
+  | ParseGrammarException (msg, i) ->
+    eprintfn "FATAL: Invalid grammar. %s at %d" msg i
+    exit 1
+
+let parseTokensToTree tokens (parser: LrParser) =
+  let events =
+    let tokens = tokens |> Array.map fst |> Array.toList
+    LrParser.parse tokens parser
+
+  ParseTree.generate tokens events
 
 // -----------------------------------------------
 // Dump
 // -----------------------------------------------
 
 let dump text =
-  let termArray, tokenMemo, nodeMemo, startRule, rules = parseGrammar text |> lower
+  let termArray, _tokenMemo, _nodeMemo, _startRule, rules = parseGrammar text |> lower
 
   let nullableSet = computeNullableSet rules
   let firstSet = computeFirstSet termArray nullableSet rules

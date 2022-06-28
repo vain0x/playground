@@ -2,26 +2,57 @@ module MyLex
 
 type private Dictionary<'K, 'T> = System.Collections.Generic.Dictionary<'K, 'T>
 
+let inline private unreachable () = failwith "unreachable"
+
+/// Gets a list of items from a multiset.
+let private getMulti key map =
+  Map.tryFind key map |> Option.defaultValue []
+
+/// Adds an item to a multiset.
+let private addMulti key value map =
+  Map.add key (value :: (getMulti key map)) map
+
+// -----------------------------------------------
+// Trace
+// -----------------------------------------------
+
+// Set true to print trace logs.
+[<Literal>]
+let private Trace = false
+
+let private trace fmt =
+  Printf.kprintf (if Trace then eprintf "%s\n" else ignore) fmt
+
 // -----------------------------------------------
 // Parse
 // -----------------------------------------------
 
-exception ParseTermException of msg: string * index: int
+// Parse lex.txt
+
 exception ParseLexerException of msg: string * row: int * column: int
 
+exception private ParseTermException of msg: string * index: int
+
+/// Term of regular expression.
 [<RequireQualifiedAccess; NoEquality; NoComparison>]
 type Term =
   | String of string
+  /// `[...]`
   | AnyOf of byte []
+  /// `[^...]`
   | NoneOf of byte []
+  /// `x*`
   | Rep of Term
+  /// `x+`
   | Rep1 of Term
 
+/// Checks if `text.[i..]` starts with `infix`.
 let private occursAt (infix: string) (text: string) i =
   i + infix.Length <= text.Length
   && (infix.Length = 0 || text.[i] = infix.[0])
   && text.[i .. i + infix.Length - 1] = infix
 
+/// Un-escapes a character.
 let private unescape i (c: char) =
   match c with
   | '"' -> '\"'
@@ -46,7 +77,7 @@ let private parseStringLiteral (text: string) i =
       | '"' -> acc, i + 1
 
       | _ ->
-        let rec gogo i =
+        let rec verbatim i =
           let c =
             if i < text.Length then
               text.[i]
@@ -58,9 +89,9 @@ let private parseStringLiteral (text: string) i =
           | '"'
           | '\r'
           | '\n' -> i
-          | _ -> gogo (i + 1)
+          | _ -> verbatim (i + 1)
 
-        let r = gogo (i + 1)
+        let r = verbatim (i + 1)
         go (text.[i .. r - 1] :: acc) r
     else
       raise (ParseTermException("Expected end of string", i))
@@ -69,6 +100,7 @@ let private parseStringLiteral (text: string) i =
   let acc, i = go [] (i + 1)
   Term.String(String.concat "" (List.rev acc)), i
 
+/// Parses character set.
 let private parseChars (text: string) i =
   assert (text.[i] = '[')
 
@@ -150,8 +182,7 @@ let private parseTerm (text: string) i =
 
   go [] i
 
-// see lex.txt for example
-let parseLexer (text: string) =
+let parseLexer (text: string) : (string * Term list) list =
   let lines =
     let text =
       if text.Contains('\r') then
@@ -185,8 +216,7 @@ let parseLexer (text: string) =
 // NTerm
 // -----------------------------------------------
 
-// Term -> NTerm
-
+/// Normalized term.
 [<RequireQualifiedAccess; NoEquality; NoComparison>]
 type private NTerm =
   | AnyOf of byte []
@@ -228,26 +258,30 @@ let private lowerTerms terms =
 
   match terms with
   | term :: terms -> go (lower term) terms
-  | _ -> failwith "NEVER"
+  | _ -> unreachable ()
 
 // -----------------------------------------------
 // NFA
 // -----------------------------------------------
 
-let private getMulti key map =
-  Map.tryFind key map |> Option.defaultValue []
-
-let private addMulti key value map =
-  Map.add key (value :: (getMulti key map)) map
+/// NFA (Non-deterministic finite automaton)
+///
+/// `(initialState, transitionMap, acceptStateMap)`
+///
+/// - `transitionMap`: `(state, inputByte) => nextStates`
+/// - `acceptMap`: `state => tokenName`
+type private Nfa = int * Map<int * byte, int list> * Map<int, string>
 
 /// Label of ε-transition.
-let private eps = 0uy
+[<Literal>]
+let private Eps = 0uy
 
-let generateNfa (rules: (string * Term list) list) =
+/// Converts rules to an NFA.
+let generateNfa (rules: (string * Term list) list) : Nfa =
   let fresh (trans, last) = last + 1, (trans, last + 1)
   let connect (c: byte) (u: int) (v: int) (trans, last) = addMulti (u, c) v trans, last
 
-  eprintfn "lex rules = %A" rules
+  trace "lex rules = %A" rules
 
   let rec go (u: int) b term =
     match term with
@@ -269,11 +303,11 @@ let generateNfa (rules: (string * Term list) list) =
 
       let v, b = fresh b
       let w, b = go v b t
-      let b = b |> connect eps u v |> connect eps w v
+      let b = b |> connect Eps u v |> connect Eps w v
       v, b
 
   let u = 1 // start state
-  let b = Map.empty, u
+  let b = Map.empty, u // builder
 
   let b, accepts =
     rules
@@ -296,25 +330,25 @@ let generateNfa (rules: (string * Term list) list) =
 // -----------------------------------------------
 
 let private computeClosure (s: Set<int>) trans =
-  let enhance s =
+  let add (v: int) (modified, s) =
+    if Set.contains v s |> not then
+      true, Set.add v s
+    else
+      modified, s
+
+  let update s =
     s
     |> Set.fold
-         (fun (modified, s) u ->
-           getMulti (u, eps) trans
-           |> List.fold
-                (fun (modified, s) v ->
-                  if Set.contains v s |> not then
-                    true, Set.add v s
-                  else
-                    modified, s)
-                (modified, s))
+         (fun acc u ->
+           getMulti (u, Eps) trans
+           |> List.fold (fun acc v -> add v acc) acc)
          (false, s)
 
-  let rec go s =
-    let modified, s = enhance s
-    if modified then go s else s
+  let rec makeClosure s =
+    let modified, s = update s
+    if modified then makeClosure s else s
 
-  go s
+  makeClosure s
 
 let private computeDfaEdge (d: Set<int>) (c: byte) trans =
   d
@@ -324,7 +358,7 @@ let private computeDfaEdge (d: Set<int>) (c: byte) trans =
          Set.union x (computeClosure e trans))
        Set.empty
 
-let emulateNfa (input: string) nfa : string option =
+let emulateNfa (input: string) (nfa: Nfa) : string option =
   let u, trans, accepts = nfa
 
   let d =
@@ -348,10 +382,10 @@ let emulateNfa (input: string) nfa : string option =
 
 exception TokenizeException of index: int
 
-let tokenizeWithNfa (input: string) nfa : (string * int) list =
+let tokenizeWithNfa (input: string) (nfa: Nfa) : (string * int) list =
   let u, trans, accepts = nfa
 
-  let setRev = ResizeArray()
+  let setArray = ResizeArray()
   let setMemo = Dictionary<Set<int>, int>()
   let edgeMemo = Dictionary<int * byte, int>()
   let acceptMemo = ResizeArray()
@@ -360,10 +394,10 @@ let tokenizeWithNfa (input: string) nfa : (string * int) list =
     match setMemo.TryGetValue(d) with
     | true, it -> it
     | false, _ ->
-      let n = setRev.Count
-      setRev.Add(d)
+      let n = setArray.Count
+      setArray.Add(d)
       setMemo.Add(d, n)
-      eprintfn "set %d -> %A" n d
+      trace "set %d -> %A" n d
       n
 
   // state -> labelOpt
@@ -371,7 +405,7 @@ let tokenizeWithNfa (input: string) nfa : (string * int) list =
     if d >= acceptMemo.Count then
       for e in acceptMemo.Count .. d do
         let labelOpt =
-          setRev.[e]
+          setArray.[e]
           |> Set.fold
                (fun opt v ->
                  match opt with
@@ -379,7 +413,7 @@ let tokenizeWithNfa (input: string) nfa : (string * int) list =
                  | None -> accepts |> Map.tryFind v)
                None
 
-        eprintfn "accept %d -> %A" e labelOpt
+        trace "accept %d -> %A" e labelOpt
         acceptMemo.Add(labelOpt)
 
     acceptMemo.[d]
@@ -389,10 +423,10 @@ let tokenizeWithNfa (input: string) nfa : (string * int) list =
     match edgeMemo.TryGetValue((d, c)) with
     | true, it -> it
     | false, _ ->
-      let e = computeDfaEdge setRev.[d] c trans
+      let e = computeDfaEdge setArray.[d] c trans
       let n = internSet e
       edgeMemo.Add((d, c), n)
-      eprintfn "edge %d,%d -> %A" d c n
+      trace "edge %d,%d -> %A" d c n
       n
 
   let emptyState = internSet Set.empty
@@ -417,7 +451,7 @@ let tokenizeWithNfa (input: string) nfa : (string * int) list =
             | None -> last
 
           if d <> emptyState && i + 1 < input.Length then
-            eprintfn "gogo d:%d i:%d -> %A" d i last
+            trace "gogo d:%d i:%d -> %A" d i last
 
           go last d (i + 1)
         else
@@ -431,17 +465,67 @@ let tokenizeWithNfa (input: string) nfa : (string * int) list =
 
   let result = tokenizeLoop [] 0
 
-  eprintfn
+  trace
     "stats set:%d,%d edge:%d accept:%d tick:%d\n  cost:%d"
-    setRev.Count
+    setArray.Count
     setMemo.Count
     edgeMemo.Count
     acceptMemo.Count
     tick
-    (setRev.Count
+    (setArray.Count
      + setMemo.Count
      + edgeMemo.Count
      + acceptMemo.Count
      + tick)
 
   result
+
+// -----------------------------------------------
+// NfaLexer
+// -----------------------------------------------
+
+[<RequireQualifiedAccess; NoEquality; NoComparison>]
+type NfaLexer = private { Nfa: Nfa }
+
+module NfaLexer =
+  let parse (lexText: string) : NfaLexer =
+    try
+      let rules = parseLexer lexText
+      { Nfa = generateNfa rules }
+    with
+    | ParseLexerException (msg, row, column) ->
+      printfn "FATAL: Invalid lexer. %s at %d:%d" msg (row + 1) (column + 1)
+      exit 1
+
+  let tokenize (input: string) (lexer: NfaLexer) =
+    // Tokenize.
+    let tokens =
+      try
+        tokenizeWithNfa input lexer.Nfa
+      with
+      | TokenizeException index ->
+        printfn "ERROR: Tokenize failed at %d\n" index
+        printfn "  %s" input
+        printfn "  %s^" (String.replicate index " ")
+        exit 1
+
+    let acc, _ =
+      tokens
+      |> List.fold
+           (fun (acc, offset) (kind, len) ->
+             let acc =
+               if kind <> "SPACE" then
+                 (kind, input.[offset .. offset + len - 1]) :: acc
+               else
+                 acc
+
+             acc, offset + len)
+           ([], 0)
+
+    List.rev acc
+
+let dumpTokens tokens =
+  tokens
+  |> List.map (fun (kind, len) -> sprintf "%s(%d)" kind len)
+  |> String.concat " "
+  |> printfn "  %s"
