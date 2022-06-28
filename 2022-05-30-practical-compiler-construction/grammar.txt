@@ -12,7 +12,7 @@ ty : INT                 %name IntTyp
    | ID                  %name NameTyp
    ;
 
-decs : dec decs         %name DecsCons
+decs : decs dec         %name DecsCons
      | /* empty */      %name DecsNil
      ;
 
