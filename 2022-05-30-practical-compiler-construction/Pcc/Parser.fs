@@ -340,12 +340,12 @@ let private parsePrimaryExpr px =
   | "STR" ->
     let text, px = shift px
 
-    // FIXME: correctly unescape
-    let value =
-      text.[1 .. text.Length - 1]
-        .Replace("\\n", "\n")
-        .Replace("\\\"", "\"")
-        .Replace("\\\\", "\\")
+    assert
+      (text.Length >= 2
+       && text.[0] = '"'
+       && text.[text.Length - 1] = '"')
+
+    let value = text.[1 .. text.Length - 2]
 
     Expr.Str value, px
 

@@ -27,6 +27,7 @@ let main _ =
   for name in
     [ "single_assignment"
       "fizz_buzz"
+      "hello_world"
       "local_functions"
       "multiple_statements" ] do
     let pathname = $"tests/syntax/{name}.simple"
