@@ -96,7 +96,7 @@ let private parseTyp px = parsePrimaryTyp px
 
 [<RequireQualifiedAccess; NoEquality; NoComparison>]
 type private DecOrStmt =
-  | D of Dec
+  | D of Dec list
   | S of Stmt
 
 let private parseDecOrStmt px =
@@ -107,7 +107,7 @@ let private parseDecOrStmt px =
     let px = expectPun "ASSIGN" px
     let typ, px = parseTyp px
     let px = expectPun "SEMI" px
-    DecOrStmt.D(Dec.Type(name, typ)), px
+    DecOrStmt.D [ Dec.Type(name, typ) ], px
 
   | "VOID" ->
     let px = skip px
@@ -116,7 +116,7 @@ let private parseDecOrStmt px =
     let fargs, px = parseFargs px
     let px = expectPun "RP" px
     let block, px = parseBlock px
-    DecOrStmt.D(Dec.VoidFunc(name, fargs, block)), px
+    DecOrStmt.D [ Dec.Func(name, fargs, Typ.Void, block) ], px
 
   | "IF" ->
     let px = skip px
@@ -124,14 +124,14 @@ let private parseDecOrStmt px =
     let cond, px = parseCond px
     let px = expectPun "RP" px
 
-    let thenClause, px = parseStmt px
+    let thenStmt, px = parseStmt px
 
     let stmt, px =
       if look 0 px = "ELSE" then
-        let stmt, px = parseStmt (skip px)
-        Stmt.IfElse(cond, thenClause, stmt), px
+        let elseStmt, px = parseStmt (skip px)
+        Stmt.If(cond, thenStmt, Some elseStmt), px
       else
-        Stmt.If(cond, thenClause), px
+        Stmt.If(cond, thenStmt, None), px
 
     DecOrStmt.S stmt, px
 
@@ -149,7 +149,7 @@ let private parseDecOrStmt px =
     let arg, px = parseExpr px
     let px = expectPun "RP" px
     let px = expectPun "SEMI" px
-    DecOrStmt.S(Stmt.SPrint arg), px
+    DecOrStmt.S(Stmt.CallProc("sprint", [ arg ])), px
 
   | "IPRINT" ->
     let px = skip px
@@ -157,7 +157,7 @@ let private parseDecOrStmt px =
     let arg, px = parseExpr px
     let px = expectPun "RP" px
     let px = expectPun "SEMI" px
-    DecOrStmt.S(Stmt.IPrint arg), px
+    DecOrStmt.S(Stmt.CallProc("iprint", [ arg ])), px
 
   | "SCAN" ->
     let px = skip px
@@ -165,7 +165,7 @@ let private parseDecOrStmt px =
     let name, px = parseId px
     let px = expectPun "RP" px
     let px = expectPun "SEMI" px
-    DecOrStmt.S(Stmt.Scan name), px
+    DecOrStmt.S(Stmt.CallProc("scan", [ Expr.Var(Var name) ])), px
 
   | "NEW" ->
     let px = skip px
@@ -173,17 +173,17 @@ let private parseDecOrStmt px =
     let name, px = parseId px
     let px = expectPun "RP" px
     let px = expectPun "SEMI" px
-    DecOrStmt.S(Stmt.New name), px
+    DecOrStmt.S(Stmt.CallProc("new", [ Expr.Var(Var name) ])), px
 
   | "RETURN" ->
     let px = skip px
     let arg, px = parseExpr px
     let px = expectPun "SEMI" px
-    DecOrStmt.S(Stmt.Return arg), px
+    DecOrStmt.S(Stmt.CallProc("return", [ arg ])), px
 
   | "LB" ->
     let block, px = parseBlock px
-    DecOrStmt.S(Stmt.Block block), px
+    DecOrStmt.S block, px
 
   | "SEMI" -> DecOrStmt.S Stmt.Nil, skip px
 
@@ -197,7 +197,7 @@ let private parseDecOrStmt px =
       let px = skip px
       let value, px = parseExpr px
       let px = expectPun "SEMI" px
-      DecOrStmt.S(Stmt.Assign(name, value)), px
+      DecOrStmt.S(Stmt.Assign(Var name, value)), px
 
     | "LP" ->
       let name, px = shift px
@@ -215,7 +215,7 @@ let private parseDecOrStmt px =
       let px = expectPun "ASSIGN" px
       let value, px = parseExpr px
       let px = expectPun "SEMI" px
-      DecOrStmt.S(Stmt.IndexAssign(name, index, value)), px
+      DecOrStmt.S(Stmt.Assign(IndexedVar(name, index), value)), px
 
     | _ -> parseVarOrFuncDec px
 
@@ -231,12 +231,12 @@ let private parseVarOrFuncDec px =
     let fargs, px = parseFargs px
     let px = expectPun "RP" px
     let block, px = parseBlock px
-    DecOrStmt.D(Dec.Func(typ, name, fargs, block)), px
+    DecOrStmt.D [ Dec.Func(name, fargs, typ, block) ], px
 
   | _ ->
     let names, px = parseIds px
     let px = expectPun "SEMI" px
-    DecOrStmt.D(Dec.Var(typ, names)), px
+    DecOrStmt.D(names |> List.map (fun name -> Dec.Var(typ, name))), px
 
 let private parseIds px =
   let rec go acc px =
@@ -324,8 +324,7 @@ let private parseBlock px =
     error "Expected at least one statement."
 
   let px = expectPun "RB" px
-  let block: Block = { Decs = decs; Stmts = stmts }
-  block, px
+  Stmt.Block(List.collect id decs, stmts), px
 
 // -----------------------------------------------
 // Expressions
@@ -363,9 +362,9 @@ let private parsePrimaryExpr px =
       let px = skip px
       let index, px = parseExpr px
       let px = expectPun "RS" px
-      Expr.Index(name, index), px
+      Expr.Var(IndexedVar(name, index)), px
 
-    | _ -> Expr.Name name, px
+    | _ -> Expr.Var(Var name), px
 
   | "LP" ->
     let px = skip px
@@ -380,21 +379,21 @@ let private parsePrefixExpr px =
   | "MINUS" ->
     let px = skip px
     let arg, px = parsePrimaryExpr px
-    Expr.UMinus arg, px
+    Expr.Call("!", [ arg ]), px
 
   | _ -> parsePrimaryExpr px
 
 let private parseTimesExpr px =
   let rec go lhs px =
     match (match look 0 px with
-           | "TIMES" -> Some Expr.Times
-           | "DIV" -> Some Expr.Div
+           | "TIMES" -> Some "*"
+           | "DIV" -> Some "/"
            | _ -> None)
       with
-    | Some makeExpr ->
+    | Some name ->
       let px = skip px
       let rhs, px = parsePrefixExpr px
-      go (makeExpr (lhs, rhs)) px
+      go (Expr.Call(name, [ lhs; rhs ])) px
 
     | None -> lhs, px
 
@@ -404,14 +403,14 @@ let private parseTimesExpr px =
 let private parsePlusExpr px =
   let rec go lhs px =
     match (match look 0 px with
-           | "PLUS" -> Some Expr.Plus
-           | "MINUS" -> Some Expr.Minus
+           | "PLUS" -> Some "+"
+           | "MINUS" -> Some "-"
            | _ -> None)
       with
-    | Some makeExpr ->
+    | Some name ->
       let px = skip px
       let rhs, px = parseTimesExpr px
-      go (makeExpr (lhs, rhs)) px
+      go (Expr.Call(name, [ lhs; rhs ])) px
 
     | None -> lhs, px
 
@@ -428,18 +427,18 @@ let private parseCond px =
   let lhs, px = parseExpr px
 
   match (match look 0 px with
-         | "EQ" -> Some Cond.Eq
-         | "NEQ" -> Some Cond.Neq
-         | "GT" -> Some Cond.Gt
-         | "LT" -> Some Cond.Lt
-         | "GE" -> Some Cond.Ge
-         | "LE" -> Some Cond.Le
+         | "EQ" -> Some "=="
+         | "NEQ" -> Some "!="
+         | "GT" -> Some ">"
+         | "LT" -> Some "<"
+         | "GE" -> Some ">="
+         | "LE" -> Some "<="
          | _ -> None)
     with
-  | Some makeCond ->
+  | Some name ->
     let px = skip px
     let rhs, px = parseExpr px
-    makeCond (lhs, rhs), px
+    Expr.Call(name, [ lhs; rhs ]), px
 
   | None -> error "Expected a comparison operator."
 

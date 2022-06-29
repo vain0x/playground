@@ -37,14 +37,21 @@ let private lowerDecs element =
 
 let private lowerDec element =
   match unwrapNode element with
-  | "VarDec", [ ty; ids; _ ] -> Dec.Var(lowerTyp ty, lowerIds ids)
-  | "TypeDec", [ _; id; _; ty; _ ] -> Dec.Type(lowerId id, lowerTyp ty)
+  | "VarDec", [ ty; ids; _ ] ->
+    lowerIds ids
+    |> List.map (fun name -> Dec.Var(lowerTyp ty, name))
+  | "TypeDec", [ _; id; _; ty; _ ] ->
+    Dec.Type(lowerId id, lowerTyp ty)
+    |> List.singleton
   | "FuncDec", [ result; id; _; fargsOpt; _; block ] ->
-    Dec.Func(lowerTyp result, lowerId id, lowerFargsOpt fargsOpt, lowerBlock block)
-  | "VoidFuncDec", [ _; id; fargsOpt; _; block ] -> Dec.VoidFunc(lowerId id, lowerFargsOpt fargsOpt, lowerBlock block)
+    Dec.Func(lowerId id, lowerFargsOpt fargsOpt, lowerTyp result, lowerBlock block)
+    |> List.singleton
+  | "VoidFuncDec", [ _; id; fargsOpt; _; block ] ->
+    Dec.Func(lowerId id, lowerFargsOpt fargsOpt, Typ.Void, lowerBlock block)
+    |> List.singleton
   | _ -> unreachable element
 
-let private lowerIds element =
+let private lowerIds element : string list =
   match element with
   | PElement.Node ("IdsSingle", [ id ]) -> [ lowerId id ]
   | PElement.Node ("IdsCons", [ h; _; t ]) -> lowerId h :: lowerIds t
@@ -70,18 +77,19 @@ let private lowerStmts element =
 
 let private lowerStmt element =
   match unwrapNode element with
-  | "AssignStmt", [ id; _; rExpr; _ ] -> Stmt.Assign(lowerId id, lowerExpr rExpr)
-  | "IndexAssignStmt", [ id; _; index; _; rExpr; _ ] -> Stmt.IndexAssign(lowerId id, lowerExpr index, lowerExpr rExpr)
-  | "IfStmt", [ _; _; cond; _; body ] -> Stmt.If(lowerCond cond, lowerStmt body)
-  | "IfElseStmt", [ _; _; cond; _; body; _; alt ] -> Stmt.IfElse(lowerCond cond, lowerStmt body, lowerStmt alt)
+  | "AssignStmt", [ id; _; rExpr; _ ] -> Stmt.Assign(Var(lowerId id), lowerExpr rExpr)
+  | "IndexAssignStmt", [ id; _; index; _; rExpr; _ ] ->
+    Stmt.Assign(IndexedVar(lowerId id, lowerExpr index), lowerExpr rExpr)
+  | "IfStmt", [ _; _; cond; _; body ] -> Stmt.If(lowerCond cond, lowerStmt body, None)
+  | "IfElseStmt", [ _; _; cond; _; body; _; alt ] -> Stmt.If(lowerCond cond, lowerStmt body, Some(lowerStmt alt))
   | "WhileStmt", [ _; _; cond; _; body ] -> Stmt.While(lowerCond cond, lowerStmt body)
-  | "SPrintStmt", [ _; _; arg; _; _ ] -> Stmt.SPrint(lowerExpr arg)
-  | "IPrintStmt", [ _; _; arg; _; _ ] -> Stmt.IPrint(lowerExpr arg)
-  | "ScanStmt", [ _; _; id; _; _ ] -> Stmt.Scan(lowerId id)
-  | "NewStmt", [ _; _; id; _; _ ] -> Stmt.New(lowerId id)
+  | "SPrintStmt", [ _; _; arg; _; _ ] -> Stmt.CallProc("sprint", [ lowerExpr arg ])
+  | "IPrintStmt", [ _; _; arg; _; _ ] -> Stmt.CallProc("iprint", [ lowerExpr arg ])
+  | "ScanStmt", [ _; _; id; _; _ ] -> Stmt.CallProc("scan", [ Expr.Var(Var(lowerId id)) ])
+  | "NewStmt", [ _; _; id; _; _ ] -> Stmt.CallProc("new", [ Expr.Var(Var(lowerId id)) ])
   | "CallProcStmt", [ id; _; aargsOpt; _; _ ] -> Stmt.CallProc(lowerId id, lowerAargsOpt aargsOpt)
-  | "ReturnStmt", [ _; expr; _ ] -> Stmt.Return(lowerExpr expr)
-  | "BlockStmt", [ block ] -> Stmt.Block(lowerBlock block)
+  | "ReturnStmt", [ _; expr; _ ] -> Stmt.CallProc("return", [ lowerExpr expr ])
+  | "BlockStmt", [ block ] -> lowerBlock block
   | "NilStmt", _ -> Stmt.Nil
   | _ -> unreachable element
 
@@ -97,30 +105,28 @@ let private lowerAargsOpt element =
   | PElement.Node ("AArgsSome", [ aargs ]) -> lowerAargs aargs
   | _ -> unreachable ()
 
-let private lowerBlock element : Block =
+let private lowerBlock element =
   match element with
-  | PElement.Node ("Block", [ _; decs; stmts; _ ]) ->
-    { Decs = lowerDecs decs
-      Stmts = lowerStmts stmts }
+  | PElement.Node ("Block", [ _; decs; stmts; _ ]) -> Stmt.Block(List.collect id (lowerDecs decs), lowerStmts stmts)
   | _ -> unreachable element
 
 let private lowerExpr element : Expr =
-  let onBinary makeNode =
+  let onBinary name =
     match unwrapNode element with
-    | _, [ lExpr; _; rExpr ] -> makeNode (lowerExpr lExpr, lowerExpr rExpr)
+    | _, [ lExpr; _; rExpr ] -> Expr.Call(name, [ lowerExpr lExpr; lowerExpr rExpr ])
     | _ -> unreachable ()
 
   match unwrapNode element with
-  | "NumExpr", [ token ] -> Expr.Num(lowerNum token)
-  | "NameExpr", [ token ] -> Expr.Name(lowerId token)
+  | "NumExpr", [ num ] -> Expr.Num(lowerNum num)
+  | "NameExpr", [ id ] -> Expr.Var(Var(lowerId id))
   | "CallExpr", [ id; _; aargs; _ ] -> Expr.Call(lowerId id, lowerAargs aargs)
-  | "IndexExpr", [ id; _; arg; _ ] -> Expr.Index(lowerId id, lowerExpr arg)
-  | "PlusExpr", _ -> onBinary Expr.Plus
-  | "MinusExpr", _ -> onBinary Expr.Minus
-  | "TimesExpr", _ -> onBinary Expr.Times
-  | "DivExpr", _ -> onBinary Expr.Div
-  | "UMinusExpr", [ _; arg ] -> Expr.UMinus(lowerExpr arg)
-  | "ParenExpr", [ _; body; _ ] -> Expr.Paren(lowerExpr body)
+  | "IndexExpr", [ id; _; arg; _ ] -> Expr.Var(IndexedVar(lowerId id, lowerExpr arg))
+  | "PlusExpr", _ -> onBinary "+"
+  | "MinusExpr", _ -> onBinary "-"
+  | "TimesExpr", _ -> onBinary "*"
+  | "DivExpr", _ -> onBinary "/"
+  | "UMinusExpr", [ _; arg ] -> Expr.Call("!", [ lowerExpr arg ])
+  | "ParenExpr", [ _; body; _ ] -> lowerExpr body
   | _ -> unreachable element
 
 let private lowerCond element =
@@ -128,16 +134,16 @@ let private lowerCond element =
 
   let makeNode =
     match name with
-    | "EqCond" -> Cond.Eq
-    | "NeqCond" -> Cond.Neq
-    | "GtCond" -> Cond.Gt
-    | "LtCond" -> Cond.Lt
-    | "GeCond" -> Cond.Ge
-    | "LeCond" -> Cond.Le
+    | "EqCond" -> "=="
+    | "NeqCond" -> "!="
+    | "GtCond" -> ">"
+    | "LtCond" -> "<"
+    | "GeCond" -> ">="
+    | "LeCond" -> "<="
     | _ -> unreachable element
 
   match children with
-  | [ lExpr; _; rExpr ] -> makeNode (lowerExpr lExpr, lowerExpr rExpr)
+  | [ lExpr; _; rExpr ] -> Expr.Call(name, [ lowerExpr lExpr; lowerExpr rExpr ])
   | _ -> unreachable element
 
 let lowerRoot element =
