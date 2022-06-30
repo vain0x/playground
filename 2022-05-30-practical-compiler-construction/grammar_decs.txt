@@ -1,0 +1,20 @@
+%start
+prog : block
+     ;
+
+decs : dec decs
+     | /* empty */
+     ;
+
+dec : ID ID LP RP block
+    ;
+
+stmts : stmt
+      | stmts stmt
+      ;
+
+stmt : ID ASSIGN ID SEMI
+     ;
+
+block : LB decs stmts RB
+      ;

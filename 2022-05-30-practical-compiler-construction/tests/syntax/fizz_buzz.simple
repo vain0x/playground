@@ -1,0 +1,24 @@
+{
+    int rem(int n, int m) {
+        while (n >= m) {
+            n = n - m;
+        }
+        return n;
+    }
+
+    int i;
+    i = 1;
+
+    while (i <= 15) {
+        if (rem(i, 15) == 0) {
+            sprint ("FizzBuzz");
+        } else if (rem(i, 3) == 0) {
+            sprint ("Fizz");
+        } else if (rem(i, 5) == 0) {
+            sprint ("Buzz");
+        } else {
+            iprint (i);
+        }
+        i = i + 1;
+    }
+}

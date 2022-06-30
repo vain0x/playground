@@ -1,0 +1,20 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <TargetFramework>net6.0</TargetFramework>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <Compile Include="Ast.fs" />
+    <Compile Include="AstLower.fs" />
+    <Compile Include="Parser.fs" />
+    <Compile Include="Program.fs" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\MyLex\MyLex.fsproj" />
+    <ProjectReference Include="..\MyYacc\MyYacc.fsproj" />
+  </ItemGroup>
+
+</Project>
