@@ -1,0 +1,23 @@
+{
+    "compilerOptions": {
+        "baseUrl": ".",
+        "esModuleInterop": true,
+        "incremental": true,
+        "jsx": "react",
+        "jsxFactory": "Didact.createElement",
+        "jsxFragmentFactory": "Didact.Fragment",
+        "lib": [
+            "DOM",
+            "ES2017"
+        ],
+        "module": "CommonJS",
+        "moduleResolution": "Node",
+        "noEmitOnError": false,
+        "noImplicitAny": true,
+        "outDir": "target",
+        "preserveWatchOutput": true,
+        "sourceMap": true,
+        "strict": true,
+        "target": "ES2017"
+    }
+}
