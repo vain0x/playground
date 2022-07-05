@@ -2,6 +2,24 @@ module rec Pcc.TypeCheck
 
 open Pcc.Ast
 
+let inline private unreachable () = failwith "unreachable"
+
+let private lookup (name: string) env =
+  let rec go env =
+    match env with
+    | (key, value) :: _ when key = name -> Some value
+
+    | []
+    | ("@", _) :: _ -> None
+
+    | _ :: env -> go env
+
+  go env
+
+// -----------------------------------------------
+// 中間表現
+// -----------------------------------------------
+
 [<RequireQualifiedAccess; NoEquality; NoComparison>]
 type VarInfo = { Ty: Ty; Offset: int; Level: int }
 
@@ -26,20 +44,6 @@ type Ty =
   | Array of len: int * Tag
   | Name of string * Ty option ref
   | Unit
-
-let inline private unreachable () = failwith "unreachable"
-
-let private lookup (name: string) env =
-  let rec go env =
-    match env with
-    | (key, value) :: _ when key = name -> Some value
-
-    | []
-    | ("@", _) :: _ -> None
-
-    | _ :: env -> go env
-
-  go env
 
 let private createTy tEnv ty =
   match ty with
@@ -92,7 +96,8 @@ let private checkType ty expectedTy =
 
   | lTy, rTy -> failwithf "Type mismatch (%A <-> %A)" lTy rTy
 
-let private checkRedecl tEnv = ()
+// 未実装
+let private checkRedecl (_decs: Dec list) (_env: (string * Entry) list) = ()
 
 let private typeExpr ast env =
   match ast with
@@ -150,7 +155,7 @@ let private typeVar v env =
 
     | _ -> failwithf "Expected an array '%s'" name
 
-let private typeStmt ast tEnv env =
+let private typeStmt ast env =
   match ast with
   | Stmt.Assign (v, rhs) ->
     let varTy = typeVar v env
@@ -178,19 +183,18 @@ let private typeDec ast nest addr tEnv env =
         Result = result
         Level = nest + 1 }
 
-    tEnv, (name, Entry.Fun fi) :: env, addr
+    addr, tEnv, (name, Entry.Fun fi) :: env
 
   | Dec.Type (name, ty) ->
-    ()
-    ()
+    let ty, tEnv = createTy tEnv ty
+    addr, (name, ty) :: tEnv, env
 
   | Dec.Var (ty, name) ->
     let ty, tEnv = createTy tEnv ty
     let addr = addr - 8
-
     let vi: VarInfo = { Ty = ty; Offset = addr; Level = nest }
 
-    tEnv, ((name, Entry.Var vi) :: env), addr
+    addr, tEnv, ((name, Entry.Var vi) :: env)
 
 let private typeDecs nest addr tEnv env decs =
   decs
