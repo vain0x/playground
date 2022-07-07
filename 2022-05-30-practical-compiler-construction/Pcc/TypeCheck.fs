@@ -4,7 +4,7 @@ open Pcc.Ast
 
 let inline private unreachable () = failwith "unreachable"
 
-let private lookup (name: string) env =
+let lookup (name: string) env =
   let rec go env =
     match env with
     | (key, value) :: _ when key = name -> Some value
@@ -155,7 +155,7 @@ let private typeVar v env =
 
     | _ -> failwithf "Expected an array '%s'" name
 
-let private typeStmt ast env =
+let typeStmt ast env =
   match ast with
   | Stmt.Assign (v, rhs) ->
     let varTy = typeVar v env
@@ -169,7 +169,7 @@ let private typeStmt ast env =
   | Stmt.While (cond, _) -> typeCond cond env
   | Stmt.Nil -> ()
 
-let private typeDec ast nest addr tEnv env =
+let typeDec ast nest addr tEnv env =
   match ast with
   | Dec.Func (name, fargs, resultTy, _) ->
     let formals, tEnv =
