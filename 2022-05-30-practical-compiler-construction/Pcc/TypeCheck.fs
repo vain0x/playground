@@ -138,7 +138,7 @@ let private typeExpr ast env =
     | Some (Entry.Var _) -> failwithf "Can't call non-function '%s'" name
     | None -> failwithf "No such function '%s'" name
 
-let private typeVar v env =
+let typeVar v env =
   match v with
   | Var name ->
     match lookup name env with
@@ -208,7 +208,7 @@ let private typeCond ast env =
 
   | _ -> unreachable ()
 
-let private builtInEnv () =
+let builtInEnv () =
   let newFi formals result : Entry =
     let fi: FunInfo =
       { Formals = formals

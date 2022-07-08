@@ -116,6 +116,8 @@ let private transVar ast nest env =
     //    %rax ← &(%rax)[%rbx]
     emitf "  leaq (%%rax, %%rbx), %%rax\n"
 
+let private calcSize ty = 0
+
 /// 文を評価するコードを生成する
 let private transStmt ast nest env =
   typeStmt ast env
@@ -130,9 +132,91 @@ let private transStmt ast nest env =
     // ポップされる値は前述の通り右辺の値なので、これだけで代入になる
     emitf "  popq (%%rax)\n"
 
-  | Stmt.CallProc _ -> failwith "Not Implemented"
+  | Stmt.CallProc ("new", [ Expr.Var v ]) ->
+    // これをしたい:
+    //    v = malloc(size);
+
+    let size = calcSize (typeVar v env)
+    emitf "  movq $%d, %%rdi\n" size
+    emitf "  callq malloc\n"
+
+    // mallocが返したアドレスが%raxに入っている。
+    // 次の `transVar` の間に%raxが書き換わってしまうので、
+    // 値をスタックに退避して、後でポップする
+    emitf "  pushq %%rax\n"
+
+    transVar v nest env
+
+    // %raxに変数へのアドレスが入っている。
+    // そこにmallocが返したアドレスを代入する
+    emitf "  popq (%%rax)\n"
+
+  | Stmt.CallProc ("scan", [ Expr.Var v ]) ->
+    // これをしたい:
+    //    scanf("%lld", &v);
+
+    transVar v nest env
+
+    // 書式文字列 "%lld" へのアドレスを第1引数に入れる
+    emitf "  leaq IO(%%rip), %%rdi\n"
+
+    // 書き込み先の変数のアドレスを第2引数に入れる
+    emitf "  movq %%rax, %%rsi\n"
+
+    emitf "  mov $0, %%rax\n"
+    emitf "  callq scanf\n"
+
+  | Stmt.CallProc ("sprint", [ Expr.Str value ]) ->
+    // iprintと同様
+
+    // 適当に一意な整数値。前にLをつけたものを文字列データのラベルに使う
+    let id = sb.Length
+
+    // 文字列を静的領域に配置する
+    emitf "  .data\n"
+    emitf "L%d:\n" id
+    emitf "  .string \"%s\"\n" value
+
+    emitf "  .text\n"
+    emitf "  leaq L%d(%%rip), %%rdi\n" id
+    emitf "  movq $0, %%rax\n"
+    emitf "  callq printf\n"
+
+  | Stmt.CallProc (name, args) ->
+    for arg in args |> List.rev do
+      transExpr arg nest env
+
+    match name with
+    | "iprint" ->
+      // libcのprintf関数を呼びたい。引数の値を%rsi(第1引数として渡るレジスタ)へポップする
+      emitf "  popq %%rsi\n"
+      // IOラベル(%lldという文字列)のアドレスを%rdi(第2引数として渡るレジスタ)に入れる
+      // 「ラベル(%rip)」は一種のイディオムで、ラベルへのアドレスを表す
+      // (プログラムカウンタが入っているレジスタである%ripに対して、
+      //  ラベルは現在のプログラムカウンタからの相対値なので、
+      //  結果的にラベルのアドレスになる)
+      emitf "  leaq IO(%%rip), %%rdi\n"
+
+      // %raxを0にする。(なぜかは書かれていない。浮動小数点数の個数がゼロだから？)
+      emitf "  movq $0, %%rax\n"
+
+      emitf "  callq printf\n"
+
+    | _ -> failwith "Not Implemented"
+
   | Stmt.Block (_, _) -> failwith "Not Implemented"
   | Stmt.If (_, _, _) -> failwith "Not Implemented"
   | Stmt.While (_, _) -> failwith "Not Implemented"
 
   | Stmt.Nil -> ()
+
+let private transDec ast nest tEnv env = ()
+
+let codeGen ast =
+  sb.Clear() |> ignore
+
+  // scan, iprint で使う書式文字列
+  emitf "IO: .string \"%%lld\"\n"
+
+  emitf "    .text\n"
+  failwith "Not Implemented"
