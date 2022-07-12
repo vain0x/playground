@@ -1,9 +1,13 @@
 module rec Pcc.Program
 
+open System.Diagnostics
 open System.IO
 open Pcc.Parser
+open Pcc.CodeGen
 
 let inline private unreachable context = failwithf "unreachable: %A" context
+
+let private trace msg = eprintfn "%s\n" msg
 
 // -----------------------------------------------
 // AST
@@ -39,5 +43,19 @@ let main _ =
 
     let ast = parseString input
     File.WriteAllText(outputPathname, string ast)
+
+    let asmPathname = $"tests/syntax/{name}.s"
+    eprintfn "codeGen (%s)" asmPathname
+    let code = codeGen ast
+    File.WriteAllText(asmPathname, code)
+
+    let exePathname = $"tests/syntax/{name}.exe"
+    eprintfn "cc (%s)" exePathname
+    let cc = "/usr/bin/gcc"
+    let psi = ProcessStartInfo(cc)
+    psi.ArgumentList.Add(asmPathname)
+    psi.ArgumentList.Add("-o")
+    psi.ArgumentList.Add(exePathname)
+    Process.Start(psi).WaitForExit() |> ignore
 
   0

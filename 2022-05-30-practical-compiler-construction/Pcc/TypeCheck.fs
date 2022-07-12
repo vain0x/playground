@@ -45,7 +45,7 @@ type Ty =
   | Name of string * Ty option ref
   | Unit
 
-let private createTy tEnv ty =
+let createTy tEnv ty =
   match ty with
   | Typ.Name name ->
     match lookup name tEnv with
@@ -169,7 +169,22 @@ let typeStmt ast env =
   | Stmt.While (cond, _) -> typeCond cond env
   | Stmt.Nil -> ()
 
-let typeDec ast nest addr tEnv env =
+let typeParamDec ast nest tEnv env =
+  ast
+  |> List.fold
+       (fun (i, env) (typ, name) ->
+         let ty, _ = createTy tEnv typ
+
+         let vi: VarInfo =
+           { Ty = ty
+             Level = nest
+             Offset = i * 8 + 16 }
+
+         i + 1, (name, Entry.Var vi) :: env)
+       (0, env)
+  |> snd
+
+let typeDec ast nest tEnv env addr =
   match ast with
   | Dec.Func (name, fargs, resultTy, _) ->
     let formals, tEnv =
@@ -183,22 +198,22 @@ let typeDec ast nest addr tEnv env =
         Result = result
         Level = nest + 1 }
 
-    addr, tEnv, (name, Entry.Fun fi) :: env
+    tEnv, (name, Entry.Fun fi) :: env, addr
 
   | Dec.Type (name, ty) ->
     let ty, tEnv = createTy tEnv ty
-    addr, (name, ty) :: tEnv, env
+    (name, ty) :: tEnv, env, addr
 
   | Dec.Var (ty, name) ->
     let ty, tEnv = createTy tEnv ty
     let addr = addr - 8
     let vi: VarInfo = { Ty = ty; Offset = addr; Level = nest }
 
-    addr, tEnv, ((name, Entry.Var vi) :: env)
+    tEnv, ((name, Entry.Var vi) :: env), addr
 
-let private typeDecs nest addr tEnv env decs =
+let typeDecs decs nest tEnv env =
   decs
-  |> List.fold (fun (addr, tEnv, env) dec -> typeDec dec nest addr tEnv env) (addr, tEnv, env)
+  |> List.fold (fun (tEnv, env, addr) dec -> typeDec dec nest tEnv env addr) (tEnv, env, 0)
 
 let private typeCond ast env =
   match ast with
@@ -207,6 +222,11 @@ let private typeCond ast env =
     checkInt (typeExpr r env)
 
   | _ -> unreachable ()
+
+let builtInTEnv () =
+  [ "int", Ty.Int
+    "str", Ty.Str
+    "void", Ty.Unit ]
 
 let builtInEnv () =
   let newFi formals result : Entry =
