@@ -32,6 +32,7 @@ let main _ =
     [ "single_assignment"
       "multiple_statements"
       "hello_world"
+      "iprint"
       "local_functions"
       "fizz_buzz" ] do
     let pathname = $"tests/syntax/{name}.simple"

@@ -19,18 +19,12 @@ let private sLabelRef = ref 0
 let private emitf fmt =
   Printf.kprintf (fun value -> sCode.contents.Append(value) |> ignore) fmt
 
-let private dumpVar v =
-  match v with
-  | Var name -> name
-  | IndexedVar (name, _) -> sprintf "%s[*]" name
-
 /// 式を評価し、値がスタックに1つpushされるようなコードを生成する
 let private transExpr ast nest env =
   match ast with
   | Expr.Num value -> emitf "  pushq $%d\n" value
 
   | Expr.Var v ->
-    emitf "  # var(%s)\n" (dumpVar v)
     transVar v nest env
 
     // %rax に変数へのアドレスが入っているので、そこから値を読み出してプッシュする
@@ -90,8 +84,6 @@ let private transExpr ast nest env =
     emitf "  negq (%%rsp)\n"
 
   | Expr.Call (name, args) ->
-    emitf "  # call(%s/%d)\n" name (List.length args)
-
     let tEnv = [] // 使われない
     transStmt (Stmt.CallProc(name, args)) nest tEnv env
 
@@ -164,6 +156,14 @@ let private transStmt ast nest tEnv env =
     // ポップされる値は前述の通り右辺の値なので、これだけで代入になる
     emitf "  popq (%%rax)\n"
 
+  | Stmt.CallProc ("return", [ arg ]) ->
+    emitf "  # return\n"
+    transExpr arg nest env
+
+    // 結果の値がスタックの一番上に置かれているので、それを%raxに入れる
+    // (関数の結果は%raxレジスタに入れて返す)
+    emitf "  popq %%rax\n"
+
   | Stmt.CallProc ("new", [ Expr.Var v ]) ->
     emitf "  # new\n"
     // これをしたい:
@@ -221,8 +221,16 @@ let private transStmt ast nest tEnv env =
     emitf "  callq printf\n"
 
   | Stmt.CallProc (name, args) ->
-    emitf "  # args\n"
+    let arity = List.length args
+    emitf "  # call(%s/%d)\n" name arity
 
+    // スタックのアラインメントの制約を守るため、
+    // 引数領域と静的リンクを積む領域のサイズが16の倍数にならない場合、
+    // 余分な整数値をプッシュして16の倍数にする
+    if (arity + 1) % 2 = 1 then
+      emitf "  pushq $0\n"
+
+    // 引数は後方から順に積む
     for arg in args |> List.rev do
       transExpr arg nest env
 
@@ -242,9 +250,31 @@ let private transStmt ast nest tEnv env =
       // %raxを0にする。(なぜかは書かれていない。浮動小数点数の個数がゼロだから？)
       emitf "  movq $0, %%rax\n"
 
-      emitf "  callq printf\n"
+      emitf "  callq printf\n" // (引数をポップしなくてよい？)
 
-    | _ -> todo ()
+    | _ ->
+      let fi =
+        match lookup name env with
+        | Some (Entry.Fun fi) -> fi
+        | _ -> unreachable ()
+
+      // 静的リンクを渡す
+      if nest >= fi.Level then
+        // いまのフレームからはじめて呼び出そうとしている関数の親にあたるフレームのアドレスを%raxにいれる
+        emitf "  movq %%rbp, %%rax\n"
+
+        for _ in 0 .. nest - fi.Level do
+          emitf "  movq 16(%%rax), %%rax\n"
+
+        // フレームへのリンクをスタックに積む
+        emitf "  pushq %%rax\n"
+      else
+        emitf "  pushq $0\n"
+
+      emitf "  callq %s\n" name
+
+      // 引数と静的リンクを下ろす
+      emitf "  addq $%d, %%rsp\n" ((arity + 2) / 2 * 16)
 
   | Stmt.Block (decs, stmts) ->
     emitf "  # block\n"

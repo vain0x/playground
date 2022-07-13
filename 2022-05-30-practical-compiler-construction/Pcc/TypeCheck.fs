@@ -130,6 +130,12 @@ let private typeExpr ast env =
 
     | _ -> failwith "Invalid arguments of 'scan' call"
 
+  | Expr.Call ("return", [ arg ]) ->
+    // TODO
+    let _ = typeExpr arg env
+
+    Ty.Unit
+
   | Expr.Call (name, aargs) ->
     match lookup name env with
     | Some (Entry.Fun fi) ->
