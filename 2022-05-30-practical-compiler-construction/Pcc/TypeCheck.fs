@@ -45,29 +45,36 @@ type Ty =
   | Name of string * Ty option ref
   | Unit
 
-let createTy tEnv ty =
-  match ty with
+/// 型の環境
+type TEnv = (string * Ty) list
+
+/// 値の環境
+type Env = (string * Entry) list
+
+/// 構文上の型を中間表現の型に変換する
+let createTy (tEnv: TEnv) (typ: Typ) : Ty =
+  match typ with
   | Typ.Name name ->
     match lookup name tEnv with
-    | Some it -> it, tEnv
-    | None ->
-      let ty = Ty.Name(name, ref None)
-      ty, (name, ty) :: tEnv
+    | Some it -> it
+    | None -> failwithf "Undefined type '%s'" name
 
-  | Typ.Array len -> Ty.Array(len, Tag(ref ())), tEnv
-  | Typ.Int -> Ty.Int, tEnv
-  | Typ.Void -> Ty.Unit, tEnv
+  | Typ.Array len -> Ty.Array(len, Tag(ref ()))
+  | Typ.Int -> Ty.Int
+  | Typ.Void -> Ty.Unit
 
+/// 名前付きの型を展開する
 let private actualTy ty =
   let rec go visited ty =
     match ty with
-    | Ty.Name (name, optRef) ->
-      match optRef.contents with
+    | Ty.Name (name, tyOptRef) ->
+      match tyOptRef.contents with
       | Some (Ty.Name (name, _)) when Set.contains name visited -> failwithf "Cyclic type '%s'" name
 
       | Some ty ->
+        // 経路圧縮
         let ty = go (Set.add name visited) ty
-        optRef.contents <- Some ty
+        tyOptRef.contents <- Some ty
         ty
 
       | None -> failwithf "No actual type of '%s'" name
@@ -97,13 +104,15 @@ let private checkType ty expectedTy =
   | lTy, rTy -> failwithf "Type mismatch (%A <-> %A)" lTy rTy
 
 // 未実装
-let private checkRedecl (_decs: Dec list) (_env: (string * Entry) list) = ()
+let private checkRedecl (_: Dec list) (_: Env) = ()
 
+/// 式の型検査
 let private typeExpr ast env =
   match ast with
   | Expr.Num _ -> Ty.Int
   | Expr.Var v -> typeVar v env
-  | Expr.Str _ -> failwith "String expression must appear as an argument of sprint."
+
+  | Expr.Str _ -> failwith "String expression must appear as an argument of `sprint` function."
 
   | Expr.Call ("new", aargs) ->
     match aargs with
@@ -138,7 +147,8 @@ let private typeExpr ast env =
     | Some (Entry.Var _) -> failwithf "Can't call non-function '%s'" name
     | None -> failwithf "No such function '%s'" name
 
-let typeVar v env =
+/// 変数を型検査する
+let typeVar (v: Var) (env: Env) : Ty =
   match v with
   | Var name ->
     match lookup name env with
@@ -155,7 +165,8 @@ let typeVar v env =
 
     | _ -> failwithf "Expected an array '%s'" name
 
-let typeStmt ast env =
+/// 文を型検査する
+let typeStmt (ast: Stmt) (env: Env) : unit =
   match ast with
   | Stmt.Assign (v, rhs) ->
     let varTy = typeVar v env
@@ -169,49 +180,55 @@ let typeStmt ast env =
   | Stmt.While (cond, _) -> typeCond cond env
   | Stmt.Nil -> ()
 
-let typeParamDec ast nest tEnv env =
+/// パラメータを環境に加える
+let typeParamDec (ast: (Typ * string) list) (nest: int) (tEnv: TEnv) (env: Env) : Env =
+  // フレームポインタに対するパラメータのオフセットは24から始まる
+  // (スタックポインタ、静的リンク、戻りアドレスの後ろにパラメータが積まれるため)
+  let savedArg = 24
+
   ast
   |> List.fold
-       (fun (i, env) (typ, name) ->
-         let ty, _ = createTy tEnv typ
+       (fun (addr, env) (typ, name) ->
+         let ty = createTy tEnv typ
 
-         let vi: VarInfo =
-           { Ty = ty
-             Level = nest
-             Offset = i * 8 + 16 }
+         let vi: VarInfo = { Ty = ty; Level = nest; Offset = addr }
 
-         i + 1, (name, Entry.Var vi) :: env)
-       (0, env)
+         addr + 8, (name, Entry.Var vi) :: env)
+       (savedArg, env)
   |> snd
 
-let typeDec ast nest tEnv env addr =
+/// 宣言を型検査する
+///
+/// - この関数はブロックをコード生成する際に呼ばれる
+///     - 内部の文や宣言に対する型検査は、そのブロックに到達したときに行う
+///     - この関数は再帰的に内部の文や宣言に入らない
+let typeDec (ast: Dec) (nest: int) (tEnv: TEnv) (env: Env) (addr: int) : TEnv * Env * int =
   match ast with
   | Dec.Func (name, fargs, resultTy, _) ->
-    let formals, tEnv =
+    let formals =
       fargs
-      |> List.mapFold (fun tEnv (ty, _) -> createTy tEnv ty) tEnv
-
-    let result, tEnv = createTy tEnv resultTy
+      |> List.map (fun (ty, _) -> createTy tEnv ty)
 
     let fi: FunInfo =
       { Formals = formals
-        Result = result
+        Result = createTy tEnv resultTy
         Level = nest + 1 }
 
     tEnv, (name, Entry.Fun fi) :: env, addr
 
-  | Dec.Type (name, ty) ->
-    let ty, tEnv = createTy tEnv ty
+  | Dec.Type (name, _) ->
+    // 具体的な型は transDec で解決する
+    let ty = Ty.Name(name, ref None)
     (name, ty) :: tEnv, env, addr
 
   | Dec.Var (ty, name) ->
-    let ty, tEnv = createTy tEnv ty
+    let ty = createTy tEnv ty
     let addr = addr - 8
     let vi: VarInfo = { Ty = ty; Offset = addr; Level = nest }
 
     tEnv, ((name, Entry.Var vi) :: env), addr
 
-let typeDecs decs nest tEnv env =
+let typeDecs decs nest tEnv env : TEnv * Env * int =
   decs
   |> List.fold (fun (tEnv, env, addr) dec -> typeDec dec nest tEnv env addr) (tEnv, env, 0)
 
@@ -223,12 +240,12 @@ let private typeCond ast env =
 
   | _ -> unreachable ()
 
-let builtInTEnv () =
+let builtInTEnv () : TEnv =
   [ "int", Ty.Int
     "str", Ty.Str
     "void", Ty.Unit ]
 
-let builtInEnv () =
+let builtInEnv () : Env =
   let newFi formals result : Entry =
     let fi: FunInfo =
       { Formals = formals
@@ -237,19 +254,16 @@ let builtInEnv () =
 
     Entry.Fun fi
 
-  let entries =
-    [ "+", newFi [ Ty.Int; Ty.Int ] Ty.Int
-      "-", newFi [ Ty.Int; Ty.Int ] Ty.Int
-      "*", newFi [ Ty.Int; Ty.Int ] Ty.Int
-      "/", newFi [ Ty.Int; Ty.Int ] Ty.Int
-      "!", newFi [ Ty.Int ] Ty.Int
-      "==", newFi [ Ty.Int; Ty.Int ] Ty.Int
-      "!=", newFi [ Ty.Int; Ty.Int ] Ty.Int
-      "<", newFi [ Ty.Int; Ty.Int ] Ty.Int
-      "<=", newFi [ Ty.Int; Ty.Int ] Ty.Int
-      ">", newFi [ Ty.Int; Ty.Int ] Ty.Int
-      ">=", newFi [ Ty.Int; Ty.Int ] Ty.Int
-      "iprint", newFi [ Ty.Int ] Ty.Unit
-      "sprint", newFi [ Ty.Str ] Ty.Unit ]
-
-  entries
+  [ "+", newFi [ Ty.Int; Ty.Int ] Ty.Int
+    "-", newFi [ Ty.Int; Ty.Int ] Ty.Int
+    "*", newFi [ Ty.Int; Ty.Int ] Ty.Int
+    "/", newFi [ Ty.Int; Ty.Int ] Ty.Int
+    "!", newFi [ Ty.Int ] Ty.Int
+    "==", newFi [ Ty.Int; Ty.Int ] Ty.Int
+    "!=", newFi [ Ty.Int; Ty.Int ] Ty.Int
+    "<", newFi [ Ty.Int; Ty.Int ] Ty.Int
+    "<=", newFi [ Ty.Int; Ty.Int ] Ty.Int
+    ">", newFi [ Ty.Int; Ty.Int ] Ty.Int
+    ">=", newFi [ Ty.Int; Ty.Int ] Ty.Int
+    "iprint", newFi [ Ty.Int ] Ty.Unit
+    "sprint", newFi [ Ty.Str ] Ty.Unit ]
