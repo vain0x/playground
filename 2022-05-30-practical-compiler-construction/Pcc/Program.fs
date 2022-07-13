@@ -30,10 +30,10 @@ let main _ =
 
   for name in
     [ "single_assignment"
-      "fizz_buzz"
+      "multiple_statements"
       "hello_world"
       "local_functions"
-      "multiple_statements" ] do
+      "fizz_buzz" ] do
     let pathname = $"tests/syntax/{name}.simple"
     let input = File.ReadAllText(pathname)
     let outputPathname = $"tests/syntax/{name}_ast.txt"

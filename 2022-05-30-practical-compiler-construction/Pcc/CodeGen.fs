@@ -19,12 +19,18 @@ let private sLabelRef = ref 0
 let private emitf fmt =
   Printf.kprintf (fun value -> sCode.contents.Append(value) |> ignore) fmt
 
+let private dumpVar v =
+  match v with
+  | Var name -> name
+  | IndexedVar (name, _) -> sprintf "%s[*]" name
+
 /// 式を評価し、値がスタックに1つpushされるようなコードを生成する
 let private transExpr ast nest env =
   match ast with
   | Expr.Num value -> emitf "  pushq $%d\n" value
 
   | Expr.Var v ->
+    emitf "  # var(%s)\n" (dumpVar v)
     transVar v nest env
 
     // %rax に変数へのアドレスが入っているので、そこから値を読み出してプッシュする
@@ -34,6 +40,7 @@ let private transExpr ast nest env =
   | Expr.Str _ -> unreachable ()
 
   | Expr.Call ("+", [ left; right ]) ->
+    emitf "  # (+)\n"
     transExpr left nest env
     transExpr right nest env
 
@@ -44,18 +51,21 @@ let private transExpr ast nest env =
     emitf "  addq %%rax, (%%rsp)\n"
 
   | Expr.Call ("-", [ left; right ]) ->
+    emitf "  # (-)\n"
     transExpr left nest env
     transExpr right nest env
     emitf "  popq %%rax\n"
     emitf "  subq %%rax, (%%rsp)\n"
 
   | Expr.Call ("*", [ left; right ]) ->
+    emitf "  # ( * )\n"
     transExpr left nest env
     transExpr right nest env
     emitf "  popq %%rax\n"
     emitf "  imulq %%rax, (%%rsp)\n"
 
   | Expr.Call ("/", [ left; right ]) ->
+    emitf "  # (/)\n"
     transExpr left nest env
     transExpr right nest env
 
@@ -73,12 +83,15 @@ let private transExpr ast nest env =
     emitf "  pushq %%rax\n"
 
   | Expr.Call ("!", [ arg ]) ->
+    emitf "  # (~-)\n"
     transExpr arg nest env
 
     // スタックトップの値の符号を反転する
     emitf "  negq (%%rsp)\n"
 
   | Expr.Call (name, args) ->
+    emitf "  # call(%s/%d)\n" name (List.length args)
+
     let tEnv = [] // 使われない
     transStmt (Stmt.CallProc(name, args)) nest tEnv env
 
@@ -93,6 +106,8 @@ let private transVar ast nest env =
       match lookup name env with
       | Some (Entry.Var vi) -> vi
       | _ -> unreachable ()
+
+    emitf "  # var(%s)\n" name
 
     // 静的リンクをたどる。
     // いまのスタックフレームへのポインタ (%rbp) からはじめて、
@@ -109,6 +124,8 @@ let private transVar ast nest env =
     emitf "  leaq %d(%%rax), %%rax\n" vi.Offset
 
   | IndexedVar (name, index) ->
+    emitf "  # %s[_]\n" name
+
     // インデックスが表している、配列の先頭と要素の距離がスタックトップに置かれる
     //    push ((index) * 8)
     // 後で%rbxにポップする
@@ -137,6 +154,8 @@ let private transStmt ast nest tEnv env =
 
   match ast with
   | Stmt.Assign (v, e) ->
+    emitf "  # assign\n"
+
     // 右辺を評価する。その値がスタックのトップに入るので、後でポップする
     transExpr e nest env
     transVar v nest env
@@ -146,6 +165,7 @@ let private transStmt ast nest tEnv env =
     emitf "  popq (%%rax)\n"
 
   | Stmt.CallProc ("new", [ Expr.Var v ]) ->
+    emitf "  # new\n"
     // これをしたい:
     //    v = malloc(size);
 
@@ -165,6 +185,8 @@ let private transStmt ast nest tEnv env =
     emitf "  popq (%%rax)\n"
 
   | Stmt.CallProc ("scan", [ Expr.Var v ]) ->
+    emitf "  # scan\n"
+
     // これをしたい:
     //    scanf("%lld", &v);
 
@@ -181,6 +203,7 @@ let private transStmt ast nest tEnv env =
 
   | Stmt.CallProc ("sprint", [ Expr.Str value ]) ->
     // iprintと同様
+    emitf "  # sprint\n"
 
     // 適当に一意な整数値。前にLをつけたものを文字列データのラベルに使う
     let id =
@@ -198,11 +221,15 @@ let private transStmt ast nest tEnv env =
     emitf "  callq printf\n"
 
   | Stmt.CallProc (name, args) ->
+    emitf "  # args\n"
+
     for arg in args |> List.rev do
       transExpr arg nest env
 
     match name with
     | "iprint" ->
+      emitf "  # iprint\n"
+
       // libcのprintf関数を呼びたい。引数の値を%rsi(第1引数として渡るレジスタ)へポップする
       emitf "  popq %%rsi\n"
       // IOラベル(%lldという文字列)のアドレスを%rdi(第2引数として渡るレジスタ)に入れる
@@ -220,10 +247,13 @@ let private transStmt ast nest tEnv env =
     | _ -> todo ()
 
   | Stmt.Block (decs, stmts) ->
+    emitf "  # block\n"
     let tEnv, env, addr = typeDecs decs nest tEnv env
 
     for dec in decs do
       transDec dec nest tEnv env
+
+    emitf "  # frame\n"
 
     // フレームを拡張する
     // 16バイトアラインメントを保つためサイズは16の倍数に切り上げる
@@ -256,7 +286,7 @@ let private transDec ast nest tEnv env =
       | Some (Ty.Name (_, r)) -> r
       | _ -> unreachable ()
 
-    let ty, _ = createTy tEnv typ
+    let ty = createTy tEnv typ
     tyOptRef.contents <- Some ty
 
   | Dec.Var _ -> ()
@@ -296,7 +326,7 @@ let codeGen ast =
   emitf "%s\n" prologue
   emitf "  # ==== toplevel ====\n"
   transStmt ast 0 (builtInTEnv ()) (builtInEnv ())
-  emitf "  xor %%rax, %%rax\n"
+  emitf "  movq $0, %%rax\n"
   emitf "%s\n" epilogue
 
   // 関数の定義を書き足す

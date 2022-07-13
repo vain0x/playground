@@ -110,9 +110,8 @@ let private checkRedecl (_: Dec list) (_: Env) = ()
 let private typeExpr ast env =
   match ast with
   | Expr.Num _ -> Ty.Int
+  | Expr.Str _ -> Ty.Str
   | Expr.Var v -> typeVar v env
-
-  | Expr.Str _ -> failwith "String expression must appear as an argument of `sprint` function."
 
   | Expr.Call ("new", aargs) ->
     match aargs with
