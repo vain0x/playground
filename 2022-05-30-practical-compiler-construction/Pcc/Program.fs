@@ -35,6 +35,7 @@ let main _ =
       "iprint"
       "local_functions"
       "if_stmt"
+      "while_stmt"
       "fizz_buzz" ] do
     let pathname = $"tests/syntax/{name}.simple"
     let input = File.ReadAllText(pathname)

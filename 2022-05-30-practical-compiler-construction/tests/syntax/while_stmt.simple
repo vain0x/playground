@@ -1,0 +1,58 @@
+{
+    int rem(int n, int d) {
+        while (n >= d) {
+            n = n - d;
+        }
+        return n;
+    }
+
+    void simple_loop(int count) {
+        int i;
+        i = 0;
+
+        sprint("loop [");
+        while (i < count) {
+            iprint(i);
+            i = i + 1;
+        }
+        sprint("]");
+    }
+
+    void prime_numbers(int limit) {
+        int p;
+        int ok, d;
+
+        sprint("p [");
+        if (limit >= 2) {
+            iprint(2);
+        }
+        p = 3;
+
+        while (p <= limit) {
+            ok = 1;
+            d = p - 1;
+
+            while (d > 1) {
+                if (rem(p, d) == 0) {
+                    ok = 0;
+                }
+                d = d - 1;
+            }
+            if (ok != 0) {
+                iprint(p);
+            }
+            p = p + 2;
+        }
+        sprint("]");
+    }
+
+    sprint("simple_loop(0)");
+    simple_loop(0);
+    sprint("simple_loop(1)");
+    simple_loop(1);
+    sprint("simple_loop(7)");
+    simple_loop(7);
+
+    sprint("prime_numbers");
+    prime_numbers(49);
+}

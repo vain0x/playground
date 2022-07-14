@@ -297,7 +297,7 @@ let private transStmt ast nest tEnv env =
 
   | Stmt.If (e, s, None) ->
     // else節がないとき:
-    //    if e then s
+    //    if (e) s;
     // ==>
     //    if not e then goto L_ENDIF
     //    s
@@ -310,13 +310,13 @@ let private transStmt ast nest tEnv env =
 
   | Stmt.If (e, s1, Some s2) ->
     // elseがあるとき:
-    //    if cond then body else alt
+    //    if (e) s1; else s2;
     // ==>
-    //    if not cond then goto L_ELSE
-    //    body
+    //    if not e then goto L_ELSE
+    //    s1
     //    goto L_ENDIF
     // L_ELSE:
-    //    alt
+    //    s2
     // L_ENDIF: ;
 
     emitf "  # if-else\n"
@@ -332,7 +332,22 @@ let private transStmt ast nest tEnv env =
     transStmt s2 nest tEnv env
     emitf "L%d:\n" l2
 
-  | Stmt.While (_, _) -> failwith "Not Implemented"
+  | Stmt.While (e, s) ->
+    //    while (e) s;
+    // ==>
+    // L_CONTINUE:
+    //    if not e then goto L_BREAK
+    //    s
+    //    goto L_CONTINUE
+    // L_BREAK: ;
+
+    emitf "  # while\n"
+    let l1 = freshLabel ()
+    emitf "L%d:\n" l1
+    let l2 = transCond e nest env
+    transStmt s nest tEnv env
+    emitf "  jmp L%d\n" l1
+    emitf "L%d:\n" l2
 
   | Stmt.Nil -> ()
 
@@ -355,8 +370,8 @@ let private transCond ast nest env =
     | "!=" -> "je"
     | "<" -> "jge"
     | "<=" -> "jg"
-    | ">" -> "jl"
-    | ">=" -> "jle"
+    | ">" -> "jle"
+    | ">=" -> "jl"
     | _ -> unreachable ()
 
   transExpr left nest env
