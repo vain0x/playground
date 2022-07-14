@@ -15,6 +15,10 @@ let private sOutput = StringBuilder()
 
 let private sLabelRef = ref 0
 
+let private freshLabel () =
+  incr sLabelRef
+  sLabelRef.contents
+
 /// コードを書き込む
 let private emitf fmt =
   Printf.kprintf (fun value -> sCode.contents.Append(value) |> ignore) fmt
@@ -206,9 +210,7 @@ let private transStmt ast nest tEnv env =
     emitf "  # sprint\n"
 
     // 適当に一意な整数値。前にLをつけたものを文字列データのラベルに使う
-    let id =
-      incr sLabelRef
-      sLabelRef.contents
+    let id = freshLabel ()
 
     // 文字列を静的領域に配置する
     emitf "  .data\n"
@@ -293,10 +295,77 @@ let private transStmt ast nest tEnv env =
     for stmt in stmts do
       transStmt stmt nest tEnv env
 
-  | Stmt.If (_, _, _) -> failwith "Not Implemented"
+  | Stmt.If (e, s, None) ->
+    // else節がないとき:
+    //    if e then s
+    // ==>
+    //    if not e then goto L_ENDIF
+    //    s
+    // L_ENDIF: ;
+
+    emitf "  # if\n"
+    let l = transCond e nest env
+    transStmt s nest tEnv env
+    emitf "L%d:        # endif\n" l
+
+  | Stmt.If (e, s1, Some s2) ->
+    // elseがあるとき:
+    //    if cond then body else alt
+    // ==>
+    //    if not cond then goto L_ELSE
+    //    body
+    //    goto L_ENDIF
+    // L_ELSE:
+    //    alt
+    // L_ENDIF: ;
+
+    emitf "  # if-else\n"
+    let l1 = transCond e nest env
+    let l2 = freshLabel ()
+
+    emitf "  # then\n"
+    transStmt s1 nest tEnv env
+    emitf "  jmp L%d\n" l2
+
+    emitf "  # else\n"
+    emitf "L%d:\n" l1
+    transStmt s2 nest tEnv env
+    emitf "L%d:\n" l2
+
   | Stmt.While (_, _) -> failwith "Not Implemented"
 
   | Stmt.Nil -> ()
+
+/// 条件式のコード生成を行う
+///
+/// 条件が満たさなかったらジャンプするような命令列を出力し、
+/// ジャンプ先のラベル番号を返す
+let private transCond ast nest env =
+  let dest = freshLabel ()
+
+  let name, left, right =
+    match ast with
+    | Expr.Call (name, [ left; right ]) -> name, left, right
+    | _ -> unreachable ()
+
+  // 関係が成り立たないときにジャンプする命令の名前
+  let jump =
+    match name with
+    | "==" -> "jne"
+    | "!=" -> "je"
+    | "<" -> "jge"
+    | "<=" -> "jg"
+    | ">" -> "jl"
+    | ">=" -> "jle"
+    | _ -> unreachable ()
+
+  transExpr left nest env
+  transExpr right nest env
+  emitf "  popq %%rax\n"
+  emitf "  popq %%rbx\n"
+  emitf "  cmpq %%rax, %%rbx\n"
+  emitf "  %s L%d\n" jump dest
+  dest
 
 let private prologue =
   """  # prologue
