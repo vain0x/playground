@@ -1,4 +1,5 @@
 tests/syntax/*_ast.txt
+tests/syntax/*.s
 
 
 

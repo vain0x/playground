@@ -9,6 +9,8 @@
     <Compile Include="Ast.fs" />
     <Compile Include="AstLower.fs" />
     <Compile Include="Parser.fs" />
+    <Compile Include="TypeCheck.fs" />
+    <Compile Include="CodeGen.fs" />
     <Compile Include="Program.fs" />
   </ItemGroup>
 

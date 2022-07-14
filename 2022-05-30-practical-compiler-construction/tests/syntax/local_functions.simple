@@ -1,12 +1,23 @@
 {
+    int d, x, y;
     int add(int x, int y) {
         return x + y;
     }
-    
-    int x;
+    int inc(int x) {
+        return x + d;
+    }
+
     x = 0;
     x = add(x, 3);
     x = add(x, 1);
     x = add(x, 4);
     iprint (x);
+    sprint (", ");
+
+    y = 0;
+    d = 2;
+    y = inc(y);
+    d = 3;
+    y = inc(y);
+    iprint (y);
 }

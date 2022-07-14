@@ -5,6 +5,17 @@ open Pcc.Ast
 type private TokenKind = string
 
 // -----------------------------------------------
+// Trace
+// -----------------------------------------------
+
+// Set true to print trace logs.
+[<Literal>]
+let private Trace = false
+
+let private trace fmt =
+  Printf.kprintf (if Trace then eprintf "%s\n" else ignore) fmt
+
+// -----------------------------------------------
 // Context
 // -----------------------------------------------
 
@@ -20,14 +31,14 @@ let private look (offset: int) (px: Px) : TokenKind =
   assert (offset >= 0)
 
   if px.Index + offset < px.Tokens.Length then
-    eprintfn "look: %d %A" (px.Index + offset) px.Tokens.[px.Index + offset]
+    trace "look: %d %A" (px.Index + offset) px.Tokens.[px.Index + offset]
     fst px.Tokens.[px.Index + offset]
   else
     "$"
 
 let private shift (px: Px) : string * Px =
   assert (px.Index < px.Tokens.Length)
-  eprintfn "shift: %d %A" px.Index px.Tokens.[px.Index]
+  trace "shift: %d %A" px.Index px.Tokens.[px.Index]
 
   let _, text = px.Tokens.[px.Index]
   let px = { px with Index = px.Index + 1 }
