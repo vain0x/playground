@@ -1,0 +1,39 @@
+{
+    type Vector = int[2];
+    type Pos = Vector;
+    type Month = int[2];
+
+    Pos p;
+    Vector d;
+    Month m;
+
+    new(p);
+    p[0] = 3;
+    p[1] = 4;
+    new(d);
+    d[0] = 1;
+    d[1] = -1;
+    new(m);
+    m[0] = 8;
+    m[1] = 31;
+
+    sprint("p = (");
+    iprint(p[0]);
+    sprint(", ");
+    iprint(p[1]);
+    sprint(")\n");
+
+    sprint("m = ");
+    iprint(m[0]);
+    sprint("/");
+    iprint(m[1]);
+    sprint("\n");
+
+    # これはエラーにならない (どちらもVector型だから)
+    p = d;
+
+    # これは型エラーになるべき
+    # (PosとMonthはそれぞれ異なる int[2] の型なため)
+    # まだエラーにならない
+    # p = m;
+}

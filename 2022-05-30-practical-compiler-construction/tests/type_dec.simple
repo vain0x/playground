@@ -1,0 +1,21 @@
+{
+    type suit = int;
+    type rank = int;
+
+    suit SPADE, CLOVER, s;
+    rank ACE, KING, r;
+    SPADE = 1;
+    CLOVER = 2;
+    ACE = 1;
+    KING = 13;
+
+    s = SPADE;
+    r = ACE;
+
+    if (s == SPADE) {
+        sprint("s is SPADE\n");
+    }
+    if (s != CLOVER) {
+        sprint("s isn't clover\n");
+    }
+}
