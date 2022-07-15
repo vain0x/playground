@@ -1,4 +1,5 @@
 {
+    # Compute reminder (n % m).
     int rem(int n, int m) {
         while (n >= m) {
             n = n - m;
@@ -11,14 +12,15 @@
 
     while (i <= 15) {
         if (rem(i, 15) == 0) {
-            sprint ("FizzBuzz");
+            sprint("FizzBuzz");
         } else if (rem(i, 3) == 0) {
-            sprint ("Fizz");
+            sprint("Fizz");
         } else if (rem(i, 5) == 0) {
-            sprint ("Buzz");
+            sprint("Buzz");
         } else {
-            iprint (i);
+            iprint(i);
         }
+        sprint(" ");
         i = i + 1;
     }
 }

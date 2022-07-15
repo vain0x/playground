@@ -8,9 +8,9 @@
 
     void simple_loop(int count) {
         int i;
-        i = 0;
 
         sprint("loop [");
+        i = 0;
         while (i < count) {
             iprint(i);
             i = i + 1;

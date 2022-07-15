@@ -1,4 +1,4 @@
 {
-    sprint ("Hello, world!");
-    sprint ("Bye!");
+    sprint("Hello, world!");
+    sprint("Bye!");
 }

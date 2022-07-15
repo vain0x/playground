@@ -31,3 +31,4 @@ RP ")"
 COMMA ","
 SEMI ";"
 SPACE [ \r\n]+
+COMMENT "#" [^\r\n]*

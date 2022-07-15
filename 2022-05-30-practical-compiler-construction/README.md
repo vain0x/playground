@@ -8,7 +8,7 @@
 
 - [x] lexer
     - [x] 数値、文字列、識別子
-    - [ ] コメント
+    - [x] コメント
 - [ ] ~~yacc~~ ([grammar_issue.md](grammar_issue.md)を参照)
 - [x] 手書きの再帰下降パーサ
 - 言語機能
