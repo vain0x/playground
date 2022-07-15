@@ -8,7 +8,7 @@
         if (len >= 1) {
             while (i < len - 1) {
                 iprint(xs[i]);
-                sprint(",");
+                sprint(", ");
                 i = i + 1;
             }
             iprint(xs[len - 1]);
@@ -26,13 +26,18 @@
     xs[3] = 1;
     xs[4] = 5;
 
+    sprint("xs = ");
     print_all(xs);
+    sprint("\n");
 
+    sprint("compute prefix-sum\n");
     i = 0;
     while (i < 4) {
         xs[i + 1] = xs[i] + xs[i + 1];
         i = i + 1;
     }
 
+    sprint("xs = ");
     print_all(xs);
+    sprint("\n");
 }

@@ -1,25 +1,26 @@
 {
     sprint("5 + 2 = 7? ");
     iprint(5 + 2);
-    sprint("  7 + 3 = 10? ");
+    sprint("\n7 + 3 = 10? ");
     iprint(7 + 3);
-    sprint("  9 + (-15) = -6? ");
+    sprint("\n9 + (-15) = -6? ");
     iprint(9 + (-15));
 
-    sprint("  5 - 2 = 3? ");
+    sprint("\n5 - 2 = 3? ");
     iprint(5 - 2);
-    sprint("  7 - 3 = 4? ");
+    sprint("\n7 - 3 = 4? ");
     iprint(7 - 3);
 
-    sprint("  5 * 2 = 10? ");
+    sprint("\n5 * 2 = 10? ");
     iprint(5 * 2);
-    sprint("  7 * 3 = 21? ");
+    sprint("\n7 * 3 = 21? ");
     iprint(7 * 3);
 
-    sprint("  5 / 2 = 2? ");
+    sprint("\n5 / 2 = 2? ");
     iprint(5 / 2);
-    sprint("  10 / 3 = 3? ");
+    sprint("\n10 / 3 = 3? ");
     iprint(10 / 3);
-    sprint("  1 / 2 = 0? ");
+    sprint("\n1 / 2 = 0? ");
     iprint(1 / 2);
+    sprint("\n");
 }

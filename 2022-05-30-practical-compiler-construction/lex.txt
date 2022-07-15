@@ -10,7 +10,7 @@ RETURN "return"
 TYPE "type"
 VOID "void"
 ID [A-Za-z_][0-9A-Za-z_]*
-STR "\"" [^\\"]* "\""
+STR "\"" [^"]* "\""
 ASSIGN "="
 EQ "=="
 NEQ "!="

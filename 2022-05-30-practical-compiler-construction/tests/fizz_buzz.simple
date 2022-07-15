@@ -23,4 +23,5 @@
         sprint(" ");
         i = i + 1;
     }
+    sprint("\n");
 }
