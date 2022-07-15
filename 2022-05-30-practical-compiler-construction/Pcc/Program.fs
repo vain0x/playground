@@ -37,7 +37,7 @@ let main _ =
     let! lexText = File.ReadAllTextAsync(lexFile)
     let lexer = MyLex.NfaLexer.parse lexText
 
-    let! _ =
+    let! exitCodeArray =
       args
       |> Array.filter (fun pathname -> Path.GetExtension(pathname) = ".simple")
       |> Array.map (fun pathname ->
@@ -64,12 +64,13 @@ let main _ =
           psi.ArgumentList.Add(asmPathname)
           psi.ArgumentList.Add("-o")
           psi.ArgumentList.Add(exePathname)
-          return! Process.Start(psi).WaitForExitAsync()
+          let p = Process.Start(psi)
+          do! p.WaitForExitAsync()
+          return p.ExitCode
         })
       |> Task.WhenAll
 
-    ()
+    let ok = exitCodeArray |> Array.forall ((=) 0)
+    return (if ok then 0 else 1)
   }
   |> (fun (t: Task<_>) -> t.GetAwaiter().GetResult())
-
-  0
