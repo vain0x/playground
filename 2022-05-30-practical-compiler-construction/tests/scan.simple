@@ -1,0 +1,13 @@
+{
+    int x, y;
+
+    sprint("Input two numbers:");
+    scan(x);
+    scan(y);
+
+    sprint(" sum is = ");
+    iprint(x + y);
+
+    sprint(" distance is = ");
+    iprint(x * x + y * y);
+}
