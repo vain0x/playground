@@ -1,0 +1,26 @@
+{
+    sprint("5 + 2 = 7? ");
+    iprint(5 + 2);
+    sprint("\n7 + 3 = 10? ");
+    iprint(7 + 3);
+    sprint("\n9 + (-15) = -6? ");
+    iprint(9 + (-15));
+
+    sprint("\n5 - 2 = 3? ");
+    iprint(5 - 2);
+    sprint("\n7 - 3 = 4? ");
+    iprint(7 - 3);
+
+    sprint("\n5 * 2 = 10? ");
+    iprint(5 * 2);
+    sprint("\n7 * 3 = 21? ");
+    iprint(7 * 3);
+
+    sprint("\n5 / 2 = 2? ");
+    iprint(5 / 2);
+    sprint("\n10 / 3 = 3? ");
+    iprint(10 / 3);
+    sprint("\n1 / 2 = 0? ");
+    iprint(1 / 2);
+    sprint("\n");
+}

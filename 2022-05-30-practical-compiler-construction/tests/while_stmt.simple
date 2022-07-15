@@ -8,23 +8,25 @@
 
     void simple_loop(int count) {
         int i;
-        i = 0;
 
-        sprint("loop [");
+        sprint("  [");
+        i = 0;
         while (i < count) {
             iprint(i);
+            sprint(", ");
             i = i + 1;
         }
-        sprint("]");
+        sprint("]\n");
     }
 
     void prime_numbers(int limit) {
         int p;
         int ok, d;
 
-        sprint("p [");
+        sprint("  prime_numbers: [");
         if (limit >= 2) {
             iprint(2);
+            sprint(", ");
         }
         p = 3;
 
@@ -40,19 +42,20 @@
             }
             if (ok != 0) {
                 iprint(p);
+                sprint(", ");
             }
             p = p + 2;
         }
-        sprint("]");
+        sprint("]\n");
     }
 
-    sprint("simple_loop(0)");
+    sprint("simple_loop(0):\n");
     simple_loop(0);
-    sprint("simple_loop(1)");
+    sprint("simple_loop(1):\n");
     simple_loop(1);
-    sprint("simple_loop(7)");
+    sprint("simple_loop(7):\n");
     simple_loop(7);
 
-    sprint("prime_numbers");
+    sprint("prime_numbers(49):\n");
     prime_numbers(49);
 }

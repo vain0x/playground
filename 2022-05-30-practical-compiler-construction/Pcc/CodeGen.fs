@@ -60,15 +60,16 @@ let private transExpr ast nest env =
     transExpr left nest env
     transExpr right nest env
     emitf "  popq %%rax\n"
-    emitf "  imulq %%rax, (%%rsp)\n"
+    emitf "  imulq (%%rsp), %%rax\n"
+    emitf "  movq %%rax, (%%rsp)\n"
 
   | Expr.Call ("/", [ left; right ]) ->
     emitf "  # (/)\n"
     transExpr left nest env
     transExpr right nest env
 
-    emitf "  popq %%rax\n"
     emitf "  popq %%rbx\n"
+    emitf "  popq %%rax\n"
 
     // %raxを符号拡張して、(%rdx, %rax) からなる16バイトの数値を作る
     // この16バイトの値を %rdx:%rax と表記する

@@ -514,7 +514,7 @@ module NfaLexer =
       |> List.fold
            (fun (acc, offset) (kind, len) ->
              let acc =
-               if kind <> "SPACE" then
+               if kind <> "SPACE" && kind <> "COMMENT" then
                  (kind, input.[offset .. offset + len - 1]) :: acc
                else
                  acc

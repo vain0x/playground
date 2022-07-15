@@ -1,0 +1,27 @@
+{
+    void simple_if(int n) {
+        sprint("  begin1\n");
+        if (n == 0) {
+            sprint("    n is zero.\n");
+        }
+        sprint("  end1\n");
+    }
+
+    void else_if(int n) {
+        sprint("  begin2\n");
+        if (n == 1) {
+            sprint("    n is one.\n");
+        } else {
+            sprint("    n isn't one.\n");
+        }
+        sprint("  end2\n");
+    }
+
+    sprint("simple_if:\n");
+    simple_if(0);
+    simple_if(1);
+
+    sprint("else_if:\n");
+    else_if(0);
+    else_if(1);
+}

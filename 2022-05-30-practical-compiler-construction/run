@@ -2,5 +2,4 @@
 
 set -eu
 
-# cat lex.txt | dotnet run --project Pcc --no-restore
-dotnet run --project Pcc --no-restore -- "$PWD/lex.txt" "$PWD/grammar.txt"
+make && ./pcc "$1" && "$(dirname "$1")/$(basename "$1" .simple).exe"

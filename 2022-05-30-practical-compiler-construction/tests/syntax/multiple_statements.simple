@@ -1,4 +1,0 @@
-{
-    sprint ("Hello, world!");
-    sprint ("Bye!");
-}

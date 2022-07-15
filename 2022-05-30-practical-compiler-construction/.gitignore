@@ -1,5 +1,6 @@
-tests/syntax/*_ast.txt
-tests/syntax/*.s
+*.timestamp
+tests/*_ast.txt
+tests/*.s
 
 
 

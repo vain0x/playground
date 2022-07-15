@@ -11,13 +11,14 @@
     x = add(x, 3);
     x = add(x, 1);
     x = add(x, 4);
-    iprint (x);
-    sprint (", ");
+    iprint(x);
+    sprint(", ");
 
     y = 0;
     d = 2;
     y = inc(y);
     d = 3;
     y = inc(y);
-    iprint (y);
+    iprint(y);
+    sprint("\n");
 }
