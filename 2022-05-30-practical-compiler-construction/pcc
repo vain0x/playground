@@ -1,0 +1,6 @@
+#!/bin/sh
+
+set -eu
+
+EXE="$PWD/Pcc/bin/Debug/net6.0/Pcc"
+"$EXE" "$@"
