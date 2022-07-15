@@ -13,5 +13,5 @@ build.timestamp: \
 test: test.timestamp
 
 test.timestamp: build.timestamp \
-	${wildcard tests/syntax/*.simple}
+	${wildcard tests/*.simple}
 	dotnet run --project Pcc -nologo --no-build ${wildcard tests/syntax/*.simple} && touch test.timestamp
