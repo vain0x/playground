@@ -1,0 +1,218 @@
+
+  let private findMin node =
+    let rec go l k v =
+      match l with
+      | E -> k, v
+      | T (_, l, k, v, _) -> go l k v
+
+    match node with
+    | E -> None
+    | T (_, l, k, v, _) -> Some(go l k v)
+
+  let private findMax node =
+    let rec go k v r =
+      match r with
+      | E -> k, v
+      | T (_, _, k, v, r) -> go k v r
+
+    match node with
+    | E -> None
+    | T (_, _, k, v, r) -> Some(go k v r)
+
+  /// 大小関係の分かっている2つのノードを結合する。いわゆるmerge操作
+  // Precondition: (x = E || y = E || max x < min y)
+  let private unsafeConcat x y : Node<'K, 'T> =
+    let checkPre x y =
+      match findMax x, findMin y with
+      | Some (xk, _), Some (yk, _) -> (box xk :?> int) < (box yk :?> int)
+      | _ -> true
+
+    if not (checkPre x y) then
+      eprintfn "x:"
+      dumpNode x
+      eprintfn "y:"
+      dumpNode y
+      failwith "unsafeConcat precondition violation"
+
+    let rec go x y : Node<'K, 'T> =
+      incr concatCount
+
+      if not (checkPre x y) then
+        eprintfn "x:"
+        dumpNode x
+        eprintfn "y:"
+        dumpNode y
+        failwith "internally unsafeConcat precondition violation"
+
+      match x, y with
+      | E, _ -> y
+      | _, E -> x
+
+      | T (xLev, xl, xk, xv, xr), T (yLev, yl, yk, yv, yr) ->
+        if xLev = yLev then
+          let lev = xLev
+
+          match xr, yr with
+          | T (xrLev, xrl, xrk, xrv, xrr), T (yrLev, _, _, _, _) when lev = xrLev && lev = yrLev ->
+            // x, yの両方が水平リンクを持つケース
+
+            // xとxrは同じレベルなので、xlとxrlは同じレベル
+            assert (levelOf xl = levelOf xrl)
+            let newL = T(lev, xl, xk, xv, xrl)
+
+            if not (checkNode newL) then
+              dumpNode newL
+              failwith "bad newL"
+
+            // x-xrが水平なので、xrrのレベルは(lev - 1)
+            assert (levelOf xrr = lev - 1)
+
+            let newR =
+              let m = go xrr yl
+
+              // xrr, xlはどちらも(lev - 1)なので、mのレベルは(lev - 1)のままか、splitによってlevになる
+              assert (levelOf m = lev - 1 || levelOf m = lev)
+
+              (levelOf m, m, yk, yv, yr) |> skew |> splitR |> T
+
+            // newLのレベルはlevで、newRのレベルはlevまたは(lev-1)
+            assert (levelOf newL = lev)
+            assert (levelOf newR = lev || levelOf newR = lev - 1)
+
+            T(lev + 1, newL, xrk, xrv, newR)
+
+          | T (xrLev, xrl, xrk, xrv, xrr), _ when lev = xrLev ->
+            // xが水平リンクを持ち、yが持たないケース
+
+            assert (levelOf xrl = lev - 1)
+            let newL = T(lev, xl, xk, xv, xrl)
+
+            let newR = go xrr y
+            assert (levelOf newR = lev) // ???
+
+            (lev + 1, newL, xrk, xrv, newR) |> splitR |> T
+
+          | _, T (yrLev, _, _, _, _) when lev = yrLev ->
+            // xが水平リンクを持たず、yが水平リンクを持つケース
+
+            let newL =
+              let m = go xr yl
+              // xr, ylはどちらも(lev-1)なので、mのレベルはそのまま(lev-1)か、splitによってlevになる
+              assert (levelOf m = lev - 1 || levelOf m = lev)
+
+              (lev, xl, xk, xv, m) |> splitR |> T
+
+            T(lev + 1, newL, yk, yv, yr)
+
+          | _ ->
+            // x, yがどちらも水平リンクを持たないケース
+
+            assert (levelOf xr = lev - 1)
+            assert (levelOf yl = lev - 1)
+
+            let newR =
+              let m = go xr yl
+              assert (levelOf m = lev - 1 || levelOf m = lev)
+
+              (lev, m, yk, yv, yr) |> skew |> splitR |> T
+
+            assert (levelOf newR <= lev)
+
+            // lLev+1じゃないとダメな気がする
+            (lev, xl, xk, xv, newR) |> splitR |> T
+        else if xLev < yLev then
+          // (rlがsplitする可能性があり、その場合はskewが必要。skewしたらsplitが必要)
+          let yl = go x yl
+          assert (levelOf yl = yLev || levelOf yl = yLev - 1)
+
+          (yLev, yl, yk, yv, yr) |> skew |> splitR |> T
+        else
+          // assert (xLev > yLev)
+          // (xLev, xlが変わらないのでskewは不要)
+          let xr = go xr y
+          assert (levelOf xr = xLev || levelOf xr = xLev - 1)
+          (xLev, xl, xk, xv, xr) |> splitR |> T
+
+    go x y
+
+  /// ノードを分割する操作
+  ///
+  /// キーが `mid` より小さい要素からなるノードと、`mid` 以上の要素からなるノードの2つを構築する
+  let split (keyCompare: 'K -> 'K -> int) (mid: 'K) node =
+    let rec go node =
+      incr split2Count
+
+      match node with
+      | E -> E, E
+
+      | T (_, l, k, v, r) ->
+        let c = keyCompare mid k
+
+        if c >= 0 then
+          // k >= mid
+          let l1, l2 = go l
+          let r = insertNode keyCompare k v r
+          l1, unsafeConcat l2 r
+        else
+          // k < mid
+          let r1, r2 = go r
+          let l = insertNode keyCompare k v l
+          unsafeConcat l r1, r2
+
+    go node
+
+  /// Concatenates two nodes and an entry,
+  /// assuming (left, key, right) are already ordered.
+  // Precondition: (l = E || max l < k) && (r = E || k < min r)
+  // let unsafeConcatWithRoot keyCompare l k v r : Node<_, _> =
+  //   unsafeConcat (insertNode keyCompare k v l) r
+
+
+
+  /// Adds all entries from r into l (replace on conflict.)
+  let appendNode keyCompare l r : Node<'K, 'T> =
+    let rec go l r =
+      match r with
+      | E -> l
+      | T (_, rl, rk, rv, rr) ->
+        let l1, l2 = split keyCompare rk l
+        unsafeConcat (insertNode keyCompare rk rv (go l1 rl)) (go l2 rr)
+
+    go l r
+
+
+
+
+
+
+  let append l r =
+    let (TreeMap (l, keyCompare)) = l
+    let (TreeMap (r, _)) = r
+    let node = TreeNode.appendNode keyCompare l r
+
+    if not (checkNode node) then
+      eprintfn "l:"
+      dumpNode l
+      eprintfn "r:"
+      dumpNode r
+      eprintfn "node:"
+      dumpNode node
+      failwithf "append produced invalid node"
+
+    TreeMap(node, keyCompare)
+
+  let split key map =
+    let (TreeMap (node, keyCompare)) = map
+    let l, r = TreeNode.split keyCompare key node
+
+    let lOk = checkNode l
+    let rOk = checkNode r
+
+    if not lOk || not rOk then
+      eprintfn "l (%s):" (if lOk then "ok" else "BAD")
+      dumpNode l
+      eprintfn "r (%s):" (if rOk then "ok" else "BAD")
+      dumpNode r
+      failwithf "split produced invalid nodes"
+
+    TreeMap(l, keyCompare), TreeMap(r, keyCompare)
