@@ -32,6 +32,7 @@ let main _ =
   for k, _ in TMap.toList map2 do
     let opt, m2 = TMap.remove k m
     eprintfn "remove(%d): %A" k opt
+    TMap.dump m2
     m <- m2
 
   // let l, r = TMap.split 60 map2

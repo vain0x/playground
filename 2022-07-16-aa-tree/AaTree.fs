@@ -125,14 +125,7 @@ module private TreeNode =
 
     match body with
     | lev, T (lLev, ll, lk, lv, lr), k, v, r when lev = lLev ->
-      // 左のノードが水平リンクを持っていたら壊れる気がする
-      assert (levelOf lr = lev - 1)
       let newR = T(lev, lr, k, v, r)
-
-      if not (checkNode newR) then
-        dumpNode (T body)
-        failwith "skew produced invalid node"
-
       lLev, ll, lk, lv, newR
 
     | _ -> body
@@ -195,7 +188,6 @@ module private TreeNode =
 
     T(go node)
 
-
   let removeNode (keyCompare: 'K -> 'K -> int) key node : 'T option * Node<'K, 'T> =
     let rec successor l k v =
       match l with
@@ -207,37 +199,39 @@ module private TreeNode =
       | E -> k, v
       | T (_, _, k, v, r) -> predecessor k v r
 
-    let decreaseLevel body : int * Node<'K, 'T> * 'K * 'T * Node<'K, 'T> =
-      let lev, l, k, v, r = body
-      let low = min (levelOf l) (levelOf r) + 1
-
-      if lev > low then
-        let r =
-          match r with
-          | T (rLev, rl, rk, rv, rr) when rLev > low -> T(low, rl, rk, rv, rr)
-          | _ -> r
-
-        low, l, k, v, r
-      else
-        body
-
     let rebalance (body: int * Node<'K, 'T> * 'K * 'T * Node<'K, 'T>) : Node<'K, 'T> =
-      let body = body |> decreaseLevel |> skew
+      // Decrease level
+      let level, l, k, v, r =
+        let level, l, k, v, r = body
+        let low = min (levelOf l) (levelOf r) + 1
 
-      let level, l, k, v, r = body
+        if level > low then
+          let r =
+            match r with
+            | T (rLev, rl, rk, rv, rr) when rLev > low -> T(low, rl, rk, rv, rr)
+            | _ -> r
+
+          low, l, k, v, r
+        else
+          body
+
+      // Skew
+      let level, l, k, v, r = skew (level, l, k, v, r)
 
       let r =
         match r with
         | E -> E
+        | T (rLevel, rl, rk, rv, rr) -> (rLevel, rl, rk, rv, rr) |> skew |> T
 
-        | T (rLevel, rl, rk, rv, rr) ->
-          let rr =
-            match rr with
-            | E -> E
-            | T (rrLevel, rrl, rrk, rrv, rrr) -> skew (rrLevel, rrl, rrk, rrv, rrr) |> T
+      let r =
+        match r with
+        | T (rLevel, rl, rk, rv, T (rrLevel, rrl, rrk, rrv, rrr)) ->
+          let rr = (rrLevel, rrl, rrk, rrv, rrr) |> skew |> T
+          T(rLevel, rl, rk, rv, rr)
 
-          (rLevel, rl, rk, rv, rr) |> skew |> T
+        | _ -> r
 
+      // Split
       let level, l, k, v, r = splitR (level, l, k, v, r)
 
       let r =
@@ -315,7 +309,7 @@ module TMap =
     if not (checkNode node2) then
       eprintfn "node1:"
       dumpNode node1
-      eprintfn "node1:"
+      eprintfn "node2:"
       dumpNode node2
       failwithf "add(%A:%A) produced invalid node" key value
 
@@ -328,7 +322,7 @@ module TMap =
     if not (checkNode node2) then
       eprintfn "node1:"
       dumpNode node1
-      eprintfn "node1:"
+      eprintfn "node2:"
       dumpNode node2
       failwithf "remove(%A) produced invalid node" key
 
