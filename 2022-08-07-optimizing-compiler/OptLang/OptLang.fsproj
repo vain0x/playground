@@ -1,0 +1,17 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <TargetFramework>net6.0</TargetFramework>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <Compile Include="Syntax.fs" />
+    <Compile Include="Tokenize.fs" />
+    <Compile Include="Parse.fs" />
+    <Compile Include="TypeCheck.fs" />
+    <Compile Include="Interpret.fs" />
+    <Compile Include="Program.fs" />
+  </ItemGroup>
+
+</Project>
