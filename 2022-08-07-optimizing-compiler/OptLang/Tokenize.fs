@@ -54,7 +54,7 @@ module Pos =
   let ofPair ((y: int), (x: int)) = create (uint y) (uint x)
 
   // y++, x = 0
-  let addNewline (p: Pos) = (p + (1u <<< 8)) ||| (p &&& ~~~ 0xFFu)
+  let addNewline (p: Pos) = (p &&& ~~~ 0xFFu) + (1u <<< 8)
 
   let addSlice (text: string) (l: int) (r: int) (pos: Pos) =
     assert (0 <= l && l <= r && r <= text.Length)
@@ -171,6 +171,7 @@ let private next (text: string) (i: int) =
   | ':' -> Token.Colon, 1
   | ',' -> Token.Comma, 1
   | '.' -> Token.Dot, 1
+  | '^' -> Token.Hat, 1
   | '%' -> Token.Percent, 1
   | '+' -> Token.Plus, 1
   | '*' -> Token.Star, 1
@@ -186,7 +187,7 @@ let private next (text: string) (i: int) =
     | _ -> Token.RightAngle, 1
 
   | '&' ->
-    match at 1 with
+    match at (i + 1) with
     | '&' -> Token.AmpAmp, 2
     | _ -> Token.Amp, 1
 
@@ -215,8 +216,6 @@ let private next (text: string) (i: int) =
     match at (i + 1) with
     | '|' -> Token.PipePipe, 2
     | _ -> Token.Pipe, 1
-
-  | '^' -> Token.Hat, 1
 
   | '=' ->
     match at (i + 1) with
