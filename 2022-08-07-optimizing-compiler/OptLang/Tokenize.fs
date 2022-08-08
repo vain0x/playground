@@ -27,9 +27,11 @@ let private KeywordMap =
     "fn", Token.Fn
     "if", Token.If
     "loop", Token.Loop
+    "return", Token.Return
     "then", Token.Then
     "true", Token.True
-    "type", Token.Type ]
+    "type", Token.Type
+    "while", Token.While ]
   |> Map.ofList
 
 let private makeIdentToken (ident: string) =
@@ -68,6 +70,8 @@ module Pos =
         go (pos + 1u) (i + 1)
 
     go pos l
+
+  let toString (pos: Pos) = sprintf "%d:%d" (y pos + 1) (x pos + 1)
 
 // -----------------------------------------------
 // String
@@ -191,8 +195,13 @@ let private next (text: string) (i: int) =
     | '&' -> Token.AmpAmp, 2
     | _ -> Token.Amp, 1
 
+  | '!' ->
+    match at (i + 1) with
+    | '=' -> Token.BangEqual, 2
+    | _ -> Token.Bang, 1
+
   | '-' ->
-    if at (i + 1) |> isDigit then
+    if isDigit (at (i + 1)) then
       let endIndex = scanDigits (i + 1)
       let value = int text.[i .. endIndex - 1]
       Token.Int value, endIndex - i

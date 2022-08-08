@@ -3,7 +3,8 @@ module rec OptLang.Syntax
 /// `(y <<< 8) ||| x`
 type Pos = uint
 
-[<RequireQualifiedAccess; NoEquality; NoComparison>]
+// Deriving equality, comparison.
+[<RequireQualifiedAccess>]
 type Token =
   | Bad
   | Blank
@@ -26,6 +27,8 @@ type Token =
   | Amp
   | AmpAmp
   | Arrow
+  | Bang
+  | BangEqual
   | Colon
   | Comma
   | Dot
@@ -51,41 +54,40 @@ type Token =
   | Fn
   | If
   | Loop
+  | Return
   | Then
   | True
   | Type
+  | While
 
 [<RequireQualifiedAccess; NoEquality; NoComparison>]
 type Ty =
   | Int
   | String
+  | Name of name: string
   | Array of Ty
-
-[<NoEquality; NoComparison>]
-type Place =
-  | Var of string
-  | Item of Place * index: Expr
-  | Field of Place * field: string
 
 [<RequireQualifiedAccess; NoEquality; NoComparison>]
 type Expr =
-  | Value of Place
+  | Name of string
   | Int of value: int
   | Bool of bool
   | String of string
   | Array of Expr list * Ty
   | Record of (string * Expr) list * Ty
+  | Index of Expr * index: Expr
+  | Field of Expr * field: string
   | Call of name: string * Expr list
 
 [<RequireQualifiedAccess; NoEquality; NoComparison>]
 type Block =
   { Locals: (string * Ty) list
-    Body: Stmt list }
+    Stmts: Stmt list }
 
 [<RequireQualifiedAccess; NoEquality; NoComparison>]
 type Stmt =
   | Do of Expr
-  | Assign of Place * Expr
+  | Assign of place: Expr * value: Expr
 
   // jumps:
   | Break
@@ -94,11 +96,10 @@ type Stmt =
 
   // blocks:
   | Block of Block
-  | If of cond: Expr * body: Block * alt: Block
-  | While of cond: Expr * body: Block
-  | Loop of body: Block
+  | If of cond: Expr * body: Stmt * alt: Stmt
+  | Loop of body: Stmt
 
 [<RequireQualifiedAccess; NoEquality; NoComparison>]
 type Decl =
-  | Fn of name: string * paramList: (string * Ty) list * resultTy: Ty * Stmt
+  | Fn of name: string * paramList: (string * Ty) list * resultTy: Ty * body: Stmt
   | RecordTy of name: string * fields: (string * Ty) list
