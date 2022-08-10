@@ -1,22 +1,22 @@
 type Point { x: int, y: int }
 
-fn scalar(p: Point, s: Point) -> Point {
-    { x: s * p.x, y: s * p.y }
+fn scalar(p: Point, s: int) -> Point {
+    return { x: s * p.x, y: s * p.y }
 }
 
-fn equals(p: Point, q: Point) -> Point {
-    p.x == q.x && p.y == q.y
+fn equals(p: Point, q: Point) -> bool {
+    return p.x == q.x && p.y == q.y
 }
 
 fn add(p: Point, q: Point) -> Point {
-    {
+    return {
         x: p.x + q.x
         y: p.y + q.y
     }
 }
 
 fn hypot(p: Point) -> int {
-    p.x * p.x + p.y * p.y
+    return p.x * p.x + p.y * p.y
 }
 
 {
@@ -34,8 +34,5 @@ fn hypot(p: Point) -> int {
             )
         ))
 
-    assert(
-        hypot(p)
-        2 * 2 + 3 * 3
-    )
+    assert(hypot(p) == 2 * 2 + 3 * 3)
 }

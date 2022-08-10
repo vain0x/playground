@@ -63,7 +63,8 @@ type Token =
   | While
   | Void
 
-[<RequireQualifiedAccess; NoEquality; NoComparison>]
+// derive equality, comparison
+[<RequireQualifiedAccess>]
 type Ty =
   | Void
   | Bool

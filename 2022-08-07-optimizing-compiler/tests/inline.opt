@@ -1,5 +1,5 @@
 fn f(x: int) -> int {
-    x
+    return x
 }
 
 {

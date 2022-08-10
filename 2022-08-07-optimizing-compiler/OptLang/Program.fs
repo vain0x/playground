@@ -4,6 +4,7 @@ open System.IO
 open OptLang.Parse
 open OptLang.Syntax
 open OptLang.Tokenize
+open OptLang.TypeCheck
 
 [<EntryPoint>]
 let main _ =
@@ -13,6 +14,7 @@ let main _ =
       let contents = File.ReadAllText(file)
       let tokens = tokenize contents |> List.toArray
       let ast = parseTokens tokens
+      typeCheck ast |> ignore
 
       File.WriteAllText(Path.ChangeExtension(file, "txt"), sprintf "%A\n" ast)
 

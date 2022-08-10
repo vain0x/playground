@@ -303,13 +303,13 @@ let private parsePrefixExpr (px: Px) =
     bump px
 
     let arg = parsePathExpr px
-    Expr.Call("!", [ arg ])
+    Expr.Call("not", [ arg ])
 
   | Token.Hyphen ->
     bump px
 
     let arg = parsePathExpr px
-    Expr.Call("-", [ arg ])
+    Expr.Call("minus", [ arg ])
 
   | _ -> parsePathExpr px
 
@@ -506,7 +506,7 @@ let private parseDecl (px: Px) : Decl =
       go [] px
 
     expectPun Token.RightParen px
-    eatPun Token.Arrow px
+    expectPun Token.Arrow px
     let resultTy = parseTy px
 
     let body = parseBlock px

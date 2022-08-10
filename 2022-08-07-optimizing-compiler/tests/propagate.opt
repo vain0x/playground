@@ -1,7 +1,7 @@
 {
-    let a = 40
+    let a = 44
     let b = 2
-    let n = a + b
+    let n = a + -b
 
     assert(n == 42)
 }
