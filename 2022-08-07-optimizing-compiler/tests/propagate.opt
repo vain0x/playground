@@ -1,0 +1,7 @@
+{
+    let a = 40
+    let b = 2
+    let n = a + b
+
+    assert(n == 42)
+}

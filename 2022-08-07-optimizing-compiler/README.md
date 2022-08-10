@@ -44,7 +44,8 @@ C風の文指向な構文を持つ
         { S... }
 
     宣言 D =
-        fn ident( param, ... ) -> T block   関数の宣言
+        block
+        | fn ident( param, ... ) -> T block 関数の宣言
         | type ident { f: T, ... }          レコード型の宣言
 
     param =

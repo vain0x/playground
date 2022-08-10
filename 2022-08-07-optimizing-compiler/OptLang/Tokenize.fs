@@ -26,12 +26,14 @@ let private KeywordMap =
     "false", Token.False
     "fn", Token.Fn
     "if", Token.If
+    "let", Token.Let
     "loop", Token.Loop
     "return", Token.Return
     "then", Token.Then
     "true", Token.True
     "type", Token.Type
-    "while", Token.While ]
+    "while", Token.While
+    "void", Token.Void ]
   |> Map.ofList
 
 let private makeIdentToken (ident: string) =
@@ -118,22 +120,17 @@ let private scanString (text: string) (index: int) =
 let private next (text: string) (i: int) =
   let at i = at text i
 
-  let scanDigits i =
-    let rec go i =
-      if i < text.Length && isDigit (at i) then
-        go (i + 1)
-      else
-        i
+  let rec scanDigits i =
+    if i < text.Length && isDigit (at i) then
+      scanDigits (i + 1)
+    else
+      i
 
-    assert (isDigit (at i))
-    go (i + 1)
-
-  let scanIdent i =
-    let rec go i =
-      if isIdent (at i) then go (i + 1) else i
-
-    assert (isAlphabet text.[i] || text.[i] = '_')
-    go (i + 1)
+  let rec scanIdent i =
+    if isIdent (at i) then
+      scanIdent (i + 1)
+    else
+      i
 
   assert (i < text.Length)
 
@@ -178,6 +175,7 @@ let private next (text: string) (i: int) =
   | '^' -> Token.Hat, 1
   | '%' -> Token.Percent, 1
   | '+' -> Token.Plus, 1
+  | ';' -> Token.Semi, 1
   | '*' -> Token.Star, 1
 
   | '<' ->
@@ -201,12 +199,15 @@ let private next (text: string) (i: int) =
     | _ -> Token.Bang, 1
 
   | '-' ->
-    if isDigit (at (i + 1)) then
+    match at (i + 1) with
+    | '>' -> Token.Arrow, 2
+
+    | c when isDigit c ->
       let endIndex = scanDigits (i + 1)
       let value = int text.[i .. endIndex - 1]
       Token.Int value, endIndex - i
-    else
-      Token.Hyphen, 1
+
+    | _ -> Token.Hyphen, 1
 
   | '/' ->
     match at (i + 1) with
@@ -228,7 +229,7 @@ let private next (text: string) (i: int) =
 
   | '=' ->
     match at (i + 1) with
-    | '=' -> Token.EqualEqual, 1
+    | '=' -> Token.EqualEqual, 2
     | _ -> Token.Equal, 1
 
   | c when isDigit c ->
@@ -256,7 +257,7 @@ let private next (text: string) (i: int) =
 // Interface
 // -----------------------------------------------
 
-let tokenize (text: string) : (Token * Pos) list =
+let tokenize (text: string) : (Token * Pos * int) list =
   let rec go acc (i: int) (pos: Pos) =
     if i < text.Length then
       let token, len = next text i
@@ -271,7 +272,7 @@ let tokenize (text: string) : (Token * Pos) list =
         | Token.Newlines
         | Token.Comment -> acc
 
-        | _ -> (token, pos) :: acc
+        | _ -> (token, pos, len) :: acc
 
       go acc r (Pos.addSlice text i r pos)
     else

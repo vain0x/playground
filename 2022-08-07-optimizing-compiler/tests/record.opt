@@ -1,0 +1,41 @@
+type Point { x: int, y: int }
+
+fn scalar(p: Point, s: Point) -> Point {
+    { x: s * p.x, y: s * p.y }
+}
+
+fn equals(p: Point, q: Point) -> Point {
+    p.x == q.x && p.y == q.y
+}
+
+fn add(p: Point, q: Point) -> Point {
+    {
+        x: p.x + q.x
+        y: p.y + q.y
+    }
+}
+
+fn hypot(p: Point) -> int {
+    p.x * p.x + p.y * p.y
+}
+
+{
+    let dx: Point = { x: 1, y: 0 }
+    let dy: Point = { x: 0, y: 1 }
+
+    let p: Point = { x: 2, y: 3 }
+
+    assert(
+        equals(
+            p
+            add(
+                scalar(dx, 2)
+                scalar(dy, 3)
+            )
+        ))
+
+    assert(
+        hypot(p)
+        2 * 2 + 3 * 3
+    )
+}

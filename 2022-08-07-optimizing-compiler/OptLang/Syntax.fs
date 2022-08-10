@@ -43,6 +43,7 @@ type Token =
   | Pipe
   | PipePipe
   | Plus
+  | Semi
   | Slash
   | Star
 
@@ -53,15 +54,19 @@ type Token =
   | False
   | Fn
   | If
+  | Let
   | Loop
   | Return
   | Then
   | True
   | Type
   | While
+  | Void
 
 [<RequireQualifiedAccess; NoEquality; NoComparison>]
 type Ty =
+  | Void
+  | Bool
   | Int
   | String
   | Name of name: string
@@ -71,10 +76,9 @@ type Ty =
 type Expr =
   | Name of string
   | Int of value: int
-  | Bool of bool
   | String of string
-  | Array of Expr list * Ty
-  | Record of (string * Expr) list * Ty
+  | Array of Expr list
+  | Record of (string * Expr) list
   | Index of Expr * index: Expr
   | Field of Expr * field: string
   | Call of name: string * Expr list
@@ -88,11 +92,12 @@ type Block =
 type Stmt =
   | Do of Expr
   | Assign of place: Expr * value: Expr
+  | Let of ident: string * Ty option * init: Expr
 
   // jumps:
   | Break
   | Continue
-  | Return of Expr
+  | Return of Expr option
 
   // blocks:
   | Block of Block
@@ -101,5 +106,6 @@ type Stmt =
 
 [<RequireQualifiedAccess; NoEquality; NoComparison>]
 type Decl =
+  | Block of Block
   | Fn of name: string * paramList: (string * Ty) list * resultTy: Ty * body: Stmt
   | RecordTy of name: string * fields: (string * Ty) list

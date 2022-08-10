@@ -12,7 +12,7 @@ let private Tick = ref 0
 /// Parser context.
 [<RequireQualifiedAccess; NoEquality; NoComparison>]
 type private Px =
-  { Tokens: (Token * Pos) array
+  { Tokens: (Token * Pos * int) array
     mutable Index: int }
 
 let private error msg (px: Px) =
@@ -22,39 +22,98 @@ let private error msg (px: Px) =
     else
       px.Tokens.Length - 1
 
-  let token, pos = px.Tokens.[i]
+  let token, pos, _ = px.Tokens.[i]
   failwithf "Parse error at %s (%A): %s" (Pos.toString pos) token msg
 
 let private reset () = Tick.contents <- 0
 
+let private incrementTick (px: Px) =
+  Tick.contents <- Tick.contents + 1
+
+  if Tick.contents >= 1_000_000 then
+    error "Infinite loop" px
+
 let private look (offset: int) (px: Px) : Token =
   assert (offset >= 0)
 
-  incr Tick
-
-  if Tick.contents >= 1000000 then
-    error "Infinite loop" px
+  incrementTick px
 
   if px.Index + offset < px.Tokens.Length then
     // trace "look: %d %A" (px.Index + offset) px.Tokens.[px.Index + offset]
-    fst px.Tokens.[px.Index + offset]
+    let token, _, _ = px.Tokens.[px.Index + offset]
+    token
   else
     // EOFの代わり
     Token.Bad
 
-let inline private atEof (px: Px) = px.Index = px.Tokens.Length
+let private atEof (px: Px) =
+  incrementTick px
+
+  px.Index = px.Tokens.Length
 
 let private shift (px: Px) : Token =
   assert (px.Index < px.Tokens.Length)
   // trace "shift: %d %A" px.Index px.Tokens.[px.Index]
 
-  let token, _ = px.Tokens.[px.Index]
+  let token, _, _ = px.Tokens.[px.Index]
   px.Index <- px.Index + 1
   token
 
 let inline private bump (px: Px) : unit = shift px |> ignore
 
 let inline private skip (px: Px) : unit = shift px |> ignore
+
+let private canOmitSep (offset: int) (px: Px) =
+  assert (offset >= 0)
+
+  incrementTick px
+
+  let i = px.Index + offset
+
+  if 0 < i && i < px.Tokens.Length then
+    let _, prevStart, _ = px.Tokens.[i - 1]
+    let token, currentStart, _ = px.Tokens.[i]
+
+    match token with
+    | Token.RightParen
+    | Token.RightBracket
+    | Token.RightBrace -> true
+
+    | _ -> Pos.y prevStart < Pos.y currentStart
+  else
+    i = 0
+
+let private hasLeftSpace (offset: int) (px: Px) =
+  assert (offset >= 0)
+
+  incrementTick px
+
+  let i = px.Index + offset
+
+  if 0 < i && i < px.Tokens.Length then
+    let _, prevStart, len = px.Tokens.[i - 1]
+    let _, currentStart, _ = px.Tokens.[i]
+
+    Pos.y prevStart < Pos.y currentStart
+    || Pos.x prevStart + len < Pos.x currentStart
+  else
+    i = 0
+
+let private hasRightSpace (offset: int) (px: Px) =
+  assert (offset >= 0)
+
+  incrementTick px
+
+  let i = px.Index + offset
+
+  if i + 1 < px.Tokens.Length then
+    let _, currentStart, len = px.Tokens.[i]
+    let _, nextStart, _ = px.Tokens.[i + 1]
+
+    Pos.y currentStart < Pos.y nextStart
+    || Pos.x currentStart + len < Pos.x nextStart
+  else
+    i = px.Tokens.Length - 1
 
 // -----------------------------------------------
 // Tokens
@@ -68,26 +127,43 @@ let private expectPun (token: Token) (px: Px) =
 
 let private eatPun (token: Token) (px: Px) = if look 0 px = token then bump px
 
+let private expectComma (px: Px) =
+  if look 0 px = Token.Comma then
+    bump px
+  else if not (canOmitSep 0 px) then
+    error "Expected a comma or newline" px
+
+let private expectSemi (px: Px) =
+  if look 0 px = Token.Semi then
+    bump px
+  else if not (canOmitSep 0 px) then
+    error "Expected a semicolon or newline" px
+
 // -----------------------------------------------
 // Types
 // -----------------------------------------------
 
 let private parsePrimaryTy (px: Px) =
   match look 0 px with
-  | Token.Ident "int" ->
+  | Token.Ident ident ->
     bump px
-    Ty.Int
 
-  | Token.Ident "string" ->
-    bump px
-    Ty.String
+    match ident with
+    | "bool" -> Ty.Bool
+    | "int" -> Ty.Int
+    | "string" -> Ty.String
 
-  | Token.Ident "array" ->
+    | "array" ->
+      expectPun Token.LeftParen px
+      let itemTy = parseTy px
+      expectPun Token.RightParen px
+      Ty.Array itemTy
+
+    | _ -> Ty.Name ident
+
+  | Token.Void ->
     bump px
-    expectPun Token.LeftParen px
-    let itemTy = parseTy px
-    expectPun Token.RightParen px
-    Ty.Array itemTy
+    Ty.Void
 
   | _ -> error "Expected type" px
 
@@ -108,22 +184,25 @@ let private atExpr (px: Px) =
   | Token.Bang
   | Token.Hyphen
   | Token.False
-  | Token.True -> true
+  | Token.True
+  | Token.Void -> true
   | _ -> false
 
-let private parseExpr (px: Px) : Expr = parseBinary 1 px
+let private parseExpr (px: Px) : Expr = parseBinaryExpr 1 px
 
 let private parsePrimaryExpr (px: Px) : Expr =
   let parseArgs (px: Px) =
-    let rec go acc px =
-      if atExpr px then
-        let itemExpr = parseExpr px
-        eatPun Token.Comma px
-        go (itemExpr :: acc) px
-      else
-        List.rev acc
+    let rec nextArg acc px =
+      match look 0 px with
+      | Token.RightParen
+      | Token.RightBracket -> List.rev acc
 
-    go [] px
+      | _ ->
+        let itemExpr = parseExpr px
+        expectComma px
+        nextArg (itemExpr :: acc) px
+
+    nextArg [] px
 
   match look 0 px with
   | Token.Int value ->
@@ -138,7 +217,7 @@ let private parsePrimaryExpr (px: Px) : Expr =
     bump px
 
     match look 0 px with
-    | Token.LeftParen ->
+    | Token.LeftParen when not (hasLeftSpace 0 px) ->
       bump px
       let args = parseArgs px
       expectPun Token.RightParen px
@@ -154,66 +233,71 @@ let private parsePrimaryExpr (px: Px) : Expr =
 
   | Token.LeftBracket ->
     bump px
-    let ty = parseTy px
     let items = parseArgs px
     expectPun Token.RightBracket px
-    Expr.Array(items, ty)
+    Expr.Array items
 
   | Token.LeftBrace ->
     bump px
-    let ty = parseTy px
 
     let entries =
       let rec go acc (px: Px) =
         match look 0 px with
+        | Token.RightBrace -> List.rev acc
+
         | Token.Ident field ->
           bump px
           expectPun Token.Colon px
           let init = parseExpr px
+          expectComma px
           go ((field, init) :: acc) px
 
-        | _ -> List.rev acc
+        | _ -> error "Expected a field" px
 
       go [] px
 
     expectPun Token.RightBrace px
-    Expr.Record(entries, ty)
+    Expr.Record entries
 
   | Token.False ->
     bump px
-    Expr.Bool false
+    Expr.Name "false"
 
   | Token.True ->
     bump px
-    Expr.Bool true
+    Expr.Name "true"
+
+  | Token.Void ->
+    bump px
+    Expr.Name "void"
 
   | _ -> error "Expected an expressions" px
 
 let private parsePathExpr (px: Px) =
-  let rec go acc (px: Px) =
+  let rec go lhs (px: Px) =
     match look 0 px with
-    | Token.LeftBracket ->
+    | Token.LeftBracket when not (hasLeftSpace 0 px) ->
       bump px
       let index = parseExpr px
       expectPun Token.RightBracket px
-      go (Expr.Index(acc, index)) px
+      go (Expr.Index(lhs, index)) px
 
-    | Token.Dot ->
+    | Token.Dot when not (hasRightSpace 0 px) ->
       bump px
 
       match look 0 px with
       | Token.Ident field ->
         bump px
-        go (Expr.Field(acc, field)) px
+        go (Expr.Field(lhs, field)) px
 
       | _ -> error "Expected a field" px
 
-    | _ -> acc
+    | _ -> lhs
 
   let expr = parsePrimaryExpr px
   go expr px
 
-let private parsePrefix (px: Px) =
+let private parsePrefixExpr (px: Px) =
   match look 0 px with
   | Token.Bang ->
     bump px
@@ -229,12 +313,12 @@ let private parsePrefix (px: Px) =
 
   | _ -> parsePathExpr px
 
-let private parseBinary level (px: Px) : Expr =
+let private parseBinaryExpr level (px: Px) : Expr =
   let parseArg (px: Px) =
     if level = 5 then
-      parsePrefix px
+      parsePrefixExpr px
     else
-      parseBinary (level + 1) px
+      parseBinaryExpr (level + 1) px
 
   let rec go lExpr (px: Px) =
     let op =
@@ -273,6 +357,7 @@ let private atStmt (px: Px) =
   | Token.Break
   | Token.Continue
   | Token.If
+  | Token.Let
   | Token.Loop
   | Token.Return
   | Token.While -> true
@@ -282,10 +367,12 @@ let private parseStmt (px: Px) : Stmt =
   match look 0 px with
   | Token.Break ->
     bump px
+    expectSemi px
     Stmt.Break
 
   | Token.Continue ->
     bump px
+    expectSemi px
     Stmt.Continue
 
   | Token.If ->
@@ -301,6 +388,32 @@ let private parseStmt (px: Px) : Stmt =
 
     Stmt.If(cond, Stmt.Block body, alt)
 
+  | Token.Let ->
+    bump px
+
+    let name =
+      match look 0 px with
+      | Token.Ident it ->
+        bump px
+        it
+
+      | _ -> error "Expected an identifier" px
+
+    let tyOpt =
+      match look 0 px with
+      | Token.Colon ->
+        bump px
+        parseTy px |> Some
+
+      | _ -> None
+
+    expectPun Token.Equal px
+
+    let init = parseExpr px
+    expectSemi px
+
+    Stmt.Let(name, tyOpt, init)
+
   | Token.Loop ->
     bump px
     let block = parseBlock px
@@ -308,8 +421,15 @@ let private parseStmt (px: Px) : Stmt =
 
   | Token.Return ->
     bump px
-    let arg = parseExpr px
-    Stmt.Return arg
+
+    let argOpt =
+      if atExpr px then
+        parseExpr px |> Some
+      else
+        None
+
+    expectSemi px
+    Stmt.Return argOpt
 
   | Token.While ->
     bump px
@@ -320,15 +440,18 @@ let private parseStmt (px: Px) : Stmt =
     |> Stmt.Loop
 
   | _ ->
-    let l = parsePathExpr px
+    let expr = parseExpr px
 
     match look 0 px with
     | Token.Equal ->
       bump px
-      let r = parseExpr px
-      Stmt.Assign(l, r)
+      let rhs = parseExpr px
+      expectSemi px
+      Stmt.Assign(expr, rhs)
 
-    | _ -> Stmt.Do l
+    | _ ->
+      expectSemi px
+      Stmt.Do expr
 
 let private parseBlock (px: Px) : Block =
   expectPun Token.LeftBrace px
@@ -351,9 +474,7 @@ let private parseBlock (px: Px) : Block =
 
 let private parseDecl (px: Px) : Decl =
   match look 0 px with
-  | Token.LeftBrace ->
-    let block = parseBlock px
-    Decl.Fn("", [], Ty.Name "void", Stmt.Block block)
+  | Token.LeftBrace -> Decl.Block(parseBlock px)
 
   | Token.Fn ->
     bump px
@@ -366,21 +487,26 @@ let private parseDecl (px: Px) : Decl =
 
       | _ -> error "Expected a function name" px
 
+    expectPun Token.LeftParen px
+
     let paramList =
       let rec go acc (px: Px) =
         match look 0 px with
+        | Token.RightParen -> List.rev acc
+
         | Token.Ident name ->
           bump px
           expectPun Token.Colon px
           let ty = parseTy px
-          eatPun Token.Comma px
+          expectComma px
           go ((name, ty) :: acc) px
 
-        | _ -> acc
+        | _ -> error "Expected a parameter" px
 
       go [] px
 
-    eatPun Token.Colon px
+    expectPun Token.RightParen px
+    eatPun Token.Arrow px
     let resultTy = parseTy px
 
     let body = parseBlock px
@@ -403,14 +529,18 @@ let private parseDecl (px: Px) : Decl =
     let fields =
       let rec go acc (px: Px) =
         match look 0 px with
+        | Token.RightBrace -> List.rev acc
+
         | Token.Ident field ->
+          bump px
           expectPun Token.Colon px
           let ty = parseTy px
+          expectComma px
           go ((field, ty) :: acc) px
 
-        | _ -> acc
+        | _ -> error "Expected a field" px
 
-      go [] px |> List.rev
+      go [] px
 
     expectPun Token.RightBrace px
     Decl.RecordTy(name, fields)
