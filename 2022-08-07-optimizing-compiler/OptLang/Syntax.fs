@@ -77,7 +77,7 @@ type Ty =
 type Expr =
   | Name of string
   | Int of value: int
-  | String of string
+  | String of value: string
   | Array of Expr list
   | Record of (string * Expr) list
   | Index of Expr * index: Expr

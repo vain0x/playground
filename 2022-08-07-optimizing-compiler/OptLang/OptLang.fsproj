@@ -6,11 +6,12 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <Compile Include="Symbol.fs" />
     <Compile Include="Syntax.fs" />
     <Compile Include="Tokenize.fs" />
     <Compile Include="Parse.fs" />
+    <Compile Include="Tir.fs" />
     <Compile Include="TypeCheck.fs" />
-    <Compile Include="Interpret.fs" />
     <Compile Include="Program.fs" />
   </ItemGroup>
 
