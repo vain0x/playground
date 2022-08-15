@@ -79,6 +79,6 @@ type Stmt =
 
 [<RequireQualifiedAccess; NoEquality; NoComparison>]
 type Decl =
-  | Block of Block
+  | Block of locals: (Symbol * Ty) list * Block
   | Fn of Symbol * paramList: (Symbol * Ty) list * resultTy: Ty * locals: (Symbol * Ty) list * body: Stmt
   | RecordTy of Symbol * fields: (Symbol * Ty) array

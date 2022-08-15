@@ -493,7 +493,8 @@ let private checkStmt (state: TcState) (stmt: S.Stmt) : T.Stmt =
 let private checkDecl (state: TcState) (decl: S.Decl) : T.Decl =
   match decl with
   | S.Decl.Block block ->
-    let innerState = cloneState state
+    let locals = ResizeArray()
+    let innerState = { cloneState state with Locals = locals }
 
     let stmts =
       block.Stmts
@@ -505,12 +506,12 @@ let private checkDecl (state: TcState) (decl: S.Decl) : T.Decl =
           eprintfn "In statement: %A" stmt
           reraise ())
 
+    let locals = innerState.Locals.ToArray() |> Array.toList
+
     let block: T.Block = { Stmts = stmts }
-    T.Decl.Block block
+    T.Decl.Block(locals, block)
 
   | S.Decl.Fn (name, paramList, resultTy, body) ->
-    // FIXME: validate type ascriptions
-
     let index = state.Fns.Count
     let symbol = newSymbol "F" index name
     let locals = ResizeArray()
