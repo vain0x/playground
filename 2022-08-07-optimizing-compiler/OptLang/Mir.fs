@@ -10,8 +10,9 @@ type LocalDef = { Name: string; Ty: MTy }
 [<RequireQualifiedAccess; ReferenceEquality>]
 type FnDef =
   { Name: string
-    Params: (string * MTy) array
+    Params: (Symbol * MTy) array
     ResultTy: MTy
+    Locals: Map<Symbol, LocalDef>
     Blocks: BlockDef array }
 
 [<RequireQualifiedAccess; NoEquality; NoComparison>]
@@ -34,7 +35,7 @@ type ArrayDef = { ItemTy: MTy }
 type MUnary =
   | Not
   | Minus
-  | Length
+  | ArrayLen
 
 [<RequireQualifiedAccess; NoEquality; NoComparison>]
 type MBinary =
@@ -51,7 +52,7 @@ type MBinary =
   | GreaterEqual
 
 [<RequireQualifiedAccess; NoEquality; NoComparison>]
-type Callable =
+type MCallable =
   | Fn of Symbol
   | ArrayPush
   | Assert
@@ -68,8 +69,8 @@ type MTy =
 
 [<RequireQualifiedAccess; NoEquality; NoComparison>]
 type Part =
-  | Index of MRval * ArrayDef
-  | Field of FieldDef
+  | Index of MRval * array: Symbol
+  | Field of index: int * record: Symbol
 
 [<RequireQualifiedAccess; NoEquality; NoComparison>]
 type MPlace = { Local: Symbol; Path: Part array }
@@ -83,16 +84,17 @@ type MRval =
   | Read of MPlace
   | Unary of MUnary * MRval
   | Binary of MBinary * MRval * MRval
+  | Record of MRval array * record: Symbol
+  | Array of MRval array * array: Symbol
 
 [<RequireQualifiedAccess; NoEquality; NoComparison>]
 type MStmt =
   | Assign of MPlace * MRval
-  | InitRecord of MPlace * MRval array * record: Symbol
-  | InitArray of MPlace * MRval array * array: Symbol
-  | Call of Callable * MRval array
+  | Call of MCallable * MRval array
 
 [<RequireQualifiedAccess; NoEquality; NoComparison>]
 type MTerminator =
+  | Unreachable
   | Goto of Label
   | Return
   | If of cond: MRval * body: Label * alt: Label

@@ -14,6 +14,11 @@ let inline private unwrap opt =
   | Some it -> it
   | None -> unreachable ()
 
+let private dictToMap (dict: Dictionary<_, _>) =
+  dict
+  |> Seq.map (fun (KeyValue (key, value)) -> key, value)
+  |> Map.ofSeq
+
 // -----------------------------------------------
 // MIR Helpers
 // -----------------------------------------------
@@ -45,24 +50,37 @@ let private makeProjection part (place: MPlace) =
 
 [<RequireQualifiedAccess; NoEquality; NoComparison>]
 type private MgState =
-  { mutable Locals: Map<Symbol, LocalDef>
-    Loop: LoopDef option
-    FnOpt: FnDef option
+  { // Block-local data
+    mutable BlockOpt: Symbol option
+    Stmts: ResizeArray<MStmt>
+    mutable TerminatorOpt: MTerminator option
+
+    // Body-local data
+    LoopOpt: LoopDef option
+    mutable Locals: Map<Symbol, LocalDef>
+    ResultTy: MTy
+    Blocks: ResizeArray<BlockDef>
+
+    // Global data
+    Bodies: ResizeArray<Map<Symbol, LocalDef> * BlockDef array>
+    mutable Fns: Map<Symbol, FnDef>
     ArrayMemo: Dictionary<MTy, Symbol>
     Arrays: ResizeArray<ArrayDef>
-    Records: Map<Symbol, RecordDef>
-    Stmts: ResizeArray<MStmt>
-    mutable TerminatorOpt: MTerminator option }
+    Records: Map<Symbol, RecordDef> }
 
 let private initialState: MgState =
-  { Locals = Map.empty
+  { BlockOpt = None
+    Locals = Map.empty
+    Bodies = ResizeArray()
+    Fns = Map.empty
     ArrayMemo = Dictionary()
     Arrays = ResizeArray()
     Records = Map.empty
-    Loop = None
-    FnOpt = None
+    LoopOpt = None
+    ResultTy = MTy.Void
     Stmts = ResizeArray()
-    TerminatorOpt = None }
+    TerminatorOpt = None
+    Blocks = ResizeArray() }
 
 let private cloneState (state: MgState) : MgState = { state with Locals = state.Locals }
 
@@ -71,6 +89,21 @@ let private addLocal (state: MgState) (def: LocalDef) =
   let symbol = newSymbol "_" index def.Name
   state.Locals <- state.Locals |> Map.add symbol def
   symbol
+
+let private placeToTy (state: MgState) (place: MPlace) =
+  let mutable ty = (state.Locals |> Map.find place.Local).Ty
+
+  for part in place.Path do
+    match part with
+    | Part.Index (_, array) ->
+      let arrayDef = state.Arrays.[array.Index]
+      ty <- arrayDef.ItemTy
+
+    | Part.Field (index, record) ->
+      let recordDef = state.Records |> Map.find record
+      ty <- recordDef.Fields.[index].Ty
+
+  ty
 
 // -----------------------------------------------
 // Types
@@ -92,7 +125,6 @@ let private internTy (state: MgState) ty =
   | Ty.Bool -> MTy.Bool
   | Ty.Int -> MTy.Int
   | Ty.String -> MTy.String
-
   | Ty.Record record -> MTy.Record record
 
   | Ty.Array itemTy ->
@@ -102,6 +134,28 @@ let private internTy (state: MgState) ty =
 let private addStmt (state: MgState) stmt = state.Stmts.Add(stmt)
 
 let private setTerminator (state: MgState) terminator = state.TerminatorOpt <- Some terminator
+
+let private EmptyBlockDef: BlockDef =
+  { Stmts = Array.empty
+    Terminator = MTerminator.Unreachable }
+
+let private addBlock (state: MgState) name =
+  let index = state.Blocks.Count
+  let symbol = newSymbol "B" index name
+  state.Blocks.Add(EmptyBlockDef)
+  symbol
+
+let private resolveBlock (state: MgState) (block: Symbol) =
+  assert (System.Object.ReferenceEquals(state.Blocks.[block.Index], EmptyBlockDef))
+
+  let blockDef: BlockDef =
+    { Stmts = state.Stmts.ToArray()
+      Terminator =
+        match state.TerminatorOpt with
+        | Some it -> it
+        | None -> failwithf "No terminator of %A" block }
+
+  state.Blocks.[block.Index] <- blockDef
 
 // -----------------------------------------------
 // Places
@@ -113,14 +167,24 @@ let private genAsPlace (state: MgState) (place: Place) =
 
   | Place.Index (lhs, index) ->
     let place = genAsPlace state lhs
-    let arrayDef = failwith "todo"
-    let index = genAsRval state index
 
-    makeProjection (Part.Index(index, arrayDef)) place
+    let array =
+      match placeToTy state place with
+      | MTy.Array it -> it
+      | _ -> unreachable ()
+
+    let index = genAsRval state index
+    makeProjection (Part.Index(index, array)) place
 
   | Place.Field (lhs, field) ->
     let place = genAsPlace state lhs
-    failwith "todo"
+
+    let record =
+      match placeToTy state place with
+      | MTy.Record it -> it
+      | _ -> unreachable ()
+
+    makeProjection (Part.Field(field.Index, record)) place
 
 let private genAsRval (state: MgState) (expr: Expr) =
   match expr with
@@ -132,53 +196,83 @@ let private genAsRval (state: MgState) (expr: Expr) =
   | Expr.String value -> MRval.String value
 
   | Expr.Array (itemTy, items) ->
-    let arrayDef = internArrayTy state (internTy state itemTy)
-
-    let local =
-      let localDef: LocalDef =
-        { Name = "array"
-          Ty = MTy.Array arrayDef }
-
-      addLocal state localDef
+    let array = internArrayTy state (internTy state itemTy)
 
     let items =
       items
       |> List.toArray
       |> Array.map (fun item -> genAsRval state item)
 
-    addStmt state (MStmt.InitArray(localPlace local, items, arrayDef))
-
-    MRval.Read(localPlace local)
+    MRval.Array(items, array)
 
   | Expr.Record (record, fields) ->
-    let local =
-      let localDef: LocalDef =
-        { Name = record.Name
-          Ty = MTy.Record record }
-
-      addLocal state localDef
-
     let fields =
       fields
       |> List.toArray
       |> Array.map (fun field -> genAsRval state field)
 
-    addStmt state (MStmt.InitRecord(localPlace local, fields, record))
-
-    MRval.Read(localPlace local)
+    MRval.Record(fields, record)
 
   | Expr.Call (callable, args) ->
     match callable with
-    | Callable.Fn fn -> failwith "todo"
+    | Callable.Fn fn ->
+      let fnDef = state.Fns |> Map.find fn
 
-    | Callable.LogOr -> failwith "Not Implemented"
+      let args =
+        args
+        |> List.toArray
+        |> Array.map (fun arg -> genAsRval state arg)
+
+      addStmt state (MStmt.Call(MCallable.Fn fn, args))
+
+      match fnDef.ResultTy with
+      | MTy.Void -> MRval.Void
+      | _ ->
+        let local = newSymbol "_" 0 "__return"
+        MRval.Read(localPlace local)
+
+    | Callable.LogOr -> failwith "todo"
     | Callable.LogAnd -> failwith "Not Implemented"
 
-    | Callable.ArrayPush -> failwith "Not Implemented"
+    | Callable.ArrayPush ->
+      let args =
+        args
+        |> List.toArray
+        |> Array.map (fun arg -> genAsRval state arg)
+
+      addStmt state (MStmt.Call(MCallable.ArrayPush, args))
+      MRval.Void
+
     | Callable.Assert -> failwith "Not Implemented"
 
-  | Expr.Unary (unary, arg) -> failwith "Not Implemented"
-  | Expr.Binary (binary, lhs, rhs) -> failwith "Not Implemented"
+  | Expr.Unary (unary, arg) ->
+    let unary =
+      match unary with
+      | Unary.Not -> MUnary.Not
+      | Unary.Minus -> MUnary.Minus
+      | Unary.ArrayLen -> MUnary.ArrayLen
+
+    let arg = genAsRval state arg
+    MRval.Unary(unary, arg)
+
+  | Expr.Binary (binary, lhs, rhs) ->
+    let binary =
+      match binary with
+      | Binary.Add -> MBinary.Add
+      | Binary.Subtract -> MBinary.Subtract
+      | Binary.Multiply -> MBinary.Multiply
+      | Binary.Divide -> MBinary.Divide
+      | Binary.Modulo -> MBinary.Modulo
+      | Binary.Equal -> MBinary.Equal
+      | Binary.NotEqual -> MBinary.NotEqual
+      | Binary.LessThan -> MBinary.LessThan
+      | Binary.LessEqual -> MBinary.LessEqual
+      | Binary.GreaterThan -> MBinary.GreaterThan
+      | Binary.GreaterEqual -> MBinary.GreaterEqual
+
+    let lhs = genAsRval state lhs
+    let rhs = genAsRval state rhs
+    MRval.Binary(binary, lhs, rhs)
 
 // -----------------------------------------------
 // Statements
@@ -193,11 +287,16 @@ let private genStmt (state: MgState) (stmt: Stmt) =
     let value = genAsRval state value
     addStmt state (MStmt.Assign(place, value))
 
-  | Stmt.Break -> failwith "todo"
-  | Stmt.Continue -> failwith "todo"
+  | Stmt.Break ->
+    let label = (unwrap state.LoopOpt).Break
+    setTerminator state (MTerminator.Goto label)
+
+  | Stmt.Continue ->
+    let label = (unwrap state.LoopOpt).Continue
+    setTerminator state (MTerminator.Goto label)
 
   | Stmt.Return result ->
-    assert (Option.isSome state.FnOpt)
+    // assert (Option.isSome state.FnOpt)
 
     let dest = newSymbol "_" 0 "__return"
 
@@ -212,60 +311,118 @@ let private genStmt (state: MgState) (stmt: Stmt) =
   | Stmt.If (cond, body, alt) ->
     let cond = genAsRval state cond
 
-    // begin branch
-    // genStmt state body
-    // genStmt state alt
-    failwith "todo"
+    let bodyBlock = addBlock state "then"
+    let altBlock = addBlock state "else"
+    let nextBlock = addBlock state "endif"
+    setTerminator state (MTerminator.If(cond, bodyBlock, altBlock))
+    state.BlockOpt <- Some nextBlock
+
+    do
+      let state =
+        { state with
+            Stmts = ResizeArray()
+            TerminatorOpt = Some(MTerminator.Goto nextBlock) }
+
+      genStmt state body
+      resolveBlock state bodyBlock
+
+    do
+      let state =
+        { state with
+            Stmts = ResizeArray()
+            TerminatorOpt = Some(MTerminator.Goto nextBlock) }
+
+      genStmt state alt
+      resolveBlock state altBlock
 
   | Stmt.Loop body ->
-    // genStmt state body
-    failwith "todo"
+    let bodyBlock = addBlock state "loop_body"
+    let nextBlock = addBlock state "loop_next"
+    setTerminator state (MTerminator.Goto bodyBlock)
+    state.BlockOpt <- Some nextBlock
+
+    do
+      let state =
+        { state with
+            LoopOpt =
+              Some(
+                { Break = nextBlock
+                  Continue = bodyBlock }
+              )
+            Stmts = ResizeArray()
+            TerminatorOpt = Some(MTerminator.Goto bodyBlock) }
+
+      genStmt state body
+      resolveBlock state bodyBlock
 
 // -----------------------------------------------
 // Declarations
 // -----------------------------------------------
 
 let private genDecl (state: MgState) (decl: Decl) =
-  match decl with
-  | Decl.Block (locals, block) ->
-    // let innerState = cloneState state
+  try
+    match decl with
+    | Decl.Block (locals, block) ->
+      let locals =
+        locals
+        |> List.map (fun (local, ty) ->
+          local,
+          ({ Name = local.Name
+             Ty = internTy state ty }: LocalDef))
 
-    // for stmt in block.Stmts do
-    //   try
-    //     checkStmt innerState stmt
-    //   with
-    //   | _ ->
-    //     eprintfn "In statement: %A" stmt
-    //     reraise ()
-    failwith "todo"
+      let state =
+        { state with
+            Stmts = ResizeArray()
+            TerminatorOpt = Some MTerminator.Return
 
-  | Decl.Fn (symbol, paramList, resultTy, locals, body) ->
-    // let paramTys = paramList |> List.map snd
+            LoopOpt = None
+            ResultTy = MTy.Void
+            Locals = Map.ofList locals
+            Blocks = ResizeArray() }
 
-    // state.ValueEnv <-
-    //   state.ValueEnv
-    //   |> Map.add name (ValueDef.Fn(paramTys, resultTy))
+      let entryBlock = addBlock state "entry"
 
-    // let innerState = cloneState state
+      for stmt in block.Stmts do
+        genStmt state stmt
 
-    // for paramName, paramTy in paramList do
-    //   innerState.ValueEnv <-
-    //     innerState.ValueEnv
-    //     |> Map.add paramName (ValueDef.Local paramTy)
+      resolveBlock state entryBlock
 
-    // innerState.ValueEnv <-
-    //   innerState.ValueEnv
-    //   |> Map.add "__return" (ValueDef.Local resultTy)
+      let bodyDef = state.Locals, state.Blocks.ToArray()
+      state.Bodies.Add(bodyDef)
 
-    // try
-    //   checkStmt innerState body
-    // with
-    // | _ ->
-    //   eprintfn "In fn: %s" name
-    //   reraise ()
-    failwith "todo"
+    | Decl.Fn (fn, _, _, _, body) ->
+      let fnDef = state.Fns |> Map.find fn
+      assert (fnDef.Blocks |> Array.isEmpty)
 
-  | Decl.RecordTy _ -> ()
+      let innerState =
+        let state =
+          { state with
+              Stmts = ResizeArray()
+              TerminatorOpt =
+                Some(
+                  match fnDef.ResultTy with
+                  | MTy.Void -> MTerminator.Return
+                  | _ -> MTerminator.Unreachable
+                )
+
+              LoopOpt = None
+              Locals = fnDef.Locals
+              ResultTy = fnDef.ResultTy
+              Blocks = ResizeArray() }
+
+        let entryBlock = addBlock state "entry"
+        genStmt state body
+        resolveBlock state entryBlock
+        state
+
+      let fnDef = { fnDef with Blocks = innerState.Blocks.ToArray() }
+      state.Fns <- state.Fns |> Map.add fn fnDef
+
+    | Decl.RecordTy _ -> ()
+  with
+  | _ ->
+    eprintfn "In decl %A" decl
+    reraise ()
 
 // -----------------------------------------------
 // Interface
@@ -273,21 +430,36 @@ let private genDecl (state: MgState) (decl: Decl) =
 
 let genMir (decls: Decl list) =
   let state = initialState
+  let fns = Dictionary()
   let records = Dictionary()
 
   for decl in decls do
     match decl with
-    | Decl.RecordTy (record, _) ->
-      let def: RecordDef =
-        { Name = record.Name
-          Fields = Array.empty }
+    | Decl.Fn (fn, paramList, resultTy, locals, _) ->
+      let paramList =
+        paramList
+        |> Array.ofList
+        |> Array.map (fun (local, ty) -> local, internTy state ty)
 
-      records.Add(record, def)
+      let resultTy = internTy state resultTy
 
-    | _ -> ()
+      let locals =
+        locals
+        |> List.map (fun (local, ty) ->
+          local,
+          ({ Name = local.Name
+             Ty = internTy state ty }: LocalDef))
+        |> Map.ofList
 
-  for decl in decls do
-    match decl with
+      let fnDef: FnDef =
+        { Name = fn.Name
+          Params = paramList
+          ResultTy = resultTy
+          Locals = locals
+          Blocks = Array.empty }
+
+      fns.Add(fn, fnDef)
+
     | Decl.RecordTy (record, fields) ->
       let def: RecordDef =
         { Name = record.Name
@@ -297,9 +469,14 @@ let genMir (decls: Decl list) =
               ({ Name = name.Name
                  Ty = internTy state ty }: FieldDef)) }
 
-      records.[record] <- def
+      records.Add(record, def)
 
     | _ -> ()
+
+  let state =
+    { state with
+        Fns = dictToMap fns
+        Records = dictToMap records }
 
   for decl in decls do
     genDecl state decl

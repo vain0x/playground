@@ -493,7 +493,8 @@ let private checkStmt (state: TcState) (stmt: S.Stmt) : T.Stmt =
 let private checkDecl (state: TcState) (decl: S.Decl) : T.Decl =
   match decl with
   | S.Decl.Block block ->
-    let locals = ResizeArray()
+    let locals = ResizeArray([ newSymbol "_" 0 "__return", T.Ty.Void ])
+
     let innerState = { cloneState state with Locals = locals }
 
     let stmts =
