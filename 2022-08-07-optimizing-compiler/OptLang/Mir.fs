@@ -100,6 +100,13 @@ type MTerminator =
   | If of cond: MRval * body: Label * alt: Label
 
 [<RequireQualifiedAccess; NoEquality; NoComparison>]
-type MBody =
-  { ParamCount: int
+type BodyDef =
+  { Locals: Map<Symbol, LocalDef>
     Blocks: BlockDef array }
+
+[<RequireQualifiedAccess; NoEquality; NoComparison>]
+type MProgram =
+  { Bodies: BodyDef array
+    Fns: Map<Symbol, FnDef>
+    Records: Map<Symbol, RecordDef>
+    Arrays: ArrayDef array }

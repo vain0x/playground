@@ -1,6 +1,7 @@
 module rec OptLang.Symbol
 
 [<RequireQualifiedAccess; CustomEquality; CustomComparison>]
+[<StructuredFormatDisplay("{Kind}{Index}:{Name}")>]
 type Symbol =
   { Kind: string
     Index: int

@@ -14,6 +14,11 @@ let inline private unwrap opt =
   | Some it -> it
   | None -> unreachable ()
 
+let private lookup key map =
+  match map |> Map.tryFind key with
+  | Some it -> it
+  | None -> failwithf "unreachable. Missing key: %A" key
+
 let private dictToMap (dict: Dictionary<_, _>) =
   dict
   |> Seq.map (fun (KeyValue (key, value)) -> key, value)
@@ -62,13 +67,13 @@ type private MgState =
     Blocks: ResizeArray<BlockDef>
 
     // Global data
-    Bodies: ResizeArray<Map<Symbol, LocalDef> * BlockDef array>
+    Bodies: ResizeArray<BodyDef>
     mutable Fns: Map<Symbol, FnDef>
     ArrayMemo: Dictionary<MTy, Symbol>
     Arrays: ResizeArray<ArrayDef>
     Records: Map<Symbol, RecordDef> }
 
-let private initialState: MgState =
+let private initialState () : MgState =
   { BlockOpt = None
     Locals = Map.empty
     Bodies = ResizeArray()
@@ -91,7 +96,7 @@ let private addLocal (state: MgState) (def: LocalDef) =
   symbol
 
 let private placeToTy (state: MgState) (place: MPlace) =
-  let mutable ty = (state.Locals |> Map.find place.Local).Ty
+  let mutable ty = (state.Locals |> lookup place.Local).Ty
 
   for part in place.Path do
     match part with
@@ -100,7 +105,7 @@ let private placeToTy (state: MgState) (place: MPlace) =
       ty <- arrayDef.ItemTy
 
     | Part.Field (index, record) ->
-      let recordDef = state.Records |> Map.find record
+      let recordDef = state.Records |> lookup record
       ty <- recordDef.Fields.[index].Ty
 
   ty
@@ -216,7 +221,7 @@ let private genAsRval (state: MgState) (expr: Expr) =
   | Expr.Call (callable, args) ->
     match callable with
     | Callable.Fn fn ->
-      let fnDef = state.Fns |> Map.find fn
+      let fnDef = state.Fns |> lookup fn
 
       let args =
         args
@@ -231,8 +236,81 @@ let private genAsRval (state: MgState) (expr: Expr) =
         let local = newSymbol "_" 0 "__return"
         MRval.Read(localPlace local)
 
-    | Callable.LogOr -> failwith "todo"
-    | Callable.LogAnd -> failwith "Not Implemented"
+    | Callable.LogOr ->
+      let cond, alt =
+        match args with
+        | [ lhs; rhs ] -> lhs, rhs
+        | _ -> unreachable ()
+
+      let cond = genAsRval state cond
+
+      let dest =
+        let localDef: LocalDef = { Name = "log_or"; Ty = MTy.Bool }
+        addLocal state localDef
+
+      let bodyBlock = addBlock state "then"
+      let altBlock = addBlock state "else"
+      let nextBlock = addBlock state "endif"
+      setTerminator state (MTerminator.If(cond, bodyBlock, altBlock))
+      state.BlockOpt <- Some nextBlock
+
+      do
+        let state =
+          { state with
+              Stmts = ResizeArray()
+              TerminatorOpt = Some(MTerminator.Goto nextBlock) }
+
+        addStmt state (MStmt.Assign(localPlace dest, MRval.Bool true))
+        resolveBlock state bodyBlock
+
+      do
+        let state =
+          { state with
+              Stmts = ResizeArray()
+              TerminatorOpt = Some(MTerminator.Goto nextBlock) }
+
+        addStmt state (MStmt.Assign(localPlace dest, genAsRval state alt))
+        resolveBlock state altBlock
+
+      MRval.Read(localPlace dest)
+
+    | Callable.LogAnd ->
+      let cond, body =
+        match args with
+        | [ lhs; rhs ] -> lhs, rhs
+        | _ -> unreachable ()
+
+      let cond = genAsRval state cond
+
+      let dest =
+        let localDef: LocalDef = { Name = "log_and"; Ty = MTy.Bool }
+        addLocal state localDef
+
+      let bodyBlock = addBlock state "then"
+      let altBlock = addBlock state "else"
+      let nextBlock = addBlock state "endif"
+      setTerminator state (MTerminator.If(cond, bodyBlock, altBlock))
+      state.BlockOpt <- Some nextBlock
+
+      do
+        let state =
+          { state with
+              Stmts = ResizeArray()
+              TerminatorOpt = Some(MTerminator.Goto nextBlock) }
+
+        addStmt state (MStmt.Assign(localPlace dest, genAsRval state body))
+        resolveBlock state bodyBlock
+
+      do
+        let state =
+          { state with
+              Stmts = ResizeArray()
+              TerminatorOpt = Some(MTerminator.Goto nextBlock) }
+
+        addStmt state (MStmt.Assign(localPlace dest, MRval.Bool false))
+        resolveBlock state altBlock
+
+      MRval.Read(localPlace dest)
 
     | Callable.ArrayPush ->
       let args =
@@ -243,7 +321,14 @@ let private genAsRval (state: MgState) (expr: Expr) =
       addStmt state (MStmt.Call(MCallable.ArrayPush, args))
       MRval.Void
 
-    | Callable.Assert -> failwith "Not Implemented"
+    | Callable.Assert ->
+      let args =
+        args
+        |> List.toArray
+        |> Array.map (fun arg -> genAsRval state arg)
+
+      addStmt state (MStmt.Call(MCallable.Assert, args))
+      MRval.Void
 
   | Expr.Unary (unary, arg) ->
     let unary =
@@ -387,11 +472,14 @@ let private genDecl (state: MgState) (decl: Decl) =
 
       resolveBlock state entryBlock
 
-      let bodyDef = state.Locals, state.Blocks.ToArray()
+      let bodyDef: BodyDef =
+        { Locals = state.Locals
+          Blocks = state.Blocks.ToArray() }
+
       state.Bodies.Add(bodyDef)
 
     | Decl.Fn (fn, _, _, _, body) ->
-      let fnDef = state.Fns |> Map.find fn
+      let fnDef = state.Fns |> lookup fn
       assert (fnDef.Blocks |> Array.isEmpty)
 
       let innerState =
@@ -429,7 +517,7 @@ let private genDecl (state: MgState) (decl: Decl) =
 // -----------------------------------------------
 
 let genMir (decls: Decl list) =
-  let state = initialState
+  let state = initialState ()
   let fns = Dictionary()
   let records = Dictionary()
 
@@ -481,4 +569,7 @@ let genMir (decls: Decl list) =
   for decl in decls do
     genDecl state decl
 
-  failwith "todo"
+  ({ Bodies = state.Bodies.ToArray()
+     Fns = state.Fns
+     Records = state.Records
+     Arrays = state.Arrays.ToArray() }: MProgram)
