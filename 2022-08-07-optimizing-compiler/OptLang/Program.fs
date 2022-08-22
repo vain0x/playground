@@ -7,6 +7,7 @@ open OptLang.Parse
 open OptLang.Symbol
 open OptLang.Tokenize
 open OptLang.TypeCheck
+open OptLang.Inline
 
 module T = OptLang.Tir
 module M = OptLang.Mir
@@ -237,6 +238,7 @@ let main _ =
       let ast = parseTokens tokens
       let tir = typeCheck ast
       let mir = genMir tir
+      let mir = performInlineExpansion mir
 
       let output =
         sprintf "ast: %A\n\n\n\ntir: %A\n\n\n\nmir: %A\n" ast (dumpTir tir) (dumpMir mir)

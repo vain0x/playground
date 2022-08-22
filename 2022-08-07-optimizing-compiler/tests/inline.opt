@@ -1,7 +1,14 @@
+fn unused_fn() -> void {}
+
 fn f(x: int) -> int {
-    return x
+    return x + x
+}
+
+fn multiuse(x: int) -> int {
+    return x * x
 }
 
 {
     assert(f(1) == 1)
+    assert(multiuse(1) != multiuse(2))
 }
