@@ -47,12 +47,10 @@ let performInlineExpansion (mir: MProgram) =
   let onBlock (state: CollectState) (block: BlockDef) =
     for stmt in block.Stmts do
       match stmt with
-      | MStmt.Call (MCallable.Fn fn, _) ->
+      | MStmt.Call (_, MCallable.Fn fn, _) ->
         match state.FnFreq |> Map.tryFind fn with
         | None -> state.FnFreq <- state.FnFreq |> Map.add fn 1
-
         | Some 1 -> state.FnFreq <- state.FnFreq |> Map.add fn 2
-
         | _ -> ()
       | _ -> ()
 
@@ -98,7 +96,7 @@ let performInlineExpansion (mir: MProgram) =
   let rec find i (stmts: _ array) =
     if i < stmts.Length then
       match stmts.[i] with
-      | MStmt.Call (MCallable.Fn fn, args) -> Some(i, fn, args)
+      | MStmt.Call (place, MCallable.Fn fn, args) -> Some(i, place, fn, args)
       | _ -> find (i + 1) stmts
     else
       None
@@ -135,7 +133,7 @@ let performInlineExpansion (mir: MProgram) =
     let shiftStmt stmt =
       match stmt with
       | MStmt.Assign (place, value) -> MStmt.Assign(shiftPlace place, shiftRval value)
-      | MStmt.Call (callable, args) -> MStmt.Call(callable, args |> Array.map shiftRval)
+      | MStmt.Call (place, callable, args) -> MStmt.Call(shiftPlace place, callable, args |> Array.map shiftRval)
 
     let shiftTerminator terminator =
       match terminator with
@@ -186,7 +184,7 @@ let performInlineExpansion (mir: MProgram) =
     let substStmt stmt =
       match stmt with
       | MStmt.Assign (place, value) -> MStmt.Assign(substPlace place, substRval value)
-      | MStmt.Call (callable, args) -> MStmt.Call(callable, args |> Array.map substRval)
+      | MStmt.Call (place, callable, args) -> MStmt.Call(substPlace place, callable, args |> Array.map substRval)
 
     let substTerminator terminator =
       match terminator with
@@ -209,15 +207,17 @@ let performInlineExpansion (mir: MProgram) =
       match bodyDef.Blocks
             |> tryPickIndex (fun block blockDef ->
               match find 0 blockDef.Stmts with
-              | Some (pos, fn, args) -> Some(block, pos, fn, args)
+              | Some (stmtId, place, fn, args) -> Some(block, stmtId, place, fn, args)
               | None -> None)
         with
-      | Some (block, stmtId, fn, args) ->
+      | Some (block, stmtId, place, fn, args) ->
         let fnDef = mir.Fns |> lookup fn
         let blockDef = fnDef.Blocks[block]
         let localMap = bodyDef.Locals
 
-        let localMap, argMap, assignmentRev =
+        let localMap, argMap, assignmentAcc =
+          let argMap = Map.ofList [ newSymbol "_" 0 "__return", place ]
+
           Array.zip fnDef.Params args
           |> Array.fold
                (fun (localMap, argMap, stmts) ((param, ty), arg) ->
@@ -238,10 +238,10 @@ let performInlineExpansion (mir: MProgram) =
                    let argMap = argMap |> Map.add param place
 
                    localMap, argMap, stmts)
-               (localMap, Map.empty, [])
+               (localMap, argMap, [])
 
         let assignments =
-          let a = assignmentRev |> List.toArray
+          let a = assignmentAcc |> List.toArray
           System.Array.Reverse(a)
           a
 

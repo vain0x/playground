@@ -223,18 +223,23 @@ let private genAsRval (state: MgState) (expr: Expr) =
     | Callable.Fn fn ->
       let fnDef = state.Fns |> lookup fn
 
+      let result =
+        match fnDef.ResultTy with
+        | MTy.Void -> newSymbol "_" 0 "__void"
+        | _ ->
+          let resultDef: LocalDef = { Name = fn.Name; Ty = fnDef.ResultTy }
+          addLocal state resultDef
+
       let args =
         args
         |> List.toArray
         |> Array.map (fun arg -> genAsRval state arg)
 
-      addStmt state (MStmt.Call(MCallable.Fn fn, args))
+      addStmt state (MStmt.Call(localPlace result, MCallable.Fn fn, args))
 
       match fnDef.ResultTy with
       | MTy.Void -> MRval.Void
-      | _ ->
-        let local = newSymbol "_" 0 "__return"
-        MRval.Read(localPlace local)
+      | _ -> MRval.Read(localPlace result)
 
     | Callable.LogOr ->
       let cond, alt =
@@ -318,7 +323,9 @@ let private genAsRval (state: MgState) (expr: Expr) =
         |> List.toArray
         |> Array.map (fun arg -> genAsRval state arg)
 
-      addStmt state (MStmt.Call(MCallable.ArrayPush, args))
+      let result = newSymbol "_" 0 "__void"
+
+      addStmt state (MStmt.Call(localPlace result, MCallable.ArrayPush, args))
       MRval.Void
 
     | Callable.Assert ->
@@ -327,7 +334,9 @@ let private genAsRval (state: MgState) (expr: Expr) =
         |> List.toArray
         |> Array.map (fun arg -> genAsRval state arg)
 
-      addStmt state (MStmt.Call(MCallable.Assert, args))
+      let result = newSymbol "_" 0 "__void"
+
+      addStmt state (MStmt.Call(localPlace result, MCallable.Assert, args))
       MRval.Void
 
   | Expr.Unary (unary, arg) ->

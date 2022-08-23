@@ -180,9 +180,23 @@ let private dumpMir (mir: M.MProgram) =
       match stmt with
       | M.MStmt.Assign (dest, value) -> sprintf "set %s <- %s" (displayPlace dest) (displayRval value)
 
-      | M.MStmt.Call (callable, args) ->
+      | M.MStmt.Call (_, callable, args) when
+        (match callable with
+         | M.MCallable.Fn fn -> (mir.Fns |> lookup fn).ResultTy = M.MTy.Void
+         | M.MCallable.ArrayPush
+         | M.MCallable.Assert _ -> true)
+        ->
         sprintf
           "call %A(%s)"
+          callable
+          (args
+           |> Array.map displayRval
+           |> String.concat ", ")
+
+      | M.MStmt.Call (place, callable, args) ->
+        sprintf
+          "%s <- call %A(%s)"
+          (displayPlace place)
           callable
           (args
            |> Array.map displayRval

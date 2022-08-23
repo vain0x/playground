@@ -8,7 +8,17 @@ fn multiuse(x: int) -> int {
     return x * x
 }
 
+fn g1() -> int {
+    return 1
+}
+
+fn g2() -> int {
+    return g1()
+}
+
 {
     assert(f(1) == 1)
     assert(multiuse(1) != multiuse(2))
+
+    assert(g2() == 1)
 }

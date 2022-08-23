@@ -90,7 +90,7 @@ type MRval =
 [<RequireQualifiedAccess; NoEquality; NoComparison>]
 type MStmt =
   | Assign of MPlace * MRval
-  | Call of MCallable * MRval array
+  | Call of MPlace * MCallable * MRval array
 
 [<RequireQualifiedAccess; NoEquality; NoComparison>]
 type MTerminator =
