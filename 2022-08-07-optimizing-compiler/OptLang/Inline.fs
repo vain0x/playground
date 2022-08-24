@@ -8,14 +8,14 @@ type private CollectState = { mutable FnFreq: Map<Symbol, int> }
 
 [<RequireQualifiedAccess; NoEquality; NoComparison>]
 type W =
-  | Body of index: int * BodyDef
-  | Fn of Symbol * FnDef
+  | Body of index: int * MBodyDef
+  | Fn of Symbol * MFnDef
 
 [<RequireQualifiedAccess; NoEquality; NoComparison>]
 type TransformTarget =
   { mutable Mutated: bool
-    mutable Locals: Map<Symbol, LocalDef>
-    mutable Blocks: BlockDef array }
+    mutable Locals: Map<Symbol, MLocalDef>
+    mutable Blocks: MBlockDef array }
 
 let private tryPickIndex picker (array: _ array) =
   let rec go i =
@@ -44,7 +44,7 @@ let performInlineExpansion (mir: MProgram) =
   // collect
   let state: CollectState = { FnFreq = Map.empty }
 
-  let onBlock (state: CollectState) (block: BlockDef) =
+  let onBlock (state: CollectState) (block: MBlockDef) =
     for stmt in block.Stmts do
       match stmt with
       | MStmt.Call (_, MCallable.Fn fn, _) ->
@@ -102,16 +102,16 @@ let performInlineExpansion (mir: MProgram) =
       None
 
   // ローカル変数とブロックの番号を付け替える
-  let shift localCount blockCount (blocks: BlockDef array) =
+  let shift localCount blockCount (blocks: MBlockDef array) =
     let shiftLocal local = shiftLocalBy localCount local
 
     let shiftBlock (block: Symbol) =
       newSymbol block.Kind (block.Index + blockCount) block.Name
 
-    let rec shiftPart (part: Part) =
+    let rec shiftPart (part: MPart) =
       match part with
-      | Part.Index (index, array) -> Part.Index(shiftRval index, array)
-      | Part.Field _ -> part
+      | MPart.Index (index, array) -> MPart.Index(shiftRval index, array)
+      | MPart.Field _ -> part
 
     and shiftPlace (place: MPlace) =
       ({ Local = shiftLocal place.Local
@@ -149,17 +149,17 @@ let performInlineExpansion (mir: MProgram) =
       let terminator = shiftTerminator block.Terminator
 
       ({ Stmts = stmts
-         Terminator = terminator }: BlockDef))
+         Terminator = terminator }: MBlockDef))
 
   // インライン展開される関数の本体を呼び出し側に埋め込むために変形する
   //
   // - パラメータは引数 (place) に展開する
   // - `return` はターゲットブロックへのジャンプに置き換える
-  let subst argMap dest (blocks: BlockDef array) =
-    let rec substPart (part: Part) =
+  let subst argMap dest (blocks: MBlockDef array) =
+    let rec substPart (part: MPart) =
       match part with
-      | Part.Index (index, array) -> Part.Index(substRval index, array)
-      | Part.Field _ -> part
+      | MPart.Index (index, array) -> MPart.Index(substRval index, array)
+      | MPart.Field _ -> part
 
     and substPlace (place: MPlace) : MPlace =
       let path = place.Path |> Array.map substPart
@@ -197,7 +197,7 @@ let performInlineExpansion (mir: MProgram) =
     blocks
     |> Array.map (fun block ->
       ({ Stmts = Array.map substStmt block.Stmts
-         Terminator = substTerminator block.Terminator }: BlockDef))
+         Terminator = substTerminator block.Terminator }: MBlockDef))
 
   let mutable mir = mir
 
@@ -227,7 +227,7 @@ let performInlineExpansion (mir: MProgram) =
                    localMap, argMap, stmts
 
                  | _ ->
-                   let localDef: LocalDef = { Name = param.Name; Ty = ty }
+                   let localDef: MLocalDef = { Name = param.Name; Ty = ty }
                    let local = newSymbol "_" (Map.count localMap) param.Name
 
                    let localMap = localMap |> Map.add local localDef
@@ -251,7 +251,7 @@ let performInlineExpansion (mir: MProgram) =
         let restBlock = newSymbol "B" bodyDef.Blocks.Length "after_inline"
         let entryBlock = newSymbol "B" (bodyDef.Blocks.Length + 1) fnDef.Name
 
-        let restBlockDef: BlockDef =
+        let restBlockDef: MBlockDef =
           { Stmts = blockDef.Stmts.[stmtId + 1 ..]
             Terminator = blockDef.Terminator }
 

@@ -2,34 +2,32 @@ module rec OptLang.Mir
 
 open OptLang.Symbol
 
-type Label = Symbol
+[<RequireQualifiedAccess; ReferenceEquality>]
+type MLocalDef = { Name: string; Ty: MTy }
 
 [<RequireQualifiedAccess; ReferenceEquality>]
-type LocalDef = { Name: string; Ty: MTy }
-
-[<RequireQualifiedAccess; ReferenceEquality>]
-type FnDef =
+type MFnDef =
   { Name: string
     Params: (Symbol * MTy) array
     ResultTy: MTy
-    Locals: Map<Symbol, LocalDef>
-    Blocks: BlockDef array }
+    Locals: Map<Symbol, MLocalDef>
+    Blocks: MBlockDef array }
 
 [<RequireQualifiedAccess; NoEquality; NoComparison>]
-type BlockDef =
+type MBlockDef =
   { Stmts: MStmt array
     Terminator: MTerminator }
 
 [<RequireQualifiedAccess; ReferenceEquality>]
-type FieldDef = { Name: string; Ty: MTy }
+type MFieldDef = { Name: string; Ty: MTy }
 
 [<RequireQualifiedAccess; ReferenceEquality>]
 type RecordDef =
   { Name: string
-    Fields: FieldDef array }
+    Fields: MFieldDef array }
 
 [<RequireQualifiedAccess; ReferenceEquality>]
-type ArrayDef = { ItemTy: MTy }
+type MArrayDef = { ItemTy: MTy }
 
 [<RequireQualifiedAccess; NoEquality; NoComparison>]
 type MUnary =
@@ -68,12 +66,12 @@ type MTy =
   | Array of Symbol
 
 [<RequireQualifiedAccess; NoEquality; NoComparison>]
-type Part =
+type MPart =
   | Index of MRval * array: Symbol
   | Field of index: int * record: Symbol
 
 [<RequireQualifiedAccess; NoEquality; NoComparison>]
-type MPlace = { Local: Symbol; Path: Part array }
+type MPlace = { Local: Symbol; Path: MPart array }
 
 [<RequireQualifiedAccess; NoEquality; NoComparison>]
 type MRval =
@@ -95,18 +93,18 @@ type MStmt =
 [<RequireQualifiedAccess; NoEquality; NoComparison>]
 type MTerminator =
   | Unreachable
-  | Goto of Label
+  | Goto of Symbol
   | Return
-  | If of cond: MRval * body: Label * alt: Label
+  | If of cond: MRval * body: Symbol * alt: Symbol
 
 [<RequireQualifiedAccess; NoEquality; NoComparison>]
-type BodyDef =
-  { Locals: Map<Symbol, LocalDef>
-    Blocks: BlockDef array }
+type MBodyDef =
+  { Locals: Map<Symbol, MLocalDef>
+    Blocks: MBlockDef array }
 
 [<RequireQualifiedAccess; NoEquality; NoComparison>]
 type MProgram =
-  { Bodies: BodyDef array
-    Fns: Map<Symbol, FnDef>
+  { Bodies: MBodyDef array
+    Fns: Map<Symbol, MFnDef>
     Records: Map<Symbol, RecordDef>
-    Arrays: ArrayDef array }
+    Arrays: MArrayDef array }

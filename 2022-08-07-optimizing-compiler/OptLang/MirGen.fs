@@ -30,8 +30,8 @@ let private dictToMap (dict: Dictionary<_, _>) =
 
 [<RequireQualifiedAccess; NoEquality; NoComparison>]
 type private ValueDef =
-  | Local of LocalDef
-  | Fn of FnDef
+  | Local of MLocalDef
+  | Fn of MFnDef
   | Unary of MUnary
   | Binary of MBinary
   | ArrayPush
@@ -40,7 +40,7 @@ type private ValueDef =
   | LogAnd
 
 [<RequireQualifiedAccess; NoEquality; NoComparison>]
-type private LoopDef = { Break: Label; Continue: Label }
+type private LoopDef = { Break: Symbol; Continue: Symbol }
 
 let private newPlace local path : MPlace = { Local = local; Path = path }
 
@@ -62,15 +62,15 @@ type private MgState =
 
     // Body-local data
     LoopOpt: LoopDef option
-    mutable Locals: Map<Symbol, LocalDef>
+    mutable Locals: Map<Symbol, MLocalDef>
     ResultTy: MTy
-    Blocks: ResizeArray<BlockDef>
+    Blocks: ResizeArray<MBlockDef>
 
     // Global data
-    Bodies: ResizeArray<BodyDef>
-    mutable Fns: Map<Symbol, FnDef>
+    Bodies: ResizeArray<MBodyDef>
+    mutable Fns: Map<Symbol, MFnDef>
     ArrayMemo: Dictionary<MTy, Symbol>
-    Arrays: ResizeArray<ArrayDef>
+    Arrays: ResizeArray<MArrayDef>
     Records: Map<Symbol, RecordDef> }
 
 let private initialState () : MgState =
@@ -89,7 +89,7 @@ let private initialState () : MgState =
 
 let private cloneState (state: MgState) : MgState = { state with Locals = state.Locals }
 
-let private addLocal (state: MgState) (def: LocalDef) =
+let private addLocal (state: MgState) (def: MLocalDef) =
   let index = state.Locals |> Map.count
   let symbol = newSymbol "_" index def.Name
   state.Locals <- state.Locals |> Map.add symbol def
@@ -100,11 +100,11 @@ let private placeToTy (state: MgState) (place: MPlace) =
 
   for part in place.Path do
     match part with
-    | Part.Index (_, array) ->
+    | MPart.Index (_, array) ->
       let arrayDef = state.Arrays.[array.Index]
       ty <- arrayDef.ItemTy
 
-    | Part.Field (index, record) ->
+    | MPart.Field (index, record) ->
       let recordDef = state.Records |> lookup record
       ty <- recordDef.Fields.[index].Ty
 
@@ -120,7 +120,7 @@ let private internArrayTy (state: MgState) itemTy =
 
   | false, _ ->
     let symbol = newSymbol "a" state.Arrays.Count "array"
-    let def: ArrayDef = { ItemTy = itemTy }
+    let def: MArrayDef = { ItemTy = itemTy }
     state.Arrays.Add(def)
     symbol
 
@@ -140,7 +140,7 @@ let private addStmt (state: MgState) stmt = state.Stmts.Add(stmt)
 
 let private setTerminator (state: MgState) terminator = state.TerminatorOpt <- Some terminator
 
-let private EmptyBlockDef: BlockDef =
+let private EmptyBlockDef: MBlockDef =
   { Stmts = Array.empty
     Terminator = MTerminator.Unreachable }
 
@@ -153,7 +153,7 @@ let private addBlock (state: MgState) name =
 let private resolveBlock (state: MgState) (block: Symbol) =
   assert (System.Object.ReferenceEquals(state.Blocks.[block.Index], EmptyBlockDef))
 
-  let blockDef: BlockDef =
+  let blockDef: MBlockDef =
     { Stmts = state.Stmts.ToArray()
       Terminator =
         match state.TerminatorOpt with
@@ -179,7 +179,7 @@ let private genAsPlace (state: MgState) (place: TPlace) =
       | _ -> unreachable ()
 
     let index = genAsRval state index
-    makeProjection (Part.Index(index, array)) place
+    makeProjection (MPart.Index(index, array)) place
 
   | TPlace.Field (lhs, field) ->
     let place = genAsPlace state lhs
@@ -189,7 +189,7 @@ let private genAsPlace (state: MgState) (place: TPlace) =
       | MTy.Record it -> it
       | _ -> unreachable ()
 
-    makeProjection (Part.Field(field.Index, record)) place
+    makeProjection (MPart.Field(field.Index, record)) place
 
 let private genAsRval (state: MgState) (expr: TExpr) =
   match expr with
@@ -227,7 +227,7 @@ let private genAsRval (state: MgState) (expr: TExpr) =
         match fnDef.ResultTy with
         | MTy.Void -> newSymbol "_" 0 "__void"
         | _ ->
-          let resultDef: LocalDef = { Name = fn.Name; Ty = fnDef.ResultTy }
+          let resultDef: MLocalDef = { Name = fn.Name; Ty = fnDef.ResultTy }
           addLocal state resultDef
 
       let args =
@@ -250,7 +250,7 @@ let private genAsRval (state: MgState) (expr: TExpr) =
       let cond = genAsRval state cond
 
       let dest =
-        let localDef: LocalDef = { Name = "log_or"; Ty = MTy.Bool }
+        let localDef: MLocalDef = { Name = "log_or"; Ty = MTy.Bool }
         addLocal state localDef
 
       let bodyBlock = addBlock state "then"
@@ -288,7 +288,7 @@ let private genAsRval (state: MgState) (expr: TExpr) =
       let cond = genAsRval state cond
 
       let dest =
-        let localDef: LocalDef = { Name = "log_and"; Ty = MTy.Bool }
+        let localDef: MLocalDef = { Name = "log_and"; Ty = MTy.Bool }
         addLocal state localDef
 
       let bodyBlock = addBlock state "then"
@@ -462,7 +462,7 @@ let private genDecl (state: MgState) (decl: TDecl) =
         |> List.map (fun (local, ty) ->
           local,
           ({ Name = local.Name
-             Ty = internTy state ty }: LocalDef))
+             Ty = internTy state ty }: MLocalDef))
 
       let state =
         { state with
@@ -481,7 +481,7 @@ let private genDecl (state: MgState) (decl: TDecl) =
 
       resolveBlock state entryBlock
 
-      let bodyDef: BodyDef =
+      let bodyDef: MBodyDef =
         { Locals = state.Locals
           Blocks = state.Blocks.ToArray() }
 
@@ -545,10 +545,10 @@ let genMir (decls: TDecl list) =
         |> List.map (fun (local, ty) ->
           local,
           ({ Name = local.Name
-             Ty = internTy state ty }: LocalDef))
+             Ty = internTy state ty }: MLocalDef))
         |> Map.ofList
 
-      let fnDef: FnDef =
+      let fnDef: MFnDef =
         { Name = fn.Name
           Params = paramList
           ResultTy = resultTy
@@ -564,7 +564,7 @@ let genMir (decls: TDecl list) =
             fields
             |> Array.map (fun (name, ty) ->
               ({ Name = name.Name
-                 Ty = internTy state ty }: FieldDef)) }
+                 Ty = internTy state ty }: MFieldDef)) }
 
       records.Add(record, def)
 

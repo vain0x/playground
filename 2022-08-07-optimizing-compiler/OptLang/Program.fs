@@ -2,15 +2,14 @@ module rec OptLang.Program
 
 open System.IO
 open System.Text
+open OptLang.Inline
+open OptLang.Mir
 open OptLang.MirGen
 open OptLang.Parse
 open OptLang.Symbol
 open OptLang.Tir
 open OptLang.Tokenize
 open OptLang.TypeCheck
-open OptLang.Inline
-
-module M = OptLang.Mir
 
 let private lookup key map =
   match map |> Map.tryFind key with
@@ -73,40 +72,40 @@ let private dumpTir tir =
 
   tir |> List.map go |> List
 
-let private dumpMTy (mir: M.MProgram) ty =
+let private dumpMTy (mir: MProgram) ty =
   let rec go ty =
     match ty with
-    | M.MTy.Void -> "void"
-    | M.MTy.Bool -> "bool"
-    | M.MTy.Int -> "int"
-    | M.MTy.String -> "string"
-    | M.MTy.Record record -> (mir.Records |> lookup record).Name
-    | M.MTy.Array array ->
+    | MTy.Void -> "void"
+    | MTy.Bool -> "bool"
+    | MTy.Int -> "int"
+    | MTy.String -> "string"
+    | MTy.Record record -> (mir.Records |> lookup record).Name
+    | MTy.Array array ->
       "array("
       + go mir.Arrays.[array.Index].ItemTy
       + ")"
 
   go ty
 
-let private dumpMir (mir: M.MProgram) =
+let private dumpMir (mir: MProgram) =
   let onLocals locals =
     locals
-    |> List.map (fun (_, local: M.LocalDef) -> Label(local.Name, Text(dumpMTy mir local.Ty)))
+    |> List.map (fun (_, local: MLocalDef) -> Label(local.Name, Text(dumpMTy mir local.Ty)))
 
-  let rec displayPlace (place: M.MPlace) =
+  let rec displayPlace (place: MPlace) =
     let sb = StringBuilder()
 
     sb.Append(string place.Local) |> ignore
 
     for part in place.Path do
       match part with
-      | M.Part.Index (index, _) ->
+      | MPart.Index (index, _) ->
         sb
           .Append("[")
           .Append((displayRval index: string))
           .Append("]")
         |> ignore
-      | M.Part.Field (index, record) ->
+      | MPart.Field (index, record) ->
         sb
           .Append(".")
           .Append(
@@ -117,37 +116,37 @@ let private dumpMir (mir: M.MProgram) =
 
     sb.ToString()
 
-  and displayRval (rval: M.MRval) =
+  and displayRval (rval: MRval) =
     match rval with
-    | M.MRval.Void -> "void"
-    | M.MRval.Bool value -> string value
-    | M.MRval.Int value -> string value
-    | M.MRval.String value -> sprintf "%A" value
-    | M.MRval.Read place -> "read " + displayPlace place
+    | MRval.Void -> "void"
+    | MRval.Bool value -> string value
+    | MRval.Int value -> string value
+    | MRval.String value -> sprintf "%A" value
+    | MRval.Read place -> "read " + displayPlace place
 
-    | M.MRval.Unary (unary, rval) ->
+    | MRval.Unary (unary, rval) ->
       let unary =
         match unary with
-        | M.MUnary.Minus -> "-"
-        | M.MUnary.Not -> "!"
-        | M.MUnary.ArrayLen -> "(.len)"
+        | MUnary.Minus -> "-"
+        | MUnary.Not -> "!"
+        | MUnary.ArrayLen -> "(.len)"
 
       unary + displayRval rval
 
-    | M.MRval.Binary (binary, lhs, rhs) ->
+    | MRval.Binary (binary, lhs, rhs) ->
       let b =
         match binary with
-        | M.MBinary.Add -> "+"
-        | M.MBinary.Subtract -> "-"
-        | M.MBinary.Multiply -> "*"
-        | M.MBinary.Divide -> "/"
-        | M.MBinary.Modulo -> "%"
-        | M.MBinary.Equal -> "=="
-        | M.MBinary.NotEqual -> "!="
-        | M.MBinary.LessThan -> "<"
-        | M.MBinary.LessEqual -> "<="
-        | M.MBinary.GreaterThan -> ">"
-        | M.MBinary.GreaterEqual -> ">="
+        | MBinary.Add -> "+"
+        | MBinary.Subtract -> "-"
+        | MBinary.Multiply -> "*"
+        | MBinary.Divide -> "/"
+        | MBinary.Modulo -> "%"
+        | MBinary.Equal -> "=="
+        | MBinary.NotEqual -> "!="
+        | MBinary.LessThan -> "<"
+        | MBinary.LessEqual -> "<="
+        | MBinary.GreaterThan -> ">"
+        | MBinary.GreaterEqual -> ">="
 
       "("
       + displayRval lhs
@@ -157,14 +156,14 @@ let private dumpMir (mir: M.MProgram) =
       + displayRval rhs
       + ")"
 
-    | M.MRval.Record (fields, record) ->
+    | MRval.Record (fields, record) ->
       (mir.Records |> lookup record).Fields
       |> Array.zip fields
       |> Array.map (fun (value, field) -> field.Name + " = " + displayRval value)
       |> String.concat "; "
       |> (fun x -> record.Name + "{" + x + "}")
 
-    | M.MRval.Array (items, array) ->
+    | MRval.Array (items, array) ->
       let itemTy = mir.Arrays.[array.Index].ItemTy |> string
 
       let items =
@@ -178,13 +177,13 @@ let private dumpMir (mir: M.MProgram) =
     stmtList
     |> List.map (fun stmt ->
       match stmt with
-      | M.MStmt.Assign (dest, value) -> sprintf "set %s <- %s" (displayPlace dest) (displayRval value)
+      | MStmt.Assign (dest, value) -> sprintf "set %s <- %s" (displayPlace dest) (displayRval value)
 
-      | M.MStmt.Call (_, callable, args) when
+      | MStmt.Call (_, callable, args) when
         (match callable with
-         | M.MCallable.Fn fn -> (mir.Fns |> lookup fn).ResultTy = M.MTy.Void
-         | M.MCallable.ArrayPush
-         | M.MCallable.Assert _ -> true)
+         | MCallable.Fn fn -> (mir.Fns |> lookup fn).ResultTy = MTy.Void
+         | MCallable.ArrayPush
+         | MCallable.Assert _ -> true)
         ->
         sprintf
           "call %A(%s)"
@@ -193,7 +192,7 @@ let private dumpMir (mir: M.MProgram) =
            |> Array.map displayRval
            |> String.concat ", ")
 
-      | M.MStmt.Call (place, callable, args) ->
+      | MStmt.Call (place, callable, args) ->
         sprintf
           "%s <- call %A(%s)"
           (displayPlace place)
@@ -205,11 +204,11 @@ let private dumpMir (mir: M.MProgram) =
 
   let onTerminator terminator =
     match terminator with
-    | M.MTerminator.Unreachable -> "unreachable"
-    | M.MTerminator.Goto label -> "goto " + string label
-    | M.MTerminator.Return -> "return"
+    | MTerminator.Unreachable -> "unreachable"
+    | MTerminator.Goto label -> "goto " + string label
+    | MTerminator.Return -> "return"
 
-    | M.MTerminator.If (cond, body, alt) ->
+    | MTerminator.If (cond, body, alt) ->
       "goto if "
       + displayRval cond
       + " then "
@@ -219,7 +218,7 @@ let private dumpMir (mir: M.MProgram) =
 
   let onBlocks blocks =
     blocks
-    |> List.mapi (fun i (block: M.BlockDef) ->
+    |> List.mapi (fun i (block: MBlockDef) ->
       Label(
         $"B{i}",
         List(
@@ -235,11 +234,11 @@ let private dumpMir (mir: M.MProgram) =
 
   List.append
     (mir.Bodies
-     |> Array.map (fun (body: M.BodyDef) -> Label("body", onBody (Map.toList body.Locals) (List.ofArray body.Blocks)))
+     |> Array.map (fun (body: MBodyDef) -> Label("body", onBody (Map.toList body.Locals) (List.ofArray body.Blocks)))
      |> Array.toList)
     (mir.Fns
      |> Map.toList
-     |> List.map (fun (_, fn: M.FnDef) -> Label("fn " + fn.Name, onBody (Map.toList fn.Locals) (List.ofArray fn.Blocks))))
+     |> List.map (fun (_, fn: MFnDef) -> Label("fn " + fn.Name, onBody (Map.toList fn.Locals) (List.ofArray fn.Blocks))))
   |> List
 
 [<EntryPoint>]
