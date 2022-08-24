@@ -6,16 +6,11 @@ open OptLang.Symbol
 [<RequireQualifiedAccess; NoEquality; NoComparison>]
 type private CollectState = { mutable FnFreq: Map<Symbol, int> }
 
+/// ワークリストの項目
 [<RequireQualifiedAccess; NoEquality; NoComparison>]
-type W =
+type private W =
   | Body of index: int * MBodyDef
   | Fn of Symbol * MFnDef
-
-[<RequireQualifiedAccess; NoEquality; NoComparison>]
-type TransformTarget =
-  { mutable Mutated: bool
-    mutable Locals: Map<Symbol, MLocalDef>
-    mutable Blocks: MBlockDef array }
 
 let private tryPickIndex picker (array: _ array) =
   let rec go i =
@@ -293,7 +288,10 @@ let performInlineExpansion (mir: MProgram) =
 
       | None -> workLoop workList
 
-    | W.Fn (fn, fnDef) :: workList -> workLoop workList
+    | W.Fn (fn, fnDef) :: workList ->
+      // TODO
+      workLoop workList
+
     | [] -> ()
 
   let workList =

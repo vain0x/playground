@@ -5,8 +5,6 @@ open OptLang.Symbol
 open OptLang.Tir
 open System.Collections.Generic
 
-module TC = OptLang.TypeCheck
-
 let inline private unreachable () = failwith "unreachable"
 
 let inline private unwrap opt =
@@ -27,17 +25,6 @@ let private dictToMap (dict: Dictionary<_, _>) =
 // -----------------------------------------------
 // MIR Helpers
 // -----------------------------------------------
-
-[<RequireQualifiedAccess; NoEquality; NoComparison>]
-type private ValueDef =
-  | Local of MLocalDef
-  | Fn of MFnDef
-  | Unary of MUnary
-  | Binary of MBinary
-  | ArrayPush
-  | Assert
-  | LogOr
-  | LogAnd
 
 [<RequireQualifiedAccess; NoEquality; NoComparison>]
 type private LoopDef = { Break: Symbol; Continue: Symbol }

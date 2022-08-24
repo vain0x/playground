@@ -6,7 +6,7 @@ open OptLang.Tir
 module S = OptLang.Syntax
 
 [<RequireQualifiedAccess; NoEquality; NoComparison>]
-type ValueDef =
+type private ValueDef =
   | Constant of TExpr
   | Local of Symbol * TTy
   | Fn of Symbol * TTy list * TTy
@@ -18,13 +18,13 @@ type ValueDef =
   | Assert
 
 [<RequireQualifiedAccess; NoEquality; NoComparison>]
-type FnDef = { ParamTys: TTy list; ResultTy: TTy }
+type private FnDef = { ParamTys: TTy list; ResultTy: TTy }
 
 [<RequireQualifiedAccess; NoEquality; NoComparison>]
-type RecordTyDef = { Fields: (Symbol * TTy) array }
+type private RecordTyDef = { Fields: (Symbol * TTy) array }
 
 [<RequireQualifiedAccess; NoEquality; NoComparison>]
-type TcState =
+type private TcState =
   { mutable ValueEnv: Map<string, ValueDef>
     mutable TyEnv: Map<string, TTy>
     Locals: ResizeArray<Symbol * TTy>
