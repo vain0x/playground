@@ -7,6 +7,14 @@ open System.Collections.Generic
 
 let inline private unreachable () = failwith "unreachable"
 
+let inline private withContext (label: string) (data: obj) ([<InlineIfLambda>] action) =
+  try
+    action ()
+  with
+  | _ ->
+    eprintfn "In %s: %A" label data
+    reraise ()
+
 let inline private unwrap opt =
   match opt with
   | Some it -> it
@@ -441,7 +449,7 @@ let private genStmt (state: MgState) (stmt: TStmt) =
 // -----------------------------------------------
 
 let private genDecl (state: MgState) (decl: TDecl) =
-  try
+  withContext "declaration" decl (fun () ->
     match decl with
     | TDecl.Block (locals, block) ->
       let locals =
@@ -502,11 +510,7 @@ let private genDecl (state: MgState) (decl: TDecl) =
       let fnDef = { fnDef with Blocks = innerState.Blocks.ToArray() }
       state.Fns <- state.Fns |> Map.add fn fnDef
 
-    | TDecl.RecordTy _ -> ()
-  with
-  | _ ->
-    eprintfn "In decl %A" decl
-    reraise ()
+    | TDecl.RecordTy _ -> ())
 
 // -----------------------------------------------
 // Interface

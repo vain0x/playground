@@ -81,6 +81,14 @@ let private isComparison (binary: TBinary) =
 
 let private unreachable () = failwith "unreachable"
 
+let inline private withContext (label: string) (data: obj) ([<InlineIfLambda>] action) =
+  try
+    action ()
+  with
+  | _ ->
+    eprintfn "In %s: %A" label data
+    reraise ()
+
 let private mismatch actual expected =
   failwithf "Type mismatch. Expected %s but was %s" expected actual
 
@@ -496,13 +504,7 @@ let private checkDecl (state: TcState) (decl: S.Decl) : TDecl =
 
     let stmts =
       block.Stmts
-      |> List.map (fun stmt ->
-        try
-          checkStmt innerState stmt
-        with
-        | _ ->
-          eprintfn "In statement: %A" stmt
-          reraise ())
+      |> List.map (fun stmt -> withContext "statement" stmt (fun () -> checkStmt innerState stmt))
 
     let locals = innerState.Locals.ToArray() |> Array.toList
 
@@ -548,13 +550,7 @@ let private checkDecl (state: TcState) (decl: S.Decl) : TDecl =
       innerState.ValueEnv
       |> Map.add "__return" (ValueDef.Local(r, resultTy))
 
-    let body =
-      try
-        checkStmt innerState body
-      with
-      | _ ->
-        eprintfn "In fn: %s" name
-        reraise ()
+    let body = withContext "fn" name (fun () -> checkStmt innerState body)
 
     let locals = innerState.Locals.ToArray() |> Array.toList
 
