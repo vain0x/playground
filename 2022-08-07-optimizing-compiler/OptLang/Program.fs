@@ -5,11 +5,11 @@ open System.Text
 open OptLang.MirGen
 open OptLang.Parse
 open OptLang.Symbol
+open OptLang.Tir
 open OptLang.Tokenize
 open OptLang.TypeCheck
 open OptLang.Inline
 
-module T = OptLang.Tir
 module M = OptLang.Mir
 
 let private lookup key map =
@@ -51,12 +51,12 @@ let private renderNode node =
 let private dumpTy ty =
   let rec go ty =
     match ty with
-    | T.Ty.Void -> "void"
-    | T.Ty.Bool -> "bool"
-    | T.Ty.Int -> "int"
-    | T.Ty.String -> "string"
-    | T.Ty.Record record -> string record
-    | T.Ty.Array item -> "array(" + go item + ")"
+    | TTy.Void -> "void"
+    | TTy.Bool -> "bool"
+    | TTy.Int -> "int"
+    | TTy.String -> "string"
+    | TTy.Record record -> string record
+    | TTy.Array item -> "array(" + go item + ")"
 
   go ty
 
@@ -67,9 +67,9 @@ let private dumpTir tir =
 
   let rec go decl =
     match decl with
-    | T.Decl.Block (locals, _) -> Label("block", List(onLocals locals))
-    | T.Decl.Fn (name, _, _, locals, _) -> Label("fn " + string name, List(onLocals locals))
-    | T.Decl.RecordTy _ -> List []
+    | TDecl.Block (locals, _) -> Label("block", List(onLocals locals))
+    | TDecl.Fn (name, _, _, locals, _) -> Label("fn " + string name, List(onLocals locals))
+    | TDecl.RecordTy _ -> List []
 
   tir |> List.map go |> List
 

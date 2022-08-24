@@ -126,13 +126,13 @@ let private internArrayTy (state: MgState) itemTy =
 
 let private internTy (state: MgState) ty =
   match ty with
-  | Ty.Void -> MTy.Void
-  | Ty.Bool -> MTy.Bool
-  | Ty.Int -> MTy.Int
-  | Ty.String -> MTy.String
-  | Ty.Record record -> MTy.Record record
+  | TTy.Void -> MTy.Void
+  | TTy.Bool -> MTy.Bool
+  | TTy.Int -> MTy.Int
+  | TTy.String -> MTy.String
+  | TTy.Record record -> MTy.Record record
 
-  | Ty.Array itemTy ->
+  | TTy.Array itemTy ->
     let itemTy = internTy state itemTy
     internArrayTy state itemTy |> MTy.Array
 
@@ -166,11 +166,11 @@ let private resolveBlock (state: MgState) (block: Symbol) =
 // Places
 // -----------------------------------------------
 
-let private genAsPlace (state: MgState) (place: Place) =
+let private genAsPlace (state: MgState) (place: TPlace) =
   match place with
-  | Place.Local local -> localPlace local
+  | TPlace.Local local -> localPlace local
 
-  | Place.Index (lhs, index) ->
+  | TPlace.Index (lhs, index) ->
     let place = genAsPlace state lhs
 
     let array =
@@ -181,7 +181,7 @@ let private genAsPlace (state: MgState) (place: Place) =
     let index = genAsRval state index
     makeProjection (Part.Index(index, array)) place
 
-  | Place.Field (lhs, field) ->
+  | TPlace.Field (lhs, field) ->
     let place = genAsPlace state lhs
 
     let record =
@@ -191,16 +191,16 @@ let private genAsPlace (state: MgState) (place: Place) =
 
     makeProjection (Part.Field(field.Index, record)) place
 
-let private genAsRval (state: MgState) (expr: Expr) =
+let private genAsRval (state: MgState) (expr: TExpr) =
   match expr with
-  | Expr.Read place -> genAsPlace state place |> MRval.Read
+  | TExpr.Read place -> genAsPlace state place |> MRval.Read
 
-  | Expr.Void -> MRval.Void
-  | Expr.Bool value -> MRval.Bool value
-  | Expr.Int value -> MRval.Int value
-  | Expr.String value -> MRval.String value
+  | TExpr.Void -> MRval.Void
+  | TExpr.Bool value -> MRval.Bool value
+  | TExpr.Int value -> MRval.Int value
+  | TExpr.String value -> MRval.String value
 
-  | Expr.Array (itemTy, items) ->
+  | TExpr.Array (itemTy, items) ->
     let array = internArrayTy state (internTy state itemTy)
 
     let items =
@@ -210,7 +210,7 @@ let private genAsRval (state: MgState) (expr: Expr) =
 
     MRval.Array(items, array)
 
-  | Expr.Record (record, fields) ->
+  | TExpr.Record (record, fields) ->
     let fields =
       fields
       |> List.toArray
@@ -218,9 +218,9 @@ let private genAsRval (state: MgState) (expr: Expr) =
 
     MRval.Record(fields, record)
 
-  | Expr.Call (callable, args) ->
+  | TExpr.Call (callable, args) ->
     match callable with
-    | Callable.Fn fn ->
+    | TCallable.Fn fn ->
       let fnDef = state.Fns |> lookup fn
 
       let result =
@@ -241,7 +241,7 @@ let private genAsRval (state: MgState) (expr: Expr) =
       | MTy.Void -> MRval.Void
       | _ -> MRval.Read(localPlace result)
 
-    | Callable.LogOr ->
+    | TCallable.LogOr ->
       let cond, alt =
         match args with
         | [ lhs; rhs ] -> lhs, rhs
@@ -279,7 +279,7 @@ let private genAsRval (state: MgState) (expr: Expr) =
 
       MRval.Read(localPlace dest)
 
-    | Callable.LogAnd ->
+    | TCallable.LogAnd ->
       let cond, body =
         match args with
         | [ lhs; rhs ] -> lhs, rhs
@@ -317,7 +317,7 @@ let private genAsRval (state: MgState) (expr: Expr) =
 
       MRval.Read(localPlace dest)
 
-    | Callable.ArrayPush ->
+    | TCallable.ArrayPush ->
       let args =
         args
         |> List.toArray
@@ -328,7 +328,7 @@ let private genAsRval (state: MgState) (expr: Expr) =
       addStmt state (MStmt.Call(localPlace result, MCallable.ArrayPush, args))
       MRval.Void
 
-    | Callable.Assert ->
+    | TCallable.Assert ->
       let args =
         args
         |> List.toArray
@@ -339,30 +339,30 @@ let private genAsRval (state: MgState) (expr: Expr) =
       addStmt state (MStmt.Call(localPlace result, MCallable.Assert, args))
       MRval.Void
 
-  | Expr.Unary (unary, arg) ->
+  | TExpr.Unary (unary, arg) ->
     let unary =
       match unary with
-      | Unary.Not -> MUnary.Not
-      | Unary.Minus -> MUnary.Minus
-      | Unary.ArrayLen -> MUnary.ArrayLen
+      | TUnary.Not -> MUnary.Not
+      | TUnary.Minus -> MUnary.Minus
+      | TUnary.ArrayLen -> MUnary.ArrayLen
 
     let arg = genAsRval state arg
     MRval.Unary(unary, arg)
 
-  | Expr.Binary (binary, lhs, rhs) ->
+  | TExpr.Binary (binary, lhs, rhs) ->
     let binary =
       match binary with
-      | Binary.Add -> MBinary.Add
-      | Binary.Subtract -> MBinary.Subtract
-      | Binary.Multiply -> MBinary.Multiply
-      | Binary.Divide -> MBinary.Divide
-      | Binary.Modulo -> MBinary.Modulo
-      | Binary.Equal -> MBinary.Equal
-      | Binary.NotEqual -> MBinary.NotEqual
-      | Binary.LessThan -> MBinary.LessThan
-      | Binary.LessEqual -> MBinary.LessEqual
-      | Binary.GreaterThan -> MBinary.GreaterThan
-      | Binary.GreaterEqual -> MBinary.GreaterEqual
+      | TBinary.Add -> MBinary.Add
+      | TBinary.Subtract -> MBinary.Subtract
+      | TBinary.Multiply -> MBinary.Multiply
+      | TBinary.Divide -> MBinary.Divide
+      | TBinary.Modulo -> MBinary.Modulo
+      | TBinary.Equal -> MBinary.Equal
+      | TBinary.NotEqual -> MBinary.NotEqual
+      | TBinary.LessThan -> MBinary.LessThan
+      | TBinary.LessEqual -> MBinary.LessEqual
+      | TBinary.GreaterThan -> MBinary.GreaterThan
+      | TBinary.GreaterEqual -> MBinary.GreaterEqual
 
     let lhs = genAsRval state lhs
     let rhs = genAsRval state rhs
@@ -372,24 +372,24 @@ let private genAsRval (state: MgState) (expr: Expr) =
 // Statements
 // -----------------------------------------------
 
-let private genStmt (state: MgState) (stmt: Stmt) =
+let private genStmt (state: MgState) (stmt: TStmt) =
   match stmt with
-  | Stmt.Do expr -> genAsRval state expr |> ignore
+  | TStmt.Do expr -> genAsRval state expr |> ignore
 
-  | Stmt.Assign (place, value) ->
+  | TStmt.Assign (place, value) ->
     let place = genAsPlace state place
     let value = genAsRval state value
     addStmt state (MStmt.Assign(place, value))
 
-  | Stmt.Break ->
+  | TStmt.Break ->
     let label = (unwrap state.LoopOpt).Break
     setTerminator state (MTerminator.Goto label)
 
-  | Stmt.Continue ->
+  | TStmt.Continue ->
     let label = (unwrap state.LoopOpt).Continue
     setTerminator state (MTerminator.Goto label)
 
-  | Stmt.Return result ->
+  | TStmt.Return result ->
     // assert (Option.isSome state.FnOpt)
 
     let dest = newSymbol "_" 0 "__return"
@@ -398,11 +398,11 @@ let private genStmt (state: MgState) (stmt: Stmt) =
     addStmt state (MStmt.Assign(localPlace dest, result))
     setTerminator state MTerminator.Return
 
-  | Stmt.Block block ->
+  | TStmt.Block block ->
     for stmt in block.Stmts do
       genStmt state stmt
 
-  | Stmt.If (cond, body, alt) ->
+  | TStmt.If (cond, body, alt) ->
     let cond = genAsRval state cond
 
     let bodyBlock = addBlock state "then"
@@ -429,7 +429,7 @@ let private genStmt (state: MgState) (stmt: Stmt) =
       genStmt state alt
       resolveBlock state altBlock
 
-  | Stmt.Loop body ->
+  | TStmt.Loop body ->
     let bodyBlock = addBlock state "loop_body"
     let nextBlock = addBlock state "loop_next"
     setTerminator state (MTerminator.Goto bodyBlock)
@@ -453,10 +453,10 @@ let private genStmt (state: MgState) (stmt: Stmt) =
 // Declarations
 // -----------------------------------------------
 
-let private genDecl (state: MgState) (decl: Decl) =
+let private genDecl (state: MgState) (decl: TDecl) =
   try
     match decl with
-    | Decl.Block (locals, block) ->
+    | TDecl.Block (locals, block) ->
       let locals =
         locals
         |> List.map (fun (local, ty) ->
@@ -487,7 +487,7 @@ let private genDecl (state: MgState) (decl: Decl) =
 
       state.Bodies.Add(bodyDef)
 
-    | Decl.Fn (fn, _, _, _, body) ->
+    | TDecl.Fn (fn, _, _, _, body) ->
       let fnDef = state.Fns |> lookup fn
       assert (fnDef.Blocks |> Array.isEmpty)
 
@@ -515,7 +515,7 @@ let private genDecl (state: MgState) (decl: Decl) =
       let fnDef = { fnDef with Blocks = innerState.Blocks.ToArray() }
       state.Fns <- state.Fns |> Map.add fn fnDef
 
-    | Decl.RecordTy _ -> ()
+    | TDecl.RecordTy _ -> ()
   with
   | _ ->
     eprintfn "In decl %A" decl
@@ -525,14 +525,14 @@ let private genDecl (state: MgState) (decl: Decl) =
 // Interface
 // -----------------------------------------------
 
-let genMir (decls: Decl list) =
+let genMir (decls: TDecl list) =
   let state = initialState ()
   let fns = Dictionary()
   let records = Dictionary()
 
   for decl in decls do
     match decl with
-    | Decl.Fn (fn, paramList, resultTy, locals, _) ->
+    | TDecl.Fn (fn, paramList, resultTy, locals, _) ->
       let paramList =
         paramList
         |> Array.ofList
@@ -557,7 +557,7 @@ let genMir (decls: Decl list) =
 
       fns.Add(fn, fnDef)
 
-    | Decl.RecordTy (record, fields) ->
+    | TDecl.RecordTy (record, fields) ->
       let def: RecordDef =
         { Name = record.Name
           Fields =

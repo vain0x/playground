@@ -1,59 +1,56 @@
 module rec OptLang.TypeCheck
 
 open OptLang.Symbol
+open OptLang.Tir
 
 module S = OptLang.Syntax
-module T = OptLang.Tir
-
-type Unary = T.Unary
-type Binary = T.Binary
 
 [<RequireQualifiedAccess; NoEquality; NoComparison>]
 type ValueDef =
-  | Constant of T.Expr
-  | Local of Symbol * T.Ty
-  | Fn of Symbol * T.Ty list * T.Ty
-  | Unary of T.Unary
-  | Binary of T.Binary
+  | Constant of TExpr
+  | Local of Symbol * TTy
+  | Fn of Symbol * TTy list * TTy
+  | Unary of TUnary
+  | Binary of TBinary
   | LogAnd
   | LogOr
   | ArrayPush
   | Assert
 
 [<RequireQualifiedAccess; NoEquality; NoComparison>]
-type FnDef = { ParamTys: T.Ty list; ResultTy: T.Ty }
+type FnDef = { ParamTys: TTy list; ResultTy: TTy }
 
 [<RequireQualifiedAccess; NoEquality; NoComparison>]
-type RecordTyDef = { Fields: (Symbol * T.Ty) array }
+type RecordTyDef = { Fields: (Symbol * TTy) array }
 
 [<RequireQualifiedAccess; NoEquality; NoComparison>]
 type TcState =
   { mutable ValueEnv: Map<string, ValueDef>
-    mutable TyEnv: Map<string, T.Ty>
-    Locals: ResizeArray<Symbol * T.Ty>
+    mutable TyEnv: Map<string, TTy>
+    Locals: ResizeArray<Symbol * TTy>
     Fns: ResizeArray<FnDef>
     Records: ResizeArray<RecordTyDef> }
 
 let private builtInValueEnv =
-  [ "void", ValueDef.Constant T.Expr.Void
-    "false", ValueDef.Constant(T.Expr.Bool false)
-    "true", ValueDef.Constant(T.Expr.Bool true)
-    "not", ValueDef.Unary T.Unary.Not
-    "minus", ValueDef.Unary T.Unary.Minus
+  [ "void", ValueDef.Constant TExpr.Void
+    "false", ValueDef.Constant(TExpr.Bool false)
+    "true", ValueDef.Constant(TExpr.Bool true)
+    "not", ValueDef.Unary TUnary.Not
+    "minus", ValueDef.Unary TUnary.Minus
 
     "||", ValueDef.LogOr
     "&&", ValueDef.LogAnd
-    "==", ValueDef.Binary T.Binary.Equal
-    "!=", ValueDef.Binary T.Binary.NotEqual
-    "<", ValueDef.Binary T.Binary.LessThan
-    "<=", ValueDef.Binary T.Binary.LessEqual
-    ">", ValueDef.Binary T.Binary.GreaterThan
-    ">=", ValueDef.Binary T.Binary.GreaterEqual
-    "+", ValueDef.Binary T.Binary.Add
-    "-", ValueDef.Binary T.Binary.Subtract
-    "*", ValueDef.Binary T.Binary.Multiply
-    "/", ValueDef.Binary T.Binary.Divide
-    "%", ValueDef.Binary T.Binary.Modulo
+    "==", ValueDef.Binary TBinary.Equal
+    "!=", ValueDef.Binary TBinary.NotEqual
+    "<", ValueDef.Binary TBinary.LessThan
+    "<=", ValueDef.Binary TBinary.LessEqual
+    ">", ValueDef.Binary TBinary.GreaterThan
+    ">=", ValueDef.Binary TBinary.GreaterEqual
+    "+", ValueDef.Binary TBinary.Add
+    "-", ValueDef.Binary TBinary.Subtract
+    "*", ValueDef.Binary TBinary.Multiply
+    "/", ValueDef.Binary TBinary.Divide
+    "%", ValueDef.Binary TBinary.Modulo
 
     "push", ValueDef.ArrayPush
     "assert", ValueDef.Assert ]
@@ -72,14 +69,14 @@ let private cloneState (state: TcState) : TcState =
       TyEnv = state.TyEnv
       Locals = state.Locals }
 
-let private isComparison (binary: T.Binary) =
+let private isComparison (binary: TBinary) =
   match binary with
-  | Binary.Equal
-  | Binary.NotEqual
-  | Binary.LessThan
-  | Binary.LessEqual
-  | Binary.GreaterThan
-  | Binary.GreaterEqual -> true
+  | TBinary.Equal
+  | TBinary.NotEqual
+  | TBinary.LessThan
+  | TBinary.LessEqual
+  | TBinary.GreaterThan
+  | TBinary.GreaterEqual -> true
   | _ -> false
 
 let private unreachable () = failwith "unreachable"
@@ -87,87 +84,87 @@ let private unreachable () = failwith "unreachable"
 let private mismatch actual expected =
   failwithf "Type mismatch. Expected %s but was %s" expected actual
 
-let private unifyTy (actualTy: T.Ty) (expectedTy: T.Ty) =
+let private unifyTy (actualTy: TTy) (expectedTy: TTy) =
   if actualTy <> expectedTy then
     failwithf "Type mismatch. Expected %A but was %A" expectedTy actualTy
 
-let private placeToTy (state: TcState) (place: T.Place) : T.Ty =
+let private placeToTy (state: TcState) (place: TPlace) : TTy =
   match place with
-  | T.Place.Local symbol ->
+  | TPlace.Local symbol ->
     let _, ty = state.Locals.[symbol.Index]
     ty
 
-  | T.Place.Index (lhs, _) ->
+  | TPlace.Index (lhs, _) ->
     match placeToTy state lhs with
-    | T.Ty.Array itemTy -> itemTy
+    | TTy.Array itemTy -> itemTy
     | _ -> unreachable ()
 
-  | T.Place.Field (lhs, field) ->
+  | TPlace.Field (lhs, field) ->
     match placeToTy state lhs with
-    | T.Ty.Record record ->
+    | TTy.Record record ->
       state.Records.[record.Index].Fields.[field.Index]
       |> snd
 
     | _ -> unreachable ()
 
-let private exprToTy (state: TcState) (expr: T.Expr) : T.Ty =
+let private exprToTy (state: TcState) (expr: TExpr) : TTy =
   match expr with
-  | T.Expr.Void -> T.Ty.Void
-  | T.Expr.Bool _ -> T.Ty.Bool
-  | T.Expr.Int _ -> T.Ty.Int
-  | T.Expr.String _ -> T.Ty.String
-  | T.Expr.Read place -> placeToTy state place
+  | TExpr.Void -> TTy.Void
+  | TExpr.Bool _ -> TTy.Bool
+  | TExpr.Int _ -> TTy.Int
+  | TExpr.String _ -> TTy.String
+  | TExpr.Read place -> placeToTy state place
 
-  | T.Expr.Array (itemTy, _) -> T.Ty.Array itemTy
-  | T.Expr.Record (record, _) -> T.Ty.Record record
+  | TExpr.Array (itemTy, _) -> TTy.Array itemTy
+  | TExpr.Record (record, _) -> TTy.Record record
 
-  | T.Expr.Unary (unary, _) ->
+  | TExpr.Unary (unary, _) ->
     match unary with
-    | Unary.Not -> T.Ty.Bool
+    | TUnary.Not -> TTy.Bool
 
-    | Unary.Minus
-    | Unary.ArrayLen -> T.Ty.Int
+    | TUnary.Minus
+    | TUnary.ArrayLen -> TTy.Int
 
-  | T.Expr.Binary (binary, _, _) ->
+  | TExpr.Binary (binary, _, _) ->
     match binary with
-    | Binary.Add
-    | Binary.Subtract
-    | Binary.Multiply
-    | Binary.Divide
-    | Binary.Modulo -> T.Ty.Int
+    | TBinary.Add
+    | TBinary.Subtract
+    | TBinary.Multiply
+    | TBinary.Divide
+    | TBinary.Modulo -> TTy.Int
 
-    | Binary.Equal
-    | Binary.NotEqual
-    | Binary.LessThan
-    | Binary.LessEqual
-    | Binary.GreaterThan
-    | Binary.GreaterEqual -> T.Ty.Bool
+    | TBinary.Equal
+    | TBinary.NotEqual
+    | TBinary.LessThan
+    | TBinary.LessEqual
+    | TBinary.GreaterThan
+    | TBinary.GreaterEqual -> TTy.Bool
 
-  | T.Expr.Call (callable, _) ->
+  | TExpr.Call (callable, _) ->
     match callable with
-    | T.Callable.Fn fn -> state.Fns.[fn.Index].ResultTy
+    | TCallable.Fn fn -> state.Fns.[fn.Index].ResultTy
 
-    | T.Callable.LogOr
-    | T.Callable.LogAnd -> T.Ty.Bool
+    | TCallable.LogOr
+    | TCallable.LogAnd -> TTy.Bool
 
-    | T.Callable.ArrayPush
-    | T.Callable.Assert -> T.Ty.Void
+    | TCallable.ArrayPush
+    | TCallable.Assert -> TTy.Void
 
-let private checkTy (state: TcState) (ty: S.Ty) : T.Ty =
+let private checkTy (state: TcState) (ty: S.Ty) : TTy =
   match ty with
-  | S.Ty.Void -> T.Ty.Void
-  | S.Ty.Bool -> T.Ty.Bool
-  | S.Ty.Int -> T.Ty.Int
-  | S.Ty.String -> T.Ty.String
+  | S.Ty.Void -> TTy.Void
+  | S.Ty.Bool -> TTy.Bool
+  | S.Ty.Int -> TTy.Int
+  | S.Ty.String -> TTy.String
 
   | S.Ty.Name name ->
     match state.TyEnv |> Map.tryFind name with
     | Some ty -> ty
     | None -> failwithf "Undefined type '%s'" name
 
-  | S.Ty.Array itemTy -> T.Ty.Array(checkTy state itemTy)
+  | S.Ty.Array itemTy -> TTy.Array(checkTy state itemTy)
 
-let private synthFieldAsPlace (state: TcState) expr : Result<T.Place, T.Expr> =
+let private synthFieldAsPlace (state: TcState) expr : Result<TPlace, TExpr> =
   let lhs, field =
     match expr with
     | S.Expr.Field (lhs, field) -> lhs, field
@@ -176,27 +173,27 @@ let private synthFieldAsPlace (state: TcState) expr : Result<T.Place, T.Expr> =
   let lhs = synthAsPlace state lhs
 
   match placeToTy state lhs with
-  | T.Ty.Record record ->
+  | TTy.Record record ->
     let fields = state.Records.[record.Index].Fields
 
     match fields
           |> Array.tryPick (fun ((f: Symbol), _) -> if f.Name = field then Some f else None)
       with
-    | Some field -> Ok(T.Place.Field(lhs, field))
+    | Some field -> Ok(TPlace.Field(lhs, field))
     | None -> failwithf "Missing field '%s' in a record type '%A'" field record
 
-  | T.Ty.Array _ ->
+  | TTy.Array _ ->
     match field with
-    | "len" -> Error(T.Expr.Unary(Unary.ArrayLen, T.Expr.Read lhs))
+    | "len" -> Error(TExpr.Unary(TUnary.ArrayLen, TExpr.Read lhs))
     | _ -> failwithf "Array doesn't have field '%s'" field
 
   | _ -> mismatch (string (placeToTy state lhs)) "record"
 
-let private synthAsPlace (state: TcState) (expr: S.Expr) : T.Place =
+let private synthAsPlace (state: TcState) (expr: S.Expr) : TPlace =
   match expr with
   | S.Expr.Name name ->
     match state.ValueEnv |> Map.tryFind name with
-    | Some (ValueDef.Local (local, _)) -> T.Place.Local local
+    | Some (ValueDef.Local (local, _)) -> TPlace.Local local
     | Some _ -> failwithf "Function can't be used as a value '%s'" name
     | None -> failwithf "Undefined variable '%s'" name
 
@@ -204,11 +201,11 @@ let private synthAsPlace (state: TcState) (expr: S.Expr) : T.Place =
     let lhs = synthAsPlace state lhs
 
     match placeToTy state lhs with
-    | T.Ty.Array _ -> ()
+    | TTy.Array _ -> ()
     | ty -> mismatch (string ty) "array(_)"
 
-    let index = checkExpr state index T.Ty.Int
-    T.Place.Index(lhs, index)
+    let index = checkExpr state index TTy.Int
+    TPlace.Index(lhs, index)
 
   | S.Expr.Field _ ->
     match synthFieldAsPlace state expr with
@@ -217,12 +214,12 @@ let private synthAsPlace (state: TcState) (expr: S.Expr) : T.Place =
 
   | _ -> failwithf "Expected a place but was %A" expr
 
-let private checkAsPlace (state: TcState) (expr: S.Expr) (ty: T.Ty) : T.Place =
+let private checkAsPlace (state: TcState) (expr: S.Expr) (ty: TTy) : TPlace =
   match expr with
   | S.Expr.Index (lhs, index) ->
-    let lhs = checkAsPlace state lhs (T.Ty.Array ty)
-    let index = checkExpr state index T.Ty.Int
-    T.Place.Index(lhs, index)
+    let lhs = checkAsPlace state lhs (TTy.Array ty)
+    let index = checkExpr state index TTy.Int
+    TPlace.Index(lhs, index)
 
   | S.Expr.Name _
   | S.Expr.Field _ ->
@@ -232,17 +229,17 @@ let private checkAsPlace (state: TcState) (expr: S.Expr) (ty: T.Ty) : T.Place =
 
   | _ -> failwithf "Expected a place but was %A" expr
 
-let private synthExpr (state: TcState) (expr: S.Expr) : T.Expr =
+let private synthExpr (state: TcState) (expr: S.Expr) : TExpr =
   match expr with
   | S.Expr.Name name ->
     match state.ValueEnv |> Map.tryFind name with
     | Some (ValueDef.Constant expr) -> expr
     | _ ->
       let place = synthAsPlace state expr
-      T.Expr.Read place
+      TExpr.Read place
 
-  | S.Expr.Int value -> T.Expr.Int value
-  | S.Expr.String value -> T.Expr.String value
+  | S.Expr.Int value -> TExpr.Int value
+  | S.Expr.String value -> TExpr.String value
 
   | S.Expr.Array (head :: tail) ->
     let head = synthExpr state head
@@ -252,13 +249,13 @@ let private synthExpr (state: TcState) (expr: S.Expr) : T.Expr =
       tail
       |> List.map (fun item -> checkExpr state item itemTy)
 
-    T.Expr.Array(itemTy, head :: tail)
+    TExpr.Array(itemTy, head :: tail)
 
-  | S.Expr.Index _ -> T.Expr.Read(synthAsPlace state expr)
+  | S.Expr.Index _ -> TExpr.Read(synthAsPlace state expr)
 
   | S.Expr.Field _ ->
     match synthFieldAsPlace state expr with
-    | Ok place -> T.Expr.Read place
+    | Ok place -> TExpr.Read place
     | Error expr -> expr
 
   | S.Expr.Call (name, args) ->
@@ -275,58 +272,58 @@ let private synthExpr (state: TcState) (expr: S.Expr) : T.Expr =
     match state.ValueEnv |> Map.tryFind name with
     | Some (ValueDef.Fn (fn, paramTys, _)) ->
       let args = checkArgs paramTys
-      T.Expr.Call(T.Callable.Fn fn, args)
+      TExpr.Call(TCallable.Fn fn, args)
 
     | Some (ValueDef.Binary binary) when isComparison binary ->
       match args with
       | [ lhs; rhs ] ->
         let lhs = synthExpr state lhs
         let rhs = checkExpr state rhs (exprToTy state lhs)
-        T.Expr.Binary(binary, lhs, rhs)
+        TExpr.Binary(binary, lhs, rhs)
 
       | _ -> unreachable ()
 
     | Some (ValueDef.Unary unary) ->
       let paramTy =
         match unary with
-        | Unary.Not -> T.Ty.Bool
-        | Unary.Minus -> T.Ty.Int
-        | Unary.ArrayLen -> unreachable ()
+        | TUnary.Not -> TTy.Bool
+        | TUnary.Minus -> TTy.Int
+        | TUnary.ArrayLen -> unreachable ()
 
       match checkArgs [ paramTy ] with
-      | [ arg ] -> T.Expr.Unary(unary, arg)
+      | [ arg ] -> TExpr.Unary(unary, arg)
       | _ -> unreachable ()
 
     | Some (ValueDef.Binary binary) ->
       let paramTys =
         match binary with
-        | Binary.Add
-        | Binary.Subtract
-        | Binary.Multiply
-        | Binary.Divide
-        | Binary.Modulo -> [ T.Ty.Int; T.Ty.Int ]
+        | TBinary.Add
+        | TBinary.Subtract
+        | TBinary.Multiply
+        | TBinary.Divide
+        | TBinary.Modulo -> [ TTy.Int; TTy.Int ]
 
-        | Binary.Equal
-        | Binary.NotEqual
-        | Binary.LessThan
-        | Binary.LessEqual
-        | Binary.GreaterThan
-        | Binary.GreaterEqual -> unreachable ()
+        | TBinary.Equal
+        | TBinary.NotEqual
+        | TBinary.LessThan
+        | TBinary.LessEqual
+        | TBinary.GreaterThan
+        | TBinary.GreaterEqual -> unreachable ()
 
       match checkArgs paramTys with
-      | [ l; r ] -> T.Expr.Binary(binary, l, r)
+      | [ l; r ] -> TExpr.Binary(binary, l, r)
       | _ -> unreachable ()
 
     | Some ((ValueDef.LogOr
     | ValueDef.LogAnd) as v) ->
       let c =
         match v with
-        | ValueDef.LogOr -> T.Callable.LogOr
-        | ValueDef.LogAnd -> T.Callable.LogAnd
+        | ValueDef.LogOr -> TCallable.LogOr
+        | ValueDef.LogAnd -> TCallable.LogAnd
         | _ -> unreachable ()
 
-      let args = checkArgs [ T.Ty.Bool; T.Ty.Bool ]
-      T.Expr.Call(c, args)
+      let args = checkArgs [ TTy.Bool; TTy.Bool ]
+      TExpr.Call(c, args)
 
     | Some ValueDef.ArrayPush ->
       match args with
@@ -335,20 +332,20 @@ let private synthExpr (state: TcState) (expr: S.Expr) : T.Expr =
 
         let itemTy =
           match exprToTy state array with
-          | T.Ty.Array it -> it
+          | TTy.Array it -> it
           | ty -> mismatch (string ty) "array(_)"
 
         let item = checkExpr state item itemTy
 
-        T.Expr.Call(T.Callable.ArrayPush, [ array; item ])
+        TExpr.Call(TCallable.ArrayPush, [ array; item ])
 
       | _ -> failwith "Expected 2 arguments (push)"
 
     | Some ValueDef.Assert ->
       match args with
       | [ cond ] ->
-        let cond = checkExpr state cond T.Ty.Bool
-        T.Expr.Call(T.Callable.Assert, [ cond ])
+        let cond = checkExpr state cond TTy.Bool
+        TExpr.Call(TCallable.Assert, [ cond ])
 
       | _ -> failwith "Expected 2 args (assert)"
 
@@ -360,24 +357,24 @@ let private synthExpr (state: TcState) (expr: S.Expr) : T.Expr =
   | S.Expr.Array []
   | S.Expr.Record _ -> failwithf "Can't infer type: %A." expr
 
-let private checkExpr (state: TcState) (expr: S.Expr) (ty: T.Ty) : T.Expr =
+let private checkExpr (state: TcState) (expr: S.Expr) (ty: TTy) : TExpr =
   match expr with
   | S.Expr.Array items ->
     let itemTy =
       match ty with
-      | T.Ty.Array it -> it
+      | TTy.Array it -> it
       | _ -> mismatch (string ty) "array(_)"
 
     let items =
       items
       |> List.map (fun item -> checkExpr state item itemTy)
 
-    T.Expr.Array(itemTy, items)
+    TExpr.Array(itemTy, items)
 
   | S.Expr.Record fields ->
     let record =
       match ty with
-      | T.Ty.Record it -> it
+      | TTy.Record it -> it
       | _ -> mismatch (string ty) "record"
 
     let mutable fieldMap =
@@ -411,28 +408,28 @@ let private checkExpr (state: TcState) (expr: S.Expr) (ty: T.Ty) : T.Expr =
       |> Array.map snd
       |> Array.toList
 
-    T.Expr.Record(record, items)
+    TExpr.Record(record, items)
 
   | _ ->
     let expr = synthExpr state expr
     unifyTy (exprToTy state expr) ty
     expr
 
-let private checkStmt (state: TcState) (stmt: S.Stmt) : T.Stmt =
+let private checkStmt (state: TcState) (stmt: S.Stmt) : TStmt =
   match stmt with
-  | S.Stmt.Do expr -> synthExpr state expr |> T.Stmt.Do
+  | S.Stmt.Do expr -> synthExpr state expr |> TStmt.Do
 
   | S.Stmt.Assign (place, value) ->
     let place = synthAsPlace state place
     let value = checkExpr state value (placeToTy state place)
-    T.Stmt.Assign(place, value)
+    TStmt.Assign(place, value)
 
   | S.Stmt.Let (ident, tyOpt, init) ->
     let symbol =
       let index = state.Locals.Count
       newSymbol "_" index ident
 
-    state.Locals.Add(symbol, T.Ty.Void)
+    state.Locals.Add(symbol, TTy.Void)
 
     let init =
       match tyOpt with
@@ -447,10 +444,10 @@ let private checkStmt (state: TcState) (stmt: S.Stmt) : T.Stmt =
       state.ValueEnv
       |> Map.add ident (ValueDef.Local(symbol, ty))
 
-    T.Stmt.Assign(T.Place.Local symbol, init)
+    TStmt.Assign(TPlace.Local symbol, init)
 
-  | S.Stmt.Break -> T.Stmt.Break
-  | S.Stmt.Continue -> T.Stmt.Continue
+  | S.Stmt.Break -> TStmt.Break
+  | S.Stmt.Continue -> TStmt.Continue
 
   | S.Stmt.Return argOpt ->
     let arg =
@@ -461,16 +458,16 @@ let private checkStmt (state: TcState) (stmt: S.Stmt) : T.Stmt =
 
         | None ->
           try
-            unifyTy resultTy T.Ty.Void
+            unifyTy resultTy TTy.Void
           with
           | _ -> failwithf "Use return statement with a value in non-void function"
 
-          T.Expr.Void
+          TExpr.Void
 
       | Some _ -> unreachable ()
       | None -> failwithf "Can't use return out of a function"
 
-    T.Stmt.Return arg
+    TStmt.Return arg
 
   | S.Stmt.Block block ->
     let state = cloneState state
@@ -479,21 +476,21 @@ let private checkStmt (state: TcState) (stmt: S.Stmt) : T.Stmt =
       block.Stmts
       |> List.map (fun stmt -> checkStmt state stmt)
 
-    let block: T.Block = { Stmts = stmts }
-    T.Stmt.Block block
+    let block: TBlock = { Stmts = stmts }
+    TStmt.Block block
 
   | S.Stmt.If (cond, body, alt) ->
-    let cond = checkExpr state cond T.Ty.Bool
+    let cond = checkExpr state cond TTy.Bool
     let body = checkStmt (cloneState state) body
     let alt = checkStmt (cloneState state) alt
-    T.Stmt.If(cond, body, alt)
+    TStmt.If(cond, body, alt)
 
-  | S.Stmt.Loop body -> T.Stmt.Loop(checkStmt state body)
+  | S.Stmt.Loop body -> TStmt.Loop(checkStmt state body)
 
-let private checkDecl (state: TcState) (decl: S.Decl) : T.Decl =
+let private checkDecl (state: TcState) (decl: S.Decl) : TDecl =
   match decl with
   | S.Decl.Block block ->
-    let locals = ResizeArray([ newSymbol "_" 0 "__return", T.Ty.Void ])
+    let locals = ResizeArray([ newSymbol "_" 0 "__return", TTy.Void ])
 
     let innerState = { cloneState state with Locals = locals }
 
@@ -509,8 +506,8 @@ let private checkDecl (state: TcState) (decl: S.Decl) : T.Decl =
 
     let locals = innerState.Locals.ToArray() |> Array.toList
 
-    let block: T.Block = { Stmts = stmts }
-    T.Decl.Block(locals, block)
+    let block: TBlock = { Stmts = stmts }
+    TDecl.Block(locals, block)
 
   | S.Decl.Fn (name, paramList, resultTy, body) ->
     let index = state.Fns.Count
@@ -525,7 +522,7 @@ let private checkDecl (state: TcState) (decl: S.Decl) : T.Decl =
     let resultTy = checkTy state resultTy
 
     let r = newSymbol "_" 0 "__return"
-    locals.Add(r, T.Ty.Void)
+    locals.Add(r, TTy.Void)
 
     for p, ty in paramList do
       locals.Add(p, ty)
@@ -561,7 +558,7 @@ let private checkDecl (state: TcState) (decl: S.Decl) : T.Decl =
 
     let locals = innerState.Locals.ToArray() |> Array.toList
 
-    T.Decl.Fn(symbol, paramList, resultTy, locals, body)
+    TDecl.Fn(symbol, paramList, resultTy, locals, body)
 
   | S.Decl.RecordTy (name, fields) ->
     let def: RecordTyDef = { Fields = Array.empty }
@@ -571,7 +568,7 @@ let private checkDecl (state: TcState) (decl: S.Decl) : T.Decl =
       newSymbol "R" index name
 
     state.Records.Add(def)
-    state.TyEnv <- state.TyEnv |> Map.add name (T.Ty.Record symbol)
+    state.TyEnv <- state.TyEnv |> Map.add name (TTy.Record symbol)
 
     let fields =
       fields
@@ -580,9 +577,9 @@ let private checkDecl (state: TcState) (decl: S.Decl) : T.Decl =
 
     state.Records.[symbol.Index] <- { Fields = fields }
 
-    T.Decl.RecordTy(symbol, fields)
+    TDecl.RecordTy(symbol, fields)
 
-let typeCheck (decls: S.Decl list) : T.Decl list =
+let typeCheck (decls: S.Decl list) : TDecl list =
   let state = initialState ()
 
   decls

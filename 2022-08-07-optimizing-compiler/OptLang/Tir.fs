@@ -3,13 +3,13 @@ module rec OptLang.Tir
 open OptLang.Symbol
 
 [<RequireQualifiedAccess; NoEquality; NoComparison>]
-type Unary =
+type TUnary =
   | Not
   | Minus
   | ArrayLen
 
 [<RequireQualifiedAccess; NoEquality; NoComparison>]
-type Binary =
+type TBinary =
   | Add
   | Subtract
   | Multiply
@@ -24,16 +24,16 @@ type Binary =
 
 // derive equality, comparison
 [<RequireQualifiedAccess>]
-type Ty =
+type TTy =
   | Void
   | Bool
   | Int
   | String
   | Record of Symbol
-  | Array of Ty
+  | Array of TTy
 
 [<RequireQualifiedAccess; NoEquality; NoComparison>]
-type Callable =
+type TCallable =
   | Fn of Symbol
   | LogOr
   | LogAnd
@@ -41,44 +41,44 @@ type Callable =
   | Assert
 
 [<RequireQualifiedAccess; NoEquality; NoComparison>]
-type Place =
+type TPlace =
   | Local of Symbol
-  | Index of Place * index: Expr
-  | Field of Place * field: Symbol
+  | Index of TPlace * index: TExpr
+  | Field of TPlace * field: Symbol
 
 [<RequireQualifiedAccess; NoEquality; NoComparison>]
-type Expr =
+type TExpr =
   | Void
   | Bool of value: bool
   | Int of value: int
   | String of value: string
-  | Read of Place
-  | Array of itemTy: Ty * Expr list
-  | Record of recordTy: Symbol * Expr list
-  | Unary of Unary * Expr
-  | Binary of Binary * Expr * Expr
-  | Call of Callable * Expr list
+  | Read of TPlace
+  | Array of itemTy: TTy * TExpr list
+  | Record of recordTy: Symbol * TExpr list
+  | Unary of TUnary * TExpr
+  | Binary of TBinary * TExpr * TExpr
+  | Call of TCallable * TExpr list
 
 [<RequireQualifiedAccess; NoEquality; NoComparison>]
-type Block = { Stmts: Stmt list }
+type TBlock = { Stmts: TStmt list }
 
 [<RequireQualifiedAccess; NoEquality; NoComparison>]
-type Stmt =
-  | Do of Expr
-  | Assign of Place * Expr
+type TStmt =
+  | Do of TExpr
+  | Assign of TPlace * TExpr
 
   // jumps:
   | Break
   | Continue
-  | Return of Expr
+  | Return of TExpr
 
   // blocks:
-  | Block of Block
-  | If of cond: Expr * body: Stmt * alt: Stmt
-  | Loop of body: Stmt
+  | Block of TBlock
+  | If of cond: TExpr * body: TStmt * alt: TStmt
+  | Loop of body: TStmt
 
 [<RequireQualifiedAccess; NoEquality; NoComparison>]
-type Decl =
-  | Block of locals: (Symbol * Ty) list * Block
-  | Fn of Symbol * paramList: (Symbol * Ty) list * resultTy: Ty * locals: (Symbol * Ty) list * body: Stmt
-  | RecordTy of Symbol * fields: (Symbol * Ty) array
+type TDecl =
+  | Block of locals: (Symbol * TTy) list * TBlock
+  | Fn of Symbol * paramList: (Symbol * TTy) list * resultTy: TTy * locals: (Symbol * TTy) list * body: TStmt
+  | RecordTy of Symbol * fields: (Symbol * TTy) array
