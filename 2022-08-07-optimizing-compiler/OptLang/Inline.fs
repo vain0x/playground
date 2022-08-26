@@ -207,7 +207,7 @@ let performInlineExpansion (mir: MProgram) =
         with
       | Some (block, stmtId, place, fn, args) ->
         let fnDef = mir.Fns |> lookup fn
-        let blockDef = fnDef.Blocks[block]
+        let blockDef = bodyDef.Blocks.[block]
         let localMap = bodyDef.Locals
 
         let localMap, argMap, assignmentAcc =

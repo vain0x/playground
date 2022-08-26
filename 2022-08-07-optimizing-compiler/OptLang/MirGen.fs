@@ -35,7 +35,10 @@ let private dictToMap (dict: Dictionary<_, _>) =
 // -----------------------------------------------
 
 [<RequireQualifiedAccess; NoEquality; NoComparison>]
-type private LoopDef = { Break: Symbol; Continue: Symbol }
+type private LoopDef =
+  { Break: Symbol
+    Continue: Symbol
+    mutable MightBreak: bool }
 
 let private newPlace local path : MPlace = { Local = local; Path = path }
 
@@ -52,8 +55,8 @@ let private makeProjection part (place: MPlace) =
 type private MgState =
   { // Block-local data
     mutable BlockOpt: Symbol option
-    Stmts: ResizeArray<MStmt>
-    mutable TerminatorOpt: MTerminator option
+    mutable Stmts: ResizeArray<MStmt>
+    mutable Terminator: MTerminator
 
     // Body-local data
     LoopOpt: LoopDef option
@@ -79,7 +82,7 @@ let private initialState () : MgState =
     LoopOpt = None
     ResultTy = MTy.Void
     Stmts = ResizeArray()
-    TerminatorOpt = None
+    Terminator = MTerminator.Unreachable
     Blocks = ResizeArray() }
 
 let private cloneState (state: MgState) : MgState = { state with Locals = state.Locals }
@@ -133,8 +136,6 @@ let private internTy (state: MgState) ty =
 
 let private addStmt (state: MgState) stmt = state.Stmts.Add(stmt)
 
-let private setTerminator (state: MgState) terminator = state.TerminatorOpt <- Some terminator
-
 let private EmptyBlockDef: MBlockDef =
   { Stmts = Array.empty
     Terminator = MTerminator.Unreachable }
@@ -145,17 +146,80 @@ let private addBlock (state: MgState) name =
   state.Blocks.Add(EmptyBlockDef)
   symbol
 
-let private resolveBlock (state: MgState) (block: Symbol) =
+// derive equality
+[<NoComparison>]
+type private Flow =
+  | Step
+  | Break
+  | Continue
+  | Return
+
+/// 分岐から合流するときのフローを計算する
+///
+/// - 各枝のフローの種類はここでは気にしなくてよい
+///   (フローは枝のブロックを閉じる際のターミネータの選択で使用済みであるため)
+///   すべての枝が発散するなら、発散することを示すためにReturnを返す
+let private mergeFlow f1 f2 =
+  match f1, f2 with
+  | Step, _
+  | _, Step -> Step
+
+  | _ -> Return
+
+/// 新しいブロックの生成を開始する
+///
+/// - `terminator`: ブロックの終端に到達したときに使う
+/// - コードを生成した後、ブロックを閉じること (finishBlock)
+let private startBlock (state: MgState) (block: Symbol) terminator =
   assert (System.Object.ReferenceEquals(state.Blocks.[block.Index], EmptyBlockDef))
+  assert (Option.isNone state.BlockOpt)
+
+  { state with
+      BlockOpt = Some block
+      Stmts = ResizeArray()
+      Terminator = terminator }
+
+let private finishBlock (state: MgState) flow =
+  let block = unwrap state.BlockOpt
+
+  let terminator =
+    match flow with
+    | Step -> state.Terminator
+    | Break -> MTerminator.Goto (unwrap state.LoopOpt).Break
+    | Continue -> MTerminator.Goto (unwrap state.LoopOpt).Continue
+    | Return -> MTerminator.Return
 
   let blockDef: MBlockDef =
     { Stmts = state.Stmts.ToArray()
-      Terminator =
-        match state.TerminatorOpt with
-        | Some it -> it
-        | None -> failwithf "No terminator of %A" block }
+      Terminator = terminator }
 
+  assert (System.Object.ReferenceEquals(state.Blocks.[block.Index], EmptyBlockDef))
   state.Blocks.[block.Index] <- blockDef
+
+  state.BlockOpt <- None
+  state.Stmts.Clear()
+  state.Terminator <- MTerminator.Unreachable
+
+/// 分岐を開始する
+///
+/// - これを呼ぶ前に現在のブロックを閉じておくこと (finishBlockを使う)
+/// - これの後に分岐先のブロックを生成し、その後、新しいブロックを開くこと (joinを使う)
+let private split (state: MgState) terminator next =
+  assert (Option.isSome state.BlockOpt)
+
+  let t = state.Terminator
+  state.Terminator <- terminator
+  finishBlock state Step
+
+  next, t
+
+/// 分岐から合流する
+let private join (state: MgState) next =
+  let nextBlock, terminator = next
+  let s = startBlock state nextBlock terminator
+  state.BlockOpt <- s.BlockOpt
+  state.Stmts <- s.Stmts
+  state.Terminator <- s.Terminator
 
 // -----------------------------------------------
 // Places
@@ -251,27 +315,19 @@ let private genAsRval (state: MgState) (expr: TExpr) =
       let bodyBlock = addBlock state "then"
       let altBlock = addBlock state "else"
       let nextBlock = addBlock state "endif"
-      setTerminator state (MTerminator.If(cond, bodyBlock, altBlock))
-      state.BlockOpt <- Some nextBlock
+      let next = split state (MTerminator.If(cond, bodyBlock, altBlock)) nextBlock
 
       do
-        let state =
-          { state with
-              Stmts = ResizeArray()
-              TerminatorOpt = Some(MTerminator.Goto nextBlock) }
-
+        let state = startBlock state bodyBlock (MTerminator.Goto nextBlock)
         addStmt state (MStmt.Assign(localPlace dest, MRval.Bool true))
-        resolveBlock state bodyBlock
+        finishBlock state Step
 
       do
-        let state =
-          { state with
-              Stmts = ResizeArray()
-              TerminatorOpt = Some(MTerminator.Goto nextBlock) }
-
+        let state = startBlock state altBlock (MTerminator.Goto nextBlock)
         addStmt state (MStmt.Assign(localPlace dest, genAsRval state alt))
-        resolveBlock state altBlock
+        finishBlock state Step
 
+      join state next
       MRval.Read(localPlace dest)
 
     | TCallable.LogAnd ->
@@ -289,27 +345,19 @@ let private genAsRval (state: MgState) (expr: TExpr) =
       let bodyBlock = addBlock state "then"
       let altBlock = addBlock state "else"
       let nextBlock = addBlock state "endif"
-      setTerminator state (MTerminator.If(cond, bodyBlock, altBlock))
-      state.BlockOpt <- Some nextBlock
+      let next = split state (MTerminator.If(cond, bodyBlock, altBlock)) nextBlock
 
       do
-        let state =
-          { state with
-              Stmts = ResizeArray()
-              TerminatorOpt = Some(MTerminator.Goto nextBlock) }
-
+        let state = startBlock state bodyBlock (MTerminator.Goto nextBlock)
         addStmt state (MStmt.Assign(localPlace dest, genAsRval state body))
-        resolveBlock state bodyBlock
+        finishBlock state Step
 
       do
-        let state =
-          { state with
-              Stmts = ResizeArray()
-              TerminatorOpt = Some(MTerminator.Goto nextBlock) }
-
+        let state = startBlock state altBlock (MTerminator.Goto nextBlock)
         addStmt state (MStmt.Assign(localPlace dest, MRval.Bool false))
-        resolveBlock state altBlock
+        finishBlock state Step
 
+      join state next
       MRval.Read(localPlace dest)
 
     | TCallable.ArrayPush ->
@@ -369,33 +417,34 @@ let private genAsRval (state: MgState) (expr: TExpr) =
 
 let private genStmt (state: MgState) (stmt: TStmt) =
   match stmt with
-  | TStmt.Do expr -> genAsRval state expr |> ignore
+  | TStmt.Do expr ->
+    genAsRval state expr |> ignore
+    Step
 
   | TStmt.Assign (place, value) ->
     let place = genAsPlace state place
     let value = genAsRval state value
     addStmt state (MStmt.Assign(place, value))
+    Step
 
   | TStmt.Break ->
-    let label = (unwrap state.LoopOpt).Break
-    setTerminator state (MTerminator.Goto label)
+    assert (Option.isSome state.LoopOpt)
+    (unwrap state.LoopOpt).MightBreak <- true
+    Break
 
   | TStmt.Continue ->
-    let label = (unwrap state.LoopOpt).Continue
-    setTerminator state (MTerminator.Goto label)
+    assert (Option.isSome state.LoopOpt)
+    Continue
 
   | TStmt.Return result ->
     // assert (Option.isSome state.FnOpt)
 
     let dest = newSymbol "_" 0 "__return"
-
     let result = genAsRval state result
     addStmt state (MStmt.Assign(localPlace dest, result))
-    setTerminator state MTerminator.Return
+    Return
 
-  | TStmt.Block block ->
-    for stmt in block.Stmts do
-      genStmt state stmt
+  | TStmt.Block block -> genStmtBlock state block.Stmts
 
   | TStmt.If (cond, body, alt) ->
     let cond = genAsRval state cond
@@ -403,46 +452,77 @@ let private genStmt (state: MgState) (stmt: TStmt) =
     let bodyBlock = addBlock state "then"
     let altBlock = addBlock state "else"
     let nextBlock = addBlock state "endif"
-    setTerminator state (MTerminator.If(cond, bodyBlock, altBlock))
-    state.BlockOpt <- Some nextBlock
+    let next = split state (MTerminator.If(cond, bodyBlock, altBlock)) nextBlock
 
-    do
-      let state =
-        { state with
-            Stmts = ResizeArray()
-            TerminatorOpt = Some(MTerminator.Goto nextBlock) }
+    let bodyFlow =
+      let state = startBlock state bodyBlock (MTerminator.Goto nextBlock)
+      let flow = genStmt state body
+      finishBlock state flow
+      flow
 
-      genStmt state body
-      resolveBlock state bodyBlock
+    let altFlow =
+      let state = startBlock state altBlock (MTerminator.Goto nextBlock)
+      let flow = genStmt state alt
+      finishBlock state flow
+      flow
 
-    do
-      let state =
-        { state with
-            Stmts = ResizeArray()
-            TerminatorOpt = Some(MTerminator.Goto nextBlock) }
-
-      genStmt state alt
-      resolveBlock state altBlock
+    join state next
+    mergeFlow bodyFlow altFlow
 
   | TStmt.Loop body ->
     let bodyBlock = addBlock state "loop_body"
     let nextBlock = addBlock state "loop_next"
-    setTerminator state (MTerminator.Goto bodyBlock)
-    state.BlockOpt <- Some nextBlock
+    let next = split state (MTerminator.Goto bodyBlock) nextBlock
 
-    do
+    let flow =
       let state =
-        { state with
+        let s = startBlock state bodyBlock (MTerminator.Goto bodyBlock)
+
+        { s with
             LoopOpt =
               Some(
                 { Break = nextBlock
-                  Continue = bodyBlock }
-              )
-            Stmts = ResizeArray()
-            TerminatorOpt = Some(MTerminator.Goto bodyBlock) }
+                  Continue = bodyBlock
+                  MightBreak = false }
+              ) }
 
-      genStmt state body
-      resolveBlock state bodyBlock
+      let flow =
+        match genStmt state body with
+        | Step -> Continue
+        | it -> it
+
+      finishBlock state flow
+
+      if (unwrap state.LoopOpt).MightBreak then
+        Step
+      else
+        // 発散を表す
+        Return
+
+    join state next
+    flow
+
+/// 複数の文をコード生成する
+let private genStmtBlock (state: MgState) stmts =
+  let rec go stmts =
+    match stmts with
+    | [] -> Step
+
+    | stmt :: stmts ->
+      match genStmt state stmt with
+      | Step -> go stmts
+
+      | it ->
+        // 発散するので、残りの文は到達できない
+        if stmts |> List.isEmpty |> not then
+          eprintfn "unreachable: %A" stmts
+
+          for stmt in stmts do
+            genStmt state stmt |> ignore
+
+        it
+
+  go stmts
 
 // -----------------------------------------------
 // Declarations
@@ -452,6 +532,9 @@ let private genDecl (state: MgState) (decl: TDecl) =
   withContext "declaration" decl (fun () ->
     match decl with
     | TDecl.Block (locals, block) ->
+      assert (Option.isNone state.BlockOpt)
+      assert (state.Stmts.Count = 0)
+
       let locals =
         locals
         |> List.map (fun (local, ty) ->
@@ -461,9 +544,6 @@ let private genDecl (state: MgState) (decl: TDecl) =
 
       let state =
         { state with
-            Stmts = ResizeArray()
-            TerminatorOpt = Some MTerminator.Return
-
             LoopOpt = None
             ResultTy = MTy.Void
             Locals = Map.ofList locals
@@ -471,10 +551,15 @@ let private genDecl (state: MgState) (decl: TDecl) =
 
       let entryBlock = addBlock state "entry"
 
-      for stmt in block.Stmts do
-        genStmt state stmt
+      do
+        let state = startBlock state entryBlock MTerminator.Return
 
-      resolveBlock state entryBlock
+        let flow =
+          match genStmtBlock state block.Stmts with
+          | Step -> Return
+          | it -> it
+
+        finishBlock state flow
 
       let bodyDef: MBodyDef =
         { Locals = state.Locals
@@ -483,28 +568,32 @@ let private genDecl (state: MgState) (decl: TDecl) =
       state.Bodies.Add(bodyDef)
 
     | TDecl.Fn (fn, _, _, _, body) ->
+      assert (Option.isNone state.BlockOpt)
+      assert (state.Stmts.Count = 0)
+
       let fnDef = state.Fns |> lookup fn
       assert (fnDef.Blocks |> Array.isEmpty)
 
       let innerState =
         let state =
           { state with
-              Stmts = ResizeArray()
-              TerminatorOpt =
-                Some(
-                  match fnDef.ResultTy with
-                  | MTy.Void -> MTerminator.Return
-                  | _ -> MTerminator.Unreachable
-                )
-
               LoopOpt = None
-              Locals = fnDef.Locals
               ResultTy = fnDef.ResultTy
+              Locals = fnDef.Locals
               Blocks = ResizeArray() }
 
         let entryBlock = addBlock state "entry"
-        genStmt state body
-        resolveBlock state entryBlock
+
+        do
+          let terminator =
+            match fnDef.ResultTy with
+            | MTy.Void -> MTerminator.Return
+            | _ -> MTerminator.Unreachable
+
+          let state = startBlock state entryBlock terminator
+          let flow = genStmt state body
+          finishBlock state flow
+
         state
 
       let fnDef = { fnDef with Blocks = innerState.Blocks.ToArray() }

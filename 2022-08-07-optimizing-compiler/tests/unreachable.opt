@@ -1,0 +1,19 @@
+// never return
+fn panic() -> void {
+    loop {}
+}
+
+fn bit(b: bool) -> int {
+    if b {
+        return 1
+    } else {
+        return 0
+    }
+
+    panic()
+}
+
+{
+    assert(bit(false) == 0)
+    assert(bit(true) == 1)
+}
