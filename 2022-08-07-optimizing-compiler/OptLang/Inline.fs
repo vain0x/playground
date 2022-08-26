@@ -91,7 +91,11 @@ let performInlineExpansion (mir: MProgram) =
   let rec find i (stmts: _ array) =
     if i < stmts.Length then
       match stmts.[i] with
-      | MStmt.Call (place, MCallable.Fn fn, args) -> Some(i, place, fn, args)
+      | MStmt.Call (place, MCallable.Fn fn, args) ->
+        if inlinedFns |> Map.containsKey fn then
+          Some(i, place, fn, args)
+        else
+          None
       | _ -> find (i + 1) stmts
     else
       None
