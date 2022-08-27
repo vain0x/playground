@@ -518,7 +518,7 @@ let private checkDecl (state: TcState) (decl: S.Decl) : TDecl =
 
     let paramList =
       paramList
-      |> List.mapi (fun i (ident, ty) -> newSymbol "P" (i + 1) ident, checkTy state ty)
+      |> List.mapi (fun i (ident, ty) -> newSymbol "_" (i + 1) ident, checkTy state ty)
 
     let paramTys = paramList |> List.map snd
     let resultTy = checkTy state resultTy

@@ -17,7 +17,7 @@ fn g2() -> int {
 }
 
 {
-    assert(f(1) == 1)
+    assert(f(1) == 2)
     assert(multiuse(1) != multiuse(2))
 
     assert(g2() == 1)

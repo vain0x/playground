@@ -551,7 +551,7 @@ let private genDecl (state: MgState) (decl: TDecl) =
 
       let entryBlock = addBlock state "entry"
 
-      do
+      let innerState =
         let state = startBlock state entryBlock MTerminator.Return
 
         let flow =
@@ -560,9 +560,10 @@ let private genDecl (state: MgState) (decl: TDecl) =
           | it -> it
 
         finishBlock state flow
+        state
 
       let bodyDef: MBodyDef =
-        { Locals = state.Locals
+        { Locals = innerState.Locals
           Blocks = state.Blocks.ToArray() }
 
       state.Bodies.Add(bodyDef)
@@ -584,19 +585,21 @@ let private genDecl (state: MgState) (decl: TDecl) =
 
         let entryBlock = addBlock state "entry"
 
-        do
-          let terminator =
-            match fnDef.ResultTy with
-            | MTy.Void -> MTerminator.Return
-            | _ -> MTerminator.Unreachable
+        let terminator =
+          match fnDef.ResultTy with
+          | MTy.Void -> MTerminator.Return
+          | _ -> MTerminator.Unreachable
 
-          let state = startBlock state entryBlock terminator
-          let flow = genStmt state body
-          finishBlock state flow
-
+        let state = startBlock state entryBlock terminator
+        let flow = genStmt state body
+        finishBlock state flow
         state
 
-      let fnDef = { fnDef with Blocks = innerState.Blocks.ToArray() }
+      let fnDef =
+        { fnDef with
+            Locals = innerState.Locals
+            Blocks = innerState.Blocks.ToArray() }
+
       state.Fns <- state.Fns |> Map.add fn fnDef
 
     | TDecl.RecordTy _ -> ())

@@ -32,6 +32,8 @@ let private mapAppend entries map =
   entries
   |> Array.fold (fun map (local, localDef) -> map |> Map.add local localDef) map
 
+let private localPlace local : MPlace = { Local = local; Path = Array.empty }
+
 let private shiftLocalBy localCount (local: Symbol) =
   newSymbol "_" (local.Index + localCount) local.Name
 
@@ -66,17 +68,17 @@ let performInlineExpansion (mir: MProgram) =
     | Some 1 -> singleUseFns.Add(fn)
     | _ -> ()
 
-  eprintfn
-    "unusedFns: [%s]"
-    (unusedFns.ToArray()
-     |> Array.map string
-     |> String.concat "; ")
+  // eprintfn
+  //   "unusedFns: [%s]"
+  //   (unusedFns.ToArray()
+  //    |> Array.map string
+  //    |> String.concat "; ")
 
-  eprintfn
-    "singleUseFns: [%s]"
-    (singleUseFns.ToArray()
-     |> Array.map string
-     |> String.concat "; ")
+  // eprintfn
+  //   "singleUseFns: [%s]"
+  //   (singleUseFns.ToArray()
+  //    |> Array.map string
+  //    |> String.concat "; ")
 
   let inlinedFns =
     mir.Fns
@@ -91,11 +93,7 @@ let performInlineExpansion (mir: MProgram) =
   let rec find i (stmts: _ array) =
     if i < stmts.Length then
       match stmts.[i] with
-      | MStmt.Call (place, MCallable.Fn fn, args) ->
-        if inlinedFns |> Map.containsKey fn then
-          Some(i, place, fn, args)
-        else
-          None
+      | MStmt.Call (place, MCallable.Fn fn, args) when inlinedFns |> Map.containsKey fn -> Some(i, place, fn, args)
       | _ -> find (i + 1) stmts
     else
       None
@@ -152,143 +150,108 @@ let performInlineExpansion (mir: MProgram) =
 
   // インライン展開される関数の本体を呼び出し側に埋め込むために変形する
   //
-  // - パラメータは引数 (place) に展開する
   // - `return` はターゲットブロックへのジャンプに置き換える
-  let subst argMap dest (blocks: MBlockDef array) =
-    let rec substPart (part: MPart) =
-      match part with
-      | MPart.Index (index, array) -> MPart.Index(substRval index, array)
-      | MPart.Field _ -> part
-
-    and substPlace (place: MPlace) : MPlace =
-      let path = place.Path |> Array.map substPart
-
-      match argMap |> Map.tryFind place.Local with
-      | Some arg -> { arg with Path = Array.append arg.Path path }
-      | None -> { place with Path = path }
-
-    and substRval (rval: MRval) =
-      match rval with
-      | MRval.Void
-      | MRval.Bool _
-      | MRval.Int _
-      | MRval.String _ -> rval
-
-      | MRval.Read place -> MRval.Read(substPlace place)
-      | MRval.Unary (unary, arg) -> MRval.Unary(unary, substRval arg)
-      | MRval.Binary (binary, lhs, rhs) -> MRval.Binary(binary, substRval lhs, substRval rhs)
-      | MRval.Record (fields, record) -> MRval.Record(Array.map substRval fields, record)
-      | MRval.Array (items, array) -> MRval.Array(Array.map substRval items, array)
-
-    let substStmt stmt =
-      match stmt with
-      | MStmt.Assign (place, value) -> MStmt.Assign(substPlace place, substRval value)
-      | MStmt.Call (place, callable, args) -> MStmt.Call(substPlace place, callable, args |> Array.map substRval)
-
+  let subst dest (blocks: MBlockDef array) =
     let substTerminator terminator =
       match terminator with
-      | MTerminator.If (cond, body, alt) -> MTerminator.If(substRval cond, body, alt)
       | MTerminator.Return -> MTerminator.Goto dest
 
       | MTerminator.Unreachable
-      | MTerminator.Goto _ -> terminator
+      | MTerminator.Goto _
+      | MTerminator.If _ -> terminator
 
     blocks
-    |> Array.map (fun block ->
-      ({ Stmts = Array.map substStmt block.Stmts
-         Terminator = substTerminator block.Terminator }: MBlockDef))
+    |> Array.map (fun blockDef -> ({ blockDef with Terminator = substTerminator blockDef.Terminator }: MBlockDef))
+
+  let inlineBody (bodyDef: MBodyDef) =
+    match bodyDef.Blocks
+          |> tryPickIndex (fun block blockDef ->
+            match find 0 blockDef.Stmts with
+            | Some (stmtId, place, fn, args) -> Some(block, stmtId, place, fn, args)
+            | None -> None)
+      with
+    | Some (block, stmtId, place, fn, args) ->
+      eprintfn "inline %A" fn
+
+      let fnDef = mir.Fns |> lookup fn
+      let blockDef = bodyDef.Blocks.[block]
+      let localMap = bodyDef.Locals
+      let callerLocalCount = bodyDef.Locals.Count
+      let callerBlockCount = bodyDef.Blocks.Length
+
+      // 呼び出される関数のエントリーブロック
+      let entryBlock = newSymbol "B" callerBlockCount fnDef.Name
+
+      // 呼び出しから戻る先のブロック
+      let restBlock =
+        newSymbol "B" (callerBlockCount + fnDef.Blocks.Length) "after_inline"
+
+      // 呼び出される関数の返り値を受け取るローカル
+      let result = newSymbol "_" callerLocalCount "__return"
+
+      // 呼び出される関数のローカル、ブロックを呼び出し側に埋め込めるように調整する
+      //
+      // 番号が被らないようにずらす。`return` をジャンプに置き換える
+      let fnLocals =
+        fnDef.Locals
+        |> Map.toArray
+        |> Array.map (fun (local, localDef) -> shiftLocalBy callerLocalCount local, localDef)
+
+      let fnBlocks =
+        shift callerLocalCount callerBlockCount fnDef.Blocks
+        |> subst restBlock
+
+      // 呼び出される関数のパラメータに引数を設定する文を生成する
+      let prologue =
+        Array.zip fnDef.Params args
+        |> Array.map (fun ((param, _), arg) -> MStmt.Assign(localPlace (shiftLocalBy callerLocalCount param), arg))
+
+      // 呼び出される関数の結果を所定のローカルに代入する
+      let epilogue = [| MStmt.Assign(place, MRval.Read(localPlace result)) |]
+
+      // 呼び出し側のブロックを分割する。
+      // 呼び出すブロックはインラインされた関数のエントリーブロックへのジャンプで終了する。
+      // インラインされた関数の `return` から、後半のブロックへジャンプしてくる
+      let callerBlockDef: MBlockDef =
+        { blockDef with
+            Stmts = Array.append blockDef.Stmts.[0 .. stmtId - 1] prologue
+            Terminator = MTerminator.Goto entryBlock }
+
+      let restBlockDef: MBlockDef =
+        { Stmts = Array.append epilogue blockDef.Stmts.[stmtId + 1 ..]
+          Terminator = blockDef.Terminator }
+
+      { bodyDef with
+          Locals = mapAppend fnLocals localMap
+          Blocks =
+            [| yield!
+                 bodyDef.Blocks
+                 |> Array.mapi (fun i blockDef ->
+                   if i = block then
+                     callerBlockDef
+                   else
+                     blockDef)
+
+               yield! fnBlocks
+               yield restBlockDef |] }
+      |> Some
+
+    | None -> None
+
+  // ワークリスト処理:
 
   let mutable mir = mir
 
   let rec workLoop workList =
     match workList with
-    | W.Body (bodyId, bodyDef) :: workList ->
-      match bodyDef.Blocks
-            |> tryPickIndex (fun block blockDef ->
-              match find 0 blockDef.Stmts with
-              | Some (stmtId, place, fn, args) -> Some(block, stmtId, place, fn, args)
-              | None -> None)
-        with
-      | Some (block, stmtId, place, fn, args) ->
-        let fnDef = mir.Fns |> lookup fn
-        let blockDef = bodyDef.Blocks.[block]
-        let localMap = bodyDef.Locals
+    | W.Body (bodyId, _) :: workList ->
+      let bodyDef = mir.Bodies.[bodyId]
 
-        let localMap, argMap, assignmentAcc =
-          let argMap = Map.ofList [ newSymbol "_" 0 "__return", place ]
-
-          Array.zip fnDef.Params args
-          |> Array.fold
-               (fun (localMap, argMap, stmts) ((param, ty), arg) ->
-                 match arg with
-                 | MRval.Read place ->
-                   let argMap = argMap |> Map.add param place
-                   localMap, argMap, stmts
-
-                 | _ ->
-                   let localDef: MLocalDef = { Name = param.Name; Ty = ty }
-                   let local = newSymbol "_" (Map.count localMap) param.Name
-
-                   let localMap = localMap |> Map.add local localDef
-
-                   let place: MPlace = { Local = local; Path = Array.empty }
-                   let stmts = MStmt.Assign(place, arg) :: stmts
-
-                   let argMap = argMap |> Map.add param place
-
-                   localMap, argMap, stmts)
-               (localMap, argMap, [])
-
-        let assignments =
-          let a = assignmentAcc |> List.toArray
-          System.Array.Reverse(a)
-          a
-
-        let localSize = localMap.Count - fnDef.Params.Length - 1
-        let blockSize = bodyDef.Blocks.Length + 1
-
-        let restBlock = newSymbol "B" bodyDef.Blocks.Length "after_inline"
-        let entryBlock = newSymbol "B" (bodyDef.Blocks.Length + 1) fnDef.Name
-
-        let restBlockDef: MBlockDef =
-          { Stmts = blockDef.Stmts.[stmtId + 1 ..]
-            Terminator = blockDef.Terminator }
-
-        let fnLocals =
-          fnDef.Locals
-          |> Map.toArray
-          |> Array.map (fun (local, localDef) -> shiftLocalBy localSize local, localDef)
-
-        let fnBlocks =
-          let argMap =
-            argMap
-            |> Map.toArray
-            |> Array.map (fun (param, place) -> shiftLocalBy localSize param, place)
-            |> Map.ofArray
-
-          shift localSize blockSize fnDef.Blocks
-          |> subst argMap restBlock
-
+      match inlineBody bodyDef with
+      | Some bodyDef2 ->
         assert (System.Object.ReferenceEquals(mir.Bodies.[bodyId], bodyDef))
-
-        mir.Bodies.[bodyId] <-
-          { mir.Bodies.[bodyId] with
-              Locals = mapAppend fnLocals localMap
-              Blocks =
-                [| yield!
-                     bodyDef.Blocks
-                     |> Array.mapi (fun i blockDef ->
-                       if i = block then
-                         { blockDef with
-                             Stmts = Array.append blockDef.Stmts.[0 .. stmtId - 1] assignments
-                             Terminator = MTerminator.Goto entryBlock }
-                       else
-                         blockDef)
-
-                   yield restBlockDef
-                   yield! fnBlocks |] }
-
-        workLoop (W.Body(bodyId, mir.Bodies.[bodyId]) :: workList)
+        mir.Bodies.[bodyId] <- bodyDef2
+        workLoop (W.Body(bodyId, bodyDef2) :: workList)
 
       | None -> workLoop workList
 
