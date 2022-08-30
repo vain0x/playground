@@ -15,6 +15,7 @@
     <Compile Include="Mir.fs" />
     <Compile Include="MirGen.fs" />
     <Compile Include="Inline.fs" />
+    <Compile Include="Interpret.fs" />
     <Compile Include="Program.fs" />
   </ItemGroup>
 
