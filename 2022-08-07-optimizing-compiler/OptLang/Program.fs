@@ -258,4 +258,6 @@ let main _ =
 
       File.WriteAllText(Path.ChangeExtension(file, "txt"), output)
 
+      Interpret.interpret mir
+
   0

@@ -9,5 +9,5 @@
         i = i + 1
     }
 
-    assert(sum == 55)
+    assert(sum == 45)
 }
