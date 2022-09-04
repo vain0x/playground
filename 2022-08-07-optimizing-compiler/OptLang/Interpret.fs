@@ -4,6 +4,8 @@ open System.Collections.Generic
 open OptLang.Mir
 open OptLang.Symbol
 
+module MirDump = OptLang.MirDump
+
 let inline private todo () = failwith "TODO"
 
 let inline private unreachable () = failwith "unreachable"
@@ -234,13 +236,12 @@ let interpret (mir: MProgram) =
       let stmts = blocks.[blockId].Stmts
 
       if stmtId < stmts.Length then
-        eprintfn "+ %A" stmts.[stmtId]
+        eprintfn "+ %s" (MirDump.displayStmt mir stmts.[stmtId])
 
         match stmts.[stmtId] with
         | MStmt.Assign (place, rval) -> assign env place (onRval env rval)
 
         | MStmt.Call (place, fn, args) ->
-          let argsOrig = args
           let args = Array.map (onRval env) args
 
           match fn with
@@ -284,15 +285,13 @@ let interpret (mir: MProgram) =
             | _ -> unreachable ()
 
           | MCallable.Assert ->
-            eprintfn "assert(%A)" argsOrig
-
             if expectBool args.[0] |> not then
               failwithf "ERROR: Assertion violation!"
 
         stmtId <- stmtId + 1
         go ()
       else
-        eprintfn "+ %A" (blocks.[blockId].Terminator)
+        eprintfn "+ %s" (MirDump.displayTerminator mir blocks.[blockId].Terminator)
 
         match blocks.[blockId].Terminator with
         | MTerminator.Goto block ->

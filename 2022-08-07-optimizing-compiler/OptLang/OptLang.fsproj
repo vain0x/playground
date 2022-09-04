@@ -13,6 +13,7 @@
     <Compile Include="Tir.fs" />
     <Compile Include="TypeCheck.fs" />
     <Compile Include="Mir.fs" />
+    <Compile Include="MirDump.fs" />
     <Compile Include="MirGen.fs" />
     <Compile Include="Inline.fs" />
     <Compile Include="Interpret.fs" />
