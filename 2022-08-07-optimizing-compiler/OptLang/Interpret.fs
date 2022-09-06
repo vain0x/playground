@@ -313,7 +313,11 @@ let interpret (mir: MProgram) =
 
     go ()
 
-  for bodyDef in mir.Bodies do
-    let env = newEnv ()
-    defineLocals env bodyDef.Locals
-    run env bodyDef.Blocks
+  for fnDef in mir.Fns.Values do
+    if fnDef.TopLevel then
+      assert (Array.isEmpty fnDef.Params)
+      assert (fnDef.ResultTy = MTy.Void)
+
+      let env = newEnv ()
+      defineLocals env fnDef.Locals
+      run env fnDef.Blocks

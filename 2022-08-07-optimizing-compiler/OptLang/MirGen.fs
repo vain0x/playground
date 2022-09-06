@@ -65,8 +65,7 @@ type private MgState =
     Blocks: ResizeArray<MBlockDef>
 
     // Global data
-    Bodies: ResizeArray<MBodyDef>
-    mutable Fns: Map<Symbol, MFnDef>
+    Fns: Dictionary<Symbol, MFnDef>
     ArrayMemo: Dictionary<MTy, Symbol>
     Arrays: ResizeArray<MArrayDef>
     Records: Map<Symbol, RecordDef> }
@@ -74,8 +73,7 @@ type private MgState =
 let private initialState () : MgState =
   { BlockOpt = None
     Locals = Map.empty
-    Bodies = ResizeArray()
-    Fns = Map.empty
+    Fns = Dictionary()
     ArrayMemo = Dictionary()
     Arrays = ResizeArray()
     Records = Map.empty
@@ -280,7 +278,7 @@ let private genAsRval (state: MgState) (expr: TExpr) =
   | TExpr.Call (callable, args) ->
     match callable with
     | TCallable.Fn fn ->
-      let fnDef = state.Fns |> lookup fn
+      let fnDef = state.Fns.[fn]
 
       let result =
         match fnDef.ResultTy with
@@ -562,17 +560,22 @@ let private genDecl (state: MgState) (decl: TDecl) =
         finishBlock state flow
         state
 
-      let bodyDef: MBodyDef =
-        { Locals = innerState.Locals
+      let fnDef: MFnDef =
+        { Name = "body"
+          TopLevel = true
+          Params = Array.empty
+          ResultTy = MTy.Void
+          Locals = innerState.Locals
           Blocks = state.Blocks.ToArray() }
 
-      state.Bodies.Add(bodyDef)
+      let fn = newSymbol "F" state.Fns.Count "body"
+      state.Fns.Add(fn, fnDef)
 
     | TDecl.Fn (fn, _, _, _, body) ->
       assert (Option.isNone state.BlockOpt)
       assert (state.Stmts.Count = 0)
 
-      let fnDef = state.Fns |> lookup fn
+      let fnDef = state.Fns.[fn]
       assert (fnDef.Blocks |> Array.isEmpty)
 
       let innerState =
@@ -600,7 +603,7 @@ let private genDecl (state: MgState) (decl: TDecl) =
             Locals = innerState.Locals
             Blocks = innerState.Blocks.ToArray() }
 
-      state.Fns <- state.Fns |> Map.add fn fnDef
+      state.Fns.[fn] <- fnDef
 
     | TDecl.RecordTy _ -> ())
 
@@ -633,6 +636,7 @@ let genMir (decls: TDecl list) =
 
       let fnDef: MFnDef =
         { Name = fn.Name
+          TopLevel = false
           Params = paramList
           ResultTy = resultTy
           Locals = locals
@@ -655,13 +659,12 @@ let genMir (decls: TDecl list) =
 
   let state =
     { state with
-        Fns = dictToMap fns
+        Fns = fns
         Records = dictToMap records }
 
   for decl in decls do
     genDecl state decl
 
-  ({ Bodies = state.Bodies.ToArray()
-     Fns = state.Fns
+  ({ Fns = dictToMap state.Fns
      Records = state.Records
      Arrays = state.Arrays.ToArray() }: MProgram)

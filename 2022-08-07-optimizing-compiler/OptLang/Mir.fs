@@ -5,9 +5,17 @@ open OptLang.Symbol
 [<RequireQualifiedAccess; ReferenceEquality>]
 type MLocalDef = { Name: string; Ty: MTy }
 
+/// 関数、またはトップレベルのブロックの定義
+///
+/// トップレベルに書かれたブロックは、引数を持たない、返り値型がvoidである関数として登録する。
+/// そのほうが実装を書きやすいため
 [<RequireQualifiedAccess; ReferenceEquality>]
 type MFnDef =
   { Name: string
+
+    /// トップレベルのブロックならtrue、関数ならfalse
+    TopLevel: bool
+
     Params: (Symbol * MTy) array
     ResultTy: MTy
     Locals: Map<Symbol, MLocalDef>
@@ -104,7 +112,6 @@ type MBodyDef =
 
 [<RequireQualifiedAccess; NoEquality; NoComparison>]
 type MProgram =
-  { Bodies: MBodyDef array
-    Fns: Map<Symbol, MFnDef>
+  { Fns: Map<Symbol, MFnDef>
     Records: Map<Symbol, RecordDef>
     Arrays: MArrayDef array }

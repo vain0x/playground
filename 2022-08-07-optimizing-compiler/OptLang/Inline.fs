@@ -6,12 +6,6 @@ open OptLang.Symbol
 [<RequireQualifiedAccess; NoEquality; NoComparison>]
 type private CollectState = { mutable FnFreq: Map<Symbol, int> }
 
-/// ワークリストの項目
-[<RequireQualifiedAccess; NoEquality; NoComparison>]
-type private W =
-  | Body of index: int * MBodyDef
-  | Fn of Symbol * MFnDef
-
 let private tryPickIndex picker (array: _ array) =
   let rec go i =
     if i < array.Length then
@@ -50,10 +44,6 @@ let performInlineExpansion (mir: MProgram) =
         | Some 1 -> state.FnFreq <- state.FnFreq |> Map.add fn 2
         | _ -> ()
       | _ -> ()
-
-  for bodyDef in mir.Bodies do
-    for blockDef in bodyDef.Blocks do
-      onBlock state blockDef
 
   for fnDef in mir.Fns.Values do
     for blockDef in fnDef.Blocks do
@@ -163,8 +153,8 @@ let performInlineExpansion (mir: MProgram) =
     blocks
     |> Array.map (fun blockDef -> ({ blockDef with Terminator = substTerminator blockDef.Terminator }: MBlockDef))
 
-  let inlineBody (bodyDef: MBodyDef) =
-    match bodyDef.Blocks
+  let inlineBody (mir: MProgram) (callerDef: MFnDef) =
+    match callerDef.Blocks
           |> tryPickIndex (fun block blockDef ->
             match find 0 blockDef.Stmts with
             | Some (stmtId, place, fn, args) -> Some(block, stmtId, place, fn, args)
@@ -173,18 +163,21 @@ let performInlineExpansion (mir: MProgram) =
     | Some (block, stmtId, place, fn, args) ->
       eprintfn "inline %A" fn
 
-      let fnDef = mir.Fns |> lookup fn
-      let blockDef = bodyDef.Blocks.[block]
-      let localMap = bodyDef.Locals
-      let callerLocalCount = bodyDef.Locals.Count
-      let callerBlockCount = bodyDef.Blocks.Length
+      let calleeDef = mir.Fns |> lookup fn
+      eprintfn "calleeDef = %A" calleeDef
+      eprintfn "block: %d" block
+
+      let blockDef = callerDef.Blocks.[block]
+      let localMap = callerDef.Locals
+      let callerLocalCount = callerDef.Locals.Count
+      let callerBlockCount = callerDef.Blocks.Length
 
       // 呼び出される関数のエントリーブロック
-      let entryBlock = newSymbol "B" callerBlockCount fnDef.Name
+      let entryBlock = newSymbol "B" callerBlockCount calleeDef.Name
 
       // 呼び出しから戻る先のブロック
       let restBlock =
-        newSymbol "B" (callerBlockCount + fnDef.Blocks.Length) "after_inline"
+        newSymbol "B" (callerBlockCount + calleeDef.Blocks.Length) "after_inline"
 
       // 呼び出される関数の返り値を受け取るローカル
       let result = newSymbol "_" callerLocalCount "__return"
@@ -192,18 +185,18 @@ let performInlineExpansion (mir: MProgram) =
       // 呼び出される関数のローカル、ブロックを呼び出し側に埋め込めるように調整する
       //
       // 番号が被らないようにずらす。`return` をジャンプに置き換える
-      let fnLocals =
-        fnDef.Locals
+      let calleeLocals =
+        calleeDef.Locals
         |> Map.toArray
         |> Array.map (fun (local, localDef) -> shiftLocalBy callerLocalCount local, localDef)
 
-      let fnBlocks =
-        shift callerLocalCount callerBlockCount fnDef.Blocks
+      let calleeBlocks =
+        shift callerLocalCount callerBlockCount calleeDef.Blocks
         |> subst restBlock
 
       // 呼び出される関数のパラメータに引数を設定する文を生成する
       let prologue =
-        Array.zip fnDef.Params args
+        Array.zip calleeDef.Params args
         |> Array.map (fun ((param, _), arg) -> MStmt.Assign(localPlace (shiftLocalBy callerLocalCount param), arg))
 
       // 呼び出される関数の結果を所定のローカルに代入する
@@ -221,18 +214,18 @@ let performInlineExpansion (mir: MProgram) =
         { Stmts = Array.append epilogue blockDef.Stmts.[stmtId + 1 ..]
           Terminator = blockDef.Terminator }
 
-      { bodyDef with
-          Locals = mapAppend fnLocals localMap
+      { callerDef with
+          Locals = mapAppend calleeLocals localMap
           Blocks =
             [| yield!
-                 bodyDef.Blocks
+                 callerDef.Blocks
                  |> Array.mapi (fun i blockDef ->
                    if i = block then
                      callerBlockDef
                    else
                      blockDef)
 
-               yield! fnBlocks
+               yield! calleeBlocks
                yield restBlockDef |] }
       |> Some
 
@@ -244,31 +237,18 @@ let performInlineExpansion (mir: MProgram) =
 
   let rec workLoop workList =
     match workList with
-    | W.Body (bodyId, _) :: workList ->
-      let bodyDef = mir.Bodies.[bodyId]
+    | fn :: workList ->
+      let fnDef = mir.Fns.[fn]
 
-      match inlineBody bodyDef with
-      | Some bodyDef2 ->
-        assert (System.Object.ReferenceEquals(mir.Bodies.[bodyId], bodyDef))
-        mir.Bodies.[bodyId] <- bodyDef2
-        workLoop (W.Body(bodyId, bodyDef2) :: workList)
+      match inlineBody mir fnDef with
+      | Some fnDef2 ->
+        assert (System.Object.ReferenceEquals(mir.Fns.[fn], fnDef))
+        mir <- { mir with Fns = mir.Fns |> Map.add fn fnDef2 }
+        workLoop (fn :: workList)
 
       | None -> workLoop workList
 
-    | W.Fn (fn, fnDef) :: workList ->
-      // TODO
-      workLoop workList
-
     | [] -> ()
 
-  let workList =
-    Array.append
-      (mir.Bodies
-       |> Array.mapi (fun i bodyDef -> W.Body(i, bodyDef)))
-      (mir.Fns
-       |> Map.toArray
-       |> Array.map (fun (fn, fnDef) -> W.Fn(fn, fnDef)))
-    |> Array.toList
-
-  workLoop workList
+  workLoop (List.ofSeq mir.Fns.Keys)
   mir

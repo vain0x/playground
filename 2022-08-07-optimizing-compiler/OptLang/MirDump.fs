@@ -175,13 +175,13 @@ let displayTerminator mir terminator =
     let cond = displayRval mir cond
     $"goto if {cond} then {body} else {alt}"
 
-let private onBody (mir: MProgram) (dx: Dx) (locals: (Symbol * MLocalDef) list) (blocks: MBlockDef list) =
+let private onFnDef (mir: MProgram) (dx: Dx) (fnDef: MFnDef) =
   writeLn dx "locals:"
 
   do
     deep dx
 
-    for local, localDef in locals do
+    for KeyValue (local, localDef) in fnDef.Locals do
       let name = local.Name
       let ty = displayTy mir localDef.Ty
       writeLn dx $"{name}: {ty}"
@@ -193,7 +193,7 @@ let private onBody (mir: MProgram) (dx: Dx) (locals: (Symbol * MLocalDef) list) 
     writeLn dx "blocks:"
     deep dx
 
-    for i, blockDef in List.indexed blocks do
+    for i, blockDef in Array.indexed fnDef.Blocks do
       writeLn dx $"B{i}:"
       deep dx
 
@@ -208,22 +208,22 @@ let private onBody (mir: MProgram) (dx: Dx) (locals: (Symbol * MLocalDef) list) 
 let dumpMir (mir: MProgram) : string =
   let dx: Dx = newDx ()
 
-  for bodyDef in mir.Bodies do
-    writeLn dx "body:"
-
-    do
-      deep dx
-      onBody mir dx (Map.toList bodyDef.Locals) (List.ofArray bodyDef.Blocks)
-      shallow dx
-
-    newline dx
-
   for fn, fnDef in Map.toList mir.Fns do
-    writeLn dx $"fn {fn.Name}"
+    if fnDef.TopLevel then
+      writeLn dx $"body"
+    else
+      let paramList =
+        fnDef.Params
+        |> Array.map (fun (param, ty) -> param.Name + ": " + displayTy mir ty)
+        |> String.concat ", "
+
+      let resultTy = displayTy mir fnDef.ResultTy
+
+      writeLn dx $"fn {fn.Name}({paramList}) -> {resultTy}"
 
     do
       deep dx
-      onBody mir dx (Map.toList fnDef.Locals) (List.ofArray fnDef.Blocks)
+      onFnDef mir dx fnDef
       shallow dx
 
     newline dx
