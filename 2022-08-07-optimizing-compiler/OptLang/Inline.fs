@@ -164,8 +164,8 @@ let performInlineExpansion (mir: MProgram) =
       eprintfn "inline %A" fn
 
       let calleeDef = mir.Fns |> lookup fn
-      eprintfn "calleeDef = %A" calleeDef
-      eprintfn "block: %d" block
+      // eprintfn "calleeDef = %A" calleeDef
+      // eprintfn "block: %d" block
 
       let blockDef = callerDef.Blocks.[block]
       let localMap = callerDef.Locals
