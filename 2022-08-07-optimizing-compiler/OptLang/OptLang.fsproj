@@ -16,6 +16,7 @@
     <Compile Include="MirDump.fs" />
     <Compile Include="MirGen.fs" />
     <Compile Include="Inline.fs" />
+    <Compile Include="SingleAssignment.fs" />
     <Compile Include="Interpret.fs" />
     <Compile Include="Program.fs" />
   </ItemGroup>
