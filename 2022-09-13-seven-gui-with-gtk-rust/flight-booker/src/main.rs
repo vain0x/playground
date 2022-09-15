@@ -1,5 +1,7 @@
-use gtk::{prelude::*, ApplicationWindow, Orientation, WindowPosition};
+use gtk::{gdk, prelude::*, ApplicationWindow, Orientation, WindowPosition};
 use std::cmp::Ordering;
+
+static STYLES: &[u8] = include_bytes!("styles.css");
 
 fn build_ui(application: &gtk::Application) {
     let window = ApplicationWindow::new(application);
@@ -76,12 +78,13 @@ fn build_ui(application: &gtk::Application) {
         move |start_date| {
             refresh_button_sensitive();
 
-            // TODO: change background color
+            // 検証エラーが発生しているときだけクラスをつける。CSSにおいて `.invalid` にマッチするようになる
             let ok = parse_date(&start_date.buffer().text()).is_some();
-            start_date.set_icon_from_icon_name(
-                gtk::EntryIconPosition::Secondary,
-                if ok { None } else { Some("messagebox_warning") },
-            );
+            if ok {
+                start_date.style_context().remove_class("invalid");
+            } else {
+                start_date.style_context().add_class("invalid");
+            }
         }
     });
 
@@ -91,12 +94,12 @@ fn build_ui(application: &gtk::Application) {
         move |end_date| {
             refresh_button_sensitive();
 
-            // TODO: change background color
             let ok = parse_date(&end_date.buffer().text()).is_some();
-            end_date.set_icon_from_icon_name(
-                gtk::EntryIconPosition::Secondary,
-                if ok { None } else { Some("messagebox_warning") },
-            );
+            if ok {
+                end_date.style_context().remove_class("invalid");
+            } else {
+                end_date.style_context().add_class("invalid");
+            }
         }
     });
 
@@ -142,16 +145,6 @@ struct Date {
 }
 
 impl Date {
-    // impl ToString
-    fn to_string(self) -> String {
-        let Date {
-            year: y,
-            month: m,
-            date: d,
-        } = self;
-        format!("{y:4}-{m:02}-{d:02}")
-    }
-
     fn to_digital(self) -> i32 {
         let Date {
             year: y,
@@ -201,6 +194,15 @@ fn main() {
     let application = gtk::Application::new(Some("com.example.flight-booker"), Default::default());
 
     application.connect_activate(|app| {
+        let provider = gtk::CssProvider::new();
+        provider.load_from_data(STYLES).expect("load css");
+
+        gtk::StyleContext::add_provider_for_screen(
+            &gdk::Screen::default().expect("screen default"),
+            &provider,
+            gtk::STYLE_PROVIDER_PRIORITY_APPLICATION,
+        );
+
         build_ui(app);
     });
 

@@ -6,7 +6,7 @@
 
 - [x] Counter
 - [x] Temperature Converter
-- [ ] Flight Booker
+- [x] Flight Booker
 - [ ] Timer
 - [ ] CRUD
 - [ ] Circle Drawer

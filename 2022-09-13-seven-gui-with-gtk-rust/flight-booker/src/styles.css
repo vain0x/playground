@@ -1,0 +1,8 @@
+entry {
+    background-color: #f3fff3;
+}
+
+entry.invalid {
+    background-color: #ff4d4d;
+    color: white;
+}
