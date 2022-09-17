@@ -1,2 +1,2 @@
 [workspace]
-members = ["counter", "temperature-converter", "flight-booker", "timer"]
+members = ["counter", "temperature-converter", "flight-booker", "timer", "crud"]
