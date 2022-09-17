@@ -12,10 +12,22 @@
 - [ ] Circle Drawer
 - [ ] Cells
 
+## 動かしかた
+
+- Rustをインストールする
+- [Gtk3](https://www.gtk.org/docs/installations/) をインストールする
+
+```sh
+# 実行
+cargo run --bin counter
+```
+
 ## リンク
 
-- [Gtk – 3.0: Getting Started with GTK](https://docs.gtk.org/gtk3/getting_started.html)
-    Gtk 3.x の公式のチュートリアル。(C言語、英語)
+- [The GTK Project](https://www.gtk.org/)
+    Gtk 3.x の公式サイト (英語)
+- [Gtk - 3.0: Getting Started with GTK](https://docs.gtk.org/gtk3/getting_started.html)
+    公式のチュートリアル (C言語、英語)
 - [GTK 3 Rust bindings](https://gtk-rs.org/gtk3-rs/):
     Rustバインディング (RustからGtkを使うためのライブラリ) であるgtk-rsの公式サイト
 - <https://github.com/RainMark/gtk3-tutorial>
