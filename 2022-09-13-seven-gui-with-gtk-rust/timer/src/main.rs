@@ -2,30 +2,16 @@
 
 // 参考:
 //
-// - マルチスレッドの処理 (メインスレッドのチャネル):
+// - メインスレッドのチャネルの利用:
 //      https://github.com/gtk-rs/gtk3-rs/blob/master/examples/multi_threading_context/main.rs
 //
 // - プログレスバーやタイマーの処理:
 //      https://github.com/gtk-rs/gtk3-rs/blob/master/examples/progress_tracker/main.rs
 
 use gtk::{glib, prelude::*, ApplicationWindow, Orientation, WindowPosition};
-use std::{
-    sync::mpsc,
-    thread,
-    time::{Duration, SystemTime},
-};
+use std::time::{Duration, SystemTime};
 
-enum MainMsg {
-    /// タイマーをリセットすることを要求するメッセージ
-    ResetTimer {
-        #[allow(unused)]
-        duration: f64,
-    },
-    /// アプリの内部状態の変化をUIに反映することを要求するメッセージ
-    UpdateUi { fraction: f64, elapsed: f64 },
-}
-
-enum WorkerMsg {
+enum Msg {
     /// スライダーの操作によってdurationが変化したとき
     OnDurationChanged(f64),
     /// リセットボタンが押されて、タイマーの再起動が要求されたとき
@@ -35,12 +21,11 @@ enum WorkerMsg {
 }
 
 fn build_ui(application: &gtk::Application) {
-    // ## メインスレッドとワーカースレッドが相互にメッセージを送るためのチャネルを用意する
+    // ## メインスレッドにメッセージを送るチャネルを用意する
     //
-    // - tx: 送信用。クローンして複数のスレッドやコールバックに渡せる
-    // - rx: 受信用。単一のスレッドに所有される
-    let (tx1, rx1) = glib::MainContext::channel(glib::PRIORITY_DEFAULT);
-    let (tx2, rx2) = mpsc::sync_channel(0);
+    // - tx: 送信用。クローンして複数のコールバックに渡せる
+    // - rx: 受信用。単一のコールバックに所有される
+    let (tx, rx) = glib::MainContext::channel(glib::PRIORITY_DEFAULT);
 
     // ## UIを組み立てる
     //
@@ -86,33 +71,33 @@ fn build_ui(application: &gtk::Application) {
 
     // ## UIのイベントにコールバックを接続する
     //
-    // コールバックはワーカーにイベントの発生を意味するメッセージを送る
+    // コールバックはイベントの発生を意味するメッセージを送る
     // (アプリの状態への参照を発生させないため、それ以外のことはしない)
 
     slider.connect_value_changed({
-        let tx2 = tx2.clone();
+        let tx = tx.clone();
         move |slider| {
             eprintln!("slider value changed: {:.1}s", slider.value());
-            tx2.send(WorkerMsg::OnDurationChanged(slider.value()))
-                .unwrap();
+            tx.send(Msg::OnDurationChanged(slider.value())).unwrap();
         }
     });
 
     reset_button.connect_clicked({
-        let tx2 = tx2.clone();
+        let tx = tx.clone();
         move |_| {
             eprintln!("reset button clicked");
-            tx2.send(WorkerMsg::OnResetRequested).unwrap();
+            tx.send(Msg::OnResetRequested).unwrap();
         }
     });
 
-    // ## メインスレッド側の挙動を定義する
+    // ## イベント発生時の処理を定義する
     //
-    // 競合を避けるため、UIオブジェクトへの操作はメインスレッドでのみ行う
-    // タイマーはUIオブジェクトの一種とみなす (Windowsの感覚でいえばそう)。すなわち:
+    // チャネルからメッセージを受け取って、UIオブジェクトのイベントに対する実質的な処理を行う
     //
-    // - タイマーの操作はメインスレッドでのみ行う
-    // - タイマーの発火はワーカーへのメッセージの送信だけ行う
+    // 内部状態 (タイマーの長さなど) は単に可変な変数で持つ
+    // (メッセージのハンドラだけが可変な状態にアクセスできるため &mut の一意性が静的に分かる
+    //  逆にコールバックごとに処理を書くと共有参照 (&T) が必要になってしまう)
+
     // TODO: 必要なときだけタイマーを動かす
 
     let update_ui = {
@@ -125,66 +110,44 @@ fn build_ui(application: &gtk::Application) {
         }
     };
 
-    let _timer = glib::timeout_add_local(Duration::from_millis(100), move || {
-        tx2.send(WorkerMsg::OnTick).unwrap();
-        Continue(true)
+    let _timer = glib::timeout_add_local(Duration::from_millis(100), {
+        let tx = tx.clone();
+        move || {
+            tx.send(Msg::OnTick).unwrap();
+            Continue(true)
+        }
     });
 
-    rx1.attach(None, {
+    rx.attach(None, {
         let update_ui = update_ui.clone();
+
+        let mut current_duration = 10.0;
+        let mut started_time = SystemTime::now();
 
         move |msg| {
             match msg {
-                MainMsg::ResetTimer { duration: _ } => {
+                Msg::OnDurationChanged(duration) => {
+                    current_duration = duration;
+                    started_time = SystemTime::now();
                     update_ui(0.0, 0.0);
                 }
-                MainMsg::UpdateUi { fraction, elapsed } => {
-                    update_ui(fraction, elapsed);
+                Msg::OnResetRequested => {
+                    started_time = SystemTime::now();
+                    update_ui(0.0, 0.0);
+                }
+                Msg::OnTick => {
+                    let elapsed_duration = started_time.elapsed().unwrap();
+                    let elapsed = elapsed_duration.as_secs_f64().min(current_duration);
+
+                    if elapsed < current_duration + 1e-2 {
+                        let fraction = (elapsed / current_duration).min(1.0);
+                        update_ui(fraction, elapsed);
+                    }
                 }
             }
             glib::Continue(true)
         }
     });
-
-    // ## ワーカースレッド側の処理を定義する
-    //
-    // チャネルからメッセージを受け取って、UIオブジェクトのイベントに対する実質的な処理を行う
-    // ワーカーは内部状態 (タイマーの長さなど) を単に可変な変数で持つ
-    // (メッセージを受け取るたびにループが回るという制御構造なので、可変な状態に並列でアクセスするおそれがない)
-    // TODO: アプリの終了時にワーカースレッドを適切に破棄する
-
-    let _worker = {
-        let tx1 = tx1.clone();
-
-        thread::spawn(move || {
-            let mut current_duration = 10.0;
-            let mut started_time = SystemTime::now();
-
-            for msg in rx2 {
-                match msg {
-                    WorkerMsg::OnDurationChanged(duration) => {
-                        current_duration = duration;
-                        started_time = SystemTime::now();
-                        tx1.send(MainMsg::ResetTimer { duration }).unwrap();
-                    }
-                    WorkerMsg::OnResetRequested => {
-                        let duration = current_duration;
-                        started_time = SystemTime::now();
-                        tx1.send(MainMsg::ResetTimer { duration }).unwrap();
-                    }
-                    WorkerMsg::OnTick => {
-                        let elapsed_duration = started_time.elapsed().unwrap();
-                        let elapsed = elapsed_duration.as_secs_f64().min(current_duration);
-
-                        if elapsed < current_duration + 1e-2 {
-                            let fraction = (elapsed / current_duration).min(1.0);
-                            tx1.send(MainMsg::UpdateUi { fraction, elapsed }).unwrap();
-                        }
-                    }
-                }
-            }
-        })
-    };
 
     // ## UIを初期化する
 
