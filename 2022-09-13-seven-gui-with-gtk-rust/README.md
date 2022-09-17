@@ -7,7 +7,7 @@
 - [x] Counter
 - [x] Temperature Converter
 - [x] Flight Booker
-- [ ] Timer
+- [x] Timer
 - [ ] CRUD
 - [ ] Circle Drawer
 - [ ] Cells

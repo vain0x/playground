@@ -11,6 +11,38 @@
 use gtk::{glib, prelude::*, ApplicationWindow, Orientation, WindowPosition};
 use std::time::{Duration, SystemTime};
 
+mod glib_ext {
+    use gtk::{glib, prelude::Continue};
+    use std::time::Duration;
+
+    /// Glibのtimeoutをベースとするタイマー
+    pub(crate) struct Timer(i32, Option<glib::SourceId>);
+
+    impl Timer {
+        /// 一定時間ごとに発火するタイマーを作り、起動する
+        ///
+        /// SAFETY: この関数はメインスレッドでのみ呼べる
+        pub(crate) fn new_local(
+            id: i32,
+            duration: Duration,
+            func: impl FnMut() -> Continue + 'static,
+        ) -> Self {
+            eprintln!("timer#{id} created");
+            let source = glib::timeout_add_local(duration, func);
+            Timer(id, Some(source))
+        }
+    }
+
+    impl Drop for Timer {
+        fn drop(&mut self) {
+            if let Some(source) = self.1.take() {
+                eprintln!("timer#{} dropped", self.0);
+                source.remove();
+            }
+        }
+    }
+}
+
 enum Msg {
     /// スライダーの操作によってdurationが変化したとき
     OnDurationChanged(f64),
@@ -98,7 +130,16 @@ fn build_ui(application: &gtk::Application) {
     // (メッセージのハンドラだけが可変な状態にアクセスできるため &mut の一意性が静的に分かる
     //  逆にコールバックごとに処理を書くと共有参照 (&T) が必要になってしまう)
 
-    // TODO: 必要なときだけタイマーを動かす
+    let start_timer = {
+        let tx = tx.clone();
+        move |id: i32| {
+            let tx = tx.clone();
+            glib_ext::Timer::new_local(id, Duration::from_millis(30), move || {
+                tx.send(Msg::OnTick).unwrap();
+                Continue(true)
+            })
+        }
+    };
 
     let update_ui = {
         let progress_bar = progress_bar.clone();
@@ -110,38 +151,43 @@ fn build_ui(application: &gtk::Application) {
         }
     };
 
-    let _timer = glib::timeout_add_local(Duration::from_millis(100), {
-        let tx = tx.clone();
-        move || {
-            tx.send(Msg::OnTick).unwrap();
-            Continue(true)
-        }
-    });
-
     rx.attach(None, {
+        let tx = tx.clone();
         let update_ui = update_ui.clone();
 
         let mut current_duration = 10.0;
         let mut started_time = SystemTime::now();
 
+        let mut last_id = 0;
+        let mut current_timer: Option<glib_ext::Timer> = None;
+
         move |msg| {
             match msg {
                 Msg::OnDurationChanged(duration) => {
                     current_duration = duration;
-                    started_time = SystemTime::now();
-                    update_ui(0.0, 0.0);
+                    tx.send(Msg::OnResetRequested).unwrap();
                 }
                 Msg::OnResetRequested => {
-                    started_time = SystemTime::now();
-                    update_ui(0.0, 0.0);
+                    if current_duration == 0.0 {
+                        current_timer.take();
+                        update_ui(1.0, 0.0);
+                    } else {
+                        started_time = SystemTime::now();
+                        last_id += 1;
+                        let id = last_id;
+                        current_timer = Some(start_timer(id));
+                        update_ui(0.0, 0.0);
+                    }
                 }
                 Msg::OnTick => {
                     let elapsed_duration = started_time.elapsed().unwrap();
                     let elapsed = elapsed_duration.as_secs_f64().min(current_duration);
 
-                    if elapsed < current_duration + 1e-2 {
-                        let fraction = (elapsed / current_duration).min(1.0);
-                        update_ui(fraction, elapsed);
+                    let fraction = (elapsed / current_duration).min(1.0);
+                    update_ui(fraction, elapsed);
+
+                    if elapsed > current_duration - 1e-2 {
+                        current_timer.take();
                     }
                 }
             }
@@ -152,6 +198,7 @@ fn build_ui(application: &gtk::Application) {
     // ## UIを初期化する
 
     update_ui(0.0, 0.0);
+    tx.send(Msg::OnResetRequested).unwrap();
     window.show_all();
 }
 
