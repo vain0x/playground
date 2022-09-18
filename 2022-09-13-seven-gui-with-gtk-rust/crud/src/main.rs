@@ -2,11 +2,26 @@
 
 // 参考:
 //
-// - https://docs.gtk.org/gtk3/class.ListBox.html
+// - リストボックス
+//      https://docs.gtk.org/gtk3/class.ListBox.html
+//      - 項目として文字列を挿入するには、ラベルに包んでから挿入する
+//      - 行を挿入した後、挿入された行を `show_all` によって表示する (そうでないと中身が空欄になる)
 
-use gtk::{prelude::*, ApplicationWindow, Orientation, WindowPosition};
+use gtk::{glib, prelude::*, ApplicationWindow, Orientation, WindowPosition};
+
+#[derive(Debug)]
+enum Msg {
+    OnInit,
+    OnFilterChanged(String),
+    OnListRowSelected(i32),
+    OnCreateClick,
+    OnUpdateClick,
+    OnDeleteClick,
+}
 
 fn build_ui(application: &gtk::Application) {
+    let (tx, rx) = glib::MainContext::channel(glib::PRIORITY_DEFAULT);
+
     // ## UIを組み立てる
 
     let window = ApplicationWindow::new(application);
@@ -37,17 +52,12 @@ fn build_ui(application: &gtk::Application) {
     };
     y += 1;
 
+    // TODO: リストボックスの高さの最小値を決める、要素数が多いときはスクロールする
     let listbox = gtk::ListBox::new();
     {
-        for (i, &item) in ["Emil, Hans", "Mustermann, Max", "Tisch, Roman"]
-            .iter()
-            .enumerate()
-        {
-            listbox.insert(&gtk::Label::new(Some(item)), i as i32);
-        }
-
         listbox.set_widget_name("persons-listbox");
         listbox.set_vexpand(true);
+        listbox.set_can_focus(false);
         grid.attach(&listbox, 0, y, 2, 3);
     }
 
@@ -79,23 +89,153 @@ fn build_ui(application: &gtk::Application) {
     let update_button = gtk::Button::with_label("Update");
     let delete_button = gtk::Button::with_label("Delete");
 
-    let buttons_row = {
-        let r = gtk::Box::new(Orientation::Horizontal, 16);
-        r.add(&create_button);
-        r.add(&update_button);
-        r.add(&delete_button);
-        grid.attach(&r, 0, 4, W, 1);
-        r
+    {
+        let row = gtk::Box::new(Orientation::Horizontal, 16);
+        row.add(&create_button);
+        row.add(&update_button);
+        row.add(&delete_button);
+        grid.attach(&row, 0, y, W, 1);
     };
 
     window.add(&grid);
 
     // ## UIのイベントにコールバックを接続する
 
+    filter_entry.connect_changed({
+        let tx = tx.clone();
+        move |entry| {
+            let value = entry.buffer().text();
+            tx.send(Msg::OnFilterChanged(value)).unwrap();
+        }
+    });
+    listbox.connect_row_selected({
+        let tx = tx.clone();
+        move |_, row_opt| {
+            let value = match row_opt {
+                Some(row) => row.index(),
+                None => -1,
+            };
+            tx.send(Msg::OnListRowSelected(value)).unwrap();
+        }
+    });
+    // name_entry.connect_changed({
+    //     let tx = tx.clone();
+    //     move |entry| {
+    //         let value = entry.buffer().text();
+    //         tx.send(Msg::OnNameChanged(value)).unwrap();
+    //     }
+    // });
+    // surname_entry.connect_changed({
+    //     let tx = tx.clone();
+    //     move |entry| {
+    //         let value = entry.buffer().text();
+    //         tx.send(Msg::OnSurnameChanged(value)).unwrap();
+    //     }
+    // });
+    create_button.connect_clicked({
+        let tx = tx.clone();
+        move |_| tx.send(Msg::OnCreateClick).unwrap()
+    });
+    update_button.connect_clicked({
+        let tx = tx.clone();
+        move |_| tx.send(Msg::OnUpdateClick).unwrap()
+    });
+    delete_button.connect_clicked({
+        let tx = tx.clone();
+        move |_| tx.send(Msg::OnDeleteClick).unwrap()
+    });
+
     // TODO
+
+    // ## イベントを処理する
+
+    rx.attach(None, {
+        let _tx = tx.clone();
+
+        move |msg| {
+            eprintln!("msg {:?}", msg);
+
+            match msg {
+                Msg::OnInit => {
+                    let data = ["Emil, Hans", "Mustermann, Max", "Tisch, Roman"];
+                    for (i, name) in data.iter().enumerate() {
+                        listbox.insert(&gtk::Label::new(Some(&name)), i as i32);
+                    }
+                    listbox.select_row(listbox.row_at_index(0).as_ref());
+                    listbox.show_all();
+                }
+                Msg::OnFilterChanged(_filter) => {
+                    // TODO
+                }
+                Msg::OnListRowSelected(index) => {
+                    let item = listbox.row_at_index(index).map(|row| {
+                        row.child()
+                            .unwrap()
+                            .downcast::<gtk::Label>()
+                            .unwrap()
+                            .text()
+                            .to_string()
+                    });
+                    let (name, surname) = match &item {
+                        Some(item) => item.split_once(", ").unwrap(),
+                        None => ("", ""),
+                    };
+
+                    name_entry.buffer().set_text(name);
+                    surname_entry.buffer().set_text(surname);
+                }
+                Msg::OnCreateClick => {
+                    let item = {
+                        let name = name_entry.buffer().text();
+                        let surname = surname_entry.buffer().text();
+                        format!("{}, {}", name, surname)
+                    };
+
+                    let position = listbox.children().len() as i32;
+                    listbox.insert(&gtk::Label::new(Some(&item)), position);
+
+                    // 新しい行を選択する
+                    if let Some(row) = listbox.row_at_index(position) {
+                        listbox.select_row(Some(&row));
+                        row.show_all();
+                    }
+                }
+                Msg::OnUpdateClick => {
+                    let item = {
+                        let name = name_entry.buffer().text();
+                        let surname = surname_entry.buffer().text();
+                        format!("{}, {}", name, surname)
+                    };
+
+                    if let Some(row) = listbox.selected_row() {
+                        // 行コンテナの要素であるラベルを置き換える (もっといい方法がありそう)
+                        row.remove(&row.child().unwrap());
+                        row.add(&gtk::Label::new(Some(&item)));
+                        row.show_all();
+                    }
+                }
+                Msg::OnDeleteClick => {
+                    if let Some(row) = listbox.selected_row() {
+                        let position = row.index();
+                        listbox.remove(&row);
+
+                        // 次の行か末尾の行を改めて選択する (これがないと選択された行がない状態になる)
+                        if let Some(row) = listbox
+                            .row_at_index(position)
+                            .or_else(|| listbox.row_at_index(position - 1))
+                        {
+                            listbox.select_row(Some(&row));
+                        }
+                    }
+                }
+            }
+            Continue(true)
+        }
+    });
 
     // ## UIを初期化する
 
+    tx.send(Msg::OnInit).unwrap();
     window.show_all();
 }
 
