@@ -95,7 +95,7 @@ fn build_ui(application: &gtk::Application) {
         row.add(&update_button);
         row.add(&delete_button);
         grid.attach(&row, 0, y, W, 1);
-    };
+    }
 
     window.add(&grid);
 
@@ -145,12 +145,19 @@ fn build_ui(application: &gtk::Application) {
         move |_| tx.send(Msg::OnDeleteClick).unwrap()
     });
 
-    // TODO
-
     // ## イベントを処理する
 
     rx.attach(None, {
         let _tx = tx.clone();
+
+        // リストボックスの行コンテナからテキストを取り出す
+        fn row_to_string(row: &gtk::ListBoxRow) -> glib::GString {
+            row.child()
+                .unwrap()
+                .downcast::<gtk::Label>()
+                .unwrap()
+                .text()
+        }
 
         move |msg| {
             eprintln!("msg {:?}", msg);
@@ -164,18 +171,17 @@ fn build_ui(application: &gtk::Application) {
                     listbox.select_row(listbox.row_at_index(0).as_ref());
                     listbox.show_all();
                 }
-                Msg::OnFilterChanged(_filter) => {
-                    // TODO
+                Msg::OnFilterChanged(filter) => {
+                    if !filter.is_empty() {
+                        let filter_fn =
+                            move |row: &gtk::ListBoxRow| row_to_string(row).contains(&filter);
+                        listbox.set_filter_func(Some(Box::new(filter_fn)));
+                    } else {
+                        listbox.set_filter_func(None);
+                    }
                 }
                 Msg::OnListRowSelected(index) => {
-                    let item = listbox.row_at_index(index).map(|row| {
-                        row.child()
-                            .unwrap()
-                            .downcast::<gtk::Label>()
-                            .unwrap()
-                            .text()
-                            .to_string()
-                    });
+                    let item = listbox.row_at_index(index).map(|row| row_to_string(&row));
                     let (name, surname) = match &item {
                         Some(item) => item.split_once(", ").unwrap(),
                         None => ("", ""),
@@ -213,6 +219,8 @@ fn build_ui(application: &gtk::Application) {
                         row.add(&gtk::Label::new(Some(&item)));
                         row.show_all();
                     }
+
+                    listbox.invalidate_filter();
                 }
                 Msg::OnDeleteClick => {
                     if let Some(row) = listbox.selected_row() {
