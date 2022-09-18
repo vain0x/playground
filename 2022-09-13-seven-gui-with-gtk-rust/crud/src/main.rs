@@ -6,8 +6,19 @@
 //      https://docs.gtk.org/gtk3/class.ListBox.html
 //      - 項目として文字列を挿入するには、ラベルに包んでから挿入する
 //      - 行を挿入した後、挿入された行を `show_all` によって表示する (そうでないと中身が空欄になる)
+//
+// - ScrolledWindow (スクロール可能な領域を包含するコンテナ)
+//      https://docs.gtk.org/gtk3/class.ScrolledWindow.html
+//      垂直スクロールバーと水平スクロールバーを取得できる
+//
+// - スクロールバー
+//      https://docs.gtk.org/gtk3/class.Scrollbar.html
+//
+// - Adjustment (?)
+//      https://docs.gtk.org/gtk3/class.Adjustment.html
 
 use gtk::{glib, prelude::*, ApplicationWindow, Orientation, WindowPosition};
+use std::time::Duration;
 
 #[derive(Debug)]
 enum Msg {
@@ -52,13 +63,16 @@ fn build_ui(application: &gtk::Application) {
     };
     y += 1;
 
-    // TODO: リストボックスの高さの最小値を決める、要素数が多いときはスクロールする
     let listbox = gtk::ListBox::new();
+    let scroll = gtk::ScrolledWindow::default();
     {
         listbox.set_widget_name("persons-listbox");
         listbox.set_vexpand(true);
-        listbox.set_can_focus(false);
-        grid.attach(&listbox, 0, y, 2, 3);
+
+        scroll.set_height_request(250);
+        scroll.add(&listbox);
+
+        grid.attach(&scroll, 0, y, 2, 3);
     }
 
     let name_entry = {
@@ -118,20 +132,6 @@ fn build_ui(application: &gtk::Application) {
             tx.send(Msg::OnListRowSelected(value)).unwrap();
         }
     });
-    // name_entry.connect_changed({
-    //     let tx = tx.clone();
-    //     move |entry| {
-    //         let value = entry.buffer().text();
-    //         tx.send(Msg::OnNameChanged(value)).unwrap();
-    //     }
-    // });
-    // surname_entry.connect_changed({
-    //     let tx = tx.clone();
-    //     move |entry| {
-    //         let value = entry.buffer().text();
-    //         tx.send(Msg::OnSurnameChanged(value)).unwrap();
-    //     }
-    // });
     create_button.connect_clicked({
         let tx = tx.clone();
         move |_| tx.send(Msg::OnCreateClick).unwrap()
@@ -205,6 +205,20 @@ fn build_ui(application: &gtk::Application) {
                         listbox.select_row(Some(&row));
                         row.show_all();
                     }
+
+                    // 最下部にスクロールする
+                    // (おそらく) この時点ではまだリストボックスに最後の列が挿入されていないため、
+                    // 即座にスクロールすると最後の行の直前にスクロールしてしまうので、
+                    // 少し待ってからスクロールする
+
+                    glib::timeout_add_local_once(Duration::from_millis(16), {
+                        let listbox = listbox.clone();
+                        move || {
+                            if let Some(adjustment) = listbox.adjustment() {
+                                adjustment.set_value(adjustment.upper());
+                            }
+                        }
+                    });
                 }
                 Msg::OnUpdateClick => {
                     let item = {
