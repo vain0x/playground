@@ -20,19 +20,17 @@ namespace AppDesktop
 
         public Command<object> LoginCommand { get; }
 
+        public event EventHandler<LoginRequest>? OnLoginRequested;
+
         public LoginPageVm()
         {
             LoginCommand = Command.CreateWithCanExecute<object>(
-                _ =>
-                {
-                    System.Diagnostics.Debug.WriteLine($"canExecute? {loginId}, {Password}");
-                    return !string.IsNullOrEmpty(LoginId)
-                       && !string.IsNullOrEmpty(Password);
-                },
-                _ =>
-                {
-                    System.Diagnostics.Debug.WriteLine($"login! '{LoginId}' '{Password}'");
-                });
+                _ => !string.IsNullOrEmpty(LoginId)
+                       && !string.IsNullOrEmpty(Password),
+                _ => OnLoginRequested?.Invoke(this, new LoginRequest(LoginId, Password))
+            );
         }
     }
+
+    internal sealed record LoginRequest(string LoginId, string Password);
 }

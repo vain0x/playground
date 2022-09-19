@@ -1,9 +1,17 @@
-﻿<Application x:Class="AppDesktop.App"
+<Application x:Class="AppDesktop.App"
              xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              xmlns:local="clr-namespace:AppDesktop"
              StartupUri="MainWindow.xaml">
     <Application.Resources>
-         
+        <ResourceDictionary>
+            <!-- Mapping from view models to views. -->
+            <DataTemplate DataType="{x:Type local:LoginPageVm}">
+                <local:LoginPage />
+            </DataTemplate>
+            <DataTemplate DataType="{x:Type local:HomePageVm}">
+                <local:HomePage />
+            </DataTemplate>
+        </ResourceDictionary>
     </Application.Resources>
 </Application>

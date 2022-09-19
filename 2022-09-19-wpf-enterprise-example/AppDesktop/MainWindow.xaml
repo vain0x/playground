@@ -9,11 +9,10 @@
     Title="WPF Enterprise Example"
     Width="640" Height="480"
     FontFamily="Meiryo"
-    FontSize="16">
+    FontSize="16"
+    Content="{Binding CurrentPage}">
     <Window.DataContext>
         <!-- This is just same as: window.DataContext = new MainWindowVm(); -->
         <local:MainWindowVm />
     </Window.DataContext>
-
-    <local:LoginPage DataContext="{Binding LoginPage}" />
 </Window>
