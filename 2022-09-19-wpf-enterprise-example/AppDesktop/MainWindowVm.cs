@@ -1,3 +1,4 @@
+using System.Collections.Generic;
 using System.ComponentModel;
 using System.Diagnostics;
 using System.Linq;
@@ -19,6 +20,8 @@ namespace AppDesktop
             get => loginInfo;
             set { loginInfo = value; RaisePropertyChagned(); }
         }
+
+        private readonly List<int> deletedEmployees = new();
 
         public MainWindowVm()
         {
@@ -58,12 +61,28 @@ namespace AppDesktop
             var dummyEmployees = "Alice,Bob,Charlotte,Don,Eve"
                 .Split(",")
                 .Select((name, index) => new EmployeeListItem(1 + index, name))
+                .Where(e => !deletedEmployees.Contains(e.EmployeeId))
                 .ToArray();
 
             var page = new EmployeesListPageVm(dummyEmployees);
+            page.CreateCommand.Executed += (_, _) => OpenEmployeesAddPage();
+            page.OnDeleteRequested += OnDeleteEmployees;
             page.BackCommand.Executed += (_, _) => OpenHomePage();
 
             CurrentPage = page;
+        }
+
+        private void OpenEmployeesAddPage()
+        {
+            Debug.WriteLine("TODO: Go to employee creation page");
+        }
+
+        private void OnDeleteEmployees(object? _sender, int[] employeeIds)
+        {
+            deletedEmployees.AddRange(employeeIds);
+
+            // TODO: update employeesList in-place
+            OpenEmployeesListPage();
         }
     }
 
