@@ -12,6 +12,9 @@
             <DataTemplate DataType="{x:Type local:HomePageVm}">
                 <local:HomePage />
             </DataTemplate>
+            <DataTemplate DataType="{x:Type local:EmployeesListPageVm}">
+                <local:EmployeesListPage />
+            </DataTemplate>
         </ResourceDictionary>
     </Application.Resources>
 </Application>

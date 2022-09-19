@@ -1,6 +1,6 @@
 using System.ComponentModel;
 using System.Diagnostics;
-using System;
+using System.Linq;
 
 namespace AppDesktop
 {
@@ -48,13 +48,22 @@ namespace AppDesktop
         private void OpenHomePage()
         {
             var page = new HomePageVm();
+            page.GoEmployeesCommand.Executed += (_, _) => OpenEmployeesListPage();
 
-            page.GoEmployeesCommand.Executed += (_, _) =>
-            {
-                Debug.WriteLine("TODO: Navigate to the employees page");
-            };
+            CurrentPage = page;
+        }
 
-            currentPage = page;
+        private void OpenEmployeesListPage()
+        {
+            var dummyEmployees = "Alice,Bob,Charlotte,Don,Eve"
+                .Split(",")
+                .Select((name, index) => new EmployeeListItem(1 + index, name))
+                .ToArray();
+
+            var page = new EmployeesListPageVm(dummyEmployees);
+            page.BackCommand.Executed += (_, _) => OpenHomePage();
+
+            CurrentPage = page;
         }
     }
 
