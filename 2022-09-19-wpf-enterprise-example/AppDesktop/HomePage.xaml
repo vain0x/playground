@@ -6,8 +6,48 @@
     xmlns:d="http://schemas.microsoft.com/expression/blend/2008" 
     xmlns:local="clr-namespace:AppDesktop"
     mc:Ignorable="d" 
-    d:DesignHeight="450" d:DesignWidth="800">
+    d:DesignHeight="450" d:DesignWidth="800"
+    d:DataContext="{d:DesignInstance Type=local:HomePageVm}">
+    <UserControl.Resources>
+        <ResourceDictionary>
+            <!-- 再利用可能なスタイルを定義する (このページでしか使わないもの) -->
+            <Style x:Key="MenuButton" TargetType="Button">
+                <Setter Property="Width" Value="200"/>
+                <Setter Property="Height" Value="40"/>
+                <Setter Property="Margin" Value="0,16"/>
+                <Setter Property="Padding" Value="8,4" />
+                <Setter Property="Background" Value="Transparent" />
+                <Setter Property="BorderThickness" Value="0" />
+                <Setter Property="HorizontalContentAlignment" Value="Left" />
+            </Style>
+        </ResourceDictionary>
+    </UserControl.Resources>
+
     <Grid>
-        <TextBlock>Hello, world!</TextBlock>
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="*" />
+        </Grid.RowDefinitions>
+        <Grid.ColumnDefinitions>
+            <ColumnDefinition Width="*" />
+            <ColumnDefinition Width="Auto" />
+        </Grid.ColumnDefinitions>
+
+        <!-- ヘッダー部分 (タイトルとログインユーザーの表示) -->
+        <TextBlock Margin="16,16,16,24" FontFamily="Yu Gothic" FontSize="32" FontWeight="Bold">
+            WPF Enterprise Example
+        </TextBlock>
+
+        <TextBlock Grid.Column="1" Margin="16,0" VerticalAlignment="Center">
+            As <Run Text="{Binding DataContext.LoginInfo.Username, RelativeSource={RelativeSource AncestorType={x:Type local:MainWindow}}}"/>
+        </TextBlock>
+
+        <!-- コンテンツ (当面は個別ページへのボタンを並べる) -->
+
+        <StackPanel Grid.Row="1" Grid.ColumnSpan="2" Margin="16,0,16,24" HorizontalAlignment="Left">
+            <Button Command="{Binding GoEmployeesCommand}" Style="{StaticResource MenuButton}">▶ 社員</Button>
+            <Button x:Name="rolesListButton" Style="{StaticResource MenuButton}" IsEnabled="False">▶ ロール</Button>
+            <Button x:Name="attandancesButton" Style="{StaticResource MenuButton}" IsEnabled="False">▶ 出退勤</Button>
+        </StackPanel>
     </Grid>
 </UserControl>
