@@ -8,12 +8,6 @@ namespace AppDesktop
         public MainWindow()
         {
             InitializeComponent();
-
-            Loaded += (_sender, _e) =>
-            {
-                SQLitePCL.Batteries.Init();
-                AppDatabase.Example().GetAwaiter().GetResult();
-            };
         }
     }
 }
