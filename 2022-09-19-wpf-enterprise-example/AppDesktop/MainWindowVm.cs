@@ -21,7 +21,13 @@ namespace AppDesktop
             set { loginInfo = value; RaisePropertyChagned(); }
         }
 
-        private readonly List<int> deletedEmployees = new();
+        private readonly List<EmployeeListItem> dummyEmployees =
+            "Alice,Bob,Charlotte,Don,Eve"
+                .Split(",")
+                .Select((name, index) => new EmployeeListItem(1 + index, name))
+                .ToList();
+
+        private int lastEmployeeId = 5;
 
         public MainWindowVm()
         {
@@ -58,28 +64,35 @@ namespace AppDesktop
 
         private void OpenEmployeesListPage()
         {
-            var dummyEmployees = "Alice,Bob,Charlotte,Don,Eve"
-                .Split(",")
-                .Select((name, index) => new EmployeeListItem(1 + index, name))
-                .Where(e => !deletedEmployees.Contains(e.EmployeeId))
-                .ToArray();
-
-            var page = new EmployeesListPageVm(dummyEmployees);
-            page.CreateCommand.Executed += (_, _) => OpenEmployeesAddPage();
+            var page = new EmployeesListPageVm(dummyEmployees.ToArray());
+            page.CreateCommand.Executed += (_, _) => OpenEmployeesCreatePage();
             page.OnDeleteRequested += OnDeleteEmployees;
             page.BackCommand.Executed += (_, _) => OpenHomePage();
 
             CurrentPage = page;
         }
 
-        private void OpenEmployeesAddPage()
+        private void OpenEmployeesCreatePage()
         {
-            Debug.WriteLine("TODO: Go to employee creation page");
+            var page = new EmployeesCreatePageVm();
+            page.OnCreateRequested += OnCreateEmployee;
+            page.CancelCommand.Executed += (_, _) => OpenEmployeesListPage();
+            CurrentPage = page;
+        }
+
+        private void OnCreateEmployee(object? _sender, CreateEmployeeRequest request)
+        {
+            lastEmployeeId++;
+            var id = lastEmployeeId;
+            var employee = new EmployeeListItem(id, request.EmployeeName);
+            dummyEmployees.Add(employee);
+
+            OpenEmployeesListPage();
         }
 
         private void OnDeleteEmployees(object? _sender, int[] employeeIds)
         {
-            deletedEmployees.AddRange(employeeIds);
+            dummyEmployees.RemoveAll(e => employeeIds.Contains(e.EmployeeId));
 
             // TODO: update employeesList in-place
             OpenEmployeesListPage();
