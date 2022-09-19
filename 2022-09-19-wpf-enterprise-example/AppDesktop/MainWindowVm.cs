@@ -32,7 +32,7 @@ namespace AppDesktop
         public MainWindowVm()
         {
             var loginPage = new LoginPageVm();
-            loginPage.OnLoginRequested += OnLoginRequested;
+            loginPage.OnLoginRequested += (_, request) => Login(request);
             currentPage = loginPage;
 
 #if DEBUG
@@ -44,7 +44,7 @@ namespace AppDesktop
 #endif
         }
 
-        private void OnLoginRequested(object? _sender, LoginRequest request)
+        private void Login(LoginRequest request)
         {
             Debug.WriteLine($"LoginId={request.LoginId} Password={request.Password}");
             LoginInfo = new LoginInfo()
@@ -66,7 +66,7 @@ namespace AppDesktop
         {
             var page = new EmployeesListPageVm(dummyEmployees.ToArray());
             page.CreateCommand.Executed += (_, _) => OpenEmployeesCreatePage();
-            page.OnDeleteRequested += OnDeleteEmployees;
+            page.OnDeleteRequested += (_, ids) => DeleteEmployees(ids);
             page.BackCommand.Executed += (_, _) => OpenHomePage();
 
             CurrentPage = page;
@@ -75,12 +75,12 @@ namespace AppDesktop
         private void OpenEmployeesCreatePage()
         {
             var page = new EmployeesCreatePageVm();
-            page.OnCreateRequested += OnCreateEmployee;
+            page.OnCreateRequested += (_, request) => CreateEmployee(request);
             page.CancelCommand.Executed += (_, _) => OpenEmployeesListPage();
             CurrentPage = page;
         }
 
-        private void OnCreateEmployee(object? _sender, CreateEmployeeRequest request)
+        private void CreateEmployee(CreateEmployeeRequest request)
         {
             lastEmployeeId++;
             var id = lastEmployeeId;
@@ -90,7 +90,7 @@ namespace AppDesktop
             OpenEmployeesListPage();
         }
 
-        private void OnDeleteEmployees(object? _sender, int[] employeeIds)
+        private void DeleteEmployees(int[] employeeIds)
         {
             dummyEmployees.RemoveAll(e => employeeIds.Contains(e.EmployeeId));
 
