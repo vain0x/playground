@@ -9,18 +9,16 @@
     d:DesignHeight="450" d:DesignWidth="800"
     d:DataContext="{d:DesignInstance Type=local:HomePageVm}">
     <UserControl.Resources>
-        <ResourceDictionary>
-            <!-- 再利用可能なスタイルを定義する (このページでしか使わないもの) -->
-            <Style x:Key="MenuButton" TargetType="Button">
-                <Setter Property="Width" Value="200"/>
-                <Setter Property="Height" Value="40"/>
-                <Setter Property="Margin" Value="0,16"/>
-                <Setter Property="Padding" Value="8,4" />
-                <Setter Property="Background" Value="Transparent" />
-                <Setter Property="BorderThickness" Value="0" />
-                <Setter Property="HorizontalContentAlignment" Value="Left" />
-            </Style>
-        </ResourceDictionary>
+        <!-- 再利用可能なスタイルを定義する (このページでしか使わないもの) -->
+        <Style x:Key="MenuButton" TargetType="Button">
+            <Setter Property="Width" Value="200"/>
+            <Setter Property="Height" Value="40"/>
+            <Setter Property="Margin" Value="0,16"/>
+            <Setter Property="Padding" Value="8,4" />
+            <Setter Property="Background" Value="Transparent" />
+            <Setter Property="BorderThickness" Value="0" />
+            <Setter Property="HorizontalContentAlignment" Value="Left" />
+        </Style>
     </UserControl.Resources>
 
     <Grid>
