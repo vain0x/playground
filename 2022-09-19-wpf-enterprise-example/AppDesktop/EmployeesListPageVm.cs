@@ -74,14 +74,14 @@ namespace AppDesktop
         public bool Checked
         {
             get => @checked;
-            set { @checked = value; RaisePropertyChagned(); }
+            set { @checked = value; RaisePropertyChanged(); }
         }
 
         private string employeeName;
         public string EmployeeName
         {
             get => employeeName;
-            set { employeeName = value; RaisePropertyChagned(); }
+            set { employeeName = value; RaisePropertyChanged(); }
         }
 
         public EmployeeListItemVm(int employeeId, string employeeName)

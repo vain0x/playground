@@ -8,7 +8,7 @@ namespace AppDesktop
     {
         public event PropertyChangedEventHandler? PropertyChanged;
 
-        protected void RaisePropertyChagned([CallerMemberName] string? name = null)
+        protected void RaisePropertyChanged([CallerMemberName] string? name = null)
         {
             if (name == null) throw new ArgumentNullException(nameof(name));
             PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(name));

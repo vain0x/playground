@@ -8,14 +8,14 @@ namespace AppDesktop
         public string LoginId
         {
             get => loginId;
-            set { loginId = value; RaisePropertyChagned(); LoginCommand.RaiseCanExecuteChanged(); }
+            set { loginId = value; RaisePropertyChanged(); LoginCommand.RaiseCanExecuteChanged(); }
         }
 
         private string password = "";
         public string Password
         {
             get => password;
-            set { password = value; RaisePropertyChagned(); LoginCommand.RaiseCanExecuteChanged(); }
+            set { password = value; RaisePropertyChanged(); LoginCommand.RaiseCanExecuteChanged(); }
         }
 
         public Command<object> LoginCommand { get; }

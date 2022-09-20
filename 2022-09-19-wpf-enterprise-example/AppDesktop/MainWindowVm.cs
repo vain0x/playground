@@ -11,14 +11,14 @@ namespace AppDesktop
         public INotifyPropertyChanged CurrentPage
         {
             get => currentPage;
-            set { currentPage = value; RaisePropertyChagned(); }
+            set { currentPage = value; RaisePropertyChanged(); }
         }
 
         private LoginInfo? loginInfo;
         public LoginInfo? LoginInfo
         {
             get => loginInfo;
-            set { loginInfo = value; RaisePropertyChagned(); }
+            set { loginInfo = value; RaisePropertyChanged(); }
         }
 
         private readonly List<EmployeeListItem> dummyEmployees =
@@ -105,7 +105,7 @@ namespace AppDesktop
         public string Username
         {
             get => username;
-            set { username = value; RaisePropertyChagned(); }
+            set { username = value; RaisePropertyChanged(); }
         }
     }
 }

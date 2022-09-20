@@ -8,7 +8,7 @@ namespace AppDesktop
         public string EmployeeName
         {
             get => employeeName;
-            set { employeeName = value; RaisePropertyChagned(); CreateCommand.RaiseCanExecuteChanged(); }
+            set { employeeName = value; RaisePropertyChanged(); CreateCommand.RaiseCanExecuteChanged(); }
         }
 
         public Command<object?> CreateCommand { get; }
