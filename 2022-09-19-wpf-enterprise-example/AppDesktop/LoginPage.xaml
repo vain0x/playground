@@ -9,8 +9,13 @@
     d:DesignHeight="450" d:DesignWidth="800"
     d:DataContext="{d:DesignInstance local:LoginPageVm}"
     FocusManager.FocusedElement="{Binding ElementName=loginIdTextBox}">
+    <UserControl.Resources>
+        <BooleanToVisibilityConverter x:Key="BooleanToVisibilityConverter" />
+    </UserControl.Resources>
+
     <Grid Margin="24">
         <Grid.RowDefinitions>
+            <RowDefinition Height="Auto" />
             <RowDefinition Height="Auto" />
             <RowDefinition Height="Auto" />
             <RowDefinition Height="Auto" />
@@ -37,8 +42,17 @@
         </TextBlock>
         <PasswordBox Grid.Row="2" Grid.Column="1" Padding="2,4" VerticalAlignment="Center" PasswordChanged="OnPasswordChanged" />
 
-        <Button Command="{Binding LoginCommand}" Grid.Row="3" Grid.Column="1" Margin="0,16,0,0" HorizontalAlignment="Right" Width="120" Height="40">
+        <Button
+            Command="{Binding LoginCommand}" IsDefault="True"
+            Grid.Row="3" Grid.Column="1" Margin="0,16,0,0" HorizontalAlignment="Right" Width="120" Height="40">
             ログイン
         </Button>
+
+        <!-- エラー表示 (ログインに失敗したときのみ) -->
+
+        <TextBlock Grid.Row="4" Grid.ColumnSpan="2" Foreground="Red" Visibility="{Binding IsFailed, Converter={StaticResource BooleanToVisibilityConverter}}">
+            <Run Text="ログインできません" /><LineBreak />
+            <Run Text="ログインIDまたはパスワードが一致していないか、ログインできないユーザーです" />
+        </TextBlock>
     </Grid>
 </UserControl>

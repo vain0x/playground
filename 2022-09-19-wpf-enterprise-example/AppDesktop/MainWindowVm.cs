@@ -1,3 +1,4 @@
+using System;
 using System.Collections.Generic;
 using System.ComponentModel;
 using System.Diagnostics;
@@ -33,6 +34,7 @@ namespace AppDesktop
         {
             var loginPage = new LoginPageVm();
             loginPage.OnLoginRequested += (_, request) => Login(request);
+            LoginFailed += (_, _) => loginPage.NotifyLoginFailed();
             currentPage = loginPage;
 
 #if DEBUG
@@ -44,6 +46,8 @@ namespace AppDesktop
 #endif
         }
 
+        private event EventHandler? LoginFailed;
+
         private void Login(LoginRequest request)
         {
             Debug.WriteLine($"LoginId={request.LoginId} Password={request.Password}");
@@ -51,6 +55,11 @@ namespace AppDesktop
             {
                 Username = string.Concat(request.LoginId[..1].ToUpper(), request.LoginId[1..]),
             };
+            if (request.Password == "password")
+            {
+                LoginFailed?.Invoke(this, EventArgs.Empty);
+                return;
+            }
             OpenHomePage();
         }
 
