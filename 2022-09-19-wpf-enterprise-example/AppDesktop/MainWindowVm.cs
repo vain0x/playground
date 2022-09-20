@@ -53,7 +53,7 @@ namespace AppDesktop
 
 #if DEBUG
             // デバッグ用: 毎回ログインするのは面倒なので自動でログインする
-            var loginRequest = new LoginRequest("john", "john_password", () => { });
+            var loginRequest = new LoginRequest("john", "john_password", () => { }, () => { });
             loginPage.LoginId = loginRequest.LoginId;
             loginPage.Password = loginRequest.Password;
             loginPage.LoginCommand.Execute(loginRequest);
@@ -70,6 +70,7 @@ namespace AppDesktop
                 if (!verified)
                 {
                     request.OnFailed();
+                    request.OnFinally();
                     return;
                 }
 
@@ -80,6 +81,7 @@ namespace AppDesktop
                 };
 
                 OpenHomePage();
+                request.OnFinally();
             });
         }
 
