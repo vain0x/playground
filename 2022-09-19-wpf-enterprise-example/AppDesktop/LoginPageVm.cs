@@ -29,17 +29,32 @@ namespace AppDesktop
 
         public event EventHandler<LoginRequest>? OnLoginRequested;
 
-        public void OnLoginFailed() => IsFailed = true;
-
         public LoginPageVm()
         {
             LoginCommand = Command.CreateWithCanExecute<object?>(
                 _ => !string.IsNullOrEmpty(LoginId)
                        && !string.IsNullOrEmpty(Password),
-                _ => OnLoginRequested?.Invoke(this, new LoginRequest(LoginId, Password))
+                _ => OnLoginRequested?.Invoke(this, new LoginRequest(LoginId, Password, OnLoginFailed))
             );
+        }
+
+        public void OnLoginFailed()
+        {
+            IsFailed = true;
         }
     }
 
-    internal sealed record LoginRequest(string LoginId, string Password);
+    internal sealed class LoginRequest
+    {
+        public string LoginId { get; }
+        public string Password { get; }
+        public Action OnFailed { get; }
+
+        public LoginRequest(string loginId, string password, Action onFailed)
+        {
+            LoginId = loginId;
+            Password = password;
+            OnFailed = onFailed;
+        }
+    }
 }
