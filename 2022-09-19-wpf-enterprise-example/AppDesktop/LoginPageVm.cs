@@ -29,7 +29,7 @@ namespace AppDesktop
 
         public event EventHandler<LoginRequest>? OnLoginRequested;
 
-        public void NotifyLoginFailed() => IsFailed = true;
+        public void OnLoginFailed() => IsFailed = true;
 
         public LoginPageVm()
         {

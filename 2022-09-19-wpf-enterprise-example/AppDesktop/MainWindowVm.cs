@@ -33,8 +33,7 @@ namespace AppDesktop
         public MainWindowVm()
         {
             var loginPage = new LoginPageVm();
-            loginPage.OnLoginRequested += (_, request) => Login(request);
-            LoginFailed += (_, _) => loginPage.NotifyLoginFailed();
+            loginPage.OnLoginRequested += (_, request) => Login(request, loginPage);
             currentPage = loginPage;
 
 #if DEBUG
@@ -46,9 +45,7 @@ namespace AppDesktop
 #endif
         }
 
-        private event EventHandler? LoginFailed;
-
-        private void Login(LoginRequest request)
+        private void Login(LoginRequest request, LoginPageVm page)
         {
             Debug.WriteLine($"LoginId={request.LoginId} Password={request.Password}");
             LoginInfo = new LoginInfo()
@@ -57,7 +54,7 @@ namespace AppDesktop
             };
             if (request.Password == "password")
             {
-                LoginFailed?.Invoke(this, EventArgs.Empty);
+                page.OnLoginFailed();
                 return;
             }
             OpenHomePage();
