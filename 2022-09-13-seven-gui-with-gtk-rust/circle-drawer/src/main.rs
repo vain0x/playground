@@ -1,15 +1,20 @@
 //! # Circle Drawer
 
 // [Custom Drawing: GTK+ 3 Reference Manual](https://developer-old.gnome.org/gtk3/stable/ch01s05.html)
+// [Basic drawing in PyCairo](https://zetcode.com/gfx/pycairo/basicdrawing/)
 
 use gtk::{gdk, glib, prelude::*, ApplicationWindow, Orientation, WindowPosition};
+use std::{
+    f64::consts::PI,
+    sync::{Arc, Mutex},
+};
 
 #[derive(Debug)]
 enum Msg {
     OnInit,
     OnUndoClick,
     OnRedoClick,
-    OnClick(f64, f64),
+    OnCanvasClick(f64, f64),
 }
 
 fn build_ui(application: &gtk::Application) {
@@ -57,15 +62,32 @@ fn build_ui(application: &gtk::Application) {
         let tx = tx.clone();
         move |_| tx.send(Msg::OnRedoClick).unwrap()
     });
-    canvas.connect_draw(|_canvas, _dx| {
-        // TODO: DRAW
-        Inhibit(false)
-    });
     canvas.connect_button_press_event({
         let tx = tx.clone();
         move |_, ev| {
             let (x, y) = ev.position();
-            tx.send(Msg::OnClick(x, y)).unwrap();
+            tx.send(Msg::OnCanvasClick(x, y)).unwrap();
+            Inhibit(false)
+        }
+    });
+
+    let circles = Arc::new(Mutex::new(vec![]));
+
+    // drawの処理はここで同期的に行う必要があり、メッセージを送るだけにはできない
+    canvas.connect_draw({
+        let circles = Arc::clone(&circles);
+
+        move |_canvas, ctx| {
+            let circles = circles.lock().unwrap();
+            let circles = circles.as_slice();
+
+            ctx.set_line_width(1.0);
+
+            for &(cx, cy, r) in circles {
+                ctx.arc(cx, cy, r, 0.0, PI * 2.0);
+                ctx.set_source_rgb(0.3, 0.3, 0.3);
+                ctx.stroke().unwrap();
+            }
             Inhibit(false)
         }
     });
@@ -89,8 +111,9 @@ fn build_ui(application: &gtk::Application) {
                 Msg::OnRedoClick => {
                     // TODO
                 }
-                Msg::OnClick(_x, _y) => {
-                    // TODO
+                Msg::OnCanvasClick(x, y) => {
+                    circles.lock().unwrap().push((x, y, 20.0));
+                    canvas.queue_draw();
                 }
             }
             Continue(true)
