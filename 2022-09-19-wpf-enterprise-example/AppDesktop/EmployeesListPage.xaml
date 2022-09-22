@@ -7,7 +7,8 @@
     xmlns:local="clr-namespace:AppDesktop"
     mc:Ignorable="d" 
     d:DesignHeight="450" d:DesignWidth="800"
-    d:DataContext="{d:DesignInstance local:EmployeesListPageVm}">
+    d:DataContext="{d:DesignInstance local:EmployeesListPageVm}"
+    Template="{StaticResource PageTemplate}">
     <UserControl.Resources>
         <Style x:Key="GridStyle" TargetType="DataGrid">
             <!-- 既定のラインは濃くてみづらいので垂直線を消して水平線を薄くする -->
@@ -18,13 +19,13 @@
         </Style>
     </UserControl.Resources>
 
-    <Grid Margin="24">
+    <Grid>
         <Grid.RowDefinitions>
             <RowDefinition Height="*" />
             <RowDefinition Height="Auto" />
         </Grid.RowDefinitions>
 
-        <DataGrid ItemsSource="{Binding Employees}" Style="{StaticResource GridStyle}">
+        <DataGrid ItemsSource="{Binding Employees}" Style="{StaticResource GridStyle}" Margin="0,0,0,16">
             <DataGrid.Columns>
                 <DataGridTemplateColumn Width="40" IsReadOnly="True" SortMemberPath="Checked">
                     <DataGridTemplateColumn.CellTemplate>
@@ -61,15 +62,15 @@
                 <ColumnDefinition Width="*" />
             </Grid.ColumnDefinitions>
 
-            <Button Grid.Column="0" Command="{Binding CreateCommand}" Margin="16" Width="120" Height="40">
+            <Button Grid.Column="0" Command="{Binding CreateCommand}" Width="120" Height="40">
                 新規作成
             </Button>
 
-            <Button Grid.Column="1" Command="{Binding DeleteCommand}" Margin="16" Width="80" Height="40">
+            <Button Grid.Column="1" Command="{Binding DeleteCommand}" Margin="16,0" Width="80" Height="40">
                 削除
             </Button>
 
-            <Button Grid.Column="2" Command="{Binding BackCommand}" Margin="16" Width="80" Height="40" HorizontalAlignment="Right">
+            <Button Grid.Column="2" Command="{Binding BackCommand}" Margin="0" Width="80" Height="40" HorizontalAlignment="Right">
                 ▶ 戻る
             </Button>
         </Grid>

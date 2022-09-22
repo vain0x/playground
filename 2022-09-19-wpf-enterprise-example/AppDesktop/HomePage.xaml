@@ -7,7 +7,8 @@
     xmlns:local="clr-namespace:AppDesktop"
     mc:Ignorable="d" 
     d:DesignHeight="450" d:DesignWidth="800"
-    d:DataContext="{d:DesignInstance Type=local:HomePageVm}">
+    d:DataContext="{d:DesignInstance Type=local:HomePageVm}"
+    Template="{StaticResource PageTemplate}">
     <UserControl.Resources>
         <!-- 再利用可能なスタイルを定義する (このページでしか使わないもの) -->
         <Style x:Key="MenuButton" TargetType="Button">
@@ -21,31 +22,10 @@
         </Style>
     </UserControl.Resources>
 
-    <Grid>
-        <Grid.RowDefinitions>
-            <RowDefinition Height="Auto" />
-            <RowDefinition Height="*" />
-        </Grid.RowDefinitions>
-        <Grid.ColumnDefinitions>
-            <ColumnDefinition Width="*" />
-            <ColumnDefinition Width="Auto" />
-        </Grid.ColumnDefinitions>
-
-        <!-- ヘッダー部分 (タイトルとログインユーザーの表示) -->
-        <TextBlock Margin="16,16,16,24" FontFamily="Yu Gothic" FontSize="32" FontWeight="Bold">
-            WPF Enterprise Example
-        </TextBlock>
-
-        <TextBlock Grid.Column="1" Margin="16,0" VerticalAlignment="Center">
-            As <Run Text="{Binding DataContext.LoginInfo.Username, RelativeSource={RelativeSource AncestorType={x:Type local:MainWindow}}}"/>
-        </TextBlock>
-
-        <!-- コンテンツ (当面は個別ページへのボタンを並べる) -->
-
-        <StackPanel Grid.Row="1" Grid.ColumnSpan="2" Margin="16,0,16,24" HorizontalAlignment="Left">
-            <Button Command="{Binding GoEmployeesCommand}" Style="{StaticResource MenuButton}">▶ 社員</Button>
-            <Button x:Name="rolesListButton" Style="{StaticResource MenuButton}" IsEnabled="False">▶ ロール</Button>
-            <Button x:Name="attandancesButton" Style="{StaticResource MenuButton}" IsEnabled="False">▶ 出退勤</Button>
-        </StackPanel>
-    </Grid>
+    <!-- (個別ページへのボタンを並べる) -->
+    <StackPanel HorizontalAlignment="Left">
+        <Button Command="{Binding GoEmployeesCommand}" Style="{StaticResource MenuButton}">▶ 社員</Button>
+        <Button Style="{StaticResource MenuButton}" IsEnabled="False">▶ ロール</Button>
+        <Button Style="{StaticResource MenuButton}" IsEnabled="False">▶ 出退勤</Button>
+    </StackPanel>
 </UserControl>

@@ -1,0 +1,23 @@
+<ResourceDictionary
+    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:local="clr-namespace:AppDesktop">
+    <!-- ページのレイアウトを構成するテンプレート -->
+    <ControlTemplate x:Key="PageTemplate" TargetType="{x:Type UserControl}">
+        <DockPanel LastChildFill="True">
+            <!-- ヘッダー部分 (タイトルとログインユーザーの表示) -->
+            <DockPanel DockPanel.Dock="Top" Background="#4d4d9d">
+                <TextBlock DockPanel.Dock="Left" Margin="16,4,16,4" FontFamily="Yu Gothic" FontSize="32" FontWeight="Bold" Foreground="White">
+                    WPF Enterprise Example
+                </TextBlock>
+
+                <TextBlock DockPanel.Dock="Right" Margin="16,0" HorizontalAlignment="Right" VerticalAlignment="Center" Foreground="White">
+                    As <Run Text="{Binding DataContext.LoginInfo.Username, RelativeSource={RelativeSource AncestorType={x:Type local:MainWindow}}}"/>
+                </TextBlock>
+            </DockPanel>
+
+            <!-- コンテンツ -->
+            <ContentPresenter Margin="16" Content="{TemplateBinding Content}" />
+        </DockPanel>
+    </ControlTemplate>
+</ResourceDictionary>
