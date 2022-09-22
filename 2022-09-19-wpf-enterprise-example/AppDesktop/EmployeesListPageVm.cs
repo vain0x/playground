@@ -23,11 +23,7 @@ namespace AppDesktop
             CreateCommand = EventCommand.Create<object?>(this);
 
             DeleteCommand = Command.CreateWithCanExecute<object?>(
-                _ =>
-                {
-                    System.Diagnostics.Debug.WriteLine($"canExecute? {SomeRowIsChecked()}");
-                    return SomeRowIsChecked();
-                },
+                _ => SomeRowIsChecked(),
                 _ =>
                 {
                     var items = CheckedItems().ToArray();
@@ -49,7 +45,6 @@ namespace AppDesktop
             {
                 em.PropertyChanged += (_, e) =>
                 {
-                    System.Diagnostics.Debug.WriteLine($"PropertyChanged {e.PropertyName} is {nameof(EmployeeListItemVm.Checked)}?");
                     if (e.PropertyName == nameof(EmployeeListItemVm.Checked))
                     {
                         DeleteCommand.RaiseCanExecuteChanged();

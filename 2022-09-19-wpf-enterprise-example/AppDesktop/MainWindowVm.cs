@@ -64,8 +64,6 @@ namespace AppDesktop
         {
             StartAsync(async ct =>
             {
-                Debug.WriteLine($"LoginId={request.LoginId} Password={request.Password}");
-
                 var verified = await VerifyLoginAsync(request, ct);
                 if (!verified)
                 {
