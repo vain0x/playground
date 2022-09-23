@@ -97,6 +97,7 @@ fn build_ui(application: &gtk::Application) {
 
     rx.attach(None, {
         let _tx = tx.clone();
+        let mut redo = vec![];
 
         move |msg| {
             eprintln!("msg {:?}", msg);
@@ -106,16 +107,26 @@ fn build_ui(application: &gtk::Application) {
                     //
                 }
                 Msg::OnUndoClick => {
-                    // TODO
+                    if let Some(circle) = circles.lock().unwrap().pop() {
+                        redo.push(circle);
+                        canvas.queue_draw();
+                    }
                 }
                 Msg::OnRedoClick => {
-                    // TODO
+                    if let Some(circle) = redo.pop() {
+                        circles.lock().unwrap().push(circle);
+                        canvas.queue_draw();
+                    }
                 }
                 Msg::OnCanvasClick(x, y) => {
+                    redo.clear();
                     circles.lock().unwrap().push((x, y, 20.0));
                     canvas.queue_draw();
                 }
             }
+
+            undo_button.set_sensitive(!circles.lock().unwrap().is_empty());
+            redo_button.set_sensitive(!redo.is_empty());
             Continue(true)
         }
     });
