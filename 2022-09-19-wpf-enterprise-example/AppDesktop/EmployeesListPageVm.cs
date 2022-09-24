@@ -10,17 +10,27 @@ namespace AppDesktop
     {
         public ObservableCollection<EmployeeListItemVm> Employees { get; }
 
-        public EventCommand<object?> CreateCommand { get; }
+        private EmployeesCreatePageVm? createDialog;
+        public EmployeesCreatePageVm? CreateDialog
+        {
+            get => createDialog;
+            set { createDialog = value; RaisePropertyChanged(); RaisePropertyChanged(nameof(IsCreateDialogOpen)); }
+        }
+
+        public bool IsCreateDialogOpen => CreateDialog != null;
+
+        public Command<object?> CreateCommand { get; }
         public Command<object?> DeleteCommand { get; }
         public EventCommand<object?> BackCommand { get; }
 
+        public event EventHandler<CreateEmployeeRequest>? OnCreateRequested;
         public event EventHandler<int[]>? OnDeleteRequested;
 
         public EmployeesListPageVm(EmployeeListItem[] employees)
         {
             Employees = new(employees.Select(e => new EmployeeListItemVm(e.EmployeeId, e.EmployeeName)).ToArray());
 
-            CreateCommand = EventCommand.Create<object?>(this);
+            CreateCommand = Command.Create<object?>(_ => OpenCreateDialog());
 
             DeleteCommand = Command.CreateWithCanExecute<object?>(
                 _ => SomeRowIsChecked(),
@@ -56,6 +66,21 @@ namespace AppDesktop
         private bool SomeRowIsChecked() => Employees.Any(e => e.Checked);
 
         private IEnumerable<EmployeeListItemVm> CheckedItems() => Employees.Where(e => e.Checked);
+
+        private void OpenCreateDialog()
+        {
+            var dialog = new EmployeesCreatePageVm();
+            CreateDialog = dialog;
+            dialog.OnCreateRequested += (_, request) =>
+            {
+                OnCreateRequested?.Invoke(this, request);
+                CreateDialog = null;
+            };
+            dialog.CancelCommand.Executed += (_, _) =>
+            {
+                CreateDialog = null;
+            };
+        }
     }
 
     // FIXME: モデル層に置く

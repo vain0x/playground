@@ -1,4 +1,5 @@
 <UserControl
+    x:Name="page"
     x:Class="AppDesktop.EmployeesListPage"
     xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
@@ -75,4 +76,18 @@
             </Button>
         </Grid>
     </Grid>
+
+    <local:DialogHost.DialogHost>
+        <local:DialogHost IsOpen="{Binding IsCreateDialogOpen}" Content="{Binding CreateDialog}" Width="320" Height="240">
+            <local:DialogHost.Style>
+                <Style>
+                    <Setter Property="Window.Title" Value="社員登録" />
+                </Style>
+            </local:DialogHost.Style>
+
+            <DataTemplate>
+                <local:EmployeesCreatePage />
+            </DataTemplate>
+        </local:DialogHost>
+    </local:DialogHost.DialogHost>
 </UserControl>

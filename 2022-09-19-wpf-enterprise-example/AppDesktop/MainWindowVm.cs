@@ -103,18 +103,10 @@ namespace AppDesktop
         private void OpenEmployeesListPage()
         {
             var page = new EmployeesListPageVm(dummyEmployees.ToArray());
-            page.CreateCommand.Executed += (_, _) => OpenEmployeesCreatePage();
+            page.OnCreateRequested += (_, request) => CreateEmployee(request);
             page.OnDeleteRequested += (_, ids) => DeleteEmployees(ids);
             page.BackCommand.Executed += (_, _) => OpenHomePage();
 
-            CurrentPage = page;
-        }
-
-        private void OpenEmployeesCreatePage()
-        {
-            var page = new EmployeesCreatePageVm();
-            page.OnCreateRequested += (_, request) => CreateEmployee(request);
-            page.CancelCommand.Executed += (_, _) => OpenEmployeesListPage();
             CurrentPage = page;
         }
 
