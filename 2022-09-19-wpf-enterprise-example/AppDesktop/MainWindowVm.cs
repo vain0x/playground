@@ -40,6 +40,9 @@ namespace AppDesktop
                 .Select((name, index) => new EmployeeListItem(1 + index, name))
                 .ToList();
 
+        private bool isAttended;
+        private DateTime? attendanceTime;
+
         private int lastEmployeeId = 5;
         private int busyLevel;
 
@@ -94,10 +97,48 @@ namespace AppDesktop
 
         private void OpenHomePage()
         {
-            var page = new HomePageVm();
+            var page = new HomePageVm()
+            {
+                IsAttended = isAttended,
+                AttendanceTime = attendanceTime,
+            };
+            page.Attended += (_, _) =>
+            {
+                Attend();
+                page.AttendanceTime = attendanceTime;
+                page.IsAttended = isAttended;
+            };
+            page.Left += (_, _) =>
+            {
+                Leave();
+                page.IsAttended = isAttended;
+            };
             page.GoEmployeesCommand.Executed += (_, _) => OpenEmployeesListPage();
 
             CurrentPage = page;
+        }
+
+        private void Attend()
+        {
+            if (isAttended)
+            {
+                Debug.WriteLine("すでに出勤しています");
+                return;
+            }
+
+            isAttended = true;
+            attendanceTime = DateTime.Now;
+        }
+
+        private void Leave()
+        {
+            if (!isAttended)
+            {
+                Debug.WriteLine("出勤していません");
+                return;
+            }
+
+            isAttended = false;
         }
 
         private void OpenEmployeesListPage()
