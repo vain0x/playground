@@ -114,6 +114,7 @@ namespace AppDesktop
                 page.IsAttended = isAttended;
             };
             page.GoEmployeesCommand.Executed += (_, _) => OpenEmployeesListPage();
+            page.GoAttendancesCommand.Executed += (_, _) => OpenAttendancesSummaryPage();
 
             CurrentPage = page;
         }
@@ -139,6 +140,57 @@ namespace AppDesktop
             }
 
             isAttended = false;
+        }
+
+        private void OpenAttendancesSummaryPage()
+        {
+            // Generate dummy data.
+            var month = DateOnly.FromDateTime(DateTime.Now);
+            month = month.AddDays(1 - month.Day);
+
+            var data = new AttendanceSummaryData(month, new AttendanceSummaryEntry[]
+            {
+                new(month, month.ToDateTime(TimeOnly.FromTimeSpan(TimeSpan.FromHours(9.5))), null),
+                new(month.AddDays(1), month.AddDays(1).ToDateTime(TimeOnly.FromTimeSpan(TimeSpan.FromHours(9.5))), month.AddDays(1).ToDateTime(TimeOnly.FromTimeSpan(TimeSpan.FromHours(17.5)))),
+            });
+
+            var page = new AttendancesSummaryPageVm(data);
+            page.BackCommand.Executed += (_, _) => OpenHomePage();
+            page.OnDataRequested += (_, request) => FetchAttendancesSummary(request);
+
+            CurrentPage = page;
+        }
+
+        private void FetchAttendancesSummary(AttendanceSummaryDataRequest request)
+        {
+            StartAsync(async ct =>
+            {
+                try
+                {
+
+                    Debug.WriteLine($"Fetch attendances {request.Month:yyyy-MM}");
+                    var month = request.Month;
+
+                    await Task.Delay(3000, ct);
+
+                    var data = new AttendanceSummaryData(month, new AttendanceSummaryEntry[]
+                    {
+                        new(month, month.ToDateTime(TimeOnly.FromTimeSpan(TimeSpan.FromHours(9.5))), null),
+                        new(month.AddDays(1),  month.AddDays(1).ToDateTime(TimeOnly.FromTimeSpan(TimeSpan.FromHours(9.5))), month.AddDays(1).ToDateTime(TimeOnly.FromTimeSpan(TimeSpan.FromHours(17.5)))),
+                    });
+
+                    request.OnSuccess(data);
+                }
+                catch
+                {
+                    request.OnError();
+                    throw;
+                }
+                finally
+                {
+                    request.OnFinally();
+                }
+            });
         }
 
         private void OpenEmployeesListPage()

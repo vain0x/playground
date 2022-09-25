@@ -37,6 +37,6 @@
         
         <Button Command="{Binding GoEmployeesCommand}" Style="{StaticResource MenuButton}">▶ 社員</Button>
         <Button Style="{StaticResource MenuButton}" IsEnabled="False">▶ ロール</Button>
-        <Button Style="{StaticResource MenuButton}" IsEnabled="False">▶ 出退勤</Button>
+        <Button Command="{Binding GoAttendancesCommand}" Style="{StaticResource MenuButton}">▶ 出退勤</Button>
     </StackPanel>
 </UserControl>
