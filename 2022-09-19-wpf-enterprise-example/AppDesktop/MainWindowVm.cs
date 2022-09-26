@@ -4,10 +4,8 @@ using System.ComponentModel;
 using System.Diagnostics;
 using System.Linq;
 using System.Runtime.CompilerServices;
-using System.Runtime.InteropServices;
 using System.Threading;
 using System.Threading.Tasks;
-using System.Windows.Threading;
 
 namespace AppDesktop
 {
@@ -17,7 +15,15 @@ namespace AppDesktop
         public INotifyPropertyChanged CurrentPage
         {
             get => currentPage;
-            set { currentPage = value; RaisePropertyChanged(); }
+            set
+            {
+                var oldPage = currentPage;
+
+                currentPage = value;
+                RaisePropertyChanged();
+
+                (oldPage as IDisposable)?.Dispose();
+            }
         }
 
         private bool isBusy;
@@ -156,7 +162,7 @@ namespace AppDesktop
 
             var page = new AttendancesSummaryPageVm(data);
             page.BackCommand.Executed += (_, _) => OpenHomePage();
-            page.OnDataRequested += (_, request) => FetchAttendancesSummary(request);
+            page.FetchEffect.Invoked += (_, request) => FetchAttendancesSummary(request);
 
             CurrentPage = page;
         }
@@ -167,11 +173,10 @@ namespace AppDesktop
             {
                 try
                 {
-
                     Debug.WriteLine($"Fetch attendances {request.Month:yyyy-MM}");
                     var month = request.Month;
 
-                    await Task.Delay(3000, ct);
+                    await Task.Delay(200 * month.Month, ct);
 
                     var data = new AttendanceSummaryData(month, new AttendanceSummaryEntry[]
                     {
@@ -183,14 +188,14 @@ namespace AppDesktop
                 }
                 catch
                 {
-                    request.OnError();
+                    request.OnError?.Invoke();
                     throw;
                 }
                 finally
                 {
-                    request.OnFinally();
+                    request.OnFinally?.Invoke();
                 }
-            });
+            }, request.Cts);
         }
 
         private void OpenEmployeesListPage()
@@ -221,9 +226,9 @@ namespace AppDesktop
             OpenEmployeesListPage();
         }
 
-        private async void StartAsync(Func<CancellationToken, Task> funcAsync, [CallerMemberName] string? name = null)
+        private async void StartAsync(Func<CancellationToken, Task> funcAsync, CancellationTokenSource? cts = null, [CallerMemberName] string? name = null)
         {
-            using var cts = new CancellationTokenSource();
+            cts ??= new CancellationTokenSource();
 
             // UIスレッドにメッセージを投げるためのチャネル
             var context = SynchronizationContext.Current!;

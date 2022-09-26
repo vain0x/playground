@@ -1,11 +1,16 @@
 using System;
+using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.Diagnostics;
 using System.Globalization;
+using System.Linq;
+using System.Threading;
+using System.Windows;
+using System.Windows.Threading;
 
 namespace AppDesktop
 {
-    internal sealed class AttendancesSummaryPageVm : BindableBase
+    internal sealed class AttendancesSummaryPageVm : BindableBase, IDisposable
     {
         private string monthInput = "";
         public string MonthInput
@@ -32,28 +37,19 @@ namespace AppDesktop
                 selectedMonth = value;
                 RaisePropertyChanged();
 
-                IsRequested = true;
-                OnDataRequested?.Invoke(this, new(
-                    value,
-                    OnGotData,
-                    () => { },
-                    () => IsRequested = false
-                ));
+                // TODO: debounce
+
+                FetchEffect.Invoke(new(value, OnGotData));
             }
         }
 
-        private bool isRequested;
-        public bool IsRequested
-        {
-            get => isRequested;
-            set { isRequested = value; RaisePropertyChanged(); }
-        }
+        public bool IsRequested => FetchEffect.IsBusy;
 
         public ObservableCollection<AttendanceTableRowVm> Rows { get; } = new();
 
         public EventCommand<object?> BackCommand { get; }
 
-        public event EventHandler<AttendanceSummaryDataRequest>? OnDataRequested;
+        public AttendanceSummaryDataFetchEffect FetchEffect { get; } = new();
 
         public AttendancesSummaryPageVm(AttendanceSummaryData data)
         {
@@ -62,11 +58,30 @@ namespace AppDesktop
 
             BackCommand = EventCommand.Create<object?>(this);
 
+            FetchEffect.PropertyChanged += (_, e) =>
+            {
+                if (e.PropertyName == nameof(AttendanceSummaryDataFetchEffect.IsBusy))
+                {
+                    RaisePropertyChanged(nameof(IsRequested));
+                }
+            };
+
             OnGotData(data);
         }
 
+        public void Dispose()
+        {
+            if (isDisposed) throw new InvalidOperationException();
+            isDisposed = true;
+
+            FetchEffect.Cancel();
+        }
+
+        bool isDisposed;
+
         private void OnGotData(AttendanceSummaryData data)
         {
+            Debug.WriteLine($"Got data {data.Month:yyyy-MM}");
             Rows.Clear();
 
             var lastDay = data.Month.AddMonths(1).AddDays(-1).Day;
@@ -122,15 +137,14 @@ namespace AppDesktop
     {
         public DateOnly Month { get; }
         public Action<AttendanceSummaryData> OnSuccess { get; }
-        public Action OnError { get; }
-        public Action OnFinally { get; }
+        public Action? OnError { get; set; }
+        public Action? OnFinally { get; set; }
+        public CancellationTokenSource Cts { get; } = new();
 
-        public AttendanceSummaryDataRequest(DateOnly month, Action<AttendanceSummaryData> onSuccess, Action onError, Action onFinally)
+        public AttendanceSummaryDataRequest(DateOnly month, Action<AttendanceSummaryData> onSuccess)
         {
             Month = month;
             OnSuccess = onSuccess;
-            OnError = onError;
-            OnFinally = onFinally;
         }
     }
 
@@ -146,6 +160,71 @@ namespace AppDesktop
             Date = date;
             AttendedAt = attendedAt;
             LeftAt = leftAt;
+        }
+    }
+
+    // データを取得する操作の発生源
+    // 後続のリクエストが来たら実行中のリクエストは破棄する
+    internal sealed class AttendanceSummaryDataFetchEffect : BindableBase
+    {
+        // 実行中のリクエスト
+        //
+        // 起動していないか終了したらnull
+        // キャンセルされても終了するまではnullにならない
+        private AttendanceSummaryDataRequest? current;
+
+        // 次のリクエスト
+        private AttendanceSummaryDataRequest? pending;
+
+        // 新しいリクエストが発生したとき
+        public event EventHandler<AttendanceSummaryDataRequest>? Invoked;
+
+        private bool isBusy;
+        public bool IsBusy
+        {
+            get => isBusy;
+            set { isBusy = value; RaisePropertyChanged(); }
+        }
+
+        public void Invoke(AttendanceSummaryDataRequest newRequest)
+        {
+            Debug.Assert(Application.Current.Dispatcher.Thread == Thread.CurrentThread);
+
+            if (current != null)
+            {
+                pending = newRequest;
+                Cancel();
+                return;
+            }
+
+            current = newRequest;
+            IsBusy = true;
+            newRequest.OnFinally += () =>
+            {
+                current = null;
+
+                if (pending != null)
+                {
+                    var request = pending;
+                    pending = null;
+                    Invoke(request);
+                    return;
+                }
+
+                IsBusy = false;
+            };
+            Invoked?.Invoke(this, newRequest);
+        }
+
+        public void Cancel()
+        {
+            Debug.Assert(Application.Current.Dispatcher.Thread == Thread.CurrentThread);
+
+            if (current != null)
+            {
+                Debug.WriteLine("Cancel requested");
+                current.Cts.Cancel();
+            }
         }
     }
 }
