@@ -75,7 +75,7 @@
         </Button>
 
         <!-- エラー表示のポップアップ -->
-        <Popup IsOpen="{Binding IsErrorPopupShown, Mode=OneWay}" PlacementTarget="{Binding ElementName=monthTextBox}" Placement="Bottom" PopupAnimation="Slide" VerticalOffset="4">
+        <Popup IsOpen="{Binding IsErrorPopupShown, Mode=OneWay}" PlacementTarget="{Binding ElementName=monthTextBox}" Placement="Bottom" PopupAnimation="Slide" VerticalOffset="4" local:PopupRelocationBehavior.Use="True">
             <Border Background="#d81b1b" BorderBrush="Red" BorderThickness="2" Padding="4">
                 <DockPanel>
                     <!-- (!) アイコン -->

@@ -68,7 +68,6 @@ namespace AppDesktop
 
             BackCommand = EventCommand.Create<object?>(this);
 
-            ErrorPopupText = "エラーが発生しました";
             DismissErrorPopupCommand = Command.Create<object?>(_ => DismissError());
 
             FetchEffect.PropertyChanged += (_, e) =>
