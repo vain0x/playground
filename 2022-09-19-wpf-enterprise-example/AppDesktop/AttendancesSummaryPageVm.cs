@@ -5,6 +5,7 @@ using System.Diagnostics;
 using System.Globalization;
 using System.Linq;
 using System.Threading;
+using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Threading;
 
@@ -36,8 +37,6 @@ namespace AppDesktop
             {
                 selectedMonth = value;
                 RaisePropertyChanged();
-
-                // TODO: debounce
 
                 FetchEffect.Invoke(new(value, OnGotData));
             }
@@ -186,7 +185,24 @@ namespace AppDesktop
             set { isBusy = value; RaisePropertyChanged(); }
         }
 
-        public void Invoke(AttendanceSummaryDataRequest newRequest)
+        private long lastId;
+
+        public async void Invoke(AttendanceSummaryDataRequest newRequest)
+        {
+            Debug.Assert(Application.Current.Dispatcher.Thread == Thread.CurrentThread);
+
+            // Debounce (連続して起こるイベントのうち最後の1個だけ処理する)
+            lastId++;
+            var localId = lastId;
+            await Task.Delay(300, newRequest.Cts.Token);
+
+            if (localId == lastId)
+            {
+                InvokeCore(newRequest);
+            }
+        }
+
+        private void InvokeCore(AttendanceSummaryDataRequest newRequest)
         {
             Debug.Assert(Application.Current.Dispatcher.Thread == Thread.CurrentThread);
 

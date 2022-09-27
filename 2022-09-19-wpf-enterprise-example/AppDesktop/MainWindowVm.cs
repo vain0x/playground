@@ -6,6 +6,7 @@ using System.Linq;
 using System.Runtime.CompilerServices;
 using System.Threading;
 using System.Threading.Tasks;
+using System.Windows;
 
 namespace AppDesktop
 {
@@ -228,10 +229,13 @@ namespace AppDesktop
 
         private async void StartAsync(Func<CancellationToken, Task> funcAsync, CancellationTokenSource? cts = null, [CallerMemberName] string? name = null)
         {
+            Debug.Assert(Application.Current.Dispatcher.Thread == Thread.CurrentThread);
+
             cts ??= new CancellationTokenSource();
 
             // UIスレッドにメッセージを投げるためのチャネル
             var context = SynchronizationContext.Current!;
+            Debug.Assert(context != null);
 
             // trueなら処理が瞬間的には完了しなかったことを表す
             // ドハティの閾値にもとづき、0.4s以上経過したらtrueになる
