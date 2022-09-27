@@ -1,13 +1,10 @@
 using System;
-using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.Diagnostics;
 using System.Globalization;
-using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using System.Windows;
-using System.Windows.Threading;
 
 namespace AppDesktop
 {
@@ -38,17 +35,31 @@ namespace AppDesktop
                 selectedMonth = value;
                 RaisePropertyChanged();
 
-                FetchEffect.Invoke(new(value, OnGotData));
+                DismissError();
+                AttendanceSummaryDataRequest newRequest = new(value, OnGotData);
+                newRequest.OnError += OnError;
+                FetchEffect.Invoke(newRequest);
             }
         }
 
-        public bool IsRequested => FetchEffect.IsBusy;
+        public bool IsGridDisabled => FetchEffect.IsBusy || ErrorPopupText != null;
 
         public ObservableCollection<AttendanceTableRowVm> Rows { get; } = new();
 
         public EventCommand<object?> BackCommand { get; }
 
         public AttendanceSummaryDataFetchEffect FetchEffect { get; } = new();
+
+        private string? errorPopupText;
+        public string? ErrorPopupText
+        {
+            get => errorPopupText;
+            set { errorPopupText = value; RaisePropertyChanged(); RaisePropertyChanged(nameof(IsGridDisabled)); RaisePropertyChanged(nameof(IsErrorPopupShown)); }
+        }
+
+        public bool IsErrorPopupShown => ErrorPopupText != null;
+
+        public Command<object?> DismissErrorPopupCommand { get; }
 
         public AttendancesSummaryPageVm(AttendanceSummaryData data)
         {
@@ -57,11 +68,14 @@ namespace AppDesktop
 
             BackCommand = EventCommand.Create<object?>(this);
 
+            ErrorPopupText = "エラーが発生しました";
+            DismissErrorPopupCommand = Command.Create<object?>(_ => DismissError());
+
             FetchEffect.PropertyChanged += (_, e) =>
             {
                 if (e.PropertyName == nameof(AttendanceSummaryDataFetchEffect.IsBusy))
                 {
-                    RaisePropertyChanged(nameof(IsRequested));
+                    RaisePropertyChanged(nameof(IsGridDisabled));
                 }
             };
 
@@ -102,6 +116,17 @@ namespace AppDesktop
                     Rows.Add(new(data.Month.AddDays(d - 1), null, null));
                 }
             }
+        }
+
+        private void OnError()
+        {
+            Rows.Clear();
+            ErrorPopupText = "データの取得に失敗しました";
+        }
+
+        private void DismissError()
+        {
+            ErrorPopupText = null;
         }
     }
 

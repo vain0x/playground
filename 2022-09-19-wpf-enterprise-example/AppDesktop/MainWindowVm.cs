@@ -179,6 +179,12 @@ namespace AppDesktop
 
                     await Task.Delay(200 * month.Month, ct);
 
+                    if (month.Month == 11)
+                    {
+                        // サーバー側のエラーをシミュレーションする
+                        throw new Exception("11月のデータを取得できません");
+                    }
+
                     var data = new AttendanceSummaryData(month, new AttendanceSummaryEntry[]
                     {
                         new(month, month.ToDateTime(TimeOnly.FromTimeSpan(TimeSpan.FromHours(9.5))), null),
