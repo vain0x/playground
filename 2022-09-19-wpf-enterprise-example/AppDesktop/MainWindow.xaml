@@ -15,4 +15,8 @@
         <!-- This is just same as: window.DataContext = new MainWindowVm(); -->
         <local:MainWindowVm />
     </Window.DataContext>
+
+    <local:DialogHost.DialogHost>
+        <local:DialogHost IsOpen="{Binding IsProfileDialogOpen}" Width="360" Height="240" Content="{Binding ProfileDialog}" />
+    </local:DialogHost.DialogHost>
 </Window>

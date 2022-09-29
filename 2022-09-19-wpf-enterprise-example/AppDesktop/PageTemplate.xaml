@@ -12,7 +12,11 @@
                 </TextBlock>
 
                 <TextBlock DockPanel.Dock="Right" Margin="16,0" HorizontalAlignment="Right" VerticalAlignment="Center" Foreground="White">
-                    As <Run Text="{Binding DataContext.LoginInfo.Username, RelativeSource={RelativeSource AncestorType={x:Type local:MainWindow}}}"/>
+                    <Hyperlink Command="{Binding DataContext.GoProfileCommand, RelativeSource={RelativeSource AncestorType={x:Type local:MainWindow}}}">
+                        ●
+                    </Hyperlink>
+
+                    <Run Text="{Binding DataContext.LoginInfo.Username, RelativeSource={RelativeSource AncestorType={x:Type local:MainWindow}}}" /> さん
                 </TextBlock>
             </DockPanel>
 

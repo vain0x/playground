@@ -41,6 +41,22 @@ namespace AppDesktop
             set { loginInfo = value; RaisePropertyChanged(); }
         }
 
+        private bool isProfileDialogOpen;
+        public bool IsProfileDialogOpen
+        {
+            get => isProfileDialogOpen;
+            set { isProfileDialogOpen = value; RaisePropertyChanged(); }
+        }
+
+        private UsersProfilePageVm? profileDialogVm;
+        public UsersProfilePageVm? ProfileDialog
+        {
+            get => profileDialogVm;
+            set { profileDialogVm = value; RaisePropertyChanged(); }
+        }
+
+        public Command<object?> GoProfileCommand { get; }
+
         private readonly List<EmployeeListItem> dummyEmployees =
             "Alice,Bob,Charlotte,Don,Eve"
                 .Split(",")
@@ -57,6 +73,8 @@ namespace AppDesktop
 
         public MainWindowVm()
         {
+            GoProfileCommand = Command.Create<object?>(_ => OpenProfileDialog());
+
             var loginPage = new LoginPageVm();
             loginPage.OnLoginRequested += (_, request) => Login(request);
             currentPage = loginPage;
@@ -68,6 +86,50 @@ namespace AppDesktop
             loginPage.Password = loginRequest.Password;
             loginPage.LoginCommand.Execute(loginRequest);
 #endif
+        }
+
+        private void OpenProfileDialog()
+        {
+            if (LoginInfo == null) return;
+
+            var dialog = new UsersProfilePageVm(LoginInfo);
+            dialog.GoPasswordChangeCommand.Executed += (_, _) =>
+            {
+                CloseProfileDialog();
+                OpenUsersPasswordChangePage();
+            };
+            dialog.CloseCommand.Executed += (_, _) => CloseProfileDialog();
+
+            ProfileDialog = dialog;
+            IsProfileDialogOpen = true;
+        }
+
+        private void CloseProfileDialog()
+        {
+            IsProfileDialogOpen = false;
+            ProfileDialog = null;
+        }
+
+        private void OpenUsersPasswordChangePage()
+        {
+            var page = new UsersPasswordChangePageVm();
+            page.Requested += (_, request) => SavePassword(request);
+            CurrentPage = page;
+        }
+
+        private void SavePassword(PasswordChangeRequest request)
+        {
+            StartAsync(async ct =>
+            {
+                await Task.Delay(100, ct);
+
+                if (request.CurrentPassword == "password")
+                {
+                    throw new Exception("パスワードが違います");
+                }
+
+                Debug.WriteLine($"パスワードを変更しました: '{request.NewPassword}'");
+            });
         }
 
         private void Login(LoginRequest request)
