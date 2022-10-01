@@ -2,4 +2,4 @@
 
 set -eu
 
-make && ./pcc "$1" && "$(dirname "$1")/$(basename "$1" .simple).exe"
+make && ./app "$1" && "$(dirname "$1")/$(basename "$1" .simple).exe"
