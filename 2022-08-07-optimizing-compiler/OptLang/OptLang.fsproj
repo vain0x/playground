@@ -1,0 +1,23 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <TargetFramework>net6.0</TargetFramework>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <Compile Include="Symbol.fs" />
+    <Compile Include="Syntax.fs" />
+    <Compile Include="Tokenize.fs" />
+    <Compile Include="Parse.fs" />
+    <Compile Include="Tir.fs" />
+    <Compile Include="TypeCheck.fs" />
+    <Compile Include="Mir.fs" />
+    <Compile Include="MirDump.fs" />
+    <Compile Include="MirGen.fs" />
+    <Compile Include="Inline.fs" />
+    <Compile Include="Interpret.fs" />
+    <Compile Include="Program.fs" />
+  </ItemGroup>
+
+</Project>
