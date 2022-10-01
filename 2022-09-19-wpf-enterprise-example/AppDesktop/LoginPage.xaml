@@ -1,0 +1,59 @@
+<UserControl
+    x:Class="AppDesktop.LoginPage"
+    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006" 
+    xmlns:d="http://schemas.microsoft.com/expression/blend/2008" 
+    xmlns:local="clr-namespace:AppDesktop"
+    mc:Ignorable="d" 
+    d:DesignHeight="450" d:DesignWidth="800"
+    d:DataContext="{d:DesignInstance local:LoginPageVm}"
+    FocusManager.FocusedElement="{Binding ElementName=loginIdTextBox}"
+    Template="{StaticResource PageTemplate}">
+    <UserControl.Resources>
+        <BooleanToVisibilityConverter x:Key="BooleanToVisibilityConverter" />
+    </UserControl.Resources>
+
+    <Grid Margin="24">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="Auto" />
+        </Grid.RowDefinitions>
+        <Grid.ColumnDefinitions>
+            <ColumnDefinition Width="Auto" />
+            <ColumnDefinition Width="*" MaxWidth="250" />
+        </Grid.ColumnDefinitions>
+
+        <!-- 見出し -->
+        <TextBlock Grid.ColumnSpan="2" FontFamily="Yu Gothic" FontSize="32" FontWeight="Bold" Margin="0,0,0,24">
+            ログイン
+        </TextBlock>
+
+        <!-- 入力フォーム -->
+        <TextBlock Grid.Row="1" Margin="0,0,8,16" VerticalAlignment="Center">
+            ログインID
+        </TextBlock>
+        <TextBox x:Name="loginIdTextBox" Grid.Row="1" Grid.Column="1" Text="{Binding LoginId, UpdateSourceTrigger=PropertyChanged}" Margin="0,0,0,16" Padding="2,4" VerticalAlignment="Center" />
+
+        <TextBlock Grid.Row="2" Margin="0,0,8,0" VerticalAlignment="Center">
+            パスワード
+        </TextBlock>
+        <PasswordBox Grid.Row="2" Grid.Column="1" Padding="2,4" VerticalAlignment="Center" PasswordChanged="OnPasswordChanged" />
+
+        <Button
+            Command="{Binding LoginCommand}" IsDefault="True"
+            Grid.Row="3" Grid.Column="1" Margin="0,16,0,0" HorizontalAlignment="Right" Width="120" Height="40">
+            ログイン
+        </Button>
+
+        <!-- エラー表示 (ログインに失敗したときのみ) -->
+
+        <TextBlock Grid.Row="4" Grid.ColumnSpan="2" Foreground="Red" Visibility="{Binding IsFailed, Converter={StaticResource BooleanToVisibilityConverter}}">
+            <Run Text="ログインできません" /><LineBreak />
+            <Run Text="ログインIDまたはパスワードが一致していないか、ログインできないユーザーです" />
+        </TextBlock>
+    </Grid>
+</UserControl>

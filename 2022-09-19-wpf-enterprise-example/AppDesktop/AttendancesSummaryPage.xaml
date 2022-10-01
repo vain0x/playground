@@ -1,0 +1,109 @@
+<UserControl
+    x:Class="AppDesktop.AttendancesSummaryPage"
+    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006" 
+    xmlns:d="http://schemas.microsoft.com/expression/blend/2008" 
+    xmlns:local="clr-namespace:AppDesktop"
+    mc:Ignorable="d" 
+    d:DesignHeight="450" d:DesignWidth="800"
+    d:DataContext="{d:DesignInstance local:AttendancesSummaryPageVm}"
+    Template="{StaticResource PageTemplate}">
+    <UserControl.Resources>
+        <Style x:Key="GridStyle" TargetType="DataGrid">
+            <!-- 既定のラインは濃くてみづらいので垂直線を消して水平線を薄くする -->
+            <Setter Property="GridLinesVisibility" Value="Horizontal" />
+            <Setter Property="HorizontalGridLinesBrush" Value="#ededed" />
+
+            <Setter Property="AutoGenerateColumns" Value="False" />
+            <Setter Property="CanUserResizeRows" Value="False" />
+            <Setter Property="CanUserSortColumns" Value="False" />
+
+            <Style.Triggers>
+                <DataTrigger Binding="{Binding IsGridDisabled}" Value="True">
+                    <Setter Property="Opacity" Value="0.4" />
+                </DataTrigger>
+            </Style.Triggers>
+        </Style>
+    </UserControl.Resources>
+
+    <Grid>
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="*" />
+            <RowDefinition Height="Auto" />
+        </Grid.RowDefinitions>
+
+        <TextBlock FontSize="24" Margin="0">出退勤一覧</TextBlock>
+
+        <TextBox x:Name="monthTextBox" Grid.Row="1" Text="{Binding MonthInput, UpdateSourceTrigger=PropertyChanged}" Margin="0,16" Width="100" Padding="4" FontFamily="Cascadia Mono" HorizontalAlignment="Left" />
+
+        <DataGrid Grid.Row="2" ItemsSource="{Binding Rows}" Style="{StaticResource GridStyle}" IsReadOnly="True">
+            <DataGrid.Columns>
+                <DataGridTextColumn Header="日付" Width="60" Binding="{Binding Date, StringFormat=' d'}">
+                    <DataGridTextColumn.ElementStyle>
+                        <Style TargetType="TextBlock">
+                            <Setter Property="Margin" Value="4,2" />
+                            <Setter Property="TextAlignment" Value="Right" />
+                        </Style>
+                    </DataGridTextColumn.ElementStyle>
+                </DataGridTextColumn>
+
+                <DataGridTextColumn Header="出勤" Width="100" Binding="{Binding AttendedAt, StringFormat=HH\:mm}">
+                    <DataGridTextColumn.ElementStyle>
+                        <Style TargetType="TextBlock">
+                            <Setter Property="Margin" Value="4,2" />
+                            <Setter Property="TextAlignment" Value="Right" />
+                        </Style>
+                    </DataGridTextColumn.ElementStyle>
+                </DataGridTextColumn>
+
+                <DataGridTextColumn Header="退勤" Width="100" Binding="{Binding LeftAt, StringFormat=HH\:mm}">
+                    <DataGridTextColumn.ElementStyle>
+                        <Style TargetType="TextBlock">
+                            <Setter Property="Margin" Value="4,2" />
+                            <Setter Property="TextAlignment" Value="Right" />
+                        </Style>
+                    </DataGridTextColumn.ElementStyle>
+                </DataGridTextColumn>
+            </DataGrid.Columns>
+        </DataGrid>
+
+        <Button Grid.Row="3" Command="{Binding BackCommand}" Margin="0,16,0,0" Width="80" Height="40" BorderThickness="0" Background="Transparent" HorizontalAlignment="Left">
+            ▶ 戻る
+        </Button>
+
+        <!-- エラー表示のポップアップ -->
+        <Popup IsOpen="{Binding IsErrorPopupShown, Mode=OneWay}" PlacementTarget="{Binding ElementName=monthTextBox}" Placement="Bottom" PopupAnimation="Slide" VerticalOffset="4" local:PopupRelocationBehavior.Use="True">
+            <Border Background="#d81b1b" BorderBrush="Red" BorderThickness="2" Padding="4">
+                <DockPanel>
+                    <!-- (!) アイコン -->
+                    <Border CornerRadius="24" Background="White" Width="24" Height="24" Margin="8,0,8,0" Padding="0,2,0,0">
+                        <TextBlock Foreground="Red" FontSize="20" FontWeight="Bold" HorizontalAlignment="Center" VerticalAlignment="Center">！</TextBlock>
+                    </Border>
+
+                    <!-- テキスト -->
+                    <TextBlock Text="{Binding ErrorPopupText}" Margin="0,2,16,0" VerticalAlignment="Center" MaxWidth="400" Foreground="White" />
+
+                    <!-- 閉じるボタン -->
+                    <Button DockPanel.Dock="Right" Command="{Binding DismissErrorPopupCommand}" Content="✕" Margin="0,2,0,0" Width="30" Height="30" BorderThickness="0" VerticalAlignment="Center">
+                        <Button.Style>
+                            <Style TargetType="Button">
+                                <Style.Triggers>
+                                    <Trigger Property="IsMouseOver" Value="True">
+                                        <Setter Property="Foreground" Value="Red" />
+                                    </Trigger>
+                                    <Trigger Property="IsMouseOver" Value="False">
+                                        <Setter Property="Background" Value="Transparent" />
+                                        <Setter Property="Foreground" Value="White" />
+                                    </Trigger>
+                                </Style.Triggers>
+                            </Style>
+                        </Button.Style>
+                    </Button>
+                </DockPanel>
+            </Border>
+        </Popup>
+    </Grid>
+</UserControl>
