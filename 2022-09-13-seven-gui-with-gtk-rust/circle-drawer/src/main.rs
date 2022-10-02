@@ -2,6 +2,7 @@
 
 // [Custom Drawing: GTK+ 3 Reference Manual](https://developer-old.gnome.org/gtk3/stable/ch01s05.html)
 // [Basic drawing in PyCairo](https://zetcode.com/gfx/pycairo/basicdrawing/)
+// [Gtk - 3.0: The GTK Input and Event Handling Model](https://docs.gtk.org/gtk3/input-handling.html)
 
 use gtk::{gdk, glib, prelude::*, ApplicationWindow, Orientation, WindowPosition};
 use std::{
@@ -77,21 +78,69 @@ fn build_ui(application: &gtk::Application) {
     canvas.connect_draw({
         let circles = Arc::clone(&circles);
 
-        move |_canvas, ctx| {
+        move |canvas, ctx| {
+            // マウスポインタの位置を取得する
+            // (canvasの左上隅を原点する座標系で取得される)
+            let (mx, my) = (|| -> Option<(f64, f64)> {
+                let window = canvas.window()?;
+                let display = gdk::Display::default()?;
+                let device_manager = display.device_manager()?;
+                let mouse = device_manager.client_pointer()?;
+
+                let (_, x, y, _) = window.device_position(&mouse);
+                Some((x as f64, y as f64))
+            })()
+            .unwrap();
+
             let circles = circles.lock().unwrap();
             let circles = circles.as_slice();
 
+            let hit = circles
+                .iter()
+                .enumerate()
+                .rev()
+                .find_map(|(i, (cx, cy, r))| {
+                    if f64::hypot(mx - cx, my - cy) < r + 1e-6 {
+                        Some(i)
+                    } else {
+                        None
+                    }
+                })
+                .unwrap_or(usize::MAX);
+
             ctx.set_line_width(1.0);
 
-            for &(cx, cy, r) in circles {
-                ctx.arc(cx, cy, r, 0.0, PI * 2.0);
+            for (i, &(cx, cy, r)) in circles.iter().enumerate() {
+                if i == hit {
+                    ctx.set_source_rgb(0.3, 0.3, 0.3);
+                    ctx.arc(cx, cy, r, 0.0, PI * 2.0);
+                    ctx.stroke().unwrap();
+
+                    ctx.set_source_rgb(0.6, 0.6, 0.6);
+                    ctx.arc(cx, cy, r, 0.0, PI * 2.0);
+                    ctx.fill().unwrap();
+                    continue;
+                }
+
                 ctx.set_source_rgb(0.3, 0.3, 0.3);
+                ctx.arc(cx, cy, r, 0.0, PI * 2.0);
                 ctx.stroke().unwrap();
+
+                ctx.set_source_rgb(1.0, 1.0, 1.0);
+                ctx.arc(cx, cy, r, 0.0, PI * 2.0);
+                ctx.fill().unwrap();
             }
             Inhibit(false)
         }
     });
-    canvas.set_events(gdk::EventMask::BUTTON_PRESS_MASK);
+
+    canvas.connect_motion_notify_event(move |canvas, _| {
+        canvas.queue_draw();
+        Inhibit(false)
+    });
+
+    // クリックやマウス移動によるイベントが発生するようにする
+    canvas.set_events(gdk::EventMask::BUTTON_PRESS_MASK | gdk::EventMask::POINTER_MOTION_MASK);
 
     // ## イベントを処理する
 
