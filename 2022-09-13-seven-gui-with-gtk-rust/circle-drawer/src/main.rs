@@ -4,7 +4,15 @@
 // [Basic drawing in PyCairo](https://zetcode.com/gfx/pycairo/basicdrawing/)
 // [Gtk - 3.0: The GTK Input and Event Handling Model](https://docs.gtk.org/gtk3/input-handling.html)
 
-use gtk::{gdk, glib, prelude::*, ApplicationWindow, Orientation, WindowPosition};
+use gtk::{
+    gdk::{
+        self,
+        ffi::{GDK_BUTTON_PRIMARY, GDK_BUTTON_SECONDARY},
+    },
+    glib,
+    prelude::*,
+    ApplicationWindow, Orientation, WindowPosition,
+};
 use std::{
     f64::consts::PI,
     sync::{Arc, Mutex},
@@ -15,7 +23,11 @@ enum Msg {
     OnInit,
     OnUndoClick,
     OnRedoClick,
-    OnCanvasClick(f64, f64),
+    OnCanvasLeftClick(f64, f64),
+    OnCanvasRightClick(f64, f64),
+    OnAdjustScaleChange { radius: f64 },
+    OnAdjustCancel,
+    OnAdjustOk,
 }
 
 fn build_ui(application: &gtk::Application) {
@@ -27,10 +39,10 @@ fn build_ui(application: &gtk::Application) {
     window.set_title("Circle Drawer");
     window.set_position(WindowPosition::Center);
 
-    let column = gtk::Box::new(Orientation::Vertical, 16);
-    column.set_margin(24);
-    column.set_hexpand(true);
-    column.set_vexpand(true);
+    let window_column = gtk::Box::new(Orientation::Vertical, 16);
+    window_column.set_margin(24);
+    window_column.set_hexpand(true);
+    window_column.set_vexpand(true);
 
     let undo_button = gtk::Button::with_label("Undo");
     let redo_button = gtk::Button::with_label("Redo");
@@ -40,7 +52,7 @@ fn build_ui(application: &gtk::Application) {
         row.set_halign(gtk::Align::Center);
         row.add(&undo_button);
         row.add(&redo_button);
-        column.add(&row);
+        window_column.add(&row);
     }
 
     let canvas = gtk::DrawingArea::new();
@@ -48,10 +60,47 @@ fn build_ui(application: &gtk::Application) {
         canvas.set_size_request(300, 300);
         let frame = gtk::Frame::new(None);
         frame.add(&canvas);
-        column.add(&frame);
+        window_column.add(&frame);
     }
 
-    window.add(&column);
+    window.add(&window_column);
+
+    // or gtk::Dialog
+    let dialog = gtk::Window::new(gtk::WindowType::Toplevel);
+    dialog.set_title("Adjust");
+    dialog.set_transient_for(Some(&window));
+    dialog.set_position(WindowPosition::CenterOnParent);
+    dialog.set_modal(true);
+
+    let scale = gtk::Scale::with_range(Orientation::Horizontal, 1.0, 30.0, 0.5);
+    scale.set_width_request(200);
+    scale.set_value(1.0);
+
+    let cancel_button = gtk::Button::with_label("Cancel");
+    cancel_button.set_size_request(80, 30);
+
+    let ok_button = gtk::Button::with_label("OK");
+    ok_button.set_size_request(80, 30);
+
+    {
+        let column = gtk::Box::new(Orientation::Vertical, 8);
+        column.set_margin(8);
+
+        {
+            let row = gtk::Box::new(Orientation::Horizontal, 4);
+            row.add(&gtk::Label::new(Some("Radius")));
+            row.add(&scale);
+            column.add(&row);
+        }
+        {
+            let row = gtk::Box::new(Orientation::Horizontal, 4);
+            row.set_halign(gtk::Align::End);
+            row.add(&cancel_button);
+            row.add(&ok_button);
+            column.add(&row);
+        }
+        dialog.add(&column);
+    }
 
     // ## UIのイベントにコールバックを接続する
 
@@ -63,16 +112,23 @@ fn build_ui(application: &gtk::Application) {
         let tx = tx.clone();
         move |_| tx.send(Msg::OnRedoClick).unwrap()
     });
+
     canvas.connect_button_press_event({
         let tx = tx.clone();
         move |_, ev| {
-            let (x, y) = ev.position();
-            tx.send(Msg::OnCanvasClick(x, y)).unwrap();
+            if ev.button() == GDK_BUTTON_PRIMARY as u32 {
+                let (x, y) = ev.position();
+                tx.send(Msg::OnCanvasLeftClick(x, y)).unwrap();
+            } else if ev.button() == GDK_BUTTON_SECONDARY as u32 {
+                let (x, y) = ev.position();
+                tx.send(Msg::OnCanvasRightClick(x, y)).unwrap();
+            }
             Inhibit(false)
         }
     });
 
     let circles = Arc::new(Mutex::new(vec![]));
+    let selected_circle = Arc::new(Mutex::new(None));
 
     // drawの処理はここで同期的に行う必要があり、メッセージを送るだけにはできない
     canvas.connect_draw({
@@ -81,7 +137,7 @@ fn build_ui(application: &gtk::Application) {
         move |canvas, ctx| {
             // マウスポインタの位置を取得する
             // (canvasの左上隅を原点する座標系で取得される)
-            let (mx, my) = (|| -> Option<(f64, f64)> {
+            let mouse = (|| -> Option<(f64, f64)> {
                 let window = canvas.window()?;
                 let display = gdk::Display::default()?;
                 let device_manager = display.device_manager()?;
@@ -95,18 +151,7 @@ fn build_ui(application: &gtk::Application) {
             let circles = circles.lock().unwrap();
             let circles = circles.as_slice();
 
-            let hit = circles
-                .iter()
-                .enumerate()
-                .rev()
-                .find_map(|(i, (cx, cy, r))| {
-                    if f64::hypot(mx - cx, my - cy) < r + 1e-6 {
-                        Some(i)
-                    } else {
-                        None
-                    }
-                })
-                .unwrap_or(usize::MAX);
+            let hit = hit_test(circles, mouse).unwrap_or(usize::MAX);
 
             ctx.set_line_width(1.0);
 
@@ -142,10 +187,25 @@ fn build_ui(application: &gtk::Application) {
     // クリックやマウス移動によるイベントが発生するようにする
     canvas.set_events(gdk::EventMask::BUTTON_PRESS_MASK | gdk::EventMask::POINTER_MOTION_MASK);
 
+    scale.connect_value_changed({
+        let tx = tx.clone();
+        move |scale| {
+            let radius = scale.value();
+            tx.send(Msg::OnAdjustScaleChange { radius }).unwrap();
+        }
+    });
+    cancel_button.connect_clicked({
+        let tx = tx.clone();
+        move |_| tx.send(Msg::OnAdjustCancel).unwrap()
+    });
+    ok_button.connect_clicked({
+        let tx = tx.clone();
+        move |_| tx.send(Msg::OnAdjustOk).unwrap()
+    });
+
     // ## イベントを処理する
 
     rx.attach(None, {
-        let _tx = tx.clone();
         let mut redo = vec![];
 
         move |msg| {
@@ -167,10 +227,47 @@ fn build_ui(application: &gtk::Application) {
                         canvas.queue_draw();
                     }
                 }
-                Msg::OnCanvasClick(x, y) => {
+                Msg::OnCanvasLeftClick(x, y) => {
                     redo.clear();
                     circles.lock().unwrap().push((x, y, 20.0));
                     canvas.queue_draw();
+                }
+                Msg::OnCanvasRightClick(x, y) => {
+                    let circles = circles.lock().unwrap();
+                    let circles = circles.as_slice();
+
+                    if let Some(hit) = hit_test(circles, (x, y)) {
+                        let (_, _, r) = circles[hit];
+                        *selected_circle.lock().unwrap() = Some((hit, r));
+                        scale.set_value(r);
+                        dialog.show_all();
+                        window_column.set_opacity(0.4);
+                    }
+                }
+                Msg::OnAdjustScaleChange { radius } => {
+                    let selected_circle = selected_circle.lock().unwrap();
+                    let mut circles = circles.lock().unwrap();
+
+                    let (hit, _) = selected_circle.unwrap();
+                    circles[hit].2 = radius;
+
+                    canvas.queue_draw();
+                }
+                Msg::OnAdjustCancel => {
+                    let selected_circle = selected_circle.lock().unwrap();
+                    let mut circles = circles.lock().unwrap();
+
+                    let (hit, r) = selected_circle.unwrap();
+                    let circles = circles.as_mut_slice();
+                    circles[hit].2 = r;
+
+                    canvas.queue_draw();
+                    dialog.hide();
+                    window_column.set_opacity(1.0);
+                }
+                Msg::OnAdjustOk => {
+                    dialog.hide();
+                    window_column.set_opacity(1.0);
                 }
             }
 
@@ -184,6 +281,22 @@ fn build_ui(application: &gtk::Application) {
 
     tx.send(Msg::OnInit).unwrap();
     window.show_all();
+}
+
+fn hit_test(circles: &[(f64, f64, f64)], pos: (f64, f64)) -> Option<usize> {
+    let (mx, my) = pos;
+
+    circles
+        .iter()
+        .enumerate()
+        .rev()
+        .find_map(|(i, (cx, cy, r))| {
+            if f64::hypot(mx - cx, my - cy) < r + 1e-6 {
+                Some(i)
+            } else {
+                None
+            }
+        })
 }
 
 fn main() {
