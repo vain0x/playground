@@ -1,0 +1,36 @@
+/* See also
+    https://docs.gtk.org/gtk3/css-overview.html
+    https://docs.gtk.org/gtk3/css-properties.html */
+
+#cells-scrolled-window {
+    margin: 2px;
+    padding: 2px;
+    background-color: green;
+}
+
+#cells-grid {
+    background-color: white;
+}
+
+.cross-header-cell,
+.row-header-cell,
+.column-header-cell {
+    background-color: #666;
+    color: white;
+    font-weight: bold;
+}
+
+.row-header-cell {
+    border-top: 1px solid #bdbdbd;
+    /* text-align: right; */
+}
+
+.column-header-cell {
+    border-left: 1px solid #bdbdbd;
+    /* text-align: center; */
+}
+
+.cell-label {
+    border-top: 1px solid #bdbdbd;
+    border-left: 1px solid #bdbdbd;
+}
