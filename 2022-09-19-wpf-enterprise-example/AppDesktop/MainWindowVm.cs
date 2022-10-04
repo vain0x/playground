@@ -56,6 +56,7 @@ namespace AppDesktop
         }
 
         public Command<object?> GoProfileCommand { get; }
+        public Command<object?> GoPasswordChangeCommand { get; }
 
         private readonly List<EmployeeListItem> dummyEmployees =
             "Alice,Bob,Charlotte,Don,Eve"
@@ -74,6 +75,7 @@ namespace AppDesktop
         public MainWindowVm()
         {
             GoProfileCommand = Command.Create<object?>(_ => OpenProfileDialog());
+            GoPasswordChangeCommand = Command.Create<object?>(_ => OpenUsersPasswordChangePage());
 
             var loginPage = new LoginPageVm();
             loginPage.OnLoginRequested += (_, request) => Login(request);
