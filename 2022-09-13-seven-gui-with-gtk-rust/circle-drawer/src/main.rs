@@ -30,15 +30,23 @@ enum Msg {
     OnAdjustOk,
 }
 
+#[derive(Clone, Copy)]
+struct Circle {
+    x: f64,
+    y: f64,
+    r: f64,
+}
+
+#[derive(Default)]
+struct State {
+    circles: Vec<Circle>,
+    // (index, old_radius)
+    selected_circle_opt: Option<(usize, f64)>,
+}
+
 enum Action {
-    Add {
-        position: (f64, f64),
-        radius: f64,
-    },
-    Remove {
-        position: (f64, f64),
-        radius: f64,
-    },
+    Add(Circle),
+    Remove(Circle),
     Resize {
         index: usize,
         old_radius: f64,
@@ -49,8 +57,8 @@ enum Action {
 impl Action {
     fn inverse(self) -> Action {
         match self {
-            Action::Add { position, radius } => Action::Remove { position, radius },
-            Action::Remove { position, radius } => Action::Add { position, radius },
+            Action::Add(c) => Action::Remove(c),
+            Action::Remove(c) => Action::Add(c),
             Action::Resize {
                 index,
                 old_radius,
@@ -62,6 +70,34 @@ impl Action {
             },
         }
     }
+}
+
+fn apply_action(state: &mut State, action: &Action) {
+    match *action {
+        Action::Add(c) => {
+            state.circles.push(c);
+        }
+        Action::Remove(_) => {
+            state.circles.pop();
+        }
+        Action::Resize {
+            index, new_radius, ..
+        } => {
+            state.circles[index].r = new_radius;
+        }
+    }
+}
+
+fn hit_test(circles: &[Circle], pos: (f64, f64)) -> Option<usize> {
+    let (mx, my) = pos;
+
+    circles.iter().enumerate().rev().find_map(|(i, c)| {
+        if f64::hypot(mx - c.x, my - c.y) < c.r + 1e-6 {
+            Some(i)
+        } else {
+            None
+        }
+    })
 }
 
 fn build_ui(application: &gtk::Application) {
@@ -161,12 +197,11 @@ fn build_ui(application: &gtk::Application) {
         }
     });
 
-    let circles = Arc::new(Mutex::new(vec![]));
-    let selected_circle = Arc::new(Mutex::new(None));
+    let store = Arc::new(Mutex::new(State::default()));
 
     // drawの処理はここで同期的に行う必要があり、メッセージを送るだけにはできない
     canvas.connect_draw({
-        let circles = Arc::clone(&circles);
+        let store = Arc::clone(&store);
 
         move |canvas, ctx| {
             // マウスポインタの位置を取得する
@@ -182,14 +217,15 @@ fn build_ui(application: &gtk::Application) {
             })()
             .unwrap();
 
-            let circles = circles.lock().unwrap();
-            let circles = circles.as_slice();
+            let state = store.lock().unwrap();
 
-            let hit = hit_test(circles, mouse).unwrap_or(usize::MAX);
+            let hit = hit_test(&state.circles, mouse).unwrap_or(usize::MAX);
 
             ctx.set_line_width(1.0);
 
-            for (i, &(cx, cy, r)) in circles.iter().enumerate() {
+            for (i, &c) in state.circles.iter().enumerate() {
+                let Circle { x: cx, y: cy, r } = c;
+
                 if i == hit {
                     ctx.set_source_rgb(0.3, 0.3, 0.3);
                     ctx.arc(cx, cy, r, 0.0, PI * 2.0);
@@ -241,27 +277,7 @@ fn build_ui(application: &gtk::Application) {
 
     rx.attach(None, {
         let mut undo: Vec<Action> = vec![];
-        let mut redo = vec![];
-
-        let apply_action = {
-            let circles = Arc::clone(&circles);
-            move |action: &Action| match *action {
-                Action::Add {
-                    position: (x, y),
-                    radius: r,
-                } => {
-                    circles.lock().unwrap().push((x, y, r));
-                }
-                Action::Remove { .. } => {
-                    circles.lock().unwrap().pop();
-                }
-                Action::Resize {
-                    index, new_radius, ..
-                } => {
-                    circles.lock().unwrap()[index].2 = new_radius;
-                }
-            }
-        };
+        let mut redo: Vec<Action> = vec![];
 
         move |msg| {
             eprintln!("msg {:?}", msg);
@@ -269,59 +285,56 @@ fn build_ui(application: &gtk::Application) {
             match msg {
                 Msg::OnInit => {}
                 Msg::OnUndoClick => {
+                    let mut state = store.lock().unwrap();
+
                     if let Some(action) = undo.pop() {
-                        apply_action(&action);
+                        apply_action(&mut state, &action);
                         redo.push(action.inverse());
                         canvas.queue_draw();
                     }
                 }
                 Msg::OnRedoClick => {
+                    let mut state = store.lock().unwrap();
+
                     if let Some(action) = redo.pop() {
-                        apply_action(&action);
+                        apply_action(&mut state, &action);
                         undo.push(action.inverse());
                         canvas.queue_draw();
                     }
                 }
                 Msg::OnCanvasLeftClick(x, y) => {
-                    let action = Action::Add {
-                        position: (x, y),
-                        radius: 20.0,
-                    };
-                    apply_action(&action);
+                    let mut state = store.lock().unwrap();
+                    let action = Action::Add(Circle { x, y, r: 20.0 });
+                    apply_action(&mut state, &action);
                     undo.push(action.inverse());
                     redo.clear();
 
                     canvas.queue_draw();
                 }
                 Msg::OnCanvasRightClick(x, y) => {
-                    let circles = circles.lock().unwrap();
-                    let circles = circles.as_slice();
-                    let mut selected_circle = selected_circle.lock().unwrap();
+                    let mut state = store.lock().unwrap();
 
-                    if let Some(hit) = hit_test(circles, (x, y)) {
-                        let (_, _, r) = circles[hit];
-                        *selected_circle = Some((hit, r));
+                    if let Some(hit) = hit_test(&state.circles, (x, y)) {
+                        let r = state.circles[hit].r;
+                        state.selected_circle_opt = Some((hit, r));
                         scale.set_value(r);
                         dialog.show_all();
                         window_column.set_opacity(0.4);
                     }
                 }
                 Msg::OnAdjustScaleChange { radius } => {
-                    let mut circles = circles.lock().unwrap();
-                    let selected_circle = selected_circle.lock().unwrap();
+                    let mut state = store.lock().unwrap();
 
-                    let (hit, _) = selected_circle.unwrap();
-                    circles[hit].2 = radius;
+                    let (hit, _) = state.selected_circle_opt.unwrap();
+                    state.circles[hit].r = radius;
 
                     canvas.queue_draw();
                 }
                 Msg::OnAdjustCancel => {
-                    let mut circles = circles.lock().unwrap();
-                    let selected_circle = selected_circle.lock().unwrap();
+                    let mut state = store.lock().unwrap();
 
-                    let (hit, r) = selected_circle.unwrap();
-                    let circles = circles.as_mut_slice();
-                    circles[hit].2 = r;
+                    let (hit, r) = state.selected_circle_opt.unwrap();
+                    state.circles[hit].r = r;
 
                     canvas.queue_draw();
                     dialog.hide();
@@ -329,19 +342,16 @@ fn build_ui(application: &gtk::Application) {
                 }
                 Msg::OnAdjustOk => {
                     let action = {
-                        let mut circles = circles.lock().unwrap();
-                        let circles = circles.as_mut_slice();
-                        let selected_circle = selected_circle.lock().unwrap();
-                        let (hit, r) = selected_circle.unwrap();
+                        let state = store.lock().unwrap();
+                        let (hit, r) = state.selected_circle_opt.unwrap();
 
                         Action::Resize {
                             index: hit,
                             old_radius: r,
-                            new_radius: circles[hit].2,
+                            new_radius: state.circles[hit].r,
                         }
                     };
 
-                    apply_action(&action);
                     undo.push(action.inverse());
                     redo.clear();
 
@@ -360,22 +370,6 @@ fn build_ui(application: &gtk::Application) {
 
     tx.send(Msg::OnInit).unwrap();
     window.show_all();
-}
-
-fn hit_test(circles: &[(f64, f64, f64)], pos: (f64, f64)) -> Option<usize> {
-    let (mx, my) = pos;
-
-    circles
-        .iter()
-        .enumerate()
-        .rev()
-        .find_map(|(i, (cx, cy, r))| {
-            if f64::hypot(mx - cx, my - cy) < r + 1e-6 {
-                Some(i)
-            } else {
-                None
-            }
-        })
 }
 
 fn main() {
