@@ -25,7 +25,7 @@ enum Msg {
     OnRedoClick,
     OnCanvasLeftClick(f64, f64),
     OnCanvasRightClick(f64, f64),
-    OnAdjustScaleChange { radius: f64 },
+    OnAdjustScaleChange { diameter: f64 },
     OnAdjustOk,
 }
 
@@ -143,7 +143,7 @@ fn build_ui(application: &gtk::Application) {
 
     let dialog_label = gtk::Label::new(None);
 
-    let scale = gtk::Scale::with_range(Orientation::Horizontal, 1.0, 30.0, 0.5);
+    let scale = gtk::Scale::with_range(Orientation::Horizontal, 2.0, 60.0, 1.0);
     scale.set_width_request(200);
     scale.set_value(1.0);
 
@@ -251,8 +251,8 @@ fn build_ui(application: &gtk::Application) {
     scale.connect_value_changed({
         let tx = tx.clone();
         move |scale| {
-            let radius = scale.value();
-            tx.send(Msg::OnAdjustScaleChange { radius }).unwrap();
+            let diameter = scale.value();
+            tx.send(Msg::OnAdjustScaleChange { diameter }).unwrap();
         }
     });
 
@@ -312,17 +312,17 @@ fn build_ui(application: &gtk::Application) {
                         let Circle { x, y, r } = state.circles[hit];
                         state.selected_circle_opt = Some((hit, r));
                         dialog_label
-                            .set_text(&format!("Adjust radius of circle at ({x:.0}, {y:.0})"));
-                        scale.set_value(r);
+                            .set_text(&format!("Adjust diameter of circle at ({x:.0}, {y:.0})."));
+                        scale.set_value(r * 2.0);
                         dialog.show_all();
                         window_column.set_opacity(0.4);
                     }
                 }
-                Msg::OnAdjustScaleChange { radius } => {
+                Msg::OnAdjustScaleChange { diameter } => {
                     let mut state = store.lock().unwrap();
 
                     let (hit, _) = state.selected_circle_opt.unwrap();
-                    state.circles[hit].r = radius;
+                    state.circles[hit].r = diameter / 2.0;
 
                     canvas.queue_draw();
                 }
