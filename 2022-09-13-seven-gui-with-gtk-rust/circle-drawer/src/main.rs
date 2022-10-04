@@ -30,6 +30,40 @@ enum Msg {
     OnAdjustOk,
 }
 
+enum Action {
+    Add {
+        position: (f64, f64),
+        radius: f64,
+    },
+    Remove {
+        position: (f64, f64),
+        radius: f64,
+    },
+    Resize {
+        index: usize,
+        old_radius: f64,
+        new_radius: f64,
+    },
+}
+
+impl Action {
+    fn inverse(self) -> Action {
+        match self {
+            Action::Add { position, radius } => Action::Remove { position, radius },
+            Action::Remove { position, radius } => Action::Add { position, radius },
+            Action::Resize {
+                index,
+                old_radius,
+                new_radius,
+            } => Action::Resize {
+                index,
+                old_radius: new_radius,
+                new_radius: old_radius,
+            },
+        }
+    }
+}
+
 fn build_ui(application: &gtk::Application) {
     let (tx, rx) = glib::MainContext::channel(glib::PRIORITY_DEFAULT);
 
@@ -206,47 +240,75 @@ fn build_ui(application: &gtk::Application) {
     // ## イベントを処理する
 
     rx.attach(None, {
+        let mut undo: Vec<Action> = vec![];
         let mut redo = vec![];
+
+        let apply_action = {
+            let circles = Arc::clone(&circles);
+            move |action: &Action| match *action {
+                Action::Add {
+                    position: (x, y),
+                    radius: r,
+                } => {
+                    circles.lock().unwrap().push((x, y, r));
+                }
+                Action::Remove { .. } => {
+                    circles.lock().unwrap().pop();
+                }
+                Action::Resize {
+                    index, new_radius, ..
+                } => {
+                    circles.lock().unwrap()[index].2 = new_radius;
+                }
+            }
+        };
 
         move |msg| {
             eprintln!("msg {:?}", msg);
 
             match msg {
-                Msg::OnInit => {
-                    //
-                }
+                Msg::OnInit => {}
                 Msg::OnUndoClick => {
-                    if let Some(circle) = circles.lock().unwrap().pop() {
-                        redo.push(circle);
+                    if let Some(action) = undo.pop() {
+                        apply_action(&action);
+                        redo.push(action.inverse());
                         canvas.queue_draw();
                     }
                 }
                 Msg::OnRedoClick => {
-                    if let Some(circle) = redo.pop() {
-                        circles.lock().unwrap().push(circle);
+                    if let Some(action) = redo.pop() {
+                        apply_action(&action);
+                        undo.push(action.inverse());
                         canvas.queue_draw();
                     }
                 }
                 Msg::OnCanvasLeftClick(x, y) => {
+                    let action = Action::Add {
+                        position: (x, y),
+                        radius: 20.0,
+                    };
+                    apply_action(&action);
+                    undo.push(action.inverse());
                     redo.clear();
-                    circles.lock().unwrap().push((x, y, 20.0));
+
                     canvas.queue_draw();
                 }
                 Msg::OnCanvasRightClick(x, y) => {
                     let circles = circles.lock().unwrap();
                     let circles = circles.as_slice();
+                    let mut selected_circle = selected_circle.lock().unwrap();
 
                     if let Some(hit) = hit_test(circles, (x, y)) {
                         let (_, _, r) = circles[hit];
-                        *selected_circle.lock().unwrap() = Some((hit, r));
+                        *selected_circle = Some((hit, r));
                         scale.set_value(r);
                         dialog.show_all();
                         window_column.set_opacity(0.4);
                     }
                 }
                 Msg::OnAdjustScaleChange { radius } => {
-                    let selected_circle = selected_circle.lock().unwrap();
                     let mut circles = circles.lock().unwrap();
+                    let selected_circle = selected_circle.lock().unwrap();
 
                     let (hit, _) = selected_circle.unwrap();
                     circles[hit].2 = radius;
@@ -254,8 +316,8 @@ fn build_ui(application: &gtk::Application) {
                     canvas.queue_draw();
                 }
                 Msg::OnAdjustCancel => {
-                    let selected_circle = selected_circle.lock().unwrap();
                     let mut circles = circles.lock().unwrap();
+                    let selected_circle = selected_circle.lock().unwrap();
 
                     let (hit, r) = selected_circle.unwrap();
                     let circles = circles.as_mut_slice();
@@ -266,12 +328,29 @@ fn build_ui(application: &gtk::Application) {
                     window_column.set_opacity(1.0);
                 }
                 Msg::OnAdjustOk => {
+                    let action = {
+                        let mut circles = circles.lock().unwrap();
+                        let circles = circles.as_mut_slice();
+                        let selected_circle = selected_circle.lock().unwrap();
+                        let (hit, r) = selected_circle.unwrap();
+
+                        Action::Resize {
+                            index: hit,
+                            old_radius: r,
+                            new_radius: circles[hit].2,
+                        }
+                    };
+
+                    apply_action(&action);
+                    undo.push(action.inverse());
+                    redo.clear();
+
                     dialog.hide();
                     window_column.set_opacity(1.0);
                 }
             }
 
-            undo_button.set_sensitive(!circles.lock().unwrap().is_empty());
+            undo_button.set_sensitive(!undo.is_empty());
             redo_button.set_sensitive(!redo.is_empty());
             Continue(true)
         }
