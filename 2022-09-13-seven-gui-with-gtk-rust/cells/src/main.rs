@@ -2,50 +2,18 @@
 //!
 //! 出典: [#Cells](https://eugenkiss.github.io/7guis/tasks#cells)
 
-use gtk::{
-    gdk::{
-        self,
-        ffi::{GDK_BUTTON_PRIMARY, GDK_BUTTON_SECONDARY},
-    },
-    glib,
-    prelude::*,
-    ApplicationWindow, Orientation, WindowPosition,
-};
-use std::{
-    f64::consts::PI,
-    sync::{Arc, Mutex},
-};
+mod model;
+
+use gtk::{gdk, prelude::*, ApplicationWindow, WindowPosition};
+use model::*;
 
 static STYLES: &[u8] = include_bytes!("styles.css");
 
-// グリッド上のベクトル
-#[derive(Debug, Clone, Copy)]
-struct GridVec {
-    y: u32,
-    x: u32,
-}
-
-impl GridVec {
-    fn new(y: u32, x: u32) -> Self {
-        GridVec { y, x }
-    }
-}
-
-impl std::ops::Add for GridVec {
-    type Output = Self;
-
-    fn add(self, rhs: Self) -> Self::Output {
-        GridVec {
-            y: self.y + rhs.y,
-            x: self.x + rhs.x,
-        }
-    }
-}
-
+#[allow(unused)]
 #[derive(Debug)]
 enum Msg {
     OnEditBegin(GridVec),
-    OnEditEnd(),
+    OnEditEnd,
     OnEntryChanged(String),
 }
 
@@ -76,7 +44,7 @@ fn build_ui(application: &gtk::Application) {
     grid.set_hexpand(true);
     grid.set_vexpand(true);
 
-    let row_count = 60;
+    let row_count = 100;
     let column_count = 26;
 
     for i in 0..row_count + 1 {
@@ -86,29 +54,44 @@ fn build_ui(application: &gtk::Application) {
         grid.insert_column(i as i32);
     }
 
-    // cross header
-    {
+    let _cross_header = {
         let label = gtk::Label::new(None);
         label.set_size_request(60, 25);
         label.style_context().add_class("cross-header-cell");
+
         grid.attach(&label, 0, 0, 1, 1);
-    }
-    // row headers
-    for i in 0..row_count {
-        let label = gtk::Label::new(Some(&format!("{}", i + 1)));
-        label.set_size_request(60, 25);
-        label.set_xalign(0.75);
-        label.style_context().add_class("row-header-cell");
-        grid.attach(&label, 0, (1 + i) as i32, 1, 1);
-    }
-    // column headers
-    for i in 0..column_count {
-        let label = gtk::Label::new(Some(&format!("{}", nth_alphabet(i))));
-        label.set_size_request(60, 25);
-        label.style_context().add_class("column-header-cell");
-        grid.attach(&label, (1 + i) as i32, 0, 1, 1);
-    }
-    // data cells
+        label
+    };
+
+    let _row_headers = {
+        let mut labels = vec![];
+        for y in 0..row_count {
+            let label = gtk::Label::new(Some(&format!("{}", y)));
+            label.set_size_request(60, 25);
+            label.set_xalign(0.75);
+            label.style_context().add_class("row-header-cell");
+
+            grid.attach(&label, 0, (1 + y) as i32, 1, 1);
+            labels.push(label);
+        }
+        labels
+    };
+
+    let _column_headers = {
+        let mut labels = vec![];
+        for x in 0..column_count {
+            let label = gtk::Label::new(Some(&format!("{}", nth_alphabet(x))));
+            label.set_size_request(60, 25);
+            label.style_context().add_class("column-header-cell");
+
+            grid.attach(&label, (1 + x) as i32, 0, 1, 1);
+            labels.push(label);
+        }
+        labels
+    };
+
+    let mut data_cells = vec![vec![]; row_count];
+
     for y in 0..row_count {
         for x in 0..column_count {
             let label = gtk::Label::new(Some(&format!("{},{}", nth_alphabet(x), y + 1)));
@@ -123,6 +106,7 @@ fn build_ui(application: &gtk::Application) {
             }
 
             grid.attach(&label, (1 + x) as i32, (1 + y) as i32, 1, 1);
+            data_cells[y].push(label);
         }
     }
 

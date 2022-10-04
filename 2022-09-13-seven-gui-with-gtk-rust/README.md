@@ -22,6 +22,14 @@
 cargo run --bin counter
 ```
 
+### テスト
+
+```sh
+cargo test --bin cells
+```
+
+(テストがあるのはCellsのみ)
+
 ## リンク
 
 - [The GTK Project](https://www.gtk.org/)
