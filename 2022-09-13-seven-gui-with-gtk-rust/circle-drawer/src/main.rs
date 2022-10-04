@@ -26,7 +26,6 @@ enum Msg {
     OnCanvasLeftClick(f64, f64),
     OnCanvasRightClick(f64, f64),
     OnAdjustScaleChange { radius: f64 },
-    OnAdjustCancel,
     OnAdjustOk,
 }
 
@@ -137,7 +136,7 @@ fn build_ui(application: &gtk::Application) {
 
     // or gtk::Dialog
     let dialog = gtk::Window::new(gtk::WindowType::Toplevel);
-    dialog.set_title("Adjust");
+    dialog.set_title("Resizing Circle");
     dialog.set_transient_for(Some(&window));
     dialog.set_position(WindowPosition::CenterOnParent);
     dialog.set_modal(true);
@@ -147,12 +146,6 @@ fn build_ui(application: &gtk::Application) {
     let scale = gtk::Scale::with_range(Orientation::Horizontal, 1.0, 30.0, 0.5);
     scale.set_width_request(200);
     scale.set_value(1.0);
-
-    let cancel_button = gtk::Button::with_label("Cancel");
-    cancel_button.set_size_request(80, 30);
-
-    let ok_button = gtk::Button::with_label("OK");
-    ok_button.set_size_request(80, 30);
 
     {
         let column = gtk::Box::new(Orientation::Vertical, 8);
@@ -166,14 +159,6 @@ fn build_ui(application: &gtk::Application) {
 
         scale.set_halign(gtk::Align::Start);
         column.add(&scale);
-
-        {
-            let row = gtk::Box::new(Orientation::Horizontal, 4);
-            row.set_halign(gtk::Align::End);
-            row.add(&cancel_button);
-            row.add(&ok_button);
-            column.add(&row);
-        }
 
         dialog.add(&column);
     }
@@ -270,13 +255,16 @@ fn build_ui(application: &gtk::Application) {
             tx.send(Msg::OnAdjustScaleChange { radius }).unwrap();
         }
     });
-    cancel_button.connect_clicked({
+
+    // 閉じるボタンが押されたときに呼ばれる
+    // (Inhibit(true)を返すことで既定の挙動をキャンセルする。
+    //  そうしないとダイアログが破棄されてしまい、再度開くことができない)
+    dialog.connect_delete_event({
         let tx = tx.clone();
-        move |_| tx.send(Msg::OnAdjustCancel).unwrap()
-    });
-    ok_button.connect_clicked({
-        let tx = tx.clone();
-        move |_| tx.send(Msg::OnAdjustOk).unwrap()
+        move |_, _| {
+            tx.send(Msg::OnAdjustOk).unwrap();
+            Inhibit(true)
+        }
     });
 
     // ## イベントを処理する
@@ -337,16 +325,6 @@ fn build_ui(application: &gtk::Application) {
                     state.circles[hit].r = radius;
 
                     canvas.queue_draw();
-                }
-                Msg::OnAdjustCancel => {
-                    let mut state = store.lock().unwrap();
-
-                    let (hit, r) = state.selected_circle_opt.unwrap();
-                    state.circles[hit].r = r;
-
-                    canvas.queue_draw();
-                    dialog.hide();
-                    window_column.set_opacity(1.0);
                 }
                 Msg::OnAdjustOk => {
                     let action = {
