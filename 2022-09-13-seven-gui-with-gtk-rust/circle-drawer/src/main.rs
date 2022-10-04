@@ -142,6 +142,8 @@ fn build_ui(application: &gtk::Application) {
     dialog.set_position(WindowPosition::CenterOnParent);
     dialog.set_modal(true);
 
+    let dialog_label = gtk::Label::new(None);
+
     let scale = gtk::Scale::with_range(Orientation::Horizontal, 1.0, 30.0, 0.5);
     scale.set_width_request(200);
     scale.set_value(1.0);
@@ -154,14 +156,17 @@ fn build_ui(application: &gtk::Application) {
 
     {
         let column = gtk::Box::new(Orientation::Vertical, 8);
-        column.set_margin(8);
+        column.set_margin_start(32);
+        column.set_margin_end(32);
+        column.set_margin_top(16);
+        column.set_margin_bottom(16);
 
-        {
-            let row = gtk::Box::new(Orientation::Horizontal, 4);
-            row.add(&gtk::Label::new(Some("Radius")));
-            row.add(&scale);
-            column.add(&row);
-        }
+        dialog_label.set_halign(gtk::Align::Start);
+        column.add(&dialog_label);
+
+        scale.set_halign(gtk::Align::Start);
+        column.add(&scale);
+
         {
             let row = gtk::Box::new(Orientation::Horizontal, 4);
             row.set_halign(gtk::Align::End);
@@ -169,6 +174,7 @@ fn build_ui(application: &gtk::Application) {
             row.add(&ok_button);
             column.add(&row);
         }
+
         dialog.add(&column);
     }
 
@@ -315,8 +321,10 @@ fn build_ui(application: &gtk::Application) {
                     let mut state = store.lock().unwrap();
 
                     if let Some(hit) = hit_test(&state.circles, (x, y)) {
-                        let r = state.circles[hit].r;
+                        let Circle { x, y, r } = state.circles[hit];
                         state.selected_circle_opt = Some((hit, r));
+                        dialog_label
+                            .set_text(&format!("Adjust radius of circle at ({x:.0}, {y:.0})"));
                         scale.set_value(r);
                         dialog.show_all();
                         window_column.set_opacity(0.4);
