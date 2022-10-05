@@ -70,6 +70,15 @@ namespace AppDesktop
         private int lastEmployeeId = 5;
         private int busyLevel;
 
+        private readonly List<RecordData> records =
+            new()
+            {
+                new(1, "Hello!", "Hello, this is the first record."),
+                new(2, "Second", "This second record\nis\nmulti-lined."),
+            };
+
+        private int lastRecordId = 2;
+
         private event EventHandler<Exception>? AsyncOperationFailed;
 
         public MainWindowVm()
@@ -184,6 +193,7 @@ namespace AppDesktop
                 Leave();
                 page.IsAttended = isAttended;
             };
+            page.GoRecordsCommand.Executed += (_, _) => OpenRecordsListPage();
             page.GoEmployeesCommand.Executed += (_, _) => OpenEmployeesListPage();
             page.GoAttendancesCommand.Executed += (_, _) => OpenAttendancesSummaryPage();
 
@@ -295,6 +305,45 @@ namespace AppDesktop
 
             // TODO: update employeesList in-place
             OpenEmployeesListPage();
+        }
+
+        private void OpenRecordsListPage()
+        {
+            // TODO: fetch records list async
+            var items = records
+                .Select(record => new RecordListItem(record.RecordId, record.Subject))
+                .ToArray();
+
+            var page = new RecordsListPageVm(items);
+            page.BackCommand.Executed += (_, _) => OpenHomePage();
+            page.CreateCommand.Executed += (_, _) => OpenRecordsCreatePage();
+            CurrentPage = page;
+        }
+
+        private void OpenRecordsCreatePage()
+        {
+            var page = new RecordsCreatePageVm();
+            page.CancelCommand.Executed += (_, _) => OpenRecordsListPage();
+            page.RequestEffect.Invoked += (_, request) => CreateRecord(request);
+            CurrentPage = page;
+        }
+
+        private void CreateRecord(RecordsAddRequest request)
+        {
+            StartAsync(async ct =>
+            {
+                try
+                {
+                    await Task.Delay(request.Contents.Length * 10, ct);
+
+                    var id = ++lastRecordId;
+                    records.Add(new RecordData(id, request.Subject, request.Contents));
+                }
+                finally
+                {
+                    request.OnFinally?.Invoke();
+                }
+            });
         }
 
         private async void StartAsync(Func<CancellationToken, Task> funcAsync, CancellationTokenSource? cts = null, [CallerMemberName] string? name = null)

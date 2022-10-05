@@ -35,6 +35,7 @@
             <TextBlock Text="{Binding AttendanceStatus}" Margin="0,16" VerticalAlignment="Center" />
         </StackPanel>
         
+        <Button Command="{Binding GoRecordsCommand}" Style="{StaticResource MenuButton}">▶ 日誌</Button>
         <Button Command="{Binding GoEmployeesCommand}" Style="{StaticResource MenuButton}">▶ 社員</Button>
         <Button Style="{StaticResource MenuButton}" IsEnabled="False">▶ ロール</Button>
         <Button Command="{Binding GoAttendancesCommand}" Style="{StaticResource MenuButton}">▶ 出退勤</Button>

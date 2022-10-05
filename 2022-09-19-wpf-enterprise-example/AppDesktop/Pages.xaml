@@ -18,6 +18,12 @@
     <DataTemplate DataType="{x:Type local:EmployeesCreatePageVm}">
         <local:EmployeesCreatePage />
     </DataTemplate>
+    <DataTemplate DataType="{x:Type local:RecordsListPageVm}">
+        <local:RecordsListPage />
+    </DataTemplate>
+    <DataTemplate DataType="{x:Type local:RecordsCreatePageVm}">
+        <local:RecordsCreatePage />
+    </DataTemplate>
     <DataTemplate DataType="{x:Type local:UsersPasswordChangePageVm}">
         <local:UsersPasswordChangePage />
     </DataTemplate>
