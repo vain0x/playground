@@ -2,10 +2,11 @@
 //!
 //! 出典: [#Cells](https://eugenkiss.github.io/7guis/tasks#cells)
 
-mod model;
+mod coord;
+mod formula;
 
+use coord::*;
 use gtk::{gdk, prelude::*, ApplicationWindow, WindowPosition};
-use model::*;
 
 static STYLES: &[u8] = include_bytes!("styles.css");
 
