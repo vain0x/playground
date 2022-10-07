@@ -50,21 +50,24 @@ open Syntax
 
 prog: stmt EOF { $1 }
 
-ty: INT { Typ.Int }
-  | INT LS NUM RS { Typ.Array(int $3) }
-  | ID { Typ.Name $1 }
+ty: INT
+      { Typ.Int }
+  | INT LS NUM RS
+      { Typ.Array(int $3) }
+  | ID
+      { Typ.Name $1 }
 
 decs: decs dec { $1 @ $2 }
   | /* empty */ { [] }
 
 dec: ty ids SEMI
-        { List.map (fun id -> Dec.Var($1, id)) $2 }
+      { List.map (fun id -> Dec.Var($1, id)) $2 }
   | TYPE ID ASSIGN ty SEMI
-        { [Dec.Type($2, $4)] }
+      { [ Dec.Type($2, $4) ] }
   | ty ID LP fargs_opt RP block
-        { [Dec.Func($2, $4, $1, $6) ] }
+      { [ Dec.Func($2, $4, $1, $6) ] }
   | VOID ID LP fargs_opt RP block
-        { [Dec.Func($2, $4, Typ.Void, $6)] }
+      { [ Dec.Func($2, $4, Typ.Void, $6) ] }
 
 ids: ID COMMA ids { $1 :: $3 }
   | ID { [$1] }
@@ -76,7 +79,7 @@ fargs: fargs COMMA ty ID    { $1 @ [ $3, $4 ] }
   | ty ID                   { [ $1, $2 ] }
 
 stmts: stmts stmt { $1 @ [ $2 ] }
-  | stmt { [$1] }
+  | stmt { [ $1 ] }
 
 stmt: ID ASSIGN expr SEMI
       { Stmt.Assign(Var $1, $3) }
@@ -130,8 +133,3 @@ cond: expr EQ expr      { Expr.Call("==", [ $1; $3 ]) }
   | expr LT expr        { Expr.Call("<", [ $1; $3 ]) }
   | expr GE expr        { Expr.Call(">=", [ $1; $3 ]) }
   | expr LE expr        { Expr.Call("<=", [ $1; $3 ]) }
-
-/*
-  Not implemented:
-    binary operation precedences
-*/
