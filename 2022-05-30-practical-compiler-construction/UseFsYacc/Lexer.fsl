@@ -1,0 +1,45 @@
+{
+open FSharp.Text.Lexing
+open Parser
+
+let lexeme lexbuf = LexBuffer<_>.LexemeString lexbuf
+}
+
+rule read =
+  parse
+  | ['0'-'9']+ { NUM(lexeme lexbuf) }
+  | "if" { IF }
+  | "else" { ELSE }
+  | "while" { WHILE }
+  | "scan" { SCAN }
+  | "sprint" { SPRINT }
+  | "iprint" { IPRINT }
+  | "int" { INT }
+  | "new" { NEW }
+  | "return" { RETURN }
+  | "type" { TYPE }
+  | "void" { VOID }
+  | ['A'-'Z' 'a'-'z' '_']['0'-'9' 'A'-'Z' 'a'-'z' '_']* { ID(lexeme lexbuf) }
+  | "\"" [^'"']* "\"" { STR(lexeme lexbuf) }
+  | "=" { ASSIGN }
+  | "==" { EQ }
+  | "!=" { NEQ }
+  | ">" { GT }
+  | "<" { LT }
+  | ">=" { GE }
+  | "<=" { LE }
+  | "+" { PLUS }
+  | "-" { MINUS }
+  | "*" { TIMES }
+  | "/" { DIV }
+  | "{" { LB }
+  | "}" { RB }
+  | "[" { LS }
+  | "]" { RS }
+  | "(" { LP }
+  | ")" { RP }
+  | "," { COMMA }
+  | ";" { SEMI }
+  | [' ' '\r' '\n']+ { read lexbuf }
+  | "#" [^'\r' '\n']* { read lexbuf }
+  | eof { EOF }
