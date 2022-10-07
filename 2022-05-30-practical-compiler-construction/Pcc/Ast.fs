@@ -6,6 +6,13 @@ type Var =
   | Var of string
   | IndexedVar of string * Expr
 
+/// 宣言
+[<RequireQualifiedAccess; NoEquality; NoComparison>]
+type Dec =
+  | Func of name: string * fargs: (Typ * string) list * Typ * Stmt
+  | Type of name: string * Typ
+  | Var of Typ * name: string
+
 /// 文
 [<RequireQualifiedAccess; NoEquality; NoComparison>]
 type Stmt =
@@ -23,13 +30,6 @@ type Expr =
   | Str of text: string
   | Num of value: int
   | Call of name: string * Expr list
-
-/// 宣言
-[<RequireQualifiedAccess; NoEquality; NoComparison>]
-type Dec =
-  | Func of name: string * fargs: (Typ * string) list * Typ * Stmt
-  | Type of name: string * Typ
-  | Var of Typ * name: string
 
 /// 型
 [<RequireQualifiedAccess; NoEquality; NoComparison>]
