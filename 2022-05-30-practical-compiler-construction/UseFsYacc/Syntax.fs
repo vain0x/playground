@@ -1,10 +1,18 @@
-module rec Pcc.Ast
+module rec Syntax
 
 /// 変数または要素
 [<NoEquality; NoComparison>]
 type Var =
   | Var of string
   | IndexedVar of string * Expr
+
+/// 型
+[<RequireQualifiedAccess; NoEquality; NoComparison>]
+type Typ =
+  | Name of string
+  | Array of len: int
+  | Int
+  | Void
 
 /// 宣言
 [<RequireQualifiedAccess; NoEquality; NoComparison>]
@@ -30,11 +38,3 @@ type Expr =
   | Str of text: string
   | Num of value: int
   | Call of name: string * Expr list
-
-/// 型
-[<RequireQualifiedAccess; NoEquality; NoComparison>]
-type Typ =
-  | Name of string
-  | Array of len: int
-  | Int
-  | Void

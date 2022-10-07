@@ -1,0 +1,137 @@
+%{
+open FSharp.Text.Lexing
+open Syntax
+%}
+
+%start prog
+%type <Stmt> prog
+
+%token <string> NUM
+%token IF
+%token ELSE
+%token WHILE
+%token SCAN
+%token SPRINT
+%token IPRINT
+%token INT
+%token NEW
+%token RETURN
+%token TYPE
+%token VOID
+%token <string> ID
+%token <string> STR
+%token ASSIGN
+%token EQ
+%token NEQ
+%token GT
+%token LT
+%token GE
+%token LE
+%token PLUS
+%token MINUS
+%token TIMES
+%token DIV
+%token LB
+%token RB
+%token LS
+%token RS
+%token LP
+%token RP
+%token COMMA
+%token SEMI
+%token EOF
+
+%nonassoc EQ NEQ GT LT GE LE
+%left PLUS MINUS
+%left TIMES DIV
+%nonassoc UMINUS
+
+%%
+
+prog: stmt EOF { $1 }
+
+ty: INT { Typ.Int }
+  | INT LS NUM RS { Typ.Array(int $3) }
+  | ID { Typ.Name $1 }
+
+decs: decs dec { $1 @ $2 }
+  | /* empty */ { [] }
+
+dec: ty ids SEMI
+        { List.map (fun id -> Dec.Var($1, id)) $2 }
+  | TYPE ID ASSIGN ty SEMI
+        { [Dec.Type($2, $4)] }
+  | ty ID LP fargs_opt RP block
+        { [Dec.Func($2, $4, $1, $6) ] }
+  | VOID ID LP fargs_opt RP block
+        { [Dec.Func($2, $4, Typ.Void, $6)] }
+
+ids: ID COMMA ids { $1 :: $3 }
+  | ID { [$1] }
+
+fargs_opt: /* empty */ { [] }
+  | fargs { $1 }
+
+fargs: fargs COMMA ty ID    { $1 @ [ $3, $4 ] }
+  | ty ID                   { [ $1, $2 ] }
+
+stmts: stmts stmt { $1 @ [ $2 ] }
+  | stmt { [$1] }
+
+stmt: ID ASSIGN expr SEMI
+      { Stmt.Assign(Var $1, $3) }
+  | ID LS expr RS ASSIGN expr SEMI
+      { Stmt.Assign(IndexedVar($1, $3), $6) }
+  | IF LP cond RP stmt
+      { Stmt.If($3, $5, None) }
+  | IF LP cond RP stmt ELSE stmt
+      { Stmt.If($3, $5, Some $7) }
+  | WHILE LP cond RP stmt
+      { Stmt.While($3, $5) }
+  | SPRINT LP STR RP SEMI
+      { Stmt.CallProc("sprint", [ Expr.Str $3 ]) }
+  | IPRINT LP expr RP SEMI
+      { Stmt.CallProc("iprint", [ $3 ]) }
+  | SCAN LP ID RP SEMI
+      { Stmt.CallProc("scan", [ Expr.Var(Var $3) ]) }
+  | NEW LP ID RP SEMI
+      { Stmt.CallProc("new", [ Expr.Var(Var $3) ]) }
+  | ID LP aargs_opt RP SEMI
+      { Stmt.CallProc($1, $3) }
+  | RETURN expr SEMI
+      { Stmt.CallProc("return", [ $2 ]) }
+  | block
+      { $1 }
+  | SEMI
+      { Stmt.Nil }
+
+aargs_opt: /* empty */  { [] }
+  | aargs               { $1 }
+
+aargs: aargs COMMA expr { $1 @ [ $3 ] }
+  | expr                { [ $1 ] }
+
+block: LB decs stmts RB { Stmt.Block($2, $3) }
+
+expr: NUM               { Expr.Num(int $1) }
+  | ID                  { Expr.Var(Var $1) }
+  | ID LP aargs_opt RP  { Expr.Call($1, $3) }
+  | ID LS expr RS       { Expr.Var(IndexedVar($1, $3)) }
+  | expr PLUS expr      { Expr.Call("+", [ $1; $3 ]) }
+  | expr MINUS expr     { Expr.Call("-", [ $1; $3 ]) }
+  | expr TIMES expr     { Expr.Call("*", [ $1; $3 ]) }
+  | expr DIV expr       { Expr.Call("/", [ $1; $3 ]) }
+  | MINUS expr          { Expr.Call("!", [ $2 ]) }
+  | LP expr RP          { $2 }
+
+cond: expr EQ expr      { Expr.Call("==", [ $1; $3 ]) }
+  | expr NEQ expr       { Expr.Call("!=", [ $1; $3 ]) }
+  | expr GT expr        { Expr.Call(">", [ $1; $3 ]) }
+  | expr LT expr        { Expr.Call("<", [ $1; $3 ]) }
+  | expr GE expr        { Expr.Call(">=", [ $1; $3 ]) }
+  | expr LE expr        { Expr.Call("<=", [ $1; $3 ]) }
+
+/*
+  Not implemented:
+    binary operation precedences
+*/
