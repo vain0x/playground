@@ -31,9 +31,7 @@ module private ParserCombinator =
     | Seq of Term<'T> list * decode: (obj list -> obj)
     | Choice of Term<'T> list
 
-  and [<RequireQualifiedAccess>] private Symbol<'T> =
-    | Ref of id: obj * name: string * Lazy<Term<'T>>
-    | Boxed of id: obj * Term<'T>
+  and private Symbol<'T> = Symbol of id: obj * name: string * Lazy<Term<'T>>
 
   type Rule<'T, 'N> = private Rule of Term<'T>
 
@@ -64,7 +62,7 @@ module private ParserCombinator =
   let recurse (rule: RecRule<'T, 'N>) : Rule<'T, 'N> =
     let (RecRule (name, ruleRef)) = rule
 
-    Symbol.Ref(
+    Symbol(
       ruleRef :> obj,
       name,
       lazy
@@ -106,12 +104,7 @@ module private ParserCombinator =
     )
     |> Rule
 
-  let rule3
-    (r1: Rule<'T, 'A>)
-    (r2: Rule<'T, 'B>)
-    (r3: Rule<'T, 'C>)
-    (decode: 'A -> 'B -> 'C -> 'N)
-    : Rule<'T, 'N> =
+  let rule3 (r1: Rule<'T, 'A>) (r2: Rule<'T, 'B>) (r3: Rule<'T, 'C>) (decode: 'A -> 'B -> 'C -> 'N) : Rule<'T, 'N> =
     let (Rule r1) = r1
     let (Rule r2) = r2
     let (Rule r3) = r3
@@ -134,17 +127,15 @@ module private ParserCombinator =
     // indexing
     let ruleArray = ResizeArray()
     let ruleRev = System.Collections.Generic.Dictionary()
-    let ruleTransient = System.Collections.Generic.HashSet()
 
-    let dummy = Symbol.Boxed(null, Term.Choice [])
+    let dummy = Symbol(obj (), "dummy", lazy (Term.Choice []))
 
     ruleArray.Add(dummy)
     ruleRev.Add(dummy :> obj, 0)
 
     let ruleIdOf (rule: Symbol<'T>) =
-      match rule with
-      | Symbol.Ref (id, _, _)
-      | Symbol.Boxed (id, _) -> id
+      let (Symbol (id, _, _)) = rule
+      id
 
     let indexOf (rule: Symbol<'T>) =
       let id = ruleIdOf rule
@@ -161,26 +152,15 @@ module private ParserCombinator =
       | Term.Expect _
       | Term.Cut _ -> ()
 
-      | Term.Symbol (Symbol.Ref (id, name, r)) ->
+      | Term.Symbol ((Symbol (id, _, _)) as symbol) ->
         if ruleRev.ContainsKey(id) |> not then
           let index = ruleArray.Count
-          ruleArray.Add(Symbol.Ref(id, name, r))
+          ruleArray.Add(symbol)
           ruleRev.Add(id, index)
-
-      | Term.Symbol (Symbol.Boxed (id, r)) ->
-        if ruleRev.ContainsKey(id) |> not then
-          let index = ruleArray.Count
-          ruleArray.Add(Symbol.Boxed(id, r))
-          ruleRev.Add(id, index)
-          ruleTransient.Add(index) |> ignore
-          go r
-        else
-          let index = indexOf (Symbol.Boxed(id, r))
-          ruleTransient.Remove(index) |> ignore
 
       | Term.Map (r, _) -> go r
 
-      | Term.Seq (rules, decode) ->
+      | Term.Seq (rules, _) ->
         for r in rules do
           go r
 
@@ -202,21 +182,15 @@ module private ParserCombinator =
      let isSingle rule =
        match rule with
        | Term.Expect _
-       | Term.Cut _
-       | Term.Symbol (Symbol.Boxed _) -> true
+       | Term.Cut _ -> true
 
        | _ -> false
 
      let rec go nl (rule: Term<'T>) =
        match rule with
        | Term.Symbol symbol ->
-         match symbol with
-         | Symbol.Ref (_, name, _) -> sprintf "R%d:%s" (indexOf symbol) name
-
-         // 単一のトークンや単一のルールのボックスであるか、一回しか使用されないボックスはつぶす
-         | Symbol.Boxed (_, r) when isSingle r || ruleTransient.Contains(indexOf symbol) -> go nl r
-
-         | Symbol.Boxed _ -> sprintf "R%d" (indexOf symbol)
+         let (Symbol (_, name, _)) = symbol
+         sprintf "R%d:%s" (indexOf symbol) name
 
        | Term.Expect (token, _) -> sprintf "expect(%A)" token
        | Term.Cut (token, _) -> sprintf "cut(%A)" token
@@ -228,33 +202,22 @@ module private ParserCombinator =
      for i in 1 .. ruleArray.Count - 1 do
        let rule = ruleArray.[i]
 
-       let singleOrTransient =
-         match rule with
-         | Symbol.Boxed _ when ruleTransient.Contains(i) -> true
-         | Symbol.Boxed (_, r) -> isSingle r
-         | _ -> false
+       let name, rule =
+         let (Symbol (_, name, r)) = rule
+         ":" + name, r.Value
 
-       if not singleOrTransient then
-         let name, rule =
-           match rule with
-           | Symbol.Ref (_, name, deref) -> ":" + name, deref.Value
-           | Symbol.Boxed (_, r) -> "", r
-
-         let initial = if hasChoice rule then "\n  " else " "
-         eprintfn "R%d%s :=%s%s" i name initial (go "\n  " rule))
+       let initial = if hasChoice rule then "\n  " else " "
+       eprintfn "R%d%s :=%s%s" i name initial (go "\n  " rule))
 
     ({ Start = start
        RuleArray = ruleArray.ToArray()
        RuleMemo = ruleRev
        Mapping = id }: Parser<_, _>)
 
-  let build<'T, 'N>
-    (start: Rule<'T, 'N>)
-    (bindings: Binding<'T> list)
-    : Parser<'T, 'N> =
+  let build<'T, 'N> (start: Rule<'T, 'N>) (bindings: Binding<'T> list) : Parser<'T, 'N> =
     let start, bindings =
       match start with
-      | Rule (Term.Symbol (Symbol.Ref _)) -> start, bindings
+      | Rule (Term.Symbol _) -> start, bindings
 
       | _ ->
         let startRec = recursive "start"
@@ -274,11 +237,7 @@ module private ParserCombinator =
 
   // parser methods:
 
-  let private interpret<'T, 'N>
-    (getKind: 'T -> K)
-    (tokens: 'T array)
-    (parser: Parser<'T, 'N>)
-    : 'N =
+  let private interpret<'T, 'N> (getKind: 'T -> K) (tokens: 'T array) (parser: Parser<'T, 'N>) : 'N =
     let mutable index = 0
     let mutable cut = false
 
@@ -328,14 +287,12 @@ module private ParserCombinator =
         else
           fail (sprintf "expect token '%A'" token)
 
-      | Term.Symbol (Symbol.Ref (_, name, ruleLazy)) ->
+      | Term.Symbol (Symbol (_, name, ruleLazy)) ->
         try
           enter ruleLazy.Value
         with _ ->
           eprintfn "(While parsing %s at %d)" name index
           reraise ()
-
-      | Term.Symbol (Symbol.Boxed (_, r)) -> enter r
 
       | Term.Map (r, mapping) -> enter r |> mapping
       | Term.Seq (rules, decode) -> rules |> List.map enter |> decode
@@ -366,14 +323,12 @@ module private ParserCombinator =
         result
 
     let r =
-      match parser.Start with
-      | Symbol.Ref (_, _, r) -> r.Value
-      | Symbol.Boxed (_, r) -> r
+      let (Symbol (_, _, r)) = parser.Start
+      r.Value
 
     enter r |> parser.Mapping
 
-  let parseArray (getKind: 'T -> K) (tokens: 'T array) (parser: Parser<'T, 'N>) : 'N =
-    interpret getKind tokens parser
+  let parseArray (getKind: 'T -> K) (tokens: 'T array) (parser: Parser<'T, 'N>) : 'N = interpret getKind tokens parser
 
   // helpers:
 
