@@ -30,6 +30,7 @@ module private ParserCombinator =
     | Map of Term<'T> * mapping: (obj -> obj)
     | Seq of Term<'T> list * decode: (obj list -> obj)
     | Choice of Term<'T> list
+    | InfixLeft of Term<'T> * Term<'T> * Term<'T> * (obj -> obj -> obj -> obj)
 
   and private Symbol<'T> = Symbol of id: obj * name: string * Lazy<Term<'T>>
 
@@ -121,6 +122,18 @@ module private ParserCombinator =
   let choice (rules: Rule<'T, 'N> list) : Rule<'T, 'N> =
     Rule(Term.Choice(List.map (fun (Rule r) -> r) rules))
 
+  let infixLeft
+    (pLeft: Rule<'T, 'N>)
+    (pMid: Rule<'T, 'A>)
+    (pRight: Rule<'T, 'B>)
+    (decode: 'N -> 'A -> 'B -> 'N)
+    : Rule<'T, 'N> =
+    let (Rule rLeft) = pLeft
+    let (Rule rMid) = pMid
+    let (Rule rRight) = pRight
+
+    Rule(Term.InfixLeft(rLeft, rMid, rRight, (fun left mid right -> decode (left :?> 'N) (mid :?> 'A) (right :?> 'B) :> obj)))
+
   // build:
 
   let private doBuild<'T> (start: Symbol<'T>) (bindings: Binding<'T> list) : Parser<'T, obj> =
@@ -168,6 +181,11 @@ module private ParserCombinator =
         for r in rules do
           go r
 
+      | Term.InfixLeft (rLeft, rMid, rRight, _) ->
+        go rLeft
+        go rMid
+        go rRight
+
      for Binding rule in bindings do
        go rule)
 
@@ -178,13 +196,6 @@ module private ParserCombinator =
       | Term.Seq (rules, _) -> rules |> List.exists hasChoice
       | Term.Choice _ -> true
       | _ -> false
-
-     let isSingle rule =
-       match rule with
-       | Term.Expect _
-       | Term.Cut _ -> true
-
-       | _ -> false
 
      let rec go nl (rule: Term<'T>) =
        match rule with
@@ -198,6 +209,7 @@ module private ParserCombinator =
        | Term.Seq (rules, _) -> sprintf "(%s)" (rules |> List.map (go nl) |> String.concat " ")
 
        | Term.Choice rules -> sprintf "(%s)" (rules |> List.map (go (nl + "  ")) |> String.concat (nl + "| "))
+       | Term.InfixLeft (rLeft, rMid, rRight, _) -> sprintf "(%s %%%s %s)" (go nl rLeft) (go nl rMid) (go nl rRight)
 
      for i in 1 .. ruleArray.Count - 1 do
        let rule = ruleArray.[i]
@@ -261,7 +273,7 @@ module private ParserCombinator =
 
       failwithf "Parse Error: At %s, %s" pos msg
 
-    let rec enter rule =
+    let rec parseRec rule =
       match rule with
       | Term.Expect (token, extractor) ->
         if index < tokens.Length then
@@ -289,58 +301,72 @@ module private ParserCombinator =
 
       | Term.Symbol (Symbol (_, name, ruleLazy)) ->
         try
-          enter ruleLazy.Value
+          parseRec ruleLazy.Value
         with _ ->
           eprintfn "(While parsing %s at %d)" name index
           reraise ()
 
-      | Term.Map (r, mapping) -> enter r |> mapping
-      | Term.Seq (rules, decode) -> rules |> List.map enter |> decode
+      | Term.Map (r, mapping) -> parseRec r |> mapping
+      | Term.Seq (rules, decode) -> rules |> List.map parseRec |> decode
 
       | Term.Choice rules ->
         let indexOrig = index
         let cutOrig = cut
 
-        let rec go rules =
+        let rec chooseLoop rules =
           match rules with
           | [] -> fail "No alternative"
 
           | r :: rules ->
             try
-              enter r
+              parseRec r
             with _ ->
               if not cut then
                 eprintfn "backtrack %d" index
                 index <- indexOrig
                 cut <- cutOrig
-                go rules
+                chooseLoop rules
               else
                 reraise ()
 
         cut <- false
-        let result = go rules
+        let result = chooseLoop rules
         cut <- cutOrig
         result
+
+      | Term.InfixLeft (rLeft, rMid, rRight, decode) ->
+        let rec infixLoop left =
+          // try to parse mid
+          let indexOrig = index
+          let cutOrig = cut
+          cut <- false
+
+          let mid =
+            try
+              parseRec rMid |> Some
+            with _ ->
+              // backtrack
+              index <- indexOrig
+              cut <- cutOrig
+              None
+
+          match mid with
+          | Some mid ->
+            let right = parseRec rRight
+            infixLoop (decode left mid right)
+
+          | None -> left
+
+        let left = parseRec rLeft
+        infixLoop left
 
     let r =
       let (Symbol (_, _, r)) = parser.Start
       r.Value
 
-    enter r |> parser.Mapping
+    parseRec r |> parser.Mapping
 
   let parseArray (getKind: 'T -> K) (tokens: 'T array) (parser: Parser<'T, 'N>) : 'N = interpret getKind tokens parser
-
-  // helpers:
-
-  let infixLeft
-    (pLeft: Rule<'T, 'L>)
-    (pMid: Rule<'T, 'M>)
-    (pRight: Rule<'T, 'R>)
-    (decode1: 'L -> 'N)
-    (decode2: 'L -> 'M -> 'R -> 'N)
-    : Rule<'T, 'N> =
-    // FIXME: left-rec
-    choice [ rule3 pLeft pMid pRight decode2; rule1 pLeft decode1 ]
 
 module private Arith1 =
   module P = ParserCombinator
@@ -408,7 +434,6 @@ module private Arith =
         [ P.cut TokenKind.Star (fun _ -> Binary.Multiply)
           P.cut TokenKind.Slash (fun _ -> Binary.Divide) ])
       pPrimary
-      id
       (fun l op r -> Expr.BinOp(op, l, r))
 
   let private pAdd =
@@ -418,7 +443,6 @@ module private Arith =
         [ P.cut TokenKind.Plus (fun _ -> Binary.Add)
           P.cut TokenKind.Minus (fun _ -> Binary.Subtract) ])
       pMul
-      id
       (fun l op r -> Expr.BinOp(op, l, r))
 
   let private sParser: Lazy<P.Parser<Token, _>> =
@@ -466,6 +490,9 @@ module private Arith =
     assert (p "2 * 3" "BinOp (Multiply, Number 2, Number 3)")
     assert (p "1 + 2 * 3" "BinOp (Add, Number 1, BinOp (Multiply, Number 2, Number 3))")
     assert (p "(1 + 2) * 3" "BinOp (Multiply, Paren (BinOp (Add, Number 1, Number 2)), Number 3)")
+
+    assert (p "1 + 2 - 3" "BinOp (Subtract, BinOp (Add, Number 1, Number 2), Number 3)")
+    assert (p "2 * 3 / 5 * 7" "BinOp\n  (Multiply, BinOp (Divide, BinOp (Multiply, Number 2, Number 3), Number 5),\n   Number 7)")
 
 [<EntryPoint>]
 let main _ =
