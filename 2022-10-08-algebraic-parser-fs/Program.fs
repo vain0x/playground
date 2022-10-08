@@ -34,10 +34,12 @@ module private ParserCombinator =
 
   and private Symbol<'T> = Symbol of id: obj * name: string * Lazy<Term<'T>>
 
+  [<Struct>]
   type Rule<'T, 'N> = private Rule of Term<'T>
 
-  type RecRule<'T, 'N> = private RecRule of name: string * rule: Rule<'T, 'N> option ref
+  type RecRule<'T, 'N> = private RecRule of id: obj * name: string * rule: Rule<'T, 'N> option ref
 
+  [<Struct>]
   type Binding<'T> = private Binding of Term<'T>
 
   type Parser<'T, 'N> =
@@ -58,13 +60,15 @@ module private ParserCombinator =
 
   // nominal rules:
 
-  let recursive (name: string) : RecRule<_, _> = RecRule(name, ref None)
+  let recursive (name: string) : RecRule<_, _> =
+    let r = ref None
+    RecRule(r :> obj, name, r)
 
   let recurse (rule: RecRule<'T, 'N>) : Rule<'T, 'N> =
-    let (RecRule (name, ruleRef)) = rule
+    let (RecRule (id, name, ruleRef)) = rule
 
     Symbol(
-      ruleRef :> obj,
+      id,
       name,
       lazy
         (match ruleRef.contents with
@@ -75,7 +79,7 @@ module private ParserCombinator =
     |> Rule
 
   let bind (recRule: RecRule<'T, 'N>) (actualRule: Rule<'T, 'N>) : Binding<'T> =
-    let (RecRule (_, ruleRef)) = recRule
+    let (RecRule (_, _, ruleRef)) = recRule
     ruleRef.contents <- Some actualRule
 
     let (Rule r) = actualRule
