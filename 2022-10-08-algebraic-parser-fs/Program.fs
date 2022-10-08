@@ -8,19 +8,11 @@ let inline private unreachable () = failwith "unreachable"
 let inline private (|Unreachable|) _ = unreachable ()
 
 module private ParserCombinator =
-  [<RequireQualifiedAccess>]
-  type private Shape<'T> =
-    | Expect of 'T
-    | Cut of 'T
-    | Ref of id: obj
-    | Box of id: obj
-    | Seq of Shape<'T> list
-    | Choice of Shape<'T> list
-
   /// Kind of token.
   type private K = int
 
-  [<RequireQualifiedAccess>]
+  /// Term of syntax rule.
+  [<RequireQualifiedAccess; NoEquality; NoComparison>]
   type private Term<'T> =
     private
     | Expect of K * extractor: ('T -> obj)
@@ -30,18 +22,20 @@ module private ParserCombinator =
     | Map of Term<'T> * mapping: (obj -> obj)
     | Seq of Term<'T> list * decode: (obj list -> obj)
     | Choice of Term<'T> list
-    | InfixLeft of Term<'T> * Term<'T> * Term<'T> * (obj -> obj -> obj -> obj)
+    | InfixLeft of left: Term<'T> * mid: Term<'T> * right: Term<'T> * decode: (obj -> obj -> obj -> obj)
 
   and private Symbol<'T> = Symbol of id: obj * name: string * Lazy<Term<'T>>
 
-  [<Struct>]
+  [<Struct; NoEquality; NoComparison>]
   type Rule<'T, 'N> = private Rule of Term<'T>
 
+  [<NoEquality; NoComparison>]
   type RecRule<'T, 'N> = private RecRule of id: obj * name: string * rule: Rule<'T, 'N> option ref
 
-  [<Struct>]
+  [<Struct; NoEquality; NoComparison>]
   type Binding<'T> = private Binding of Term<'T>
 
+  [<NoEquality; NoComparison>]
   type Parser<'T, 'N> =
     private
       { Start: Symbol<'T>
@@ -51,19 +45,31 @@ module private ParserCombinator =
 
   // tokens:
 
-  let look (token: int) : Rule<'T, unit> = todo ()
+  // let look (token: int) : Rule<'T, unit> = todo ()
 
+  /// 特定の種類のトークンが1つ出現することを表す規則
   let expect (token: int) (extractor: 'T -> 'N) : Rule<'T, 'N> =
     Rule(Term.Expect(token, extractor >> box))
 
+  /// 特定の種類のトークンが1つ出現することを表す規則
+  /// また、カットを行う
+  ///
+  /// - カットとは、`choice` オペレータによる構文規則の選択を確定させるということ
+  ///   すなわち `choice` は先読みによりこのトークンが出現するか確認して、出現していたらこの `cut` を含む規則を選択する
   let cut (token: int) (extractor: 'T -> 'N) : Rule<'T, 'N> = Rule(Term.Cut(token, extractor >> box))
 
   // nominal rules:
 
+  /// 再帰的な規則を作る
+  ///
+  /// - `recurse` により、定義される規則を他の規則の一部として利用できる
+  /// - `build` する際に、再帰的な規則にその定義となる規則を `bind` したものを渡すこと
+  ///     そうでなければエラーが発生する ("Rule xxx not bound")
   let recursive (name: string) : RecRule<_, _> =
     let r = ref None
     RecRule(r :> obj, name, r)
 
+  /// 再帰的な規則の利用を表す規則
   let recurse (rule: RecRule<'T, 'N>) : Rule<'T, 'N> =
     let (RecRule (id, name, ruleRef)) = rule
 
@@ -78,6 +84,7 @@ module private ParserCombinator =
     |> Term.Symbol
     |> Rule
 
+  /// 再帰的な規則に定義を束縛することを表す
   let bind (recRule: RecRule<'T, 'N>) (actualRule: Rule<'T, 'N>) : Binding<'T> =
     let (RecRule (_, _, ruleRef)) = recRule
     ruleRef.contents <- Some actualRule
@@ -85,17 +92,21 @@ module private ParserCombinator =
     let (Rule r) = actualRule
     Binding r
 
-  let label (name: string) (rule: Rule<'T, 'N>) : Rule<'T, 'N> = todo ()
+  // let label (name: string) (rule: Rule<'T, 'N>) : Rule<'T, 'N> = todo ()
 
-  // algebraic rules:
+  // combinators:
 
-  let eps () : Rule<'T, 'N> = todo ()
+  // let eps () : Rule<'T, 'N> = todo ()
 
+  /// 単一の規則とその変換
   let rule1 (r: Rule<'T, 'A>) (mapping: 'A -> 'N) : Rule<'T, 'N> =
     let (Rule r) = r
 
     Term.Map(r, (fun obj -> mapping (obj :?> 'A) :> obj)) |> Rule
 
+  /// 2つの規則の並び
+  ///
+  /// - `decode`: 規則のパース結果を結合する関数
   let rule2 (r1: Rule<'T, 'A>) (r2: Rule<'T, 'B>) (decode: 'A -> 'B -> 'N) : Rule<'T, 'N> =
     let (Rule r1) = r1
     let (Rule r2) = r2
@@ -109,6 +120,7 @@ module private ParserCombinator =
     )
     |> Rule
 
+  /// 3つの規則の並び
   let rule3 (r1: Rule<'T, 'A>) (r2: Rule<'T, 'B>) (r3: Rule<'T, 'C>) (decode: 'A -> 'B -> 'C -> 'N) : Rule<'T, 'N> =
     let (Rule r1) = r1
     let (Rule r2) = r2
@@ -123,9 +135,21 @@ module private ParserCombinator =
     )
     |> Rule
 
+  /// 複数の規則のうち、適用可能なものを1つ選択する規則
+  ///
+  /// - `rules` は適用可能な規則の候補からなるリストである
+  ///     - それぞれの候補はカットを含む規則でなければいけない
   let choice (rules: Rule<'T, 'N> list) : Rule<'T, 'N> =
     Rule(Term.Choice(List.map (fun (Rule r) -> r) rules))
 
+  /// 左結合な二項演算の規則
+  ///
+  /// - 典型例としては乗算 (`E * E`) の式をパースするのに使う
+  ///     - 仮に乗算の両辺の規則を `primary` とする
+  ///     - 乗算の規則は `infixLeft primary (P.expect '*') primary (fun l _ r -> Mul(l, r))` のように書ける
+  /// - `infixLeft l m r` はBNF風の記法で書けば以下の構文を表す
+  ///     - `A = l | A m r`
+  ///     - いわゆる「左再帰」の構文である。`choice` と `recurse` の組み合わせで書いてしまうと、パース処理が無限再帰に陥る
   let infixLeft
     (pLeft: Rule<'T, 'N>)
     (pMid: Rule<'T, 'A>)
@@ -136,7 +160,14 @@ module private ParserCombinator =
     let (Rule rMid) = pMid
     let (Rule rRight) = pRight
 
-    Rule(Term.InfixLeft(rLeft, rMid, rRight, (fun left mid right -> decode (left :?> 'N) (mid :?> 'A) (right :?> 'B) :> obj)))
+    Rule(
+      Term.InfixLeft(
+        rLeft,
+        rMid,
+        rRight,
+        (fun left mid right -> decode (left :?> 'N) (mid :?> 'A) (right :?> 'B) :> obj)
+      )
+    )
 
   // build:
 
@@ -230,6 +261,10 @@ module private ParserCombinator =
        RuleMemo = ruleRev
        Mapping = id }: Parser<_, _>)
 
+  /// パーサを構築する
+  ///
+  /// - `start`: 開始規則
+  /// - `bindings`: 再帰的な規則に定義をバインド(`bind`)するもの
   let build<'T, 'N> (start: Rule<'T, 'N>) (bindings: Binding<'T> list) : Parser<'T, 'N> =
     let start, bindings =
       match start with
@@ -253,7 +288,8 @@ module private ParserCombinator =
 
   // parser methods:
 
-  let private interpret<'T, 'N> (getKind: 'T -> K) (tokens: 'T array) (parser: Parser<'T, 'N>) : 'N =
+  /// 構文規則を再帰的にたどって、バックトラックを利用してパースする
+  let private parseNaively<'T, 'N> (getKind: 'T -> K) (tokens: 'T array) (parser: Parser<'T, 'N>) : 'N =
     let mutable index = 0
     let mutable cut = false
 
@@ -370,25 +406,14 @@ module private ParserCombinator =
 
     parseRec r |> parser.Mapping
 
-  let parseArray (getKind: 'T -> K) (tokens: 'T array) (parser: Parser<'T, 'N>) : 'N = interpret getKind tokens parser
+  /// トークン列をパースする
+  let parseArray (getKind: 'T -> K) (tokens: 'T array) (parser: Parser<'T, 'N>) : 'N = parseNaively getKind tokens parser
 
-module private Arith1 =
-  module P = ParserCombinator
-
-  [<RequireQualifiedAccess>]
-  type Token =
-    | Number
-    | Plus
-
-  [<RequireQualifiedAccess>]
-  type Expr =
-    | Number of int
-    | Add of Expr * Expr
-
+/// 算術式のパーサの実装例
 module private Arith =
   module P = ParserCombinator
 
-  [<RequireQualifiedAccess>]
+  [<RequireQualifiedAccess; NoEquality; NoComparison>]
   type internal Token =
     | Number of int
     | Plus
@@ -398,6 +423,7 @@ module private Arith =
     | LeftParen
     | RightParen
 
+  /// トークンの種類を表す適当な定数
   module private TokenKind =
     let Number = 1
     let Plus = 2
@@ -407,14 +433,26 @@ module private Arith =
     let LeftParen = 6
     let RightParen = 7
 
-  [<RequireQualifiedAccess>]
+    let ofToken token =
+      match token with
+      | Token.Number _ -> Number
+      | Token.Plus -> Plus
+      | Token.Minus -> Minus
+      | Token.Star -> Star
+      | Token.Slash -> Slash
+      | Token.LeftParen -> LeftParen
+      | Token.RightParen -> RightParen
+
+  /// 二項演算子の種類
+  [<RequireQualifiedAccess; NoEquality; NoComparison>]
   type internal Binary =
     | Add
     | Subtract
     | Multiply
     | Divide
 
-  [<RequireQualifiedAccess>]
+  /// 数式の構文木
+  [<RequireQualifiedAccess; NoEquality; NoComparison>]
   type internal Expr =
     | Number of int
     | Paren of Expr
@@ -422,6 +460,7 @@ module private Arith =
 
   let private pExpr: P.RecRule<_, Expr> = P.recursive "Expression"
 
+  /// カッコ式の規則 (`'(' E ')'`)
   let private pParen =
     P.rule3 (P.cut TokenKind.LeftParen ignore) (P.recurse pExpr) (P.expect TokenKind.RightParen ignore) (fun _ e _ ->
       Expr.Paren e)
@@ -449,7 +488,7 @@ module private Arith =
       pMul
       (fun l op r -> Expr.BinOp(op, l, r))
 
-  let private sParser: Lazy<P.Parser<Token, _>> =
+  let private sParserLazy: Lazy<P.Parser<Token, Expr>> =
     lazy (P.build (P.recurse pExpr) [ P.bind pExpr pAdd ])
 
   let private tokenize (text: string) : Token array =
@@ -465,18 +504,9 @@ module private Arith =
       | "/" -> Token.Slash
       | _ -> Token.Number(int s))
 
-  let private getKind token =
-    match token with
-    | Token.Number _ -> TokenKind.Number
-    | Token.Plus -> TokenKind.Plus
-    | Token.Minus -> TokenKind.Minus
-    | Token.Star -> TokenKind.Star
-    | Token.Slash -> TokenKind.Slash
-    | Token.LeftParen -> TokenKind.LeftParen
-    | Token.RightParen -> TokenKind.RightParen
-
-  let internal parseString (s: string) =
-    P.parseArray getKind (tokenize s) sParser.Value
+  let internal parseString (text: string) : Expr =
+    let tokenArray = tokenize text
+    P.parseArray TokenKind.ofToken tokenArray sParserLazy.Value
 
   let internal tests () =
     let p s x =
@@ -496,7 +526,11 @@ module private Arith =
     assert (p "(1 + 2) * 3" "BinOp (Multiply, Paren (BinOp (Add, Number 1, Number 2)), Number 3)")
 
     assert (p "1 + 2 - 3" "BinOp (Subtract, BinOp (Add, Number 1, Number 2), Number 3)")
-    assert (p "2 * 3 / 5 * 7" "BinOp\n  (Multiply, BinOp (Divide, BinOp (Multiply, Number 2, Number 3), Number 5),\n   Number 7)")
+
+    assert
+      (p
+        "2 * 3 / 5 * 7"
+        "BinOp\n  (Multiply, BinOp (Divide, BinOp (Multiply, Number 2, Number 3), Number 5),\n   Number 7)")
 
 [<EntryPoint>]
 let main _ =
