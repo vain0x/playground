@@ -5,6 +5,7 @@ type private HashMap<'K, 'T> = System.Collections.Generic.Dictionary<'K, 'T>
 
 let inline private todo () = failwith "todo"
 let inline private unreachable () = failwith "unreachable"
+let inline private (|Unreachable|) _ = unreachable ()
 
 module private ParserCombinator =
   [<RequireQualifiedAccess>]
@@ -16,48 +17,51 @@ module private ParserCombinator =
     | Seq of Shape<'T> list
     | Choice of Shape<'T> list
 
+  /// Kind of token.
+  type private K = int
+
   [<RequireQualifiedAccess>]
-  type private Term<'K, 'T> =
+  type private Term<'T> =
     private
-    | Expect of 'K * extractor: ('T -> obj)
-    | Cut of 'K * extractor: ('T -> obj)
+    | Expect of K * extractor: ('T -> obj)
+    | Cut of K * extractor: ('T -> obj)
 
-    | Symbol of Symbol<'K, 'T>
-    | Map of Term<'K, 'T> * mapping: (obj -> obj)
-    | Seq of Term<'K, 'T> list * decode: (obj list -> obj)
-    | Choice of Term<'K, 'T> list
+    | Symbol of Symbol<'T>
+    | Map of Term<'T> * mapping: (obj -> obj)
+    | Seq of Term<'T> list * decode: (obj list -> obj)
+    | Choice of Term<'T> list
 
-  and [<RequireQualifiedAccess>] private Symbol<'K, 'T> =
-    | Ref of id: obj * name: string * Lazy<Term<'K, 'T>>
-    | Boxed of id: obj * Term<'K, 'T>
+  and [<RequireQualifiedAccess>] private Symbol<'T> =
+    | Ref of id: obj * name: string * Lazy<Term<'T>>
+    | Boxed of id: obj * Term<'T>
 
-  type Rule<'K, 'T, 'N> = private Rule of Term<'K, 'T>
+  type Rule<'T, 'N> = private Rule of Term<'T>
 
-  type RecRule<'K, 'T, 'N> = private RecRule of name: string * rule: Rule<'K, 'T, 'N> option ref
+  type RecRule<'T, 'N> = private RecRule of name: string * rule: Rule<'T, 'N> option ref
 
-  type Binding<'K, 'T> = private Binding of Term<'K, 'T>
+  type Binding<'T> = private Binding of Term<'T>
 
-  type Parser<'K, 'T, 'N> =
+  type Parser<'T, 'N> =
     private
-      { Start: Symbol<'K, 'T>
-        RuleArray: Symbol<'K, 'T> array
+      { Start: Symbol<'T>
+        RuleArray: Symbol<'T> array
         RuleMemo: HashMap<obj, int>
         Mapping: (obj -> 'N) }
 
   // tokens:
 
-  let look (token: 'K) : Rule<'K, 'T, unit> = todo ()
+  let look (token: int) : Rule<'T, unit> = todo ()
 
-  let expect (token: 'K) (extractor: 'T -> 'N) : Rule<'K, 'T, 'N> =
+  let expect (token: int) (extractor: 'T -> 'N) : Rule<'T, 'N> =
     Rule(Term.Expect(token, extractor >> box))
 
-  let cut (token: 'K) (extractor: 'T -> 'N) : Rule<'K, 'T, 'N> = Rule(Term.Cut(token, extractor >> box))
+  let cut (token: int) (extractor: 'T -> 'N) : Rule<'T, 'N> = Rule(Term.Cut(token, extractor >> box))
 
   // nominal rules:
 
-  let recursive (name: string) : RecRule<_, _, _> = RecRule(name, ref None)
+  let recursive (name: string) : RecRule<_, _> = RecRule(name, ref None)
 
-  let recurse (rule: RecRule<'K, 'T, 'N>) : Rule<'K, 'T, 'N> =
+  let recurse (rule: RecRule<'T, 'N>) : Rule<'T, 'N> =
     let (RecRule (name, ruleRef)) = rule
 
     Symbol.Ref(
@@ -71,25 +75,25 @@ module private ParserCombinator =
     |> Term.Symbol
     |> Rule
 
-  let bind (recRule: RecRule<'K, 'T, 'N>) (actualRule: Rule<'K, 'T, 'N>) : Binding<'K, 'T> =
+  let bind (recRule: RecRule<'T, 'N>) (actualRule: Rule<'T, 'N>) : Binding<'T> =
     let (RecRule (_, ruleRef)) = recRule
     ruleRef.contents <- Some actualRule
 
     let (Rule r) = actualRule
     Binding r
 
-  let label (name: string) (rule: Rule<'K, 'T, 'N>) : Rule<'K, 'T, 'N> = todo ()
+  let label (name: string) (rule: Rule<'T, 'N>) : Rule<'T, 'N> = todo ()
 
   // algebraic rules:
 
-  let eps () : Rule<'K, 'T, 'N> = todo ()
+  let eps () : Rule<'T, 'N> = todo ()
 
-  let rule1 (r: Rule<'K, 'T, 'A>) (mapping: 'A -> 'N) : Rule<'K, 'T, 'N> =
+  let rule1 (r: Rule<'T, 'A>) (mapping: 'A -> 'N) : Rule<'T, 'N> =
     let (Rule r) = r
 
     Term.Map(r, (fun obj -> mapping (obj :?> 'A) :> obj)) |> Rule
 
-  let rule2 (r1: Rule<'K, 'T, 'A>) (r2: Rule<'K, 'T, 'B>) (decode: 'A -> 'B -> 'N) : Rule<'K, 'T, 'N> =
+  let rule2 (r1: Rule<'T, 'A>) (r2: Rule<'T, 'B>) (decode: 'A -> 'B -> 'N) : Rule<'T, 'N> =
     let (Rule r1) = r1
     let (Rule r2) = r2
 
@@ -103,11 +107,11 @@ module private ParserCombinator =
     |> Rule
 
   let rule3
-    (r1: Rule<'K, 'T, 'A>)
-    (r2: Rule<'K, 'T, 'B>)
-    (r3: Rule<'K, 'T, 'C>)
+    (r1: Rule<'T, 'A>)
+    (r2: Rule<'T, 'B>)
+    (r3: Rule<'T, 'C>)
     (decode: 'A -> 'B -> 'C -> 'N)
-    : Rule<'K, 'T, 'N> =
+    : Rule<'T, 'N> =
     let (Rule r1) = r1
     let (Rule r2) = r2
     let (Rule r3) = r3
@@ -121,12 +125,12 @@ module private ParserCombinator =
     )
     |> Rule
 
-  let choice (rules: Rule<'K, 'T, 'N> list) : Rule<'K, 'T, 'N> =
+  let choice (rules: Rule<'T, 'N> list) : Rule<'T, 'N> =
     Rule(Term.Choice(List.map (fun (Rule r) -> r) rules))
 
   // build:
 
-  let private doBuild<'K, 'T> (start: Symbol<'K, 'T>) (bindings: Binding<'K, 'T> list) : Parser<'K, 'T, obj> =
+  let private doBuild<'T> (start: Symbol<'T>) (bindings: Binding<'T> list) : Parser<'T, obj> =
     // indexing
     let ruleArray = ResizeArray()
     let ruleRev = System.Collections.Generic.Dictionary()
@@ -137,12 +141,12 @@ module private ParserCombinator =
     ruleArray.Add(dummy)
     ruleRev.Add(dummy :> obj, 0)
 
-    let ruleIdOf (rule: Symbol<'K, 'T>) =
+    let ruleIdOf (rule: Symbol<'T>) =
       match rule with
       | Symbol.Ref (id, _, _)
       | Symbol.Boxed (id, _) -> id
 
-    let indexOf (rule: Symbol<'K, 'T>) =
+    let indexOf (rule: Symbol<'T>) =
       let id = ruleIdOf rule
 
       if ruleRev.ContainsKey(id) |> not then
@@ -150,9 +154,9 @@ module private ParserCombinator =
 
       ruleRev.[id]
 
-    let intern (rule: Symbol<'K, 'T>) = ruleArray.[indexOf rule]
+    let intern (rule: Symbol<'T>) = ruleArray.[indexOf rule]
 
-    (let rec go (rule: Term<'K, 'T>) =
+    (let rec go (rule: Term<'T>) =
       match rule with
       | Term.Expect _
       | Term.Cut _ -> ()
@@ -203,7 +207,7 @@ module private ParserCombinator =
 
        | _ -> false
 
-     let rec go nl (rule: Term<'K, 'T>) =
+     let rec go nl (rule: Term<'T>) =
        match rule with
        | Term.Symbol symbol ->
          match symbol with
@@ -242,12 +246,12 @@ module private ParserCombinator =
     ({ Start = start
        RuleArray = ruleArray.ToArray()
        RuleMemo = ruleRev
-       Mapping = id }: Parser<_, _, _>)
+       Mapping = id }: Parser<_, _>)
 
-  let build<'K, 'T, 'N when 'K: equality>
-    (start: Rule<'K, 'T, 'N>)
-    (bindings: Binding<'K, 'T> list)
-    : Parser<'K, 'T, 'N> =
+  let build<'T, 'N>
+    (start: Rule<'T, 'N>)
+    (bindings: Binding<'T> list)
+    : Parser<'T, 'N> =
     let start, bindings =
       match start with
       | Rule (Term.Symbol (Symbol.Ref _)) -> start, bindings
@@ -266,14 +270,14 @@ module private ParserCombinator =
     ({ Start = p.Start
        RuleArray = p.RuleArray
        RuleMemo = p.RuleMemo
-       Mapping = fun obj -> p.Mapping obj :?> 'N }: Parser<'K, 'T, 'N>)
+       Mapping = fun obj -> p.Mapping obj :?> 'N }: Parser<'T, 'N>)
 
   // parser methods:
 
-  let private interpret<'K, 'T, 'N when 'K: equality>
-    (getKind: 'T -> 'K)
+  let private interpret<'T, 'N>
+    (getKind: 'T -> K)
     (tokens: 'T array)
-    (parser: Parser<'K, 'T, 'N>)
+    (parser: Parser<'T, 'N>)
     : 'N =
     let mutable index = 0
     let mutable cut = false
@@ -368,18 +372,18 @@ module private ParserCombinator =
 
     enter r |> parser.Mapping
 
-  let parseArray (getKind: 'T -> 'K) (tokens: 'T array) (parser: Parser<'K, 'T, 'N>) : 'N =
+  let parseArray (getKind: 'T -> K) (tokens: 'T array) (parser: Parser<'T, 'N>) : 'N =
     interpret getKind tokens parser
 
   // helpers:
 
   let infixLeft
-    (pLeft: Rule<'K, 'T, 'L>)
-    (pMid: Rule<'K, 'T, 'M>)
-    (pRight: Rule<'K, 'T, 'R>)
+    (pLeft: Rule<'T, 'L>)
+    (pMid: Rule<'T, 'M>)
+    (pRight: Rule<'T, 'R>)
     (decode1: 'L -> 'N)
     (decode2: 'L -> 'M -> 'R -> 'N)
-    : Rule<'K, 'T, 'N> =
+    : Rule<'T, 'N> =
     // FIXME: left-rec
     choice [ rule3 pLeft pMid pRight decode2; rule1 pLeft decode1 ]
 
@@ -409,15 +413,14 @@ module private Arith =
     | LeftParen
     | RightParen
 
-  [<RequireQualifiedAccess>]
-  type private TokenKind =
-    | Number
-    | Plus
-    | Minus
-    | Star
-    | Slash
-    | LeftParen
-    | RightParen
+  module private TokenKind =
+    let Number = 1
+    let Plus = 2
+    let Minus = 3
+    let Star = 4
+    let Slash = 5
+    let LeftParen = 6
+    let RightParen = 7
 
   [<RequireQualifiedAccess>]
   type internal Binary =
@@ -432,7 +435,7 @@ module private Arith =
     | Paren of Expr
     | BinOp of Binary * Expr * Expr
 
-  let private pExpr: P.RecRule<_, _, Expr> = P.recursive "Expression"
+  let private pExpr: P.RecRule<_, Expr> = P.recursive "Expression"
 
   let private pParen =
     P.rule3 (P.cut TokenKind.LeftParen ignore) (P.recurse pExpr) (P.expect TokenKind.RightParen ignore) (fun _ e _ ->
@@ -440,10 +443,7 @@ module private Arith =
 
   let private pPrimary =
     P.choice
-      [ P.cut TokenKind.Number (fun t ->
-          match t with
-          | Token.Number value -> Expr.Number value
-          | _ -> unreachable ())
+      [ P.cut TokenKind.Number (fun (Token.Number value | Unreachable value) -> Expr.Number value)
         pParen ]
 
   let private pMul =
@@ -466,7 +466,7 @@ module private Arith =
       id
       (fun l op r -> Expr.BinOp(op, l, r))
 
-  let private sParser: Lazy<P.Parser<TokenKind, Token, _>> =
+  let private sParser: Lazy<P.Parser<Token, _>> =
     lazy (P.build (P.recurse pExpr) [ P.bind pExpr pAdd ])
 
   let private tokenize (text: string) : Token array =
