@@ -1,0 +1,490 @@
+module rec Program
+
+#nowarn "40"
+
+type private HashSet<'T> = System.Collections.Generic.HashSet<'T>
+type private HashMap<'K, 'T> = System.Collections.Generic.Dictionary<'K, 'T>
+
+let inline private todo () = failwith "todo"
+
+module private ParserCombinator =
+  [<RequireQualifiedAccess>]
+  type private Shape<'T> =
+    | Expect of 'T
+    | Cut of 'T
+    | Ref of id: obj
+    | Box of id: obj
+    | Seq of Shape<'T> list
+    | Choice of Shape<'T> list
+
+  [<RequireQualifiedAccess>]
+  type private Term<'T> =
+    private
+    | Expect of 'T
+    | Cut of 'T * extractor: (obj -> obj)
+
+    | Symbol of Symbol<'T>
+    | Map of Term<'T> * mapping: (obj -> obj)
+    | Seq of Term<'T> list * decode: (obj list -> obj)
+    | Choice of Term<'T> list
+
+  [<RequireQualifiedAccess>]
+  type private Symbol<'T> =
+    | Ref of id: obj * name: string * Lazy<Term<'T>>
+    | Boxed of id: obj * Term<'T>
+
+  type Rule<'T, 'N> = private Rule of Term<'T>
+
+  type RecRule<'T, 'N> = private RecRule of name: string * rule: Rule<'T, 'N> option ref
+
+  type Binding<'T> = private Binding of Term<'T>
+
+  type Parser<'T, 'N> =
+    private
+      { Start: Symbol<'T>
+        RuleArray: Symbol<'T> array
+        RuleMemo: HashMap<obj, int>
+        Mapping: (obj -> 'N) }
+
+  let inline private unreachable () = failwith "unreachable"
+
+  // tokens:
+
+  let look (token: 'T) : Rule<'T, unit> = todo ()
+
+  let expect (token: 'T) : Rule<'T, unit> = Rule(Term.Expect token)
+
+  let cut (token: 'T) (extractor: obj -> 'N) : Rule<'T, 'N> = Rule(Term.Cut(token, extractor >> box))
+
+  // nominal rules:
+
+  let recursive (name: string) : RecRule<'T, _> = RecRule(name, ref None)
+
+  let recurse (rule: RecRule<'T, 'N>) : Rule<'T, 'N> =
+    let (RecRule (name, ruleRef)) = rule
+
+    Symbol.Ref(
+      ruleRef :> obj,
+      name,
+      lazy
+        (match ruleRef.contents with
+         | Some (Rule it) -> it
+         | None -> failwithf "Rule '%s' unbound" name)
+    )
+    |> Term.Symbol
+    |> Rule
+
+  let bind (recRule: RecRule<'T, 'N>) (actualRule: Rule<'T, 'N>) : Binding<'T> =
+    let (RecRule (_, ruleRef)) = recRule
+    ruleRef.contents <- Some actualRule
+
+    let (Rule r) = actualRule
+    Binding r
+
+  let label (name: string) (rule: Rule<'T, 'N>) : Rule<'T, 'N> = todo ()
+
+  // algebraic rules:
+
+  let eps () : Rule<'T, 'N> = todo ()
+
+  let rule1 (r: Rule<'T, 'A>) (mapping: 'A -> 'N) : Rule<'T, 'N> =
+    let (Rule r) = r
+
+    Term.Map(r, (fun obj -> mapping (obj :?> 'A) :> obj))
+    |> Rule
+
+  let rule2 (r1: Rule<'T, 'A>) (r2: Rule<'T, 'B>) (decode: 'A -> 'B -> 'N) : Rule<'T, 'N> =
+    let (Rule r1) = r1
+    let (Rule r2) = r2
+
+    Term.Seq(
+      [ r1; r2 ],
+      fun objList ->
+        match objList with
+        | [ o1; o2 ] -> decode (o1 :?> 'A) (o2 :?> 'B) :> obj
+        | _ -> unreachable ()
+    )
+    |> Rule
+
+  let rule3 (r1: Rule<'T, 'A>) (r2: Rule<'T, 'B>) (r3: Rule<'T, 'C>) (decode: 'A -> 'B -> 'C -> 'N) : Rule<'T, 'N> =
+    let (Rule r1) = r1
+    let (Rule r2) = r2
+    let (Rule r3) = r3
+
+    Term.Seq(
+      [ r1; r2; r3 ],
+      fun objList ->
+        match objList with
+        | [ o1; o2; o3 ] -> decode (o1 :?> 'A) (o2 :?> 'B) (o3 :?> 'C) :> obj
+        | _ -> unreachable ()
+    )
+    |> Rule
+
+  let choice (rules: Rule<'T, 'N> list) : Rule<'T, 'N> =
+    Rule(Term.Choice(List.map (fun (Rule r) -> r) rules))
+
+  // build:
+
+  let private doBuild<'T when 'T: equality> (start: Symbol<'T>) (bindings: Binding<'T> list) : Parser<'T, obj> =
+    // indexing
+    let ruleArray = ResizeArray()
+    let ruleRev = System.Collections.Generic.Dictionary()
+    let ruleTransient = System.Collections.Generic.HashSet()
+
+    let dummy = Symbol.Boxed(null, Term.Choice [])
+
+    ruleArray.Add(dummy)
+    ruleRev.Add(dummy :> obj, 0)
+
+    let ruleIdOf (rule: Symbol<'T>) =
+      match rule with
+      | Symbol.Ref (id, _, _)
+      | Symbol.Boxed (id, _) -> id
+
+    let indexOf (rule: Symbol<'T>) =
+      let id = ruleIdOf rule
+
+      if ruleRev.ContainsKey(id) |> not then
+        failwithf "Rule not indexed (id:%A, rule:%A)" id rule
+
+      ruleRev.[id]
+
+    let intern (rule: Symbol<'T>) = ruleArray.[indexOf rule]
+
+    (let rec go (rule: Term<'T>) =
+      match rule with
+      | Term.Expect _
+      | Term.Cut _ -> ()
+
+      | Term.Symbol (Symbol.Ref (id, name, r)) ->
+        if ruleRev.ContainsKey(id) |> not then
+          let index = ruleArray.Count
+          ruleArray.Add(Symbol.Ref(id, name, r))
+          ruleRev.Add(id, index)
+
+      | Term.Symbol (Symbol.Boxed (id, r)) ->
+        if ruleRev.ContainsKey(id) |> not then
+          let index = ruleArray.Count
+          ruleArray.Add(Symbol.Boxed(id, r))
+          ruleRev.Add(id, index)
+          ruleTransient.Add(index) |> ignore
+          go r
+        else
+          let index = indexOf (Symbol.Boxed(id, r))
+          ruleTransient.Remove(index) |> ignore
+
+      | Term.Map (r, _) -> go r
+
+      | Term.Seq (rules, decode) ->
+        for r in rules do
+          go r
+
+      | Term.Choice rules ->
+        for r in rules do
+          go r
+
+     for Binding rule in bindings do
+       go rule)
+
+    // dump
+    (let rec hasChoice rule =
+      match rule with
+      | Term.Map (r, _) -> hasChoice r
+      | Term.Seq (rules, _) -> rules |> List.exists hasChoice
+      | Term.Choice _ -> true
+      | _ -> false
+
+     let isSingle rule =
+       match rule with
+       | Term.Expect _
+       | Term.Cut _
+       | Term.Symbol (Symbol.Boxed _) -> true
+
+       | _ -> false
+
+     let rec go nl (rule: Term<'T>) =
+       match rule with
+       | Term.Symbol symbol ->
+         match symbol with
+         | Symbol.Ref (_, name, _) -> sprintf "R%d:%s" (indexOf symbol) name
+
+         // 単一のトークンや単一のルールのボックスであるか、一回しか使用されないボックスはつぶす
+         | Symbol.Boxed (_, r) when
+           isSingle r
+           || ruleTransient.Contains(indexOf symbol)
+           ->
+           go nl r
+
+         | Symbol.Boxed _ -> sprintf "R%d" (indexOf symbol)
+
+       | Term.Expect token -> sprintf "expect(%A)" token
+       | Term.Cut (token, _) -> sprintf "cut(%A)" token
+       | Term.Map (r, _) -> go nl r
+       | Term.Seq (rules, _) -> sprintf "(%s)" (rules |> List.map (go nl) |> String.concat " ")
+
+       | Term.Choice rules ->
+         sprintf
+           "(%s)"
+           (rules
+            |> List.map (go (nl + "  "))
+            |> String.concat (nl + "| "))
+
+     for i in 1 .. ruleArray.Count - 1 do
+       let rule = ruleArray.[i]
+
+       let singleOrTransient =
+         match rule with
+         | Symbol.Boxed _ when ruleTransient.Contains(i) -> true
+         | Symbol.Boxed (_, r) -> isSingle r
+         | _ -> false
+
+       if not singleOrTransient then
+         let name, rule =
+           match rule with
+           | Symbol.Ref (_, name, deref) -> ":" + name, deref.Value
+           | Symbol.Boxed (_, r) -> "", r
+
+         let initial = if hasChoice rule then "\n  " else " "
+         eprintfn "R%d%s :=%s%s" i name initial (go "\n  " rule))
+
+    ({ Start = start
+       RuleArray = ruleArray.ToArray()
+       RuleMemo = ruleRev
+       Mapping = id }: Parser<_, _>)
+
+  let build<'T, 'N when 'T: equality> (start: Rule<'T, 'N>) (bindings: Binding<'T> list) : Parser<'T, 'N> =
+    let start, bindings =
+      match start with
+      | Rule (Term.Symbol (Symbol.Ref _)) -> start, bindings
+
+      | _ ->
+        let startRec = recursive "start"
+        recurse startRec, bind startRec start :: bindings
+
+    let start =
+      match start with
+      | Rule (Term.Symbol it) -> it
+      | _ -> unreachable ()
+
+    let p = doBuild start bindings
+
+    ({ Start = p.Start
+       RuleArray = p.RuleArray
+       RuleMemo = p.RuleMemo
+       Mapping = fun obj -> p.Mapping obj :?> 'N }: Parser<'T, 'N>)
+
+  // parser methods:
+
+  let private interpret<'T, 'N when 'T: equality> (tokens: ('T * obj) array) (parser: Parser<'T, 'N>) : 'N =
+    let mutable index = 0
+    let mutable cut = false
+
+    let tokenAt i = fst tokens.[i]
+
+    let shift cutting =
+      assert (index < tokens.Length)
+      let t, obj = tokens.[index]
+      eprintfn "shift %d:%A%s %A" index t (if cutting then "!" else "") obj
+      index <- index + 1
+
+      if cutting then cut <- true
+
+    let fail msg =
+      let pos =
+        if index < tokens.Length then
+          sprintf "%d:%A" index (tokenAt index)
+        else
+          "EOF"
+
+      failwithf "Parse Error: At %s, %s" pos msg
+
+    let rec enter rule =
+      match rule with
+      | Term.Expect token ->
+        if index < tokens.Length && tokenAt index = token then
+          shift false
+          null
+        else
+          fail (sprintf "expect token '%A'" token)
+
+      | Term.Cut (token, extractor) ->
+        if index < tokens.Length then
+          let t, obj = tokens.[index]
+
+          if t = token then
+            shift true
+            extractor obj
+          else
+            fail (sprintf "expect token '%A'" token)
+        else
+          fail (sprintf "expect token '%A'" token)
+
+      | Term.Symbol (Symbol.Ref (_, name, ruleLazy)) ->
+        try
+          enter ruleLazy.Value
+        with
+        | _ ->
+          eprintfn "(While parsing %s at %d)" name index
+          reraise ()
+
+      | Term.Symbol (Symbol.Boxed (_, r)) -> enter r
+
+      | Term.Map (r, mapping) -> enter r |> mapping
+      | Term.Seq (rules, decode) -> rules |> List.map enter |> decode
+
+      | Term.Choice rules ->
+        let indexOrig = index
+        let cutOrig = cut
+
+        let rec go rules =
+          match rules with
+          | [] -> fail "No alternative"
+
+          | r :: rules ->
+            try
+              enter r
+            with
+            | _ ->
+              if not cut then
+                eprintfn "backtrack %d" index
+                index <- indexOrig
+                cut <- cutOrig
+                go rules
+              else
+                reraise ()
+
+        cut <- false
+        let result = go rules
+        cut <- cutOrig
+        result
+
+    let r =
+      match parser.Start with
+      | Symbol.Ref (_, _, r) -> r.Value
+      | Symbol.Boxed (_, r) -> r
+
+    enter r |> parser.Mapping
+
+  let parseArray (tokens: ('T * obj) array) (parser: Parser<'T, 'N>) : 'N = interpret tokens parser
+
+  // helpers:
+
+  let infixLeft
+    (pLeft: Rule<'T, 'L>)
+    (pMid: Rule<'T, 'M>)
+    (pRight: Rule<'T, 'R>)
+    (decode1: 'L -> 'N)
+    (decode2: 'L -> 'M -> 'R -> 'N)
+    : Rule<'T, 'N> =
+    // FIXME: left-rec
+    choice [ rule3 pLeft pMid pRight decode2
+             rule1 pLeft decode1 ]
+
+module private Arith1 =
+  module P = ParserCombinator
+
+  [<RequireQualifiedAccess>]
+  type Token =
+    | Number
+    | Plus
+
+  [<RequireQualifiedAccess>]
+  type Expr =
+    | Number of int
+    | Add of Expr * Expr
+
+module private Arith =
+  module P = ParserCombinator
+
+  [<RequireQualifiedAccess>]
+  type Token =
+    | Number
+    | Plus
+    | Minus
+    | Star
+    | Slash
+    | LeftParen
+    | RightParen
+
+  [<RequireQualifiedAccess>]
+  type Binary =
+    | Add
+    | Subtract
+    | Multiply
+    | Divide
+
+  [<RequireQualifiedAccess>]
+  type Expr =
+    | Number of int
+    | Paren of Expr
+    | BinOp of Binary * Expr * Expr
+
+  let private pExpr: P.RecRule<Token, Expr> = P.recursive "Expression"
+
+  let private pParen =
+    P.rule3 (P.cut Token.LeftParen ignore) (P.recurse pExpr) (P.expect Token.RightParen) (fun _ e _ -> Expr.Paren e)
+
+  let private pPrimary =
+    P.choice [ P.cut Token.Number (fun obj -> Expr.Number(obj :?> int))
+               pParen ]
+
+  let private pMul =
+    P.infixLeft
+      pPrimary
+      (P.choice [ P.cut Token.Star (fun _ -> Binary.Multiply)
+                  P.cut Token.Slash (fun _ -> Binary.Divide) ])
+      pPrimary
+      id
+      (fun l op r -> Expr.BinOp(op, l, r))
+
+  let private pAdd =
+    P.infixLeft
+      pMul
+      (P.choice [ P.cut Token.Plus (fun _ -> Binary.Add)
+                  P.cut Token.Minus (fun _ -> Binary.Subtract) ])
+      pMul
+      id
+      (fun l op r -> Expr.BinOp(op, l, r))
+
+  let private sParser: Lazy<P.Parser<Token, _>> =
+    lazy (P.build (P.recurse pExpr) [ P.bind pExpr pAdd ])
+
+  let private tokenize (text: string) : (Token * obj) array =
+    text
+      .Replace("(", "( ")
+      .Replace(")", " )")
+      .Split(" ")
+    |> Array.filter (fun s -> s <> "")
+    |> Array.map (fun s ->
+      match s with
+      | "(" -> Token.LeftParen, null
+      | ")" -> Token.RightParen, null
+      | "+" -> Token.Plus, null
+      | "-" -> Token.Minus, null
+      | "*" -> Token.Star, null
+      | "/" -> Token.Slash, null
+      | _ -> Token.Number, box (int s))
+
+  let parseString (s: string) = P.parseArray (tokenize s) sParser.Value
+
+  let internal tests () =
+    let p s x =
+      let actual = parseString s |> sprintf "%A"
+
+      if actual = x then
+        true
+      else
+        eprintfn "Assertion violated:\nactual: '%s'\nexpected: '%s'" actual x
+        false
+
+    assert (p "42" "Number 42")
+    assert (p "(42)" "Paren (Number 42)")
+    assert (p "1 + 2" "BinOp (Add, Number 1, Number 2)")
+    assert (p "2 * 3" "BinOp (Multiply, Number 2, Number 3)")
+    assert (p "1 + 2 * 3" "BinOp (Add, Number 1, BinOp (Multiply, Number 2, Number 3))")
+    assert (p "(1 + 2) * 3" "BinOp (Multiply, Paren (BinOp (Add, Number 1, Number 2)), Number 3)")
+
+[<EntryPoint>]
+let main _ =
+  Arith.tests ()
+  0
