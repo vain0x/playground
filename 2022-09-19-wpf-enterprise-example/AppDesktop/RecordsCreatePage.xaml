@@ -10,7 +10,7 @@
     d:DataContext="{d:DesignInstance local:RecordsCreatePageVm}"
     Template="{StaticResource PageTemplate}"
     FocusManager.FocusedElement="{Binding ElementName=subjectTextBox}">
-    <Grid Margin="16">
+    <Grid>
         <Grid.RowDefinitions>
             <RowDefinition Height="Auto" />
             <RowDefinition Height="*" />

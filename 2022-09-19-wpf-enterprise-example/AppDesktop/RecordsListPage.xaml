@@ -1,4 +1,5 @@
 <UserControl
+    x:Name="page"
     x:Class="AppDesktop.RecordsListPage"
     xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
@@ -16,6 +17,7 @@
             <Setter Property="HorizontalGridLinesBrush" Value="#ededed" />
 
             <Setter Property="AutoGenerateColumns" Value="False" />
+            <Setter Property="RowHeaderWidth" Value="0" />
         </Style>
     </UserControl.Resources>
 
@@ -31,6 +33,7 @@
                     <DataGridTextColumn.ElementStyle>
                         <Style TargetType="TextBlock">
                             <Setter Property="Margin" Value="4" />
+                            <Setter Property="HorizontalAlignment" Value="Right" />
                             <Setter Property="VerticalAlignment" Value="Center" />
                         </Style>
                     </DataGridTextColumn.ElementStyle>
@@ -44,7 +47,44 @@
                         </Style>
                     </DataGridTextColumn.ElementStyle>
                 </DataGridTextColumn>
+
+                <!-- 編集ボタンの列 -->
+                <DataGridTemplateColumn Header="" Width="80" IsReadOnly="True">
+                    <DataGridTemplateColumn.CellTemplate>
+                        <DataTemplate>
+                            <Button Command="{Binding DataContext.EditCommand, ElementName=page}" CommandParameter="{Binding RecordId}" Background="White" Padding="4,0" HorizontalContentAlignment="Left" BorderThickness="0">
+                                編集
+                            </Button>
+                        </DataTemplate>
+                    </DataGridTemplateColumn.CellTemplate>
+                </DataGridTemplateColumn>
             </DataGrid.Columns>
+
+            <DataGrid.RowStyle>
+                <Style TargetType="DataGridRow">
+                    <!-- 選択されている行の背景を青くする既定のスタイルをキャンセルする -->
+                    <Setter Property="Background" Value="White" />
+                </Style>
+            </DataGrid.RowStyle>
+
+            <DataGrid.CellStyle>
+                <Style TargetType="DataGridCell">
+                    <!-- 選択されている行を白抜きにする既定のスタイルをキャンセルする -->
+                    <Setter Property="Background" Value="White" />
+                    <Setter Property="Foreground" Value="#333" />
+
+                    <Style.Triggers>
+                        <!-- 選択されている行のすべてのセルにボーダーをつける既定のスタイルのキャンセル -->
+                        <Trigger Property="IsSelected" Value="True">
+                            <Setter Property="BorderBrush" Value="Transparent" />
+                        </Trigger>
+
+                        <Trigger Property="IsKeyboardFocused" Value="True">
+                            <Setter Property="BorderBrush" Value="#666" />
+                        </Trigger>
+                    </Style.Triggers>
+                </Style>
+            </DataGrid.CellStyle>
         </DataGrid>
 
         <Grid Grid.Row="1">

@@ -9,6 +9,7 @@ namespace AppDesktop
 
         public EventCommand<object?> BackCommand { get; }
         public EventCommand<object?> CreateCommand { get; }
+        public EventCommand<int?> EditCommand { get; }
 
         public RecordsListPageVm(RecordListItem[] items)
         {
@@ -16,6 +17,7 @@ namespace AppDesktop
 
             BackCommand = EventCommand.Create<object?>(this);
             CreateCommand = EventCommand.Create<object?>(this);
+            EditCommand = EventCommand.Create<int?>(this);
         }
     }
 

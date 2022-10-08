@@ -317,6 +317,7 @@ namespace AppDesktop
             var page = new RecordsListPageVm(items);
             page.BackCommand.Executed += (_, _) => OpenHomePage();
             page.CreateCommand.Executed += (_, _) => OpenRecordsCreatePage();
+            page.EditCommand.Executed += (_, id) => OpenRecordsEditPage(id);
             CurrentPage = page;
         }
 
@@ -325,6 +326,25 @@ namespace AppDesktop
             var page = new RecordsCreatePageVm();
             page.CancelCommand.Executed += (_, _) => OpenRecordsListPage();
             page.RequestEffect.Invoked += (_, request) => CreateRecord(request);
+            CurrentPage = page;
+        }
+
+        private void OpenRecordsEditPage(int? recordId)
+        {
+            if (recordId == null)
+                throw new Exception("no id");
+
+            var recordData = records.Find(item => item.RecordId == recordId);
+            if (recordData == null)
+                throw new Exception("record missing");
+
+            var page = new RecordsCreatePageVm
+            {
+                Subject = recordData.Subject,
+                Contents = recordData.Contents
+            };
+            page.CancelCommand.Executed += (_, _) => OpenRecordsListPage();
+            page.RequestEffect.Invoked += (_, request) => UpdateRecord(recordId.Value, request);
             CurrentPage = page;
         }
 
@@ -338,6 +358,31 @@ namespace AppDesktop
 
                     var id = ++lastRecordId;
                     records.Add(new RecordData(id, request.Subject, request.Contents));
+
+                    OpenRecordsListPage();
+                }
+                finally
+                {
+                    request.OnFinally?.Invoke();
+                }
+            });
+        }
+
+        private void UpdateRecord(int recordId, RecordsAddRequest request)
+        {
+            StartAsync(async ct =>
+            {
+                try
+                {
+                    await Task.Delay(request.Contents.Length * 10, ct);
+
+                    var index = records.FindIndex(r => r.RecordId == recordId);
+                    if (index < 0)
+                        throw new Exception("record missing?");
+
+                    records[index] = new RecordData(recordId, request.Subject, request.Contents);
+
+                    OpenRecordsListPage();
                 }
                 finally
                 {

@@ -35,7 +35,7 @@
             <RowDefinition Height="Auto" />
         </Grid.RowDefinitions>
 
-        <TextBlock FontSize="24" Margin="0">出退勤一覧</TextBlock>
+        <TextBlock FontSize="24">出退勤一覧</TextBlock>
 
         <TextBox x:Name="monthTextBox" Grid.Row="1" Text="{Binding MonthInput, UpdateSourceTrigger=PropertyChanged}" Margin="0,16" Width="100" Padding="4" FontFamily="Cascadia Mono" HorizontalAlignment="Left" />
 
