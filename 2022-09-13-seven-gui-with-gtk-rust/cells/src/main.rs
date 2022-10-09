@@ -4,6 +4,7 @@
 
 mod coord;
 mod formula;
+mod model;
 
 use coord::*;
 use gtk::{gdk, prelude::*, ApplicationWindow, WindowPosition};

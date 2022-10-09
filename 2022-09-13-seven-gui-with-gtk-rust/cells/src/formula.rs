@@ -1,8 +1,8 @@
 use crate::coord::*;
 use std::{collections::VecDeque, fmt::Debug};
 
-#[derive(Debug)]
-enum Formula {
+#[derive(Clone, Debug)]
+pub(crate) enum Formula {
     Number(String),
     Ref(GridVec),
     Range(GridRange),
