@@ -1,7 +1,7 @@
+use crate::formula::*;
 use std::fmt::Debug;
 
-use crate::{coord::*, formula::*};
-
+#[allow(unused)]
 #[derive(Clone, PartialEq)]
 enum CellValue {
     Null,
@@ -23,6 +23,7 @@ impl Debug for CellValue {
     }
 }
 
+#[allow(unused)]
 #[derive(Clone)]
 enum CellInput {
     Null,
@@ -33,6 +34,7 @@ enum CellInput {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::coord::*;
 
     fn vec_list(formula: &Formula) -> Vec<GridVec> {
         match *formula {

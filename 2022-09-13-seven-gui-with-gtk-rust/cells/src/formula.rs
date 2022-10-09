@@ -2,14 +2,6 @@ use crate::coord::*;
 use std::{collections::VecDeque, fmt::Debug};
 
 #[derive(Clone, Debug)]
-pub(crate) enum Formula {
-    Number(String),
-    Call(Fn, Vec<Formula>),
-    Ref(GridVec),
-    Range(GridRange),
-}
-
-#[derive(Clone, Debug)]
 pub(crate) enum Fn {
     Add,
     Subtract,
@@ -39,6 +31,22 @@ impl Fn {
     }
 }
 
+#[derive(Clone, Debug)]
+pub(crate) enum Formula {
+    Number(String),
+    Call(Fn, Vec<Formula>),
+    Ref(GridVec),
+    Range(GridRange),
+}
+
+impl Formula {
+    #[allow(unused)]
+    pub(crate) fn parse(s: &str) -> Option<Formula> {
+        parse_formula(s)
+    }
+}
+
+/// Parse cell-reference notation, e.g. `A1`.
 fn parse_ref(s: &str) -> Option<GridVec> {
     if !(2 <= s.len() && s.as_bytes()[0].is_ascii_uppercase()) {
         return None;
@@ -188,7 +196,6 @@ fn parse_expr(tokens: &mut VecDeque<Token>) -> Option<Formula> {
     }
 }
 
-#[allow(unused)]
 fn parse_formula(s: &str) -> Option<Formula> {
     let tokens = tokenize(s)?;
 
@@ -202,20 +209,14 @@ fn parse_formula(s: &str) -> Option<Formula> {
     Some(f)
 }
 
-impl Formula {
-    pub(crate) fn parse(s: &str) -> Option<Formula> {
-        parse_formula(s)
-    }
-}
-
 #[cfg(test)]
 mod tests {
-    use super::parse_formula;
+    use super::Formula;
 
     #[test]
     fn test_parse() {
         fn p(s: &str) -> String {
-            match parse_formula(s) {
+            match Formula::parse(s) {
                 Some(f) => format!("{f:?}"),
                 None => "None".to_string(),
             }
