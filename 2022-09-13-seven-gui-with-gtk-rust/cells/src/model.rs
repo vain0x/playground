@@ -1,8 +1,8 @@
-use crate::formula::*;
+use crate::{coord::*, formula::*};
 use std::fmt::Debug;
 
 #[allow(unused)]
-#[derive(Clone, PartialEq)]
+#[derive(Clone, Copy, PartialEq)]
 enum CellValue {
     Null,
     Number(f64),
@@ -31,163 +31,357 @@ enum CellInput {
     Formula(Formula),
 }
 
+impl CellInput {
+    fn parse(s: &str) -> Option<Self> {
+        if s.starts_with('=') {
+            let f = Formula::parse(s[1..].trim())?;
+            return Some(CellInput::Formula(f));
+        }
+
+        if s.trim().is_empty() {
+            return Some(CellInput::Null);
+        }
+
+        let value = s.parse::<f64>().ok()?;
+        Some(CellInput::Number(value))
+    }
+}
+
+#[derive(Clone, Default)]
+struct FormulaDeps {
+    refs: Vec<GridVec>,
+    ranges: Vec<GridRange>,
+}
+
+impl FormulaDeps {
+    #[cfg(test)]
+    fn is_empty(&self) -> bool {
+        self.refs.is_empty() && self.ranges.is_empty()
+    }
+
+    fn recompute(&mut self, formula: &Formula) {
+        // clear:
+        self.refs.clear();
+        self.ranges.clear();
+
+        // extend:
+        {
+            let mut stack = vec![formula];
+
+            while let Some(formula) = stack.pop() {
+                match *formula {
+                    Formula::Number(_) => {}
+                    Formula::Call(_, ref args) => {
+                        for arg in args {
+                            stack.push(arg);
+                        }
+                    }
+                    Formula::Ref(v) => self.refs.push(v),
+                    Formula::Range(range) => self.ranges.push(range),
+                }
+            }
+        }
+
+        // compress:
+        self.ranges.sort_by_key(|range| (range.s, range.t));
+        self.ranges.dedup();
+
+        self.refs
+            .retain(|&v| !self.ranges.iter().any(|r| r.contains(v)));
+
+        self.refs.sort();
+        self.refs.dedup();
+    }
+}
+
+struct EvalFn<'a> {
+    values: &'a [Vec<CellValue>],
+    dirty: &'a [Vec<bool>],
+}
+
+impl<'a> EvalFn<'a> {
+    fn compute(&self, formula: &Formula) -> CellValue {
+        match formula {
+            Formula::Number(s) => CellValue::Number(s.parse().unwrap()),
+
+            Formula::Call(fn_kind, args) => match (fn_kind, args.as_slice()) {
+                (Fn::Add, [l, r]) => match (self.compute(l), self.compute(r)) {
+                    (CellValue::Number(l), CellValue::Number(r)) => CellValue::Number(l + r),
+                    (l, r) => {
+                        eprintln!("add error: {l:?}, {r:?}");
+                        CellValue::Null
+                    }
+                },
+                _ => CellValue::Invalid,
+            },
+
+            Formula::Ref(v) => {
+                let (y, x) = v.pair();
+                if self.dirty[y][x] {
+                    return CellValue::Recursive;
+                }
+                self.values[y][x].clone()
+            }
+
+            // Invalid
+            Formula::Range(_) => CellValue::Null,
+        }
+    }
+}
+
+struct TableData {
+    input: Vec<Vec<CellInput>>,
+    values: Vec<Vec<CellValue>>,
+    deps: Vec<Vec<FormulaDeps>>,
+    dirty: Vec<Vec<bool>>,
+    size: GridVec,
+}
+
+#[allow(unused)]
+impl TableData {
+    fn new() -> Self {
+        let size = GridVec::new(4, 4);
+        let (h, w) = size.pair();
+
+        Self {
+            input: vec![vec![CellInput::Null; w]; h],
+            values: vec![vec![CellValue::Null; w]; h],
+            deps: vec![vec![FormulaDeps::default(); w]; h],
+            dirty: vec![vec![true; w]; h],
+            size,
+        }
+    }
+
+    fn input_at(&self, v: impl Into<GridVec>) -> CellInput {
+        let (y, x) = Into::<GridVec>::into(v).pair();
+        self.input[y][x].clone()
+    }
+
+    fn value_at(&self, v: impl Into<GridVec>) -> CellValue {
+        let (y, x) = Into::<GridVec>::into(v).pair();
+        self.values[y][x]
+    }
+
+    fn set(&mut self, v: GridVec, s: &str) {
+        let input = match CellInput::parse(s) {
+            Some(it) => it,
+            None => {
+                #[cfg(test)]
+                eprintln!("input parse failed {s:?}");
+                CellInput::Null
+            }
+        };
+
+        let (y, x) = v.pair();
+        self.input[y][x] = input;
+    }
+
+    fn recompute(&mut self) {
+        init_deps(&mut self.deps, &self.input, self.size);
+        init_values(
+            &mut self.values,
+            &mut self.dirty,
+            &self.input,
+            &self.deps,
+            self.size,
+        );
+
+        debug_assert!({
+            let is_clean = self.dirty.iter().all(|row| row.iter().all(|&dirty| !dirty));
+            is_clean
+        });
+    }
+}
+
+fn init_deps(deps: &mut [Vec<FormulaDeps>], input: &[Vec<CellInput>], size: GridVec) {
+    let (h, w) = size.pair();
+
+    for y in 0..h {
+        for x in 0..w {
+            let f = match &input[y][x] {
+                CellInput::Formula(f) => f,
+                _ => continue,
+            };
+
+            deps[y][x].recompute(f);
+
+            #[cfg(test)]
+            {
+                let d = &deps[y][x];
+                if !d.is_empty() {
+                    let u = GridVec::from((y, x));
+                    eprintln!("dep: {u:?} ({f:?}) -> {:?} {:?}", d.refs, d.ranges);
+                }
+            }
+        }
+    }
+}
+
+fn init_values(
+    values: &mut [Vec<CellValue>],
+    dirty: &mut [Vec<bool>],
+    input: &[Vec<CellInput>],
+    deps: &[Vec<FormulaDeps>],
+    size: GridVec,
+) {
+    let (h, w) = size.pair();
+
+    for row in dirty.iter_mut() {
+        row.fill(true);
+    }
+
+    // 再帰処理のスタック
+    let mut stack = vec![];
+
+    // 再帰の状態を持つテーブル
+    // (0: 訪問前, 1: 訪問中, 2: 訪問後)
+    // (典型的にはWhite-Gray-Blackの3色を使う)
+    let mut state = vec![vec![0; w]; h];
+
+    // すべてのセルを逆順にスタックに積む
+    // (すべてのセルを前方から順に訪問するため)
+    for y in (0..h).rev() {
+        for x in (0..w).rev() {
+            stack.push(GridVec::from((y, x)));
+        }
+    }
+
+    while let Some(v) = stack.pop() {
+        let (y, x) = v.pair();
+        match state[y][x] {
+            0 => {
+                state[y][x] = 1;
+
+                // セル自身をスタックに積み直す
+                // (後で再訪し、帰りがけの処理を行う)
+                let v = GridVec::from((y, x));
+                stack.push(v);
+
+                // 依存しているセルをスタックに積む
+                // (依存しているセルの状態が 0:訪問前 であるときだけスタックに積む
+                //  そうでないセルをスタックに積まない理由は以下の通り:
+                //  - 訪問中のときは、循環参照が起こっている。そのセルをスタックに積むと無限ループに陥る
+                //  - 訪問後のときは、スタックに積んでも何も起きない)
+                for &v in deps[y][x].refs.iter().rev() {
+                    let (y, x) = v.pair();
+                    if state[y][x] == 0 {
+                        stack.push(v);
+                    }
+                }
+
+                for &range in deps[y][x].ranges.iter().rev() {
+                    for y in (range.s.y..range.t.y).rev() {
+                        for x in (range.s.x..range.t.x).rev() {
+                            let v = GridVec::new(y, x);
+                            let (y, x) = v.pair();
+                            if state[y][x] == 0 {
+                                stack.push(v);
+                            }
+                        }
+                    }
+                }
+            }
+            1 => {
+                state[y][x] = 2;
+
+                // セルの値を計算する
+                // (この時点で、セルが参照している他のセルの値はすべて計算済みのはず
+                //  そうでなければ循環参照が起こっている)
+                let (y, x) = v.pair();
+                let value = match input[y][x] {
+                    CellInput::Null => CellValue::Null,
+                    CellInput::Number(value) => CellValue::Number(value),
+                    CellInput::Formula(ref formula) => EvalFn { values, dirty }.compute(formula),
+                };
+                values[y][x] = value;
+                dirty[y][x] = false;
+            }
+            _ => {}
+        }
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::coord::*;
 
-    fn vec_list(formula: &Formula) -> Vec<GridVec> {
-        match *formula {
-            Formula::Number(_) => vec![],
-            Formula::Call(_, ref args) => args.iter().flat_map(|arg| vec_list(arg)).collect(),
-            Formula::Ref(v) => vec![v],
-            Formula::Range(range) => {
-                let mut v = vec![];
-                for y in range.s.y..range.t.y {
-                    for x in range.s.x..range.t.x {
-                        v.push(GridVec::new(y, x));
-                    }
-                }
-                v
-            }
-        }
-    }
+    fn make_table(cells: &[((usize, usize), &str)]) -> TableData {
+        let mut table = TableData::new();
 
-    struct EvalFn<'a> {
-        display: &'a [Vec<CellValue>],
-        done: &'a [Vec<bool>],
-    }
-
-    impl<'a> EvalFn<'a> {
-        fn compute(&self, formula: &Formula) -> CellValue {
-            match formula {
-                Formula::Number(s) => CellValue::Number(s.parse().unwrap()),
-
-                Formula::Call(fn_kind, args) => match (fn_kind, args.as_slice()) {
-                    (Fn::Add, [l, r]) => match (self.compute(l), self.compute(r)) {
-                        (CellValue::Number(l), CellValue::Number(r)) => CellValue::Number(l + r),
-                        (l, r) => {
-                            eprintln!("add error: {l:?}, {r:?}");
-                            CellValue::Null
-                        }
-                    },
-                    _ => CellValue::Invalid,
-                },
-
-                Formula::Ref(v) => {
-                    let (y, x) = (v.y as usize, v.x as usize);
-                    if !self.done[y][x] {
-                        return CellValue::Recursive;
-                    }
-                    self.display[y][x].clone()
-                }
-
-                // Invalid
-                Formula::Range(_) => CellValue::Null,
-            }
-        }
-    }
-
-    fn eval(formula: &Formula, display: &[Vec<CellValue>], done: &[Vec<bool>]) -> CellValue {
-        EvalFn { display, done }.compute(formula)
-    }
-
-    fn update(table: &[Vec<CellInput>], display: &mut [Vec<CellValue>]) {
-        let mut deps = vec![vec![vec![]; 8]; 8];
-
-        for y in 0..table.len() {
-            for x in 0..table[y].len() {
-                match &table[y][x] {
-                    CellInput::Formula(f) => {
-                        let vs = vec_list(f);
-                        if !vs.is_empty() {
-                            eprintln!("{y},{x} ({f:?}) -> {vs:?}");
-                        }
-                        deps[y][x].extend(vs);
-                    }
-                    _ => {}
-                }
-            }
+        for &(v, s) in cells {
+            table.set(v.into(), s);
         }
 
-        let mut pre = vec![vec![false; 8]; 8];
-        let mut stack = vec![];
-        for y in 0..table.len() {
-            for x in 0..table[y].len() {
-                for &u in deps[y][x].iter().rev() {
-                    if !pre[u.y as usize][u.x as usize] {
-                        pre[u.y as usize][u.x as usize] = true;
-                        stack.push(u);
-                    }
-                }
-
-                if !pre[y][x] {
-                    pre[y][x] = true;
-                    stack.push(GridVec::new(y as u32, x as u32));
-                }
-            }
-        }
-
-        let mut done = vec![vec![false; 8]; 8];
-        stack.reverse();
-        while let Some(pos) = stack.pop() {
-            let y = pos.y as usize;
-            let x = pos.x as usize;
-
-            let value = match table[y][x] {
-                CellInput::Null => CellValue::Null,
-                CellInput::Number(value) => CellValue::Number(value),
-                CellInput::Formula(ref formula) => eval(formula, &display, &done),
-            };
-            display[y][x] = value;
-            done[pos.y as usize][pos.x as usize] = true;
-        }
+        table.recompute();
+        table
     }
 
+    // add関数が使えること
     #[test]
-    fn test_compute_formula() {
-        let mut table = vec![vec![CellInput::Null; 8]; 8];
-        let mut display = vec![vec![CellValue::Null; 8]; 8];
+    fn test_add_fn() {
+        let table = make_table(&[((0, 0), "2"), ((0, 1), "3"), ((0, 2), "=add(A0, B0)")]);
+        let values = table.values;
 
-        // (0, 0) <- (0, 1)
-        table[0][0] = CellInput::Number(2.0);
-        table[0][1] = CellInput::Formula(Formula::Ref(GridVec::new(0, 0)));
-
-        // (1, 1) <- (1, 0)
-        table[1][1] = CellInput::Number(3.0);
-        table[1][0] = CellInput::Formula(Formula::Ref(GridVec::new(1, 1)));
-
-        // (2, 0) -> (2, 1) -> (2, 2) -> (2, 0) (recursive reference)
-        table[2][0] = CellInput::Formula(Formula::Ref(GridVec::new(2, 1)));
-        table[2][1] = CellInput::Formula(Formula::Ref(GridVec::new(2, 2)));
-        table[2][2] = CellInput::Formula(Formula::Ref(GridVec::new(2, 0)));
-
-        update(&table, &mut display);
-
-        assert_eq!(display[0][0], CellValue::Number(2.0));
-        assert_eq!(display[0][1], CellValue::Number(2.0));
-
-        assert_eq!(display[1][0], CellValue::Number(3.0));
-        assert_eq!(display[1][1], CellValue::Number(3.0));
-
-        assert_eq!(display[2][0], CellValue::Recursive);
-        assert_eq!(display[2][1], CellValue::Recursive);
-        assert_eq!(display[2][2], CellValue::Recursive);
+        assert_eq!(values[0][0], CellValue::Number(2.0));
+        assert_eq!(values[0][1], CellValue::Number(3.0));
+        assert_eq!(values[0][2], CellValue::Number(5.0));
     }
 
+    // 他のセルを参照できること。特に、順番が前にあるセルと後にあるセルの両方を参照できること
     #[test]
-    fn test_compute_add_fn() {
-        let mut table = vec![vec![CellInput::Null; 8]; 8];
-        let mut display = vec![vec![CellValue::Null; 8]; 8];
+    fn test_refs() {
+        let table = make_table(&[
+            // A0 -> B0 (後ろのセルへの依存)
+            ((0, 0), "=B0"),
+            ((0, 1), "1"),
+            // B1 -> A1 (前のセルへの依存)
+            ((1, 0), "2"),
+            ((1, 1), "=A1"),
+            // B2 -> A2, C2 (複数のセルへの依存)
+            ((2, 0), "3"),
+            ((2, 1), "=add(A2, C2)"),
+            ((2, 2), "4"),
+        ]);
+        let values = table.values;
 
-        table[0][0] = CellInput::Number(2.0);
-        table[0][1] = CellInput::Number(3.0);
-        table[0][2] = CellInput::Formula(Formula::parse("add(A0, B0)").unwrap());
+        assert_eq!(values[0][0], CellValue::Number(1.0));
+        assert_eq!(values[0][1], CellValue::Number(1.0));
 
-        update(&table, &mut display);
+        assert_eq!(values[1][0], CellValue::Number(2.0));
+        assert_eq!(values[1][1], CellValue::Number(2.0));
 
-        assert_eq!(display[0][0], CellValue::Number(2.0));
-        assert_eq!(display[0][1], CellValue::Number(3.0));
-        assert_eq!(display[0][2], CellValue::Number(5.0));
+        assert_eq!(values[2][1], CellValue::Number(3.0 + 4.0));
+    }
+
+    // 推移的に他のセルを参照できること
+    #[test]
+    fn test_transitive_refs() {
+        let table = make_table(&[
+            // A0 -> B0 -> C0
+            ((0, 0), "=B0"),
+            ((0, 1), "=C0"),
+            ((0, 2), "3"),
+        ]);
+        let values = table.values;
+
+        assert_eq!(values[0][0], CellValue::Number(3.0));
+        assert_eq!(values[0][1], CellValue::Number(3.0));
+        assert_eq!(values[0][2], CellValue::Number(3.0));
+    }
+
+    // 循環参照がエラーになること
+    #[test]
+    fn test_recurse() {
+        let table = make_table(&[
+            // A0 -> B0 -> C0 -> A0
+            ((0, 0), "=B0"),
+            ((0, 1), "=C0"),
+            ((0, 2), "=A0"),
+        ]);
+        let values = table.values;
+
+        assert_eq!(values[0][0], CellValue::Recursive);
+        assert_eq!(values[0][1], CellValue::Recursive);
+        assert_eq!(values[0][2], CellValue::Recursive);
     }
 }

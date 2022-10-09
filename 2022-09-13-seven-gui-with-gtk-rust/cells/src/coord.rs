@@ -1,7 +1,7 @@
 use std::fmt::Debug;
 
 /// グリッド上のベクトル
-#[derive(Clone, Copy, Default, PartialEq, PartialOrd)]
+#[derive(Clone, Copy, Default, PartialEq, Eq, PartialOrd, Ord)]
 pub(crate) struct GridVec {
     pub(crate) y: u32,
     pub(crate) x: u32,
@@ -10,6 +10,19 @@ pub(crate) struct GridVec {
 impl GridVec {
     pub(crate) fn new(y: u32, x: u32) -> Self {
         GridVec { y, x }
+    }
+
+    pub(crate) fn pair(self) -> (usize, usize) {
+        (self.y as usize, self.x as usize)
+    }
+}
+
+impl From<(usize, usize)> for GridVec {
+    fn from((y, x): (usize, usize)) -> Self {
+        GridVec {
+            y: y as u32,
+            x: x as u32,
+        }
     }
 }
 
@@ -42,7 +55,7 @@ impl Debug for GridVec {
 }
 
 /// グリッド上の範囲
-#[derive(Clone, Copy, Default)]
+#[derive(Clone, Copy, Default, PartialEq, Eq)]
 pub(crate) struct GridRange {
     pub(crate) s: GridVec,
     pub(crate) t: GridVec,
@@ -51,6 +64,10 @@ pub(crate) struct GridRange {
 impl GridRange {
     pub(crate) fn new(s: GridVec, t: GridVec) -> Self {
         GridRange { s, t }
+    }
+
+    pub(crate) fn contains(self, v: GridVec) -> bool {
+        self.s <= v && v <= self.t
     }
 }
 
