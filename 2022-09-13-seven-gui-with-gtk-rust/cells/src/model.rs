@@ -134,9 +134,62 @@ impl<'a> EvalFn<'a> {
                     }
                     _ => CellValue::Invalid,
                 },
-                _ => CellValue::Invalid,
-            },
+                (Fn::Sum, [Formula::Range(range)]) => {
+                    let mut sum = 0.0;
+                    for y in range.s.y..range.t.y {
+                        for x in range.s.x..range.t.x {
+                            let (y, x) = GridVec::new(y, x).pair();
+                            if self.dirty[y][x] {
+                                return CellValue::Recursive;
+                            }
 
+                            match self.values[y][x] {
+                                CellValue::Null => continue,
+                                CellValue::Number(n) => sum += n,
+                                _ => {
+                                    #[cfg(test)]
+                                    eprintln!("invalid value in range {:?}", self.values[y][x]);
+                                    return CellValue::Invalid;
+                                }
+                            }
+                        }
+                    }
+                    CellValue::Number(sum)
+                }
+                (Fn::Prod, [Formula::Range(range)]) => {
+                    let mut prod = 1.0;
+                    for y in range.s.y..range.t.y {
+                        for x in range.s.x..range.t.x {
+                            let (y, x) = GridVec::new(y, x).pair();
+                            if self.dirty[y][x] {
+                                return CellValue::Recursive;
+                            }
+
+                            match self.values[y][x] {
+                                CellValue::Null => continue,
+                                CellValue::Number(n) => {
+                                    if n.abs() < 1e-9 {
+                                        prod = 0.0;
+                                        break;
+                                    }
+                                    prod *= n;
+                                }
+                                _ => {
+                                    #[cfg(test)]
+                                    eprintln!("invalid value in range {:?}", self.values[y][x]);
+                                    return CellValue::Invalid;
+                                }
+                            }
+                        }
+                    }
+                    CellValue::Number(prod)
+                }
+                _ => {
+                    #[cfg(test)]
+                    eprintln!("invalid call {:?}", formula);
+                    CellValue::Invalid
+                }
+            },
             Formula::Ref(v) => {
                 let (y, x) = v.pair();
                 if self.dirty[y][x] {
@@ -144,9 +197,11 @@ impl<'a> EvalFn<'a> {
                 }
                 self.values[y][x].clone()
             }
-
-            // Invalid
-            Formula::Range(_) => CellValue::Null,
+            Formula::Range(_) => {
+                #[cfg(test)]
+                eprintln!("invalid formula {formula:?}");
+                CellValue::Invalid
+            }
         }
     }
 }
@@ -475,5 +530,46 @@ mod tests {
         // ゼロ除算エラーが起こること
         assert_eq!(values[1][5], CellValue::DividedByZero);
         assert_eq!(values[1][6], CellValue::DividedByZero);
+    }
+
+    // 組み込みの集約関数が使えること
+    #[test]
+    fn test_aggregation_fn() {
+        let table = make_table(
+            (3, 8),
+            &[
+                // A-H
+                ((0, 0), "31"),
+                ((0, 1), "41"),
+                ((0, 2), "59"),
+                ((0, 3), "26"),
+                ((0, 4), "53"),
+                ((0, 5), "58"),
+                ((0, 6), "97"),
+                ((0, 7), "0"),
+                // sum
+                ((1, 0), "=sum(A0:A0)"),
+                ((1, 1), "=sum(A0:B0)"),
+                ((1, 2), "=sum(A0:H0)"),
+                // prod
+                ((2, 0), "=prod(A0:A0)"),
+                ((2, 1), "=prod(A0:B0)"),
+                ((2, 2), "=prod(A0:H0)"),
+            ],
+        );
+        let values = table.values;
+
+        // sum:
+        assert_eq!(values[1][0], CellValue::Number(31.0));
+        assert_eq!(values[1][1], CellValue::Number(31.0 + 41.0));
+        assert_eq!(
+            values[1][2],
+            CellValue::Number(31.0 + 41.0 + 59.0 + 26.0 + 53.0 + 58.0 + 97.0)
+        );
+
+        // prod:
+        assert_eq!(values[2][0], CellValue::Number(31.0));
+        assert_eq!(values[2][1], CellValue::Number(31.0 * 41.0));
+        assert_eq!(values[2][2], CellValue::Number(0.0));
     }
 }

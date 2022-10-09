@@ -179,6 +179,12 @@ fn parse_expr(tokens: &mut VecDeque<Token>) -> Option<Formula> {
                     Some(Token::Ref(t)) => t,
                     _ => return None,
                 };
+
+                // 範囲記法はinclusive (終端を含む)
+                // 一方、GridRangeはexclude (終端を含まない)
+                // 境界を1ずらす必要がある
+                let t = t + GridVec::new(1, 1);
+
                 Some(Formula::Range(GridRange::new(s, t)))
             }
             _ => Some(Formula::Ref(s)),
@@ -228,7 +234,7 @@ mod tests {
         assert_eq!(p("42.159"), r#"Number("42.159")"#);
 
         assert_eq!(p("A0"), "Ref((0, 0))");
-        assert_eq!(p("A1:B2"), "Range((1, 0)-(2, 1))");
+        assert_eq!(p("A1:B2"), "Range((1, 0)-(3, 2))");
 
         assert_eq!(p("( 42.0 )"), r#"Number("42.0")"#);
 
@@ -242,7 +248,7 @@ mod tests {
         assert_eq!(p("add(A1, 1)"), r#"Call(Add, [Ref((1, 0)), Number("1")])"#);
         assert_eq!(
             p("div(sum(A1:A2), 2)"),
-            r#"Call(Divide, [Call(Sum, [Range((1, 0)-(2, 0))]), Number("2")])"#
+            r#"Call(Divide, [Call(Sum, [Range((1, 0)-(3, 1))]), Number("2")])"#
         );
         assert_eq!(p("add("), "None");
         assert_eq!(p("add )"), "None");
