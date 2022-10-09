@@ -4,8 +4,39 @@ use std::{collections::VecDeque, fmt::Debug};
 #[derive(Clone, Debug)]
 pub(crate) enum Formula {
     Number(String),
+    Call(Fn, Vec<Formula>),
     Ref(GridVec),
     Range(GridRange),
+}
+
+#[derive(Clone, Debug)]
+pub(crate) enum Fn {
+    Add,
+    Subtract,
+    Multiply,
+    Divide,
+    Modulo,
+    Sum,
+    Prod,
+}
+
+impl Fn {
+    fn parse(s: &str) -> Option<Fn> {
+        let it = match s {
+            "add" => Fn::Add,
+            "sub" => Fn::Subtract,
+            "mul" => Fn::Multiply,
+            "div" => Fn::Divide,
+            "mod" => Fn::Modulo,
+            "sum" => Fn::Sum,
+            "prod" => Fn::Prod,
+            _ => {
+                eprintln!("unknown fn '{}'", s);
+                return None;
+            }
+        };
+        Some(it)
+    }
 }
 
 fn parse_ref(s: &str) -> Option<GridVec> {
@@ -99,7 +130,40 @@ fn tokenize(s: &str) -> Option<Vec<Token>> {
 fn parse_expr(tokens: &mut VecDeque<Token>) -> Option<Formula> {
     match tokens.pop_front()? {
         Token::Number(value) => Some(Formula::Number(value)),
-        Token::Ident(_) => todo!("function application"),
+        Token::Ident(name) => {
+            let fn_kind = Fn::parse(&name)?;
+
+            match tokens.pop_front() {
+                Some(Token::LeftParen) => {}
+                _ => return None,
+            }
+
+            let mut args = vec![];
+
+            match tokens.get(0) {
+                Some(Token::RightParen) => {}
+                _ => loop {
+                    let arg = parse_expr(tokens)?;
+                    args.push(arg);
+
+                    match tokens.get(0) {
+                        Some(Token::RightParen) => break,
+                        Some(Token::Comma) => {
+                            tokens.pop_front();
+                            continue;
+                        }
+                        _ => return None,
+                    }
+                },
+            }
+
+            match tokens.pop_front() {
+                Some(Token::RightParen) => {}
+                _ => return None,
+            }
+
+            Some(Formula::Call(fn_kind, args))
+        }
         Token::Ref(s) => match tokens.get(0) {
             Some(Token::Colon) => {
                 tokens.pop_front();
@@ -138,6 +202,12 @@ fn parse_formula(s: &str) -> Option<Formula> {
     Some(f)
 }
 
+impl Formula {
+    pub(crate) fn parse(s: &str) -> Option<Formula> {
+        parse_formula(s)
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::parse_formula;
@@ -167,5 +237,16 @@ mod tests {
         assert_eq!(p("A0:"), "None");
         assert_eq!(p("A0::"), "None");
         assert_eq!(p(":A0"), "None");
+
+        assert_eq!(p("add(A1, 1)"), r#"Call(Add, [Ref((1, 0)), Number("1")])"#);
+        assert_eq!(
+            p("div(sum(A1:A2), 2)"),
+            r#"Call(Divide, [Call(Sum, [Range((1, 0)-(2, 0))]), Number("2")])"#
+        );
+        assert_eq!(p("add("), "None");
+        assert_eq!(p("add )"), "None");
+        assert_eq!(p("(add)"), "None");
+        assert_eq!(p("(add)()"), "None");
+        assert_eq!(p("unknown(1, 2))"), "None");
     }
 }
