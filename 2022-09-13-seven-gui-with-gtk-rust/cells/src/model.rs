@@ -10,6 +10,7 @@ enum CellValue {
     // Bad
     Invalid,
     Recursive,
+    DividedByZero,
 }
 
 impl Debug for CellValue {
@@ -19,6 +20,7 @@ impl Debug for CellValue {
             CellValue::Number(value) => write!(f, "{value:.2}"),
             CellValue::Invalid => write!(f, "#invalid"),
             CellValue::Recursive => write!(f, "#recursive"),
+            CellValue::DividedByZero => write!(f, "#DIV/0!"),
         }
     }
 }
@@ -105,12 +107,32 @@ impl<'a> EvalFn<'a> {
             Formula::Number(s) => CellValue::Number(s.parse().unwrap()),
 
             Formula::Call(fn_kind, args) => match (fn_kind, args.as_slice()) {
-                (Fn::Add, [l, r]) => match (self.compute(l), self.compute(r)) {
-                    (CellValue::Number(l), CellValue::Number(r)) => CellValue::Number(l + r),
-                    (l, r) => {
-                        eprintln!("add error: {l:?}, {r:?}");
-                        CellValue::Null
+                (Fn::Add, [l, r]) => number_binary(self.compute(l), self.compute(r), |l, r| l + r),
+                (Fn::Subtract, [l, r]) => {
+                    number_binary(self.compute(l), self.compute(r), |l, r| l - r)
+                }
+                (Fn::Multiply, [l, r]) => {
+                    number_binary(self.compute(l), self.compute(r), |l, r| l * r)
+                }
+                (Fn::Divide, [l, r]) => match (self.compute(l), self.compute(r)) {
+                    (CellValue::Number(l), CellValue::Number(r)) => {
+                        if r.abs() > 1e-9 {
+                            CellValue::Number(l / r)
+                        } else {
+                            CellValue::DividedByZero
+                        }
                     }
+                    _ => CellValue::Invalid,
+                },
+                (Fn::Modulo, [l, r]) => match (self.compute(l), self.compute(r)) {
+                    (CellValue::Number(l), CellValue::Number(r)) => {
+                        if r.abs() > 1e-9 {
+                            CellValue::Number(l % r)
+                        } else {
+                            CellValue::DividedByZero
+                        }
+                    }
+                    _ => CellValue::Invalid,
                 },
                 _ => CellValue::Invalid,
             },
@@ -129,6 +151,21 @@ impl<'a> EvalFn<'a> {
     }
 }
 
+fn number_binary(
+    l: CellValue,
+    r: CellValue,
+    combinator: impl std::ops::Fn(f64, f64) -> f64,
+) -> CellValue {
+    match (l, r) {
+        (CellValue::Number(l), CellValue::Number(r)) => CellValue::Number(combinator(l, r)),
+        _ => {
+            #[cfg(test)]
+            eprintln!("invalid pair: {l:?}, {r:?}");
+            CellValue::Invalid
+        }
+    }
+}
+
 struct TableData {
     input: Vec<Vec<CellInput>>,
     values: Vec<Vec<CellValue>>,
@@ -139,8 +176,7 @@ struct TableData {
 
 #[allow(unused)]
 impl TableData {
-    fn new() -> Self {
-        let size = GridVec::new(4, 4);
+    fn new(size: GridVec) -> Self {
         let (h, w) = size.pair();
 
         Self {
@@ -305,8 +341,8 @@ fn init_values(
 mod tests {
     use super::*;
 
-    fn make_table(cells: &[((usize, usize), &str)]) -> TableData {
-        let mut table = TableData::new();
+    fn make_table((h, w): (usize, usize), cells: &[((usize, usize), &str)]) -> TableData {
+        let mut table = TableData::new(GridVec::from((h, w)));
 
         for &(v, s) in cells {
             table.set(v.into(), s);
@@ -319,29 +355,44 @@ mod tests {
     // add関数が使えること
     #[test]
     fn test_add_fn() {
-        let table = make_table(&[((0, 0), "2"), ((0, 1), "3"), ((0, 2), "=add(A0, B0)")]);
+        let table = make_table(
+            (3, 3),
+            &[
+                // C0 = A0 + B0
+                ((0, 0), "2"),
+                ((0, 1), "3"),
+                ((0, 2), "=add(A0, B0)"),
+            ],
+        );
         let values = table.values;
 
         assert_eq!(values[0][0], CellValue::Number(2.0));
         assert_eq!(values[0][1], CellValue::Number(3.0));
         assert_eq!(values[0][2], CellValue::Number(5.0));
+
+        // その他のセルはnullになっているはず
+        assert_eq!(values[1][0], CellValue::Null);
+        assert_eq!(values[2][2], CellValue::Null);
     }
 
     // 他のセルを参照できること。特に、順番が前にあるセルと後にあるセルの両方を参照できること
     #[test]
     fn test_refs() {
-        let table = make_table(&[
-            // A0 -> B0 (後ろのセルへの依存)
-            ((0, 0), "=B0"),
-            ((0, 1), "1"),
-            // B1 -> A1 (前のセルへの依存)
-            ((1, 0), "2"),
-            ((1, 1), "=A1"),
-            // B2 -> A2, C2 (複数のセルへの依存)
-            ((2, 0), "3"),
-            ((2, 1), "=add(A2, C2)"),
-            ((2, 2), "4"),
-        ]);
+        let table = make_table(
+            (3, 3),
+            &[
+                // A0 -> B0 (後ろのセルへの依存)
+                ((0, 0), "=B0"),
+                ((0, 1), "1"),
+                // B1 -> A1 (前のセルへの依存)
+                ((1, 0), "2"),
+                ((1, 1), "=A1"),
+                // B2 -> A2, C2 (複数のセルへの依存)
+                ((2, 0), "3"),
+                ((2, 1), "=add(A2, C2)"),
+                ((2, 2), "4"),
+            ],
+        );
         let values = table.values;
 
         assert_eq!(values[0][0], CellValue::Number(1.0));
@@ -356,12 +407,15 @@ mod tests {
     // 推移的に他のセルを参照できること
     #[test]
     fn test_transitive_refs() {
-        let table = make_table(&[
-            // A0 -> B0 -> C0
-            ((0, 0), "=B0"),
-            ((0, 1), "=C0"),
-            ((0, 2), "3"),
-        ]);
+        let table = make_table(
+            (3, 3),
+            &[
+                // A0 -> B0 -> C0
+                ((0, 0), "=B0"),
+                ((0, 1), "=C0"),
+                ((0, 2), "3"),
+            ],
+        );
         let values = table.values;
 
         assert_eq!(values[0][0], CellValue::Number(3.0));
@@ -372,16 +426,54 @@ mod tests {
     // 循環参照がエラーになること
     #[test]
     fn test_recurse() {
-        let table = make_table(&[
-            // A0 -> B0 -> C0 -> A0
-            ((0, 0), "=B0"),
-            ((0, 1), "=C0"),
-            ((0, 2), "=A0"),
-        ]);
+        let table = make_table(
+            (3, 3),
+            &[
+                // A0 -> B0 -> C0 -> A0
+                ((0, 0), "=B0"),
+                ((0, 1), "=C0"),
+                ((0, 2), "=A0"),
+            ],
+        );
         let values = table.values;
 
         assert_eq!(values[0][0], CellValue::Recursive);
         assert_eq!(values[0][1], CellValue::Recursive);
         assert_eq!(values[0][2], CellValue::Recursive);
+    }
+
+    // 組み込みの算術関数が使えること
+    #[test]
+    fn test_arithmetic_fn() {
+        let table = make_table(
+            (2, 7),
+            &[
+                ((0, 0), "13"),
+                ((0, 1), "3"),
+                // Ops
+                ((0, 2), "=add(A0, B0)"),
+                ((0, 3), "=sub(A0, B0)"),
+                ((0, 4), "=mul(A0, B0)"),
+                ((0, 5), "=div(A0, B0)"),
+                ((0, 6), "=mod(A0, B0)"),
+                // Div by zero
+                ((1, 5), "=div(A0, 0)"),
+                ((1, 6), "=mod(A0, 0)"),
+            ],
+        );
+        let values = table.values;
+
+        assert_eq!(values[0][0], CellValue::Number(13.0));
+        assert_eq!(values[0][1], CellValue::Number(3.0));
+
+        assert_eq!(values[0][2], CellValue::Number(13.0 + 3.0));
+        assert_eq!(values[0][3], CellValue::Number(13.0 - 3.0));
+        assert_eq!(values[0][4], CellValue::Number(13.0 * 3.0));
+        assert_eq!(values[0][5], CellValue::Number(13.0 / 3.0));
+        assert_eq!(values[0][6], CellValue::Number((13 % 3) as f64));
+
+        // ゼロ除算エラーが起こること
+        assert_eq!(values[1][5], CellValue::DividedByZero);
+        assert_eq!(values[1][6], CellValue::DividedByZero);
     }
 }
