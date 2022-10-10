@@ -1,5 +1,5 @@
 use crate::{coord::*, formula::*};
-use std::fmt::Debug;
+use std::{collections::HashSet, fmt::Debug};
 
 #[allow(unused)]
 #[derive(Clone, Copy, PartialEq)]
@@ -55,16 +55,33 @@ struct FormulaDeps {
     ranges: Vec<GridRange>,
 }
 
+impl GridRange {
+    fn iter_cells(self: GridRange) -> impl Iterator<Item = GridVec> {
+        let range = self;
+        (range.s.y..range.t.y)
+            .flat_map(move |y| (range.s.x..range.t.x).map(move |x| GridVec::new(y, x)))
+    }
+}
+
 impl FormulaDeps {
-    #[cfg(test)]
     fn is_empty(&self) -> bool {
         self.refs.is_empty() && self.ranges.is_empty()
     }
 
-    fn recompute(&mut self, formula: &Formula) {
-        // clear:
+    fn iter_cells<'a>(&'a self) -> impl Iterator<Item = GridVec> + 'a {
+        self.ranges
+            .iter()
+            .flat_map(|range| range.iter_cells())
+            .chain(self.refs.iter().copied())
+    }
+
+    fn clear(&mut self) {
         self.refs.clear();
         self.ranges.clear();
+    }
+
+    fn recompute(&mut self, formula: &Formula) {
+        self.clear();
 
         // extend:
         {
@@ -222,10 +239,21 @@ fn number_binary(
 }
 
 struct TableData {
+    /// input[v] = (セルvに入力された値または数式)
     input: Vec<Vec<CellInput>>,
+    /// values[v] = (セルvの数式を評価した値)
     values: Vec<Vec<CellValue>>,
+    /// deps[v] = (セルvの数式が他のどのセルに対する参照を持つかを計算したもの)
     deps: Vec<Vec<FormulaDeps>>,
+    /// dirty[v] = (true: 再評価が必要, false: 評価済み)
+    ///
+    /// `dirty[v] == true` であるセルの `values[v]` を参照してはいけない
     dirty: Vec<Vec<bool>>,
+    /// back_deps[v] = (vを参照する数式を持つセルの集合)
+    back_deps: Vec<Vec<HashSet<GridVec>>>,
+    /// 最後の更新より後に入力が変更されたセルの集合
+    dirty_set: HashSet<GridVec>,
+    /// テーブルの大きさ。`size = (h, w)` はテーブルの行数がh、列数がwであることを表す
     size: GridVec,
 }
 
@@ -239,6 +267,8 @@ impl TableData {
             values: vec![vec![CellValue::Null; w]; h],
             deps: vec![vec![FormulaDeps::default(); w]; h],
             dirty: vec![vec![true; w]; h],
+            back_deps: vec![vec![HashSet::new(); w]; h],
+            dirty_set: HashSet::new(),
             size,
         }
     }
@@ -265,10 +295,204 @@ impl TableData {
 
         let (y, x) = v.pair();
         self.input[y][x] = input;
+        self.dirty_set.insert(v);
     }
 
+    /// 差分更新を行う
+    fn update(&mut self) {
+        // 手順:
+        // 入力が変更されたセルの依存関係を再計算する
+        //      そのセルが参照していた他のセルから、そのセル自身へのback_depを取り除く
+        //      そのセルのdepsを更新する
+        //      そのセルが参照している他のセルに、そのセル自身へのback_depを加える
+        //
+        // 次に、再評価が必要なセルの集合を用意する。
+        //      初期値は入力が変更されたセルの集合に等しい
+        //      なお再評価が必要な集合にセルを加えるのはセル1つにつき最大1回までに限る
+        // 再評価が必要なセルの集合が空でなくなるまで、以下の繰り返し処理を行う
+        // 再評価が必要なセルをdirty状態にする
+        // 再評価が必要なセル同士の依存関係に従って、それらの更新順序を決定する
+        //      参照されているセルを先に、参照しているセルを後に更新する
+        //      (循環参照がある場合はどちらが先になってもよい)
+        // その順番でセルの値を評価し、dirty状態をクリアする
+        //      計算値が変化した場合、それを参照しているセルを再評価が必要なセルの集合に、次の繰り返しの際に加える
+        // 最終的に集合に入っていてたセルはdirtyでない状態になる
+        //
+        // 備考:
+        // 全体の最悪計算量はO((WH)^2)ぐらいある
+        // 入力が変更されたセルが最大O(WH)、それらを推移的に参照しているセルを含めても最大O(WH)
+        // セル1個あたりのback_depsの更新がO(WH)
+        // セル1個あたりの評価時の計算量がO(WH) (sumの範囲が広いとき)
+        // よくあるケースでは高速に動く
+        //      入力が変更されたセルが1個だけで、それを推移的に参照しているセルが少ないとき
+
+        #[cfg(test)]
+        eprintln!("update {:?}", {
+            let mut dirty_cells = self.dirty_set.iter().collect::<Vec<_>>();
+            dirty_cells.sort();
+            dirty_cells
+        });
+
+        let mut work_set = self.dirty_set.clone();
+        let mut next_set: HashSet<GridVec> = HashSet::new();
+        let mut done: HashSet<GridVec> = HashSet::new();
+
+        let (h, w) = self.size.pair();
+
+        // 依存関係の更新:
+        {
+            for &v in &self.dirty_set {
+                let (y, x) = v.pair();
+
+                #[cfg(test)]
+                let mut old_refs = self.deps[y][x].iter_cells().collect::<HashSet<_>>();
+
+                for w in self.deps[y][x].iter_cells() {
+                    let (wy, wx) = w.pair();
+                    let removed = self.back_deps[wy][wx].remove(&v);
+                    debug_assert!(removed);
+                }
+
+                match &self.input[y][x] {
+                    CellInput::Formula(f) => {
+                        self.deps[y][x].recompute(f);
+
+                        for w in self.deps[y][x].iter_cells() {
+                            let (wy, wx) = w.pair();
+                            self.back_deps[wy][wx].insert(v);
+                        }
+
+                        #[cfg(test)]
+                        {
+                            // 参照の差分を出力する
+                            let mut new_refs = vec![];
+                            for v in self.deps[y][x].iter_cells() {
+                                if !old_refs.remove(&v) {
+                                    new_refs.push(v);
+                                }
+                            }
+                            let mut old_refs = old_refs.iter().collect::<Vec<_>>();
+                            old_refs.sort();
+                            if !(old_refs.is_empty() && new_refs.is_empty()) {
+                                eprintln!("dep changed: {v:?} -> +{:?} -{:?}", new_refs, old_refs);
+                            }
+                        }
+                    }
+                    _ => {
+                        self.deps[y][x].clear();
+
+                        #[cfg(test)]
+                        if !old_refs.is_empty() {
+                            let mut old_refs = old_refs.iter().collect::<Vec<_>>();
+                            old_refs.sort();
+                            eprintln!("dep changed: {v:?} -> -{:?} (clear)", old_refs);
+                        }
+                    }
+                }
+            }
+        }
+
+        // 再評価:
+        {
+            // 再帰処理のスタック
+            let mut stack: Vec<GridVec> = vec![];
+
+            // 再帰の状態を持つテーブル
+            // (0: 訪問前, 1: 訪問中, 2: 訪問後)
+            let mut state = vec![vec![0; w]; h];
+
+            while !work_set.is_empty() {
+                debug_assert!(stack.is_empty());
+
+                done.extend(&work_set);
+                stack.extend(&work_set);
+
+                for &v in &stack {
+                    let (y, x) = v.pair();
+                    self.dirty[y][x] = true;
+                }
+
+                while let Some(v) = stack.pop() {
+                    let (y, x) = v.pair();
+                    match state[y][x] {
+                        0 => {
+                            state[y][x] = 1;
+
+                            let v = GridVec::from((y, x));
+                            stack.push(v);
+
+                            for v in self.deps[y][x].iter_cells() {
+                                let (y, x) = v.pair();
+                                if work_set.contains(&v) && state[y][x] == 0 {
+                                    stack.push(v);
+                                }
+                            }
+                        }
+                        1 => {
+                            state[y][x] = 2;
+
+                            debug_assert!(self.dirty[y][x]);
+                            let old_value = self.values[y][x];
+
+                            let (y, x) = v.pair();
+                            let value = match self.input[y][x] {
+                                CellInput::Null => CellValue::Null,
+                                CellInput::Number(value) => CellValue::Number(value),
+                                CellInput::Formula(ref formula) => EvalFn {
+                                    values: &self.values,
+                                    dirty: &self.dirty,
+                                }
+                                .compute(formula),
+                            };
+                            self.values[y][x] = value;
+                            self.dirty[y][x] = false;
+
+                            if value != old_value {
+                                for &w in &self.back_deps[y][x] {
+                                    if !done.contains(&w) {
+                                        #[cfg(test)]
+                                        eprintln!("propagate {v:?} -> {w:?}");
+                                        next_set.insert(w);
+                                    }
+                                }
+                            }
+
+                            #[cfg(test)]
+                            {
+                                if value != old_value {
+                                    eprintln!("eval {v:?} changed ({old_value:?} -> {value:?})");
+                                } else {
+                                    eprintln!("eval {v:?} unchanged ({value:?})");
+                                }
+                            }
+                        }
+                        _ => {}
+                    }
+                }
+
+                std::mem::swap(&mut next_set, &mut work_set);
+                next_set.clear();
+            }
+        }
+
+        debug_assert!({
+            let is_clean = self.dirty.iter().all(|row| row.iter().all(|&dirty| !dirty));
+            is_clean
+        });
+        self.dirty_set.clear();
+    }
+
+    /// 全体を更新する
     fn recompute(&mut self) {
-        init_deps(&mut self.deps, &self.input, self.size);
+        let (h, w) = self.size.pair();
+        for y in 0..h {
+            for x in 0..w {
+                self.back_deps[y][x].clear();
+            }
+        }
+
+        init_deps(&mut self.deps, &mut self.back_deps, &self.input, self.size);
+
         init_values(
             &mut self.values,
             &mut self.dirty,
@@ -281,10 +505,16 @@ impl TableData {
             let is_clean = self.dirty.iter().all(|row| row.iter().all(|&dirty| !dirty));
             is_clean
         });
+        self.dirty_set.clear();
     }
 }
 
-fn init_deps(deps: &mut [Vec<FormulaDeps>], input: &[Vec<CellInput>], size: GridVec) {
+fn init_deps(
+    deps: &mut [Vec<FormulaDeps>],
+    back_deps: &mut [Vec<HashSet<GridVec>>],
+    input: &[Vec<CellInput>],
+    size: GridVec,
+) {
     let (h, w) = size.pair();
 
     for y in 0..h {
@@ -295,6 +525,19 @@ fn init_deps(deps: &mut [Vec<FormulaDeps>], input: &[Vec<CellInput>], size: Grid
             };
 
             deps[y][x].recompute(f);
+
+            // 逆方向の依存関係を記録する
+            {
+                let d = &deps[y][x];
+                if !d.is_empty() {
+                    let u = GridVec::from((y, x));
+
+                    for w in deps[y][x].iter_cells() {
+                        let (wy, wx) = w.pair();
+                        back_deps[wy][wx].insert(u);
+                    }
+                }
+            }
 
             #[cfg(test)]
             {
@@ -571,5 +814,68 @@ mod tests {
         assert_eq!(values[2][0], CellValue::Number(31.0));
         assert_eq!(values[2][1], CellValue::Number(31.0 * 41.0));
         assert_eq!(values[2][2], CellValue::Number(0.0));
+    }
+
+    // 更新が伝播されること
+    #[test]
+    fn test_change_propagation() {
+        let mut table = make_table(
+            (4, 4),
+            &[
+                // B0 = A0 * 2
+                ((0, 0), "1"),
+                ((0, 1), "=mul(A0, 2)"),
+                // C1 = A1 + B1
+                // D1 = A1 + C1
+                ((1, 0), "0"),
+                ((1, 1), "0"),
+                ((1, 2), "=add(A1, B1)"),
+                ((1, 3), "=add(A1, C1)"),
+            ],
+        );
+        assert_eq!(table.values[0][1], CellValue::Number(2.0));
+
+        table.set((0, 0).into(), "2");
+        table.update();
+        assert_eq!(table.values[0][1], CellValue::Number(4.0));
+
+        table.set((1, 0).into(), "3");
+        table.set((1, 1).into(), "5");
+        table.update();
+        assert_eq!(table.values[1][2], CellValue::Number(3.0 + 5.0));
+        assert_eq!(table.values[1][3], CellValue::Number(3.0 + 8.0));
+    }
+
+    // 更新が伝播されること
+    #[test]
+    fn test_formula_change() {
+        let mut table = make_table(
+            (1, 5),
+            &[
+                // D0 = A0 + B0
+                // E0 = A0 + C0
+                ((0, 0), "7"),
+                ((0, 1), "11"),
+                ((0, 2), "13"),
+                ((0, 3), "=add(A0, B0)"),
+                ((0, 4), "=add(A0, C0)"),
+            ],
+        );
+        assert_eq!(table.values[0][3], CellValue::Number(18.0));
+
+        // D0 = B0 * C0 (A0の参照がなくなり、C0の参照が増える)
+        table.set((0, 3).into(), "=mul(A0, C0)");
+        // 数式ではなくなる
+        table.set((0, 4).into(), "42");
+        table.update();
+
+        assert_eq!(table.values[0][3], CellValue::Number(7.0 * 13.0));
+        assert_eq!(table.values[0][4], CellValue::Number(42.0));
+
+        // 増えた参照の変更を追跡できていることを確認する
+        table.set((0, 0).into(), "17");
+        table.update();
+
+        assert_eq!(table.values[0][3], CellValue::Number(17.0 * 13.0));
     }
 }

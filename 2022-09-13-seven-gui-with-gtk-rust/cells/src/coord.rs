@@ -1,7 +1,7 @@
 use std::fmt::Debug;
 
 /// グリッド上のベクトル
-#[derive(Clone, Copy, Default, PartialEq, Eq, PartialOrd, Ord)]
+#[derive(Clone, Copy, Default, PartialEq, Eq, PartialOrd, Ord, Hash)]
 pub(crate) struct GridVec {
     pub(crate) y: u32,
     pub(crate) x: u32,
