@@ -23,11 +23,53 @@ enum Msg {
 #[derive(Default)]
 struct State;
 
+struct Sheet {
+    #[allow(unused)]
+    size: GridVec,
+    inputs: Vec<Vec<String>>,
+
+    editor_rect: Option<gtk::Rectangle>,
+    edit_state: Option<EditState>,
+}
+
+impl Sheet {
+    fn new(size: GridVec) -> Self {
+        let (h, w) = size.pair();
+
+        Self {
+            size,
+            inputs: vec![vec!["".into(); h]; w],
+            editor_rect: None,
+            edit_state: None,
+        }
+    }
+}
+
+struct EditState {
+    pos: GridVec,
+    on_changed: Box<dyn Fn(&mut Sheet, &EditState, String) + 'static>,
+}
+
 fn nth_alphabet(n: usize) -> char {
     (b'A' + n as u8) as char
 }
 
 fn build_ui(application: &gtk::Application) {
+    let row_count = 100;
+    let column_count = 26;
+    let size = GridVec::from((column_count, row_count));
+
+    let sheet_ref: Rc<RefCell<Sheet>> = Rc::new(RefCell::new(Sheet::new(size)));
+
+    {
+        let mut sheet = sheet_ref.borrow_mut();
+        for y in 0..row_count {
+            for x in 0..column_count {
+                sheet.inputs[y][x] = format!("{},{}", nth_alphabet(x), y + 1);
+            }
+        }
+    }
+
     // let (tx, rx) = glib::MainContext::channel(glib::PRIORITY_DEFAULT);
 
     // ## UIを組み立てる
@@ -57,9 +99,6 @@ fn build_ui(application: &gtk::Application) {
     editor.set_visible(false);
     editor.set_no_show_all(true);
 
-    // editorの表示位置
-    let editor_rect: Rc<RefCell<Option<gtk::Rectangle>>> = Rc::default();
-
     let scroll = gtk::ScrolledWindow::default();
     scroll.set_widget_name("cells-scrolled-window");
     scroll.set_hexpand(true);
@@ -69,9 +108,6 @@ fn build_ui(application: &gtk::Application) {
     grid.set_widget_name("cells-grid");
     grid.set_hexpand(true);
     grid.set_vexpand(true);
-
-    let row_count = 100;
-    let column_count = 26;
 
     for i in 0..row_count + 1 {
         grid.insert_row(i as i32);
@@ -118,54 +154,82 @@ fn build_ui(application: &gtk::Application) {
 
     let mut data_cells = vec![vec![]; row_count];
 
-    for y in 0..row_count {
-        for x in 0..column_count {
-            let label = gtk::Label::new(Some(&format!("{},{}", nth_alphabet(x), y + 1)));
-            label.set_size_request(60, 25);
-            label.style_context().add_class("cell-label");
+    {
+        let sheet = sheet_ref.borrow();
+        for y in 0..row_count {
+            for x in 0..column_count {
+                let label = gtk::Label::new(Some(&sheet.inputs[y][x]));
+                label.set_size_request(60, 25);
+                label.style_context().add_class("cell-label");
 
-            if y == 0 {
-                label.style_context().add_class("first-row-cell");
-            }
-            if x == 0 {
-                label.style_context().add_class("first-column-cell");
-            }
-
-            let eb = gtk::EventBox::new();
-            eb.add(&label);
-
-            eb.connect_button_press_event({
-                let editor = editor.clone();
-                let overlay = overlay.clone();
-                let scroll = scroll.clone();
-                let editor_rect = Rc::clone(&editor_rect);
-
-                move |label, _| {
-                    let rect = label.allocation();
-                    eprintln!("click ({y}, {x}) ({}x{})", rect.width(), rect.height());
-
-                    let p = 4; // margin, padding of grid
-                    let offset_y = scroll.vadjustment().value() as i32;
-                    let offset_x = scroll.hadjustment().value() as i32;
-
-                    editor.buffer().set_text("");
-                    editor.set_visible(true);
-                    let size = gtk::Rectangle::new(
-                        rect.x() - offset_x + p,
-                        rect.y() - offset_y + p,
-                        rect.width().max(100),
-                        rect.height(),
-                    );
-                    editor.set_allocation(&size);
-                    *editor_rect.borrow_mut() = Some(size);
-                    overlay.queue_resize();
-                    editor.set_has_focus(true);
-                    Inhibit(true)
+                if y == 0 {
+                    label.style_context().add_class("first-row-cell");
                 }
-            });
+                if x == 0 {
+                    label.style_context().add_class("first-column-cell");
+                }
 
-            grid.attach(&eb, (1 + x) as i32, (1 + y) as i32, 1, 1);
-            data_cells[y].push(label);
+                let eb = gtk::EventBox::new();
+                eb.add(&label);
+
+                eb.connect_button_press_event({
+                    let editor = editor.clone();
+                    let label = label.clone();
+                    let overlay = overlay.clone();
+                    let scroll = scroll.clone();
+                    let sheet_ref = Rc::clone(&sheet_ref);
+
+                    move |eb, ev| {
+                        if ev.button() != gdk::BUTTON_PRIMARY {
+                            return Inhibit(false);
+                        }
+
+                        let label = label.clone();
+                        let rect = eb.allocation();
+                        eprintln!("click ({y}, {x}) ({}x{})", rect.width(), rect.height());
+
+                        let p = 4; // margin, padding of grid
+                        let offset_y = scroll.vadjustment().value() as i32;
+                        let offset_x = scroll.hadjustment().value() as i32;
+                        let size = gtk::Rectangle::new(
+                            rect.x() - offset_x + p,
+                            rect.y() - offset_y + p,
+                            rect.width().max(100),
+                            rect.height(),
+                        );
+
+                        // Update model:
+
+                        let input;
+                        {
+                            let v = GridVec::from((y, x));
+                            let mut sheet = sheet_ref.borrow_mut();
+                            input = sheet.inputs[y][x].clone();
+                            sheet.editor_rect = Some(size);
+                            sheet.edit_state = Some(EditState {
+                                pos: v,
+                                on_changed: Box::new(move |sheet, state, text| {
+                                    let (y, x) = state.pos.pair();
+                                    label.set_text(&text);
+                                    sheet.inputs[y][x] = text;
+                                }),
+                            });
+                        };
+
+                        // Update view:
+
+                        editor.buffer().set_text(&input);
+                        editor.set_visible(true);
+                        editor.set_allocation(&size);
+                        editor.set_has_focus(true);
+                        overlay.queue_resize();
+                        Inhibit(true)
+                    }
+                });
+
+                grid.attach(&eb, (1 + x) as i32, (1 + y) as i32, 1, 1);
+                data_cells[y].push(label);
+            }
         }
     }
 
@@ -179,10 +243,10 @@ fn build_ui(application: &gtk::Application) {
     // オーバーレイの外側のクリックでエディタを非表示にする
     window.connect_button_press_event({
         let editor = editor.clone();
-        let editor_rect = Rc::clone(&editor_rect);
+        let sheet_ref = Rc::clone(&sheet_ref);
 
         move |_, _| {
-            *editor_rect.borrow_mut() = None;
+            sheet_ref.borrow_mut().editor_rect = None;
             editor.set_visible(false);
             Inhibit(false)
         }
@@ -195,19 +259,34 @@ fn build_ui(application: &gtk::Application) {
 
     // オーバーレイ上のエディタの表示位置を絶対座標で決める
     overlay.connect_get_child_position({
-        let editor_rect = Rc::clone(&editor_rect);
-        move |_, _| *editor_rect.borrow()
+        let sheet_ref = Rc::clone(&sheet_ref);
+        move |_, _| sheet_ref.borrow().editor_rect
     });
 
     // editorのEscapeキーでエディタを非表示にする
     editor.connect_key_press_event({
-        let editor_rect = Rc::clone(&editor_rect);
+        let sheet_ref = Rc::clone(&sheet_ref);
 
         move |editor, ev| {
-            if ev.keyval() == gdk::keys::constants::Escape {
-                *editor_rect.borrow_mut() = None;
+            let mut close = false;
+
+            if ev.keyval() == gdk::keys::constants::Return {
+                close = true;
+
+                let input = editor.buffer().text();
+                let mut sheet = sheet_ref.borrow_mut();
+                if let Some(edit) = sheet.edit_state.take() {
+                    (edit.on_changed)(&mut *sheet, &edit, input);
+                }
+            } else if ev.keyval() == gdk::keys::constants::Escape {
+                close = true;
+            }
+
+            if close {
+                sheet_ref.borrow_mut().editor_rect = None;
                 editor.set_visible(false);
             }
+
             Inhibit(false)
         }
     });
