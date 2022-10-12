@@ -8,6 +8,7 @@ mod model;
 
 use coord::*;
 use gtk::{gdk, prelude::*, ApplicationWindow, WindowPosition};
+use std::{cell::RefCell, rc::Rc};
 
 static STYLES: &[u8] = include_bytes!("styles.css");
 
@@ -31,10 +32,33 @@ fn build_ui(application: &gtk::Application) {
 
     // ## UIを組み立てる
 
+    //  window {
+    //      overlay {
+    //          editor (overlay)
+    //          scroll {
+    //              grid
+    //          }
+    //      }
+    //  }
+
     let window = ApplicationWindow::new(application);
     window.set_title("Cells");
+    window.set_default_size(640, 480);
     window.set_position(WindowPosition::Center);
-    window.set_size_request(640, 480);
+
+    // UI要素を重ね合わせて表示するためのコンポーネント
+    let overlay = gtk::Overlay::default();
+    overlay.set_vexpand(true);
+    overlay.set_hexpand(true);
+
+    // セルの編集時に表示される入力欄
+    let editor = gtk::Entry::new();
+    editor.set_widget_name("cells-editor");
+    editor.set_visible(false);
+    editor.set_no_show_all(true);
+
+    // editorの表示位置
+    let editor_rect: Rc<RefCell<Option<gtk::Rectangle>>> = Rc::default();
 
     let scroll = gtk::ScrolledWindow::default();
     scroll.set_widget_name("cells-scrolled-window");
@@ -107,15 +131,86 @@ fn build_ui(application: &gtk::Application) {
                 label.style_context().add_class("first-column-cell");
             }
 
-            grid.attach(&label, (1 + x) as i32, (1 + y) as i32, 1, 1);
+            let eb = gtk::EventBox::new();
+            eb.add(&label);
+
+            eb.connect_button_press_event({
+                let editor = editor.clone();
+                let overlay = overlay.clone();
+                let scroll = scroll.clone();
+                let editor_rect = Rc::clone(&editor_rect);
+
+                move |label, _| {
+                    let rect = label.allocation();
+                    eprintln!("click ({y}, {x}) ({}x{})", rect.width(), rect.height());
+
+                    let p = 4; // margin, padding of grid
+                    let offset_y = scroll.vadjustment().value() as i32;
+                    let offset_x = scroll.hadjustment().value() as i32;
+
+                    editor.buffer().set_text("");
+                    editor.set_visible(true);
+                    let size = gtk::Rectangle::new(
+                        rect.x() - offset_x + p,
+                        rect.y() - offset_y + p,
+                        rect.width().max(100),
+                        rect.height(),
+                    );
+                    editor.set_allocation(&size);
+                    *editor_rect.borrow_mut() = Some(size);
+                    overlay.queue_resize();
+                    editor.set_has_focus(true);
+                    Inhibit(true)
+                }
+            });
+
+            grid.attach(&eb, (1 + x) as i32, (1 + y) as i32, 1, 1);
             data_cells[y].push(label);
         }
     }
 
     scroll.add(&grid);
-    window.add(&scroll);
+    overlay.add_overlay(&editor);
+    overlay.add(&scroll);
+    window.add(&overlay);
 
     // ## UIのイベントにコールバックを接続する
+
+    // オーバーレイの外側のクリックでエディタを非表示にする
+    window.connect_button_press_event({
+        let editor = editor.clone();
+        let editor_rect = Rc::clone(&editor_rect);
+
+        move |_, _| {
+            *editor_rect.borrow_mut() = None;
+            editor.set_visible(false);
+            Inhibit(false)
+        }
+    });
+
+    // オーバーレイ上のマウス操作が下にあるグリッドに貫通 (pass-through) するように設定する
+    overlay.connect_realize(|p| {
+        p.window().unwrap().set_pass_through(true);
+    });
+
+    // オーバーレイ上のエディタの表示位置を絶対座標で決める
+    overlay.connect_get_child_position({
+        let editor_rect = Rc::clone(&editor_rect);
+        move |_, _| *editor_rect.borrow()
+    });
+
+    // editorのEscapeキーでエディタを非表示にする
+    editor.connect_key_press_event({
+        let editor_rect = Rc::clone(&editor_rect);
+
+        move |editor, ev| {
+            if ev.keyval() == gdk::keys::constants::Escape {
+                *editor_rect.borrow_mut() = None;
+                editor.set_visible(false);
+            }
+            Inhibit(false)
+        }
+    });
 
     // ## イベントを処理する
 

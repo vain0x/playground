@@ -34,3 +34,10 @@
     border-top: 1px solid #bdbdbd;
     border-left: 1px solid #bdbdbd;
 }
+
+#cells-editor {
+    border-radius: 0;
+    outline: none;
+    margin: 0;
+    padding: 0;
+}
