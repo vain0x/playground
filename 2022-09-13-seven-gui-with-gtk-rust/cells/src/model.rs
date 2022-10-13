@@ -55,14 +55,6 @@ struct FormulaDeps {
     ranges: Vec<CoordRange>,
 }
 
-impl CoordRange {
-    fn iter_cells(self: CoordRange) -> impl Iterator<Item = Coord> {
-        let range = self;
-        (range.s.y..range.t.y)
-            .flat_map(move |y| (range.s.x..range.t.x).map(move |x| Coord::new(y, x)))
-    }
-}
-
 impl FormulaDeps {
     fn is_empty(&self) -> bool {
         self.refs.is_empty() && self.ranges.is_empty()
@@ -153,21 +145,19 @@ impl<'a> EvalFn<'a> {
                 },
                 (Fn::Sum, [Formula::Range(range)]) => {
                     let mut sum = 0.0;
-                    for y in range.s.y..range.t.y {
-                        for x in range.s.x..range.t.x {
-                            let (y, x) = Coord::new(y, x).pair();
-                            if self.dirty[y][x] {
-                                return CellValue::Recursive;
-                            }
+                    for p in range.iter_cells() {
+                        let (y, x) = p.pair();
+                        if self.dirty[y][x] {
+                            return CellValue::Recursive;
+                        }
 
-                            match self.values[y][x] {
-                                CellValue::Null => continue,
-                                CellValue::Number(n) => sum += n,
-                                _ => {
-                                    #[cfg(test)]
-                                    eprintln!("invalid value in range {:?}", self.values[y][x]);
-                                    return CellValue::Invalid;
-                                }
+                        match self.values[y][x] {
+                            CellValue::Null => continue,
+                            CellValue::Number(n) => sum += n,
+                            _ => {
+                                #[cfg(test)]
+                                eprintln!("invalid value in range {:?}", self.values[y][x]);
+                                return CellValue::Invalid;
                             }
                         }
                     }
@@ -175,27 +165,25 @@ impl<'a> EvalFn<'a> {
                 }
                 (Fn::Prod, [Formula::Range(range)]) => {
                     let mut prod = 1.0;
-                    for y in range.s.y..range.t.y {
-                        for x in range.s.x..range.t.x {
-                            let (y, x) = Coord::new(y, x).pair();
-                            if self.dirty[y][x] {
-                                return CellValue::Recursive;
-                            }
+                    for p in range.iter_cells() {
+                        let (y, x) = p.pair();
+                        if self.dirty[y][x] {
+                            return CellValue::Recursive;
+                        }
 
-                            match self.values[y][x] {
-                                CellValue::Null => continue,
-                                CellValue::Number(n) => {
-                                    if n.abs() < 1e-9 {
-                                        prod = 0.0;
-                                        break;
-                                    }
-                                    prod *= n;
+                        match self.values[y][x] {
+                            CellValue::Null => continue,
+                            CellValue::Number(n) => {
+                                if n.abs() < 1e-9 {
+                                    prod = 0.0;
+                                    break;
                                 }
-                                _ => {
-                                    #[cfg(test)]
-                                    eprintln!("invalid value in range {:?}", self.values[y][x]);
-                                    return CellValue::Invalid;
-                                }
+                                prod *= n;
+                            }
+                            _ => {
+                                #[cfg(test)]
+                                eprintln!("invalid value in range {:?}", self.values[y][x]);
+                                return CellValue::Invalid;
                             }
                         }
                     }
@@ -592,21 +580,18 @@ fn init_values(
                 //  そうでないセルをスタックに積まない理由は以下の通り:
                 //  - 訪問中のときは、循環参照が起こっている。そのセルをスタックに積むと無限ループに陥る
                 //  - 訪問後のときは、スタックに積んでも何も起きない)
-                for &q in deps[py][px].refs.iter().rev() {
+                for &q in &deps[py][px].refs {
                     let (qy, qx) = q.pair();
                     if state[qy][qx] == 0 {
                         stack.push(q);
                     }
                 }
 
-                for &range in deps[py][px].ranges.iter().rev() {
-                    for qy in (range.s.y..range.t.y).rev() {
-                        for qx in (range.s.x..range.t.x).rev() {
-                            let q = Coord::new(qy, qx);
-                            let (qy, qx) = q.pair();
-                            if state[qy][qx] == 0 {
-                                stack.push(q);
-                            }
+                for &range in &deps[py][px].ranges {
+                    for q in range.iter_cells() {
+                        let (qy, qx) = q.pair();
+                        if state[qy][qx] == 0 {
+                            stack.push(q);
                         }
                     }
                 }

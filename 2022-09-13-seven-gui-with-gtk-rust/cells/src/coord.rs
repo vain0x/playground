@@ -69,6 +69,12 @@ impl CoordRange {
     pub(crate) fn contains(self, v: Coord) -> bool {
         self.s <= v && v <= self.t
     }
+
+    pub(crate) fn iter_cells(self: CoordRange) -> impl Iterator<Item = Coord> {
+        let range = self;
+        (range.s.y..range.t.y)
+            .flat_map(move |y| (range.s.x..range.t.x).map(move |x| Coord::new(y, x)))
+    }
 }
 
 impl Debug for CoordRange {
