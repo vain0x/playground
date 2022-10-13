@@ -52,11 +52,11 @@ impl CellInput {
 #[derive(Clone, Default)]
 struct FormulaDeps {
     refs: Vec<Coord>,
-    ranges: Vec<GridRange>,
+    ranges: Vec<CoordRange>,
 }
 
-impl GridRange {
-    fn iter_cells(self: GridRange) -> impl Iterator<Item = Coord> {
+impl CoordRange {
+    fn iter_cells(self: CoordRange) -> impl Iterator<Item = Coord> {
         let range = self;
         (range.s.y..range.t.y)
             .flat_map(move |y| (range.s.x..range.t.x).map(move |x| Coord::new(y, x)))

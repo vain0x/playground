@@ -36,7 +36,7 @@ pub(crate) enum Formula {
     Number(String),
     Call(Fn, Vec<Formula>),
     Ref(Coord),
-    Range(GridRange),
+    Range(CoordRange),
 }
 
 impl Formula {
@@ -185,7 +185,7 @@ fn parse_expr(tokens: &mut VecDeque<Token>) -> Option<Formula> {
                 // 境界を1ずらす必要がある
                 let t = t + Coord::new(1, 1);
 
-                Some(Formula::Range(GridRange::new(s, t)))
+                Some(Formula::Range(CoordRange::new(s, t)))
             }
             _ => Some(Formula::Ref(s)),
         },

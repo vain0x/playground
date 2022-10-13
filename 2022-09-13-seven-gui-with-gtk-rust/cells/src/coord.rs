@@ -56,14 +56,14 @@ impl Debug for Coord {
 
 /// グリッド上の範囲
 #[derive(Clone, Copy, Default, PartialEq, Eq)]
-pub(crate) struct GridRange {
+pub(crate) struct CoordRange {
     pub(crate) s: Coord,
     pub(crate) t: Coord,
 }
 
-impl GridRange {
+impl CoordRange {
     pub(crate) fn new(s: Coord, t: Coord) -> Self {
-        GridRange { s, t }
+        CoordRange { s, t }
     }
 
     pub(crate) fn contains(self, v: Coord) -> bool {
@@ -71,7 +71,7 @@ impl GridRange {
     }
 }
 
-impl Debug for GridRange {
+impl Debug for CoordRange {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         write!(f, "{:?}-{:?}", self.s, self.t)
     }
