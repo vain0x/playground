@@ -51,15 +51,15 @@ impl CellInput {
 
 #[derive(Clone, Default)]
 struct FormulaDeps {
-    refs: Vec<GridVec>,
+    refs: Vec<Coord>,
     ranges: Vec<GridRange>,
 }
 
 impl GridRange {
-    fn iter_cells(self: GridRange) -> impl Iterator<Item = GridVec> {
+    fn iter_cells(self: GridRange) -> impl Iterator<Item = Coord> {
         let range = self;
         (range.s.y..range.t.y)
-            .flat_map(move |y| (range.s.x..range.t.x).map(move |x| GridVec::new(y, x)))
+            .flat_map(move |y| (range.s.x..range.t.x).map(move |x| Coord::new(y, x)))
     }
 }
 
@@ -68,7 +68,7 @@ impl FormulaDeps {
         self.refs.is_empty() && self.ranges.is_empty()
     }
 
-    fn iter_cells<'a>(&'a self) -> impl Iterator<Item = GridVec> + 'a {
+    fn iter_cells<'a>(&'a self) -> impl Iterator<Item = Coord> + 'a {
         self.ranges
             .iter()
             .flat_map(|range| range.iter_cells())
@@ -155,7 +155,7 @@ impl<'a> EvalFn<'a> {
                     let mut sum = 0.0;
                     for y in range.s.y..range.t.y {
                         for x in range.s.x..range.t.x {
-                            let (y, x) = GridVec::new(y, x).pair();
+                            let (y, x) = Coord::new(y, x).pair();
                             if self.dirty[y][x] {
                                 return CellValue::Recursive;
                             }
@@ -177,7 +177,7 @@ impl<'a> EvalFn<'a> {
                     let mut prod = 1.0;
                     for y in range.s.y..range.t.y {
                         for x in range.s.x..range.t.x {
-                            let (y, x) = GridVec::new(y, x).pair();
+                            let (y, x) = Coord::new(y, x).pair();
                             if self.dirty[y][x] {
                                 return CellValue::Recursive;
                             }
@@ -207,8 +207,8 @@ impl<'a> EvalFn<'a> {
                     CellValue::Invalid
                 }
             },
-            Formula::Ref(v) => {
-                let (y, x) = v.pair();
+            Formula::Ref(p) => {
+                let (y, x) = p.pair();
                 if self.dirty[y][x] {
                     return CellValue::Recursive;
                 }
@@ -239,27 +239,27 @@ fn number_binary(
 }
 
 struct TableData {
-    /// input[v] = (セルvに入力された値または数式)
+    /// input[p] = (セルpに入力された値または数式)
     input: Vec<Vec<CellInput>>,
-    /// values[v] = (セルvの数式を評価した値)
+    /// values[p] = (セルpの数式を評価した値)
     values: Vec<Vec<CellValue>>,
-    /// deps[v] = (セルvの数式が他のどのセルに対する参照を持つかを計算したもの)
+    /// deps[p] = (セルpの数式が他のどのセルに対する参照を持つかを計算したもの)
     deps: Vec<Vec<FormulaDeps>>,
-    /// dirty[v] = (true: 再評価が必要, false: 評価済み)
+    /// dirty[p] = (true: 再評価が必要, false: 評価済み)
     ///
-    /// `dirty[v] == true` であるセルの `values[v]` を参照してはいけない
+    /// `dirty[p] == true` であるセルの `values[p]` を参照してはいけない
     dirty: Vec<Vec<bool>>,
-    /// back_deps[v] = (vを参照する数式を持つセルの集合)
-    back_deps: Vec<Vec<HashSet<GridVec>>>,
+    /// back_deps[p] = (セルpを参照する数式を持つセルの集合)
+    back_deps: Vec<Vec<HashSet<Coord>>>,
     /// 最後の更新より後に入力が変更されたセルの集合
-    dirty_set: HashSet<GridVec>,
+    dirty_set: HashSet<Coord>,
     /// テーブルの大きさ。`size = (h, w)` はテーブルの行数がh、列数がwであることを表す
-    size: GridVec,
+    size: Coord,
 }
 
 #[allow(unused)]
 impl TableData {
-    fn new(size: GridVec) -> Self {
+    fn new(size: Coord) -> Self {
         let (h, w) = size.pair();
 
         Self {
@@ -273,17 +273,17 @@ impl TableData {
         }
     }
 
-    fn input_at(&self, v: impl Into<GridVec>) -> CellInput {
-        let (y, x) = Into::<GridVec>::into(v).pair();
+    fn input_at(&self, p: impl Into<Coord>) -> CellInput {
+        let (y, x) = Into::<Coord>::into(p).pair();
         self.input[y][x].clone()
     }
 
-    fn value_at(&self, v: impl Into<GridVec>) -> CellValue {
-        let (y, x) = Into::<GridVec>::into(v).pair();
+    fn value_at(&self, p: impl Into<Coord>) -> CellValue {
+        let (y, x) = Into::<Coord>::into(p).pair();
         self.values[y][x]
     }
 
-    fn set(&mut self, v: GridVec, s: &str) {
+    fn set(&mut self, p: Coord, s: &str) {
         let input = match CellInput::parse(s) {
             Some(it) => it,
             None => {
@@ -293,9 +293,9 @@ impl TableData {
             }
         };
 
-        let (y, x) = v.pair();
+        let (y, x) = p.pair();
         self.input[y][x] = input;
-        self.dirty_set.insert(v);
+        self.dirty_set.insert(p);
     }
 
     /// 差分更新を行う
@@ -334,58 +334,58 @@ impl TableData {
         });
 
         let mut work_set = self.dirty_set.clone();
-        let mut next_set: HashSet<GridVec> = HashSet::new();
-        let mut done: HashSet<GridVec> = HashSet::new();
+        let mut next_set: HashSet<Coord> = HashSet::new();
+        let mut done: HashSet<Coord> = HashSet::new();
 
         let (h, w) = self.size.pair();
 
         // 依存関係の更新:
         {
-            for &v in &self.dirty_set {
-                let (y, x) = v.pair();
+            for &p in &self.dirty_set {
+                let (py, px) = p.pair();
 
                 #[cfg(test)]
-                let mut old_refs = self.deps[y][x].iter_cells().collect::<HashSet<_>>();
+                let mut old_refs = self.deps[py][px].iter_cells().collect::<HashSet<_>>();
 
-                for w in self.deps[y][x].iter_cells() {
-                    let (wy, wx) = w.pair();
-                    let removed = self.back_deps[wy][wx].remove(&v);
+                for q in self.deps[py][px].iter_cells() {
+                    let (qy, qx) = q.pair();
+                    let removed = self.back_deps[qy][qx].remove(&p);
                     debug_assert!(removed);
                 }
 
-                match &self.input[y][x] {
+                match &self.input[py][px] {
                     CellInput::Formula(f) => {
-                        self.deps[y][x].recompute(f);
+                        self.deps[py][px].recompute(f);
 
-                        for w in self.deps[y][x].iter_cells() {
-                            let (wy, wx) = w.pair();
-                            self.back_deps[wy][wx].insert(v);
+                        for q in self.deps[py][px].iter_cells() {
+                            let (qy, qx) = q.pair();
+                            self.back_deps[qy][qx].insert(p);
                         }
 
                         #[cfg(test)]
                         {
                             // 参照の差分を出力する
                             let mut new_refs = vec![];
-                            for v in self.deps[y][x].iter_cells() {
-                                if !old_refs.remove(&v) {
-                                    new_refs.push(v);
+                            for q in self.deps[py][px].iter_cells() {
+                                if !old_refs.remove(&q) {
+                                    new_refs.push(q);
                                 }
                             }
                             let mut old_refs = old_refs.iter().collect::<Vec<_>>();
                             old_refs.sort();
                             if !(old_refs.is_empty() && new_refs.is_empty()) {
-                                eprintln!("dep changed: {v:?} -> +{:?} -{:?}", new_refs, old_refs);
+                                eprintln!("dep changed: {p:?} -> +{:?} -{:?}", new_refs, old_refs);
                             }
                         }
                     }
                     _ => {
-                        self.deps[y][x].clear();
+                        self.deps[py][px].clear();
 
                         #[cfg(test)]
                         if !old_refs.is_empty() {
                             let mut old_refs = old_refs.iter().collect::<Vec<_>>();
                             old_refs.sort();
-                            eprintln!("dep changed: {v:?} -> -{:?} (clear)", old_refs);
+                            eprintln!("dep changed: {p:?} -> -{:?} (clear)", old_refs);
                         }
                     }
                 }
@@ -395,7 +395,7 @@ impl TableData {
         // 再評価:
         {
             // 再帰処理のスタック
-            let mut stack: Vec<GridVec> = vec![];
+            let mut stack: Vec<Coord> = vec![];
 
             // 再帰の状態を持つテーブル
             // (0: 訪問前, 1: 訪問中, 2: 訪問後)
@@ -407,35 +407,32 @@ impl TableData {
                 done.extend(&work_set);
                 stack.extend(&work_set);
 
-                for &v in &stack {
-                    let (y, x) = v.pair();
+                for &p in &stack {
+                    let (y, x) = p.pair();
                     self.dirty[y][x] = true;
                 }
 
-                while let Some(v) = stack.pop() {
-                    let (y, x) = v.pair();
-                    match state[y][x] {
+                while let Some(p) = stack.pop() {
+                    let (py, px) = p.pair();
+                    match state[py][px] {
                         0 => {
-                            state[y][x] = 1;
+                            state[py][px] = 1;
+                            stack.push(p);
 
-                            let v = GridVec::from((y, x));
-                            stack.push(v);
-
-                            for v in self.deps[y][x].iter_cells() {
-                                let (y, x) = v.pair();
-                                if work_set.contains(&v) && state[y][x] == 0 {
-                                    stack.push(v);
+                            for q in self.deps[py][px].iter_cells() {
+                                let (qy, qx) = q.pair();
+                                if work_set.contains(&q) && state[qy][qx] == 0 {
+                                    stack.push(q);
                                 }
                             }
                         }
                         1 => {
-                            state[y][x] = 2;
+                            state[py][px] = 2;
 
-                            debug_assert!(self.dirty[y][x]);
-                            let old_value = self.values[y][x];
+                            debug_assert!(self.dirty[py][px]);
+                            let old_value = self.values[py][px];
 
-                            let (y, x) = v.pair();
-                            let value = match self.input[y][x] {
+                            let value = match self.input[py][px] {
                                 CellInput::Null => CellValue::Null,
                                 CellInput::Number(value) => CellValue::Number(value),
                                 CellInput::Formula(ref formula) => EvalFn {
@@ -444,15 +441,15 @@ impl TableData {
                                 }
                                 .compute(formula),
                             };
-                            self.values[y][x] = value;
-                            self.dirty[y][x] = false;
+                            self.values[py][px] = value;
+                            self.dirty[py][px] = false;
 
                             if value != old_value {
-                                for &w in &self.back_deps[y][x] {
-                                    if !done.contains(&w) {
+                                for &q in &self.back_deps[py][px] {
+                                    if !done.contains(&q) {
                                         #[cfg(test)]
-                                        eprintln!("propagate {v:?} -> {w:?}");
-                                        next_set.insert(w);
+                                        eprintln!("propagate {p:?} -> {q:?}");
+                                        next_set.insert(q);
                                     }
                                 }
                             }
@@ -460,9 +457,9 @@ impl TableData {
                             #[cfg(test)]
                             {
                                 if value != old_value {
-                                    eprintln!("eval {v:?} changed ({old_value:?} -> {value:?})");
+                                    eprintln!("eval {p:?} changed ({old_value:?} -> {value:?})");
                                 } else {
-                                    eprintln!("eval {v:?} unchanged ({value:?})");
+                                    eprintln!("eval {p:?} unchanged ({value:?})");
                                 }
                             }
                         }
@@ -511,9 +508,9 @@ impl TableData {
 
 fn init_deps(
     deps: &mut [Vec<FormulaDeps>],
-    back_deps: &mut [Vec<HashSet<GridVec>>],
+    back_deps: &mut [Vec<HashSet<Coord>>],
     input: &[Vec<CellInput>],
-    size: GridVec,
+    size: Coord,
 ) {
     let (h, w) = size.pair();
 
@@ -530,11 +527,11 @@ fn init_deps(
             {
                 let d = &deps[y][x];
                 if !d.is_empty() {
-                    let u = GridVec::from((y, x));
+                    let p = Coord::from((y, x));
 
-                    for w in deps[y][x].iter_cells() {
-                        let (wy, wx) = w.pair();
-                        back_deps[wy][wx].insert(u);
+                    for q in deps[y][x].iter_cells() {
+                        let (qy, qx) = q.pair();
+                        back_deps[qy][qx].insert(p);
                     }
                 }
             }
@@ -543,8 +540,8 @@ fn init_deps(
             {
                 let d = &deps[y][x];
                 if !d.is_empty() {
-                    let u = GridVec::from((y, x));
-                    eprintln!("dep: {u:?} ({f:?}) -> {:?} {:?}", d.refs, d.ranges);
+                    let p = Coord::from((y, x));
+                    eprintln!("dep: {p:?} ({f:?}) -> {:?} {:?}", d.refs, d.ranges);
                 }
             }
         }
@@ -556,7 +553,7 @@ fn init_values(
     dirty: &mut [Vec<bool>],
     input: &[Vec<CellInput>],
     deps: &[Vec<FormulaDeps>],
-    size: GridVec,
+    size: Coord,
 ) {
     let (h, w) = size.pair();
 
@@ -576,59 +573,57 @@ fn init_values(
     // (すべてのセルを前方から順に訪問するため)
     for y in (0..h).rev() {
         for x in (0..w).rev() {
-            stack.push(GridVec::from((y, x)));
+            stack.push(Coord::from((y, x)));
         }
     }
 
-    while let Some(v) = stack.pop() {
-        let (y, x) = v.pair();
-        match state[y][x] {
+    while let Some(p) = stack.pop() {
+        let (py, px) = p.pair();
+        match state[py][px] {
             0 => {
-                state[y][x] = 1;
+                state[py][px] = 1;
 
                 // セル自身をスタックに積み直す
                 // (後で再訪し、帰りがけの処理を行う)
-                let v = GridVec::from((y, x));
-                stack.push(v);
+                stack.push(p);
 
                 // 依存しているセルをスタックに積む
                 // (依存しているセルの状態が 0:訪問前 であるときだけスタックに積む
                 //  そうでないセルをスタックに積まない理由は以下の通り:
                 //  - 訪問中のときは、循環参照が起こっている。そのセルをスタックに積むと無限ループに陥る
                 //  - 訪問後のときは、スタックに積んでも何も起きない)
-                for &v in deps[y][x].refs.iter().rev() {
-                    let (y, x) = v.pair();
-                    if state[y][x] == 0 {
-                        stack.push(v);
+                for &q in deps[py][px].refs.iter().rev() {
+                    let (qy, qx) = q.pair();
+                    if state[qy][qx] == 0 {
+                        stack.push(q);
                     }
                 }
 
-                for &range in deps[y][x].ranges.iter().rev() {
-                    for y in (range.s.y..range.t.y).rev() {
-                        for x in (range.s.x..range.t.x).rev() {
-                            let v = GridVec::new(y, x);
-                            let (y, x) = v.pair();
-                            if state[y][x] == 0 {
-                                stack.push(v);
+                for &range in deps[py][px].ranges.iter().rev() {
+                    for qy in (range.s.y..range.t.y).rev() {
+                        for qx in (range.s.x..range.t.x).rev() {
+                            let q = Coord::new(qy, qx);
+                            let (qy, qx) = q.pair();
+                            if state[qy][qx] == 0 {
+                                stack.push(q);
                             }
                         }
                     }
                 }
             }
             1 => {
-                state[y][x] = 2;
+                state[py][px] = 2;
 
                 // セルの値を計算する
                 // (この時点で、セルが参照している他のセルの値はすべて計算済みのはず
                 //  そうでなければ循環参照が起こっている)
-                let (y, x) = v.pair();
-                let value = match input[y][x] {
+                let value = match input[py][px] {
                     CellInput::Null => CellValue::Null,
                     CellInput::Number(value) => CellValue::Number(value),
                     CellInput::Formula(ref formula) => EvalFn { values, dirty }.compute(formula),
                 };
-                values[y][x] = value;
-                dirty[y][x] = false;
+                values[py][px] = value;
+                dirty[py][px] = false;
             }
             _ => {}
         }
@@ -640,10 +635,10 @@ mod tests {
     use super::*;
 
     fn make_table((h, w): (usize, usize), cells: &[((usize, usize), &str)]) -> TableData {
-        let mut table = TableData::new(GridVec::from((h, w)));
+        let mut table = TableData::new(Coord::from((h, w)));
 
-        for &(v, s) in cells {
-            table.set(v.into(), s);
+        for &(p, s) in cells {
+            table.set(p.into(), s);
         }
 
         table.recompute();

@@ -1,15 +1,15 @@
 use std::fmt::Debug;
 
-/// グリッド上のベクトル
+/// グリッド上のベクトル。座標や相対的な範囲を表す
 #[derive(Clone, Copy, Default, PartialEq, Eq, PartialOrd, Ord, Hash)]
-pub(crate) struct GridVec {
+pub(crate) struct Coord {
     pub(crate) y: u32,
     pub(crate) x: u32,
 }
 
-impl GridVec {
+impl Coord {
     pub(crate) fn new(y: u32, x: u32) -> Self {
-        GridVec { y, x }
+        Coord { y, x }
     }
 
     pub(crate) fn pair(self) -> (usize, usize) {
@@ -17,38 +17,38 @@ impl GridVec {
     }
 }
 
-impl From<(usize, usize)> for GridVec {
+impl From<(usize, usize)> for Coord {
     fn from((y, x): (usize, usize)) -> Self {
-        GridVec {
+        Coord {
             y: y as u32,
             x: x as u32,
         }
     }
 }
 
-impl std::ops::Add for GridVec {
+impl std::ops::Add for Coord {
     type Output = Self;
 
     fn add(self, rhs: Self) -> Self::Output {
-        GridVec {
+        Coord {
             y: self.y + rhs.y,
             x: self.x + rhs.x,
         }
     }
 }
 
-impl std::ops::Sub for GridVec {
+impl std::ops::Sub for Coord {
     type Output = Self;
 
     fn sub(self, rhs: Self) -> Self::Output {
-        GridVec {
+        Coord {
             y: self.y - rhs.y,
             x: self.x - rhs.x,
         }
     }
 }
 
-impl Debug for GridVec {
+impl Debug for Coord {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         write!(f, "({}, {})", self.y, self.x)
     }
@@ -57,16 +57,16 @@ impl Debug for GridVec {
 /// グリッド上の範囲
 #[derive(Clone, Copy, Default, PartialEq, Eq)]
 pub(crate) struct GridRange {
-    pub(crate) s: GridVec,
-    pub(crate) t: GridVec,
+    pub(crate) s: Coord,
+    pub(crate) t: Coord,
 }
 
 impl GridRange {
-    pub(crate) fn new(s: GridVec, t: GridVec) -> Self {
+    pub(crate) fn new(s: Coord, t: Coord) -> Self {
         GridRange { s, t }
     }
 
-    pub(crate) fn contains(self, v: GridVec) -> bool {
+    pub(crate) fn contains(self, v: Coord) -> bool {
         self.s <= v && v <= self.t
     }
 }

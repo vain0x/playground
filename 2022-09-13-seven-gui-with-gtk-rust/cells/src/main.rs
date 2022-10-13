@@ -15,7 +15,7 @@ static STYLES: &[u8] = include_bytes!("styles.css");
 #[allow(unused)]
 #[derive(Debug)]
 enum Msg {
-    OnEditBegin(GridVec),
+    OnEditBegin(Coord),
     OnEditEnd,
     OnEntryChanged(String),
 }
@@ -25,7 +25,7 @@ struct State;
 
 struct Sheet {
     #[allow(unused)]
-    size: GridVec,
+    size: Coord,
     inputs: Vec<Vec<String>>,
 
     editor_rect: Option<gtk::Rectangle>,
@@ -33,7 +33,7 @@ struct Sheet {
 }
 
 impl Sheet {
-    fn new(size: GridVec) -> Self {
+    fn new(size: Coord) -> Self {
         let (h, w) = size.pair();
 
         Self {
@@ -46,7 +46,7 @@ impl Sheet {
 }
 
 struct EditState {
-    pos: GridVec,
+    pos: Coord,
     on_changed: Box<dyn Fn(&mut Sheet, &EditState, String) + 'static>,
 }
 
@@ -57,7 +57,7 @@ fn nth_alphabet(n: usize) -> char {
 fn build_ui(application: &gtk::Application) {
     let row_count = 100;
     let column_count = 26;
-    let size = GridVec::from((column_count, row_count));
+    let size = Coord::from((column_count, row_count));
 
     let sheet_ref: Rc<RefCell<Sheet>> = Rc::new(RefCell::new(Sheet::new(size)));
 
@@ -202,12 +202,12 @@ fn build_ui(application: &gtk::Application) {
 
                         let input;
                         {
-                            let v = GridVec::from((y, x));
+                            let pos = Coord::from((y, x));
                             let mut sheet = sheet_ref.borrow_mut();
                             input = sheet.inputs[y][x].clone();
                             sheet.editor_rect = Some(size);
                             sheet.edit_state = Some(EditState {
-                                pos: v,
+                                pos,
                                 on_changed: Box::new(move |sheet, state, text| {
                                     let (y, x) = state.pos.pair();
                                     label.set_text(&text);

@@ -35,7 +35,7 @@ impl Fn {
 pub(crate) enum Formula {
     Number(String),
     Call(Fn, Vec<Formula>),
-    Ref(GridVec),
+    Ref(Coord),
     Range(GridRange),
 }
 
@@ -47,7 +47,7 @@ impl Formula {
 }
 
 /// Parse cell-reference notation, e.g. `A1`.
-fn parse_ref(s: &str) -> Option<GridVec> {
+fn parse_ref(s: &str) -> Option<Coord> {
     if !(2 <= s.len() && s.as_bytes()[0].is_ascii_uppercase()) {
         return None;
     }
@@ -58,14 +58,14 @@ fn parse_ref(s: &str) -> Option<GridVec> {
     let row = s[1..].parse::<u32>().ok()?;
     debug_assert!(row < 100);
 
-    Some(GridVec::new(row, column))
+    Some(Coord::new(row, column))
 }
 
 #[derive(Debug)]
 enum Token {
     Blank,
     Number(String),
-    Ref(GridVec),
+    Ref(Coord),
     Ident(String),
     LeftParen,
     RightParen,
@@ -183,7 +183,7 @@ fn parse_expr(tokens: &mut VecDeque<Token>) -> Option<Formula> {
                 // 範囲記法はinclusive (終端を含む)
                 // 一方、GridRangeはexclude (終端を含まない)
                 // 境界を1ずらす必要がある
-                let t = t + GridVec::new(1, 1);
+                let t = t + Coord::new(1, 1);
 
                 Some(Formula::Range(GridRange::new(s, t)))
             }
