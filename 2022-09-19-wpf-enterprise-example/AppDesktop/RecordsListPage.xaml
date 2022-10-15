@@ -23,11 +23,20 @@
 
     <Grid>
         <Grid.RowDefinitions>
+            <RowDefinition Height="Auto" />
             <RowDefinition Height="*" />
             <RowDefinition Height="Auto" />
         </Grid.RowDefinitions>
 
-        <DataGrid ItemsSource="{Binding Items}" Style="{StaticResource GridStyle}" Margin="0,0,0,16">
+        <StackPanel Orientation="Horizontal" Margin="0,0,0,16" HorizontalAlignment="Right">
+            <TextBlock Margin="0,0,4,0" VerticalAlignment="Center">
+                🔎
+            </TextBlock>
+
+            <TextBox Text="{Binding FilterInput, UpdateSourceTrigger=PropertyChanged, Delay=150}" Padding="4,2" Width="200" />
+        </StackPanel>
+
+        <DataGrid Grid.Row="1" ItemsSource="{Binding ItemsViewSource.View, ElementName=page}" Style="{StaticResource GridStyle}" Margin="0,0,0,16">
             <DataGrid.Columns>
                 <DataGridTextColumn Header="ID" Width="40" Binding="{Binding RecordId}" IsReadOnly="True">
                     <DataGridTextColumn.ElementStyle>
@@ -87,7 +96,7 @@
             </DataGrid.CellStyle>
         </DataGrid>
 
-        <Grid Grid.Row="1">
+        <Grid Grid.Row="2">
             <Grid.ColumnDefinitions>
                 <ColumnDefinition Width="Auto" />
                 <ColumnDefinition Width="*" />

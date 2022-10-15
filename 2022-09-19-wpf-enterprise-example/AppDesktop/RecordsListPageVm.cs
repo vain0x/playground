@@ -1,3 +1,4 @@
+using System;
 using System.Collections.ObjectModel;
 using System.Linq;
 
@@ -5,11 +6,20 @@ namespace AppDesktop
 {
     internal sealed class RecordsListPageVm : BindableBase
     {
+        private string filterInput = "";
+        public string FilterInput
+        {
+            get => filterInput;
+            set { filterInput = value; RaisePropertyChanged(); FilterChanged?.Invoke(); }
+        }
+
         public ObservableCollection<RecordListItemVm> Items { get; }
 
         public EventCommand<object?> BackCommand { get; }
         public EventCommand<object?> CreateCommand { get; }
         public EventCommand<int?> EditCommand { get; }
+
+        public event Action? FilterChanged;
 
         public RecordsListPageVm(RecordListItem[] items)
         {
@@ -19,6 +29,9 @@ namespace AppDesktop
             CreateCommand = EventCommand.Create<object?>(this);
             EditCommand = EventCommand.Create<int?>(this);
         }
+
+        public bool ApplyFilter(RecordListItemVm item) =>
+            item.Subject.Contains(FilterInput);
     }
 
     internal record RecordData(int RecordId, string Subject, string Contents);
