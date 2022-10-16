@@ -83,9 +83,6 @@ namespace AppDesktop
         }
     }
 
-    // FIXME: モデル層に置く
-    internal sealed record EmployeeListItem(int EmployeeId, string EmployeeName);
-
     internal sealed class EmployeeListItemVm : BindableBase
     {
         public int EmployeeId { get; }

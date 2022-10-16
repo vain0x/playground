@@ -7,10 +7,10 @@ namespace AppDesktop
         public bool Run()
         {
             var main = new MainWindowVm();
-            main.LoginInfo = new LoginInfo() { Username = "Tester" };
+            main.LoginInfo = new LoginInfoVm() { Username = "Tester" };
 
             // TODO: 何をテストするか考える
-            Debug.WriteLine("Test.");
+            Debug.WriteLine("No tests...");
             return true;
         }
     }

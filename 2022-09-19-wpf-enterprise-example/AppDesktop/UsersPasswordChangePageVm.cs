@@ -31,6 +31,4 @@ namespace AppDesktop
             );
         }
     }
-
-    public record PasswordChangeRequest(string CurrentPassword, string NewPassword);
 }

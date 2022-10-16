@@ -1,8 +1,6 @@
 using System;
-using System.Collections.Generic;
 using System.ComponentModel;
 using System.Diagnostics;
-using System.Linq;
 using System.Runtime.CompilerServices;
 using System.Threading;
 using System.Threading.Tasks;
@@ -12,6 +10,8 @@ namespace AppDesktop
 {
     internal sealed class MainWindowVm : BindableBase
     {
+        private readonly AppModel model = new();
+
         private INotifyPropertyChanged currentPage;
         public INotifyPropertyChanged CurrentPage
         {
@@ -34,8 +34,8 @@ namespace AppDesktop
             set { isBusy = value; RaisePropertyChanged(); }
         }
 
-        private LoginInfo? loginInfo;
-        public LoginInfo? LoginInfo
+        private LoginInfoVm? loginInfo;
+        public LoginInfoVm? LoginInfo
         {
             get => loginInfo;
             set { loginInfo = value; RaisePropertyChanged(); }
@@ -58,27 +58,7 @@ namespace AppDesktop
         public Command<object?> GoProfileCommand { get; }
         public Command<object?> GoPasswordChangeCommand { get; }
 
-        private readonly List<EmployeeListItem> dummyEmployees =
-            "Alice,Bob,Charlotte,Don,Eve"
-                .Split(",")
-                .Select((name, index) => new EmployeeListItem(1 + index, name))
-                .ToList();
-
-        private bool isAttended;
-        private DateTime? attendanceTime;
-
-        private int lastEmployeeId = 5;
         private int busyLevel;
-
-        private readonly List<RecordData> records =
-            new()
-            {
-                new(1, "Hello!", "Hello, this is the first record."),
-                new(2, "Second", "This second record\nis\nmulti-lined."),
-            };
-
-        private int lastRecordId = 2;
-
         private event EventHandler<Exception>? AsyncOperationFailed;
 
         public MainWindowVm()
@@ -132,14 +112,7 @@ namespace AppDesktop
         {
             StartAsync(async ct =>
             {
-                await Task.Delay(100, ct);
-
-                if (request.CurrentPassword == "password")
-                {
-                    throw new Exception("パスワードが違います");
-                }
-
-                Debug.WriteLine($"パスワードを変更しました: '{request.NewPassword}'");
+                await model.SavePasswordAsync(request, ct);
             });
         }
 
@@ -147,51 +120,53 @@ namespace AppDesktop
         {
             StartAsync(async ct =>
             {
-                var verified = await VerifyLoginAsync(request, ct);
-                if (!verified)
+                try
                 {
-                    request.OnFailed();
-                    request.OnFinally();
-                    return;
+                    var loginInfo = await model.VerifyLoginAsync(request, ct);
+                    if (loginInfo == null)
+                    {
+                        request.OnFailed();
+                        return;
+                    }
+
+                    LoginInfo = new LoginInfoVm() { Username = loginInfo.EmployeeName };
+                    OpenHomePage();
                 }
-
-                // ログイン成功時:
-                LoginInfo = new LoginInfo()
+                finally
                 {
-                    Username = string.Concat(request.LoginId[..1].ToUpper(), request.LoginId[1..]),
-                };
-
-                OpenHomePage();
-                request.OnFinally();
+                    request.OnFinally();
+                }
             });
-        }
-
-        // note: モデル層に書く
-        private async Task<bool> VerifyLoginAsync(LoginRequest request, CancellationToken ct)
-        {
-            // note: 実際にはデータベースにアクセスする
-            await Task.Delay(request.Password.Length * 501 / 8, ct);
-
-            return request.Password != "password";
         }
 
         private void OpenHomePage()
         {
+            var status = model.GetAttendanceStatus();
             var page = new HomePageVm()
             {
-                IsAttended = isAttended,
-                AttendanceTime = attendanceTime,
+                IsAttended = status.IsAttended,
+                AttendanceTime = status.AttendanceTime,
             };
             page.Attended += (_, _) =>
             {
-                Attend();
-                page.AttendanceTime = attendanceTime;
-                page.IsAttended = isAttended;
+                var (changed, status) = model.SetAttend();
+                if (!changed)
+                {
+                    Debug.WriteLine("すでに出勤しています");
+                }
+
+                page.AttendanceTime = status.AttendanceTime;
+                page.IsAttended = status.IsAttended;
             };
             page.Left += (_, _) =>
             {
-                Leave();
-                page.IsAttended = isAttended;
+                var (changed, status) = model.SetLeave();
+                if (!changed)
+                {
+                    Debug.WriteLine("出勤していません");
+                }
+
+                page.IsAttended = status.IsAttended;
             };
             page.GoRecordsCommand.Executed += (_, _) => OpenRecordsListPage();
             page.GoEmployeesCommand.Executed += (_, _) => OpenEmployeesListPage();
@@ -200,41 +175,9 @@ namespace AppDesktop
             CurrentPage = page;
         }
 
-        private void Attend()
-        {
-            if (isAttended)
-            {
-                Debug.WriteLine("すでに出勤しています");
-                return;
-            }
-
-            isAttended = true;
-            attendanceTime = DateTime.Now;
-        }
-
-        private void Leave()
-        {
-            if (!isAttended)
-            {
-                Debug.WriteLine("出勤していません");
-                return;
-            }
-
-            isAttended = false;
-        }
-
         private void OpenAttendancesSummaryPage()
         {
-            // Generate dummy data.
-            var month = DateOnly.FromDateTime(DateTime.Now);
-            month = month.AddDays(1 - month.Day);
-
-            var data = new AttendanceSummaryData(month, new AttendanceSummaryEntry[]
-            {
-                new(month, month.ToDateTime(TimeOnly.FromTimeSpan(TimeSpan.FromHours(9.5))), null),
-                new(month.AddDays(1), month.AddDays(1).ToDateTime(TimeOnly.FromTimeSpan(TimeSpan.FromHours(9.5))), month.AddDays(1).ToDateTime(TimeOnly.FromTimeSpan(TimeSpan.FromHours(17.5)))),
-            });
-
+            var data = model.GenerateDummyAttendanceSummary();
             var page = new AttendancesSummaryPageVm(data);
             page.BackCommand.Executed += (_, _) => OpenHomePage();
             page.FetchEffect.Invoked += (_, request) => FetchAttendancesSummary(request);
@@ -248,23 +191,7 @@ namespace AppDesktop
             {
                 try
                 {
-                    Debug.WriteLine($"Fetch attendances {request.Month:yyyy-MM}");
-                    var month = request.Month;
-
-                    await Task.Delay(200 * month.Month, ct);
-
-                    if (month.Month == 11)
-                    {
-                        // サーバー側のエラーをシミュレーションする
-                        throw new Exception("11月のデータを取得できません");
-                    }
-
-                    var data = new AttendanceSummaryData(month, new AttendanceSummaryEntry[]
-                    {
-                        new(month, month.ToDateTime(TimeOnly.FromTimeSpan(TimeSpan.FromHours(9.5))), null),
-                        new(month.AddDays(1),  month.AddDays(1).ToDateTime(TimeOnly.FromTimeSpan(TimeSpan.FromHours(9.5))), month.AddDays(1).ToDateTime(TimeOnly.FromTimeSpan(TimeSpan.FromHours(17.5)))),
-                    });
-
+                    var data = await model.FetchAttendancesSummaryAsync(request.Payload, ct);
                     request.OnSuccess(data);
                 }
                 catch
@@ -281,7 +208,7 @@ namespace AppDesktop
 
         private void OpenEmployeesListPage()
         {
-            var page = new EmployeesListPageVm(dummyEmployees.ToArray());
+            var page = new EmployeesListPageVm(model.GetEmployeeList());
             page.OnCreateRequested += (_, request) => CreateEmployee(request);
             page.OnDeleteRequested += (_, ids) => DeleteEmployees(ids);
             page.BackCommand.Executed += (_, _) => OpenHomePage();
@@ -291,17 +218,13 @@ namespace AppDesktop
 
         private void CreateEmployee(CreateEmployeeRequest request)
         {
-            lastEmployeeId++;
-            var id = lastEmployeeId;
-            var employee = new EmployeeListItem(id, request.EmployeeName);
-            dummyEmployees.Add(employee);
-
+            model.CreateEmployee(request);
             OpenEmployeesListPage();
         }
 
         private void DeleteEmployees(int[] employeeIds)
         {
-            dummyEmployees.RemoveAll(e => employeeIds.Contains(e.EmployeeId));
+            model.DeleteEmployees(employeeIds);
 
             // TODO: update employeesList in-place
             OpenEmployeesListPage();
@@ -309,10 +232,7 @@ namespace AppDesktop
 
         private void OpenRecordsListPage()
         {
-            // TODO: fetch records list async
-            var items = records
-                .Select(record => new RecordListItem(record.RecordId, record.Subject))
-                .ToArray();
+            var items = model.GetRecordList();
 
             var page = new RecordsListPageVm(items);
             page.BackCommand.Executed += (_, _) => OpenHomePage();
@@ -334,7 +254,7 @@ namespace AppDesktop
             if (recordId == null)
                 throw new Exception("no id");
 
-            var recordData = records.Find(item => item.RecordId == recordId);
+            var recordData = model.FindRecordById(recordId.Value);
             if (recordData == null)
                 throw new Exception("record missing");
 
@@ -354,11 +274,7 @@ namespace AppDesktop
             {
                 try
                 {
-                    await Task.Delay(request.Contents.Length * 10, ct);
-
-                    var id = ++lastRecordId;
-                    records.Add(new RecordData(id, request.Subject, request.Contents));
-
+                    await model.CreateRecordAsync(request, ct);
                     OpenRecordsListPage();
                 }
                 finally
@@ -374,14 +290,7 @@ namespace AppDesktop
             {
                 try
                 {
-                    await Task.Delay(request.Contents.Length * 10, ct);
-
-                    var index = records.FindIndex(r => r.RecordId == recordId);
-                    if (index < 0)
-                        throw new Exception("record missing?");
-
-                    records[index] = new RecordData(recordId, request.Subject, request.Contents);
-
+                    await model.UpdateRecordAsync(recordId, request, ct);
                     OpenRecordsListPage();
                 }
                 finally
@@ -464,7 +373,7 @@ namespace AppDesktop
         }
     }
 
-    internal sealed class LoginInfo : BindableBase
+    internal sealed class LoginInfoVm : BindableBase
     {
         private string username = "";
         public string Username

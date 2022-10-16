@@ -2,12 +2,12 @@ namespace AppDesktop
 {
     internal sealed class UsersProfilePageVm : BindableBase
     {
-        public LoginInfo LoginInfo { get; }
+        public LoginInfoVm LoginInfo { get; }
 
         public EventCommand<object?> GoPasswordChangeCommand { get; }
         public EventCommand<object?> CloseCommand { get; }
 
-        public UsersProfilePageVm(LoginInfo loginInfo)
+        public UsersProfilePageVm(LoginInfoVm loginInfo)
         {
             LoginInfo = loginInfo;
             GoPasswordChangeCommand = EventCommand.Create<object?>(this);
