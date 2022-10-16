@@ -19,11 +19,13 @@ namespace AppDesktop
             set { newPassword = value; RaisePropertyChanged(); SaveCommand.RaiseCanExecuteChanged(); }
         }
 
+        public EventCommand<object?> CancelCommand { get; }
         public Command<object?> SaveCommand { get; }
         public event EventHandler<PasswordChangeRequest>? Requested;
 
         public UsersPasswordChangePageVm()
         {
+            CancelCommand = EventCommand.Create<object?>(this);
             SaveCommand = Command.CreateWithCanExecute<object?>(
                 _ => !string.IsNullOrEmpty(CurrentPassword)
                     && !string.IsNullOrEmpty(NewPassword),

@@ -105,6 +105,7 @@ namespace AppDesktop
         {
             var page = new UsersPasswordChangePageVm();
             page.Requested += (_, request) => SavePassword(request);
+            page.CancelCommand.Executed += (_, _) => OpenHomePage();
             CurrentPage = page;
         }
 
