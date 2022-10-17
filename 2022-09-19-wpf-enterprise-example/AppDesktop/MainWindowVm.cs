@@ -66,22 +66,27 @@ namespace AppDesktop
             GoProfileCommand = Command.Create<object?>(_ => OpenProfileDialog());
             GoPasswordChangeCommand = Command.Create<object?>(_ => OpenUsersPasswordChangePage());
 
+#if !DEBUG
+            OpenLoginPage();
+#else
+            // デバッグ用: 毎回ログインするのは面倒なので自動でログインする
+            LoginInfo = new() { Username = "John" };
+            OpenHomePage();
+#endif
+
+            Debug.Assert(currentPage != null);
+        }
+
+        private void OpenLoginPage()
+        {
             var loginPage = new LoginPageVm();
             loginPage.OnLoginRequested += (_, request) => Login(request);
-            currentPage = loginPage;
-
-#if DEBUG
-            // デバッグ用: 毎回ログインするのは面倒なので自動でログインする
-            var loginRequest = new LoginRequest("john", "john_password", () => { }, () => { });
-            loginPage.LoginId = loginRequest.LoginId;
-            loginPage.Password = loginRequest.Password;
-            loginPage.LoginCommand.Execute(loginRequest);
-#endif
+            CurrentPage = loginPage;
         }
 
         private void OpenProfileDialog()
         {
-            if (LoginInfo == null) return;
+            Debug.Assert(LoginInfo != null);
 
             var dialog = new UsersProfilePageVm(LoginInfo);
             dialog.GoPasswordChangeCommand.Executed += (_, _) =>
@@ -142,6 +147,8 @@ namespace AppDesktop
 
         private void OpenHomePage()
         {
+            Debug.Assert(LoginInfo != null);
+
             var status = model.GetAttendanceStatus();
             var page = new HomePageVm()
             {
