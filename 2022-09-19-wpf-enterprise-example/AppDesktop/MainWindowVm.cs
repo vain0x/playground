@@ -77,7 +77,7 @@ namespace AppDesktop
                     {
                         Debug.Assert(ct.IsCancellationRequested);
                     }
-                });
+                }, ct);
             };
 
             OpenLoginPage();
