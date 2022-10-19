@@ -11,16 +11,9 @@ namespace AppDesktop
     internal sealed class MainWindowVm : BindableBase
     {
         private readonly AppModel model = new();
+        private readonly NavigationFrame navigationFrame;
 
-        private INotifyPropertyChanged currentPage;
-        public INotifyPropertyChanged CurrentPage
-        {
-            get => currentPage;
-            set { currentPage = value; RaisePropertyChanged(); }
-        }
-
-        // ページ遷移の状態を持つ
-        public NavigationEffect NavigationEffect { get; } = new();
+        public INotifyPropertyChanged CurrentPage => navigationFrame.Page;
 
         private bool isBusy;
         public bool IsBusy
@@ -61,44 +54,23 @@ namespace AppDesktop
             GoProfileCommand = Command.Create<object?>(_ => OpenProfileDialog());
             GoPasswordChangeCommand = Command.Create<object?>(_ => OpenUsersPasswordChangePage());
 
-            NavigationEffect.Invoked += (request, tcs, ct) =>
+            navigationFrame = new(CreateLoginPage())
             {
-                NavigateCoreAsync(request, ct).ContinueWith(task =>
-                {
-                    if (task.IsCompletedSuccessfully)
-                    {
-                        tcs.SetResult();
-                    }
-                    else if (task.IsFaulted)
-                    {
-                        tcs.SetException(task.Exception!);
-                    }
-                    else
-                    {
-                        Debug.Assert(ct.IsCancellationRequested);
-                    }
-                }, ct);
+                OnPageChanged = () => RaisePropertyChanged(nameof(CurrentPage)),
             };
-
-            OpenLoginPage();
 
 #if DEBUG
             // デバッグ用: 毎回ログインするのは面倒なので自動でログインする
             LoginInfo = new() { Username = "John" };
             OpenHomePage();
 #endif
-
-            Debug.Assert(currentPage != null);
         }
 
-        private void OpenLoginPage()
+        private LoginPageVm CreateLoginPage()
         {
-            NavigateSync(() =>
-            {
-                var page = new LoginPageVm();
-                page.OnLoginRequested += (_, request) => Login(request);
-                return page;
-            });
+            var page = new LoginPageVm();
+            page.OnLoginRequested += (_, request) => Login(request);
+            return page;
         }
 
         private void OpenProfileDialog()
@@ -125,7 +97,7 @@ namespace AppDesktop
 
         private void OpenUsersPasswordChangePage()
         {
-            NavigateSync(() =>
+            RequestNavigate(() =>
             {
                 var page = new UsersPasswordChangePageVm();
                 page.Requested += (_, request) => SavePassword(request);
@@ -250,7 +222,7 @@ namespace AppDesktop
 
         private void OpenEmployeesListPage()
         {
-            NavigateSync(() =>
+            RequestNavigate(() =>
             {
                 var page = new EmployeesListPageVm(model.GetEmployeeList());
                 page.OnCreateRequested += (_, request) => CreateEmployee(request);
@@ -276,7 +248,7 @@ namespace AppDesktop
 
         private void OpenRecordsListPage()
         {
-            NavigateSync(() =>
+            RequestNavigate(() =>
             {
                 var items = model.GetRecordList();
 
@@ -290,7 +262,7 @@ namespace AppDesktop
 
         private void OpenRecordsCreatePage()
         {
-            NavigateSync(() =>
+            RequestNavigate(() =>
             {
                 var page = new RecordsCreatePageVm();
                 page.CancelCommand.Executed += (_, _) => OpenRecordsListPage();
@@ -301,7 +273,7 @@ namespace AppDesktop
 
         private void OpenRecordsEditPage(int? recordId)
         {
-            NavigateSync(() =>
+            RequestNavigate(() =>
             {
                 if (recordId == null)
                     throw new Exception("no id");
@@ -354,47 +326,31 @@ namespace AppDesktop
             });
         }
 
-        private void NavigateSync(Func<INotifyPropertyChanged> creator)
+        /// <summary>
+        /// ページ遷移を要求する
+        ///
+        /// <para>
+        /// 注意: 呼び出しの完了時にページ遷移が完了するわけではない
+        /// </para>
+        /// </summary>
+        /// <param name="creator">
+        /// ページを生成する関数
+        /// </param>
+        private void RequestNavigate(Func<INotifyPropertyChanged> creator)
         {
-            //StartAsync(async ct =>
-            //{
-            //    await NavigateAsync(() =>
-            //    {
-            //        try
-            //        {
-            //            return Task.FromResult(creator());
-            //        }
-            //        catch (Exception ex)
-            //        {
-            //            return Task.FromException<INotifyPropertyChanged>(ex);
-            //        }
-            //    }, ct);
-            //});
-
-            NavigationEffect.Cancel();
-            var oldPage = currentPage;
-            CurrentPage = creator();
-            (oldPage as IDisposable)?.Dispose();
+            navigationFrame.RequestNavigate(creator);
         }
 
-        // ページ遷移のリクエストを出し、その完了を待機する
-        private async Task NavigateAsync(Func<Task<INotifyPropertyChanged>> creatorFunc, CancellationToken ct)
+        // asyncCreatorの提供者がCancellationTokenを持っているはずなので、トークンを関数に渡す必要はない
+        /// <summary>
+        /// 非同期でページ遷移を要求する
+        /// </summary>
+        /// <param name="asyncCreator">
+        /// 非同期でページを生成する関数
+        /// </param>
+        private async Task NavigateAsync(Func<Task<INotifyPropertyChanged>> asyncCreator, CancellationToken ct)
         {
-            var subCts = CancellationTokenSource.CreateLinkedTokenSource(ct);
-            await NavigationEffect.InvokeAsync(new(creatorFunc), subCts);
-        }
-
-        // 実際にページ遷移を行う
-        private async Task NavigateCoreAsync(NavigationAsyncRequest request, CancellationToken ct)
-        {
-            var oldPage = currentPage;
-            var newPage = await request.CreatorAsync();
-
-            ct.ThrowIfCancellationRequested();
-            if (currentPage != oldPage) throw new OperationCanceledException();
-
-            CurrentPage = newPage;
-            (oldPage as IDisposable)?.Dispose();
+            await navigationFrame.NavigateAsync(asyncCreator, ct);
         }
 
         private async void StartAsync(Func<CancellationToken, Task> funcAsync, CancellationTokenSource? cts = null, [CallerMemberName] string? name = null)
@@ -467,58 +423,6 @@ namespace AppDesktop
 
             // このメソッドから始まった非同期処理がすべて終わってからメソッドを抜けることを確実にするためにawaitする
             await timeoutTask;
-        }
-    }
-
-    // 非同期ページ遷移のリクエスト
-    internal sealed record NavigationAsyncRequest(Func<Task<INotifyPropertyChanged>> CreatorAsync);
-
-    internal sealed class NavigationEffect : BindableBase
-    {
-        //private NavigationAsyncRequest? currentRequest;
-        private CancellationTokenSource? currentCts;
-
-        public event Action<NavigationAsyncRequest, TaskCompletionSource, CancellationToken>? Invoked;
-
-        public Task InvokeAsync(NavigationAsyncRequest request, CancellationTokenSource cts)
-        {
-            Debug.WriteLine($"Request navigation");
-
-            Cancel();
-
-            if (cts.IsCancellationRequested)
-                throw new OperationCanceledException();
-
-            var tcs = new TaskCompletionSource();
-
-            //currentRequest = request;
-            currentCts = cts;
-
-            cts.Token.Register(() =>
-            {
-                if (!tcs.Task.IsCompleted)
-                {
-                    tcs.TrySetCanceled();
-                }
-            });
-
-            tcs.Task.ContinueWith(t =>
-            {
-                //currentRequest = null;
-                currentCts = null;
-            });
-
-            Invoked?.Invoke(request, tcs, cts.Token);
-
-            return tcs.Task;
-        }
-
-        public void Cancel()
-        {
-            if (currentCts != null && !currentCts.IsCancellationRequested)
-            {
-                currentCts.Cancel();
-            }
         }
     }
 

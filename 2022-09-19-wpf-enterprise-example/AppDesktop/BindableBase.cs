@@ -13,5 +13,7 @@ namespace AppDesktop
             if (name == null) throw new ArgumentNullException(nameof(name));
             PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(name));
         }
+
+        protected PropertyChangedEventHandler? GetPropertyChangedEvent() => PropertyChanged;
     }
 }
