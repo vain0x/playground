@@ -122,8 +122,7 @@ module private ParserCombinator =
   let rule1 (r: Rule<'T, 'A>) (mapping: 'A -> 'N) : Rule<'T, 'N> =
     let (Rule r) = r
 
-    Term.Map(r, (fun obj -> mapping (obj :?> 'A) :> obj))
-    |> Rule
+    Term.Map(r, (fun obj -> mapping (obj :?> 'A) :> obj)) |> Rule
 
   /// 2つの規則の並び
   ///
@@ -198,8 +197,7 @@ module private ParserCombinator =
     Rule(Term.Choice(List.map (fun (Rule r) -> r) rules))
 
   let opt (rule: Rule<'T, 'A>) (decode: ('A option -> 'N)) : Rule<'T, 'N> =
-    choice [ rule1 rule (fun a -> decode (Some a))
-             Rule(Term.Eps(decode None)) ]
+    choice [ rule1 rule (fun a -> decode (Some a)); Rule(Term.Eps(decode None)) ]
 
   /// 左結合な二項演算の規則
   ///
@@ -245,8 +243,7 @@ module private ParserCombinator =
     let ruleArray = ResizeArray()
     let ruleRev = System.Collections.Generic.Dictionary()
 
-    let dummy =
-      Symbol(obj (), "dummy", lazy (Term.Choice []))
+    let dummy = Symbol(obj (), "dummy", lazy (Term.Choice []))
 
     ruleArray.Add(dummy)
     ruleRev.Add(dummy :> obj, 0)
@@ -320,12 +317,7 @@ module private ParserCombinator =
        | Term.Map (r, _) -> go nl r
        | Term.Seq (rules, _) -> sprintf "(%s)" (rules |> List.map (go nl) |> String.concat " ")
 
-       | Term.Choice rules ->
-         sprintf
-           "(%s)"
-           (rules
-            |> List.map (go (nl + "  "))
-            |> String.concat (nl + "| "))
+       | Term.Choice rules -> sprintf "(%s)" (rules |> List.map (go (nl + "  ")) |> String.concat (nl + "| "))
        | Term.InfixLeft (rLeft, rMid, rRight, _) -> sprintf "(%s %%%s %s)" (go nl rLeft) (go nl rMid) (go nl rRight)
 
      for i in 1 .. ruleArray.Count - 1 do
@@ -422,13 +414,7 @@ module private ParserCombinator =
 
          let nullable = computeNullable termLazy.Value
 
-         eprintfn
-           "compute nullable %s: %s"
-           name
-           (if nullable then
-              "nullable"
-            else
-              "habited")
+         eprintfn "compute nullable %s: %s" name (if nullable then "nullable" else "habited")
 
          if nullable then
            modified <- true
@@ -500,7 +486,7 @@ module private ParserCombinator =
             else
               for k in firstSet do
                 if table.ContainsKey(k) then
-                  eprintfn "choice ambiguous: k:%d in branch:%A and other:%A" k table.[k] branchTerm
+                  eprintfn "choice ambiguous: k:%d" k
                 else
                   table.Add(k, branchTerm)
 
@@ -593,8 +579,7 @@ module private ParserCombinator =
       | Term.Symbol (Symbol (_, name, ruleLazy)) ->
         try
           parseRec ruleLazy.Value
-        with
-        | _ ->
+        with _ ->
           eprintfn "(While parsing %s at %d)" name index
           reraise ()
 
@@ -621,9 +606,7 @@ module private ParserCombinator =
 
           match HashMap.tryFind k table with
           | Some branchTerm ->
-            let index =
-              List.tryFindIndex ((=) branchTerm) rules
-              |> Option.defaultValue (-1)
+            let index = List.tryFindIndex ((=) branchTerm) rules |> Option.defaultValue (-1)
 
             eprintfn "choice k:%d index:%d" k index
             parseRec branchTerm
@@ -655,9 +638,8 @@ module private ParserCombinator =
               let mid =
                 try
                   parseRec rMid
-                with
-                | _ ->
-                  eprintfn "can't parse mid:%A" rMid
+                with _ ->
+                  eprintfn "can't parse mid"
                   reraise ()
 
               let right = parseRec rRight
@@ -743,22 +725,25 @@ module private Arith =
       Expr.Paren e)
 
   let private pPrimary =
-    P.choice [ P.cut TokenKind.Number (fun (Token.Number value | Unreachable value) -> Expr.Number value)
-               pParen ]
+    P.choice
+      [ P.cut TokenKind.Number (fun (Token.Number value | Unreachable value) -> Expr.Number value)
+        pParen ]
 
   let private pMul =
     P.infixLeft
       pPrimary
-      (P.choice [ P.cut TokenKind.Star (fun _ -> Binary.Multiply)
-                  P.cut TokenKind.Slash (fun _ -> Binary.Divide) ])
+      (P.choice
+        [ P.cut TokenKind.Star (fun _ -> Binary.Multiply)
+          P.cut TokenKind.Slash (fun _ -> Binary.Divide) ])
       pPrimary
       (fun l op r -> Expr.BinOp(op, l, r))
 
   let private pAdd =
     P.infixLeft
       pMul
-      (P.choice [ P.cut TokenKind.Plus (fun _ -> Binary.Add)
-                  P.cut TokenKind.Minus (fun _ -> Binary.Subtract) ])
+      (P.choice
+        [ P.cut TokenKind.Plus (fun _ -> Binary.Add)
+          P.cut TokenKind.Minus (fun _ -> Binary.Subtract) ])
       pMul
       (fun l op r -> Expr.BinOp(op, l, r))
 
@@ -766,10 +751,7 @@ module private Arith =
     lazy (P.build (P.recurse pExpr) [ P.bind pExpr pAdd ])
 
   let private tokenize (text: string) : Token array =
-    text
-      .Replace("(", "( ")
-      .Replace(")", " )")
-      .Split(" ")
+    text.Replace("(", "( ").Replace(")", " )").Split(" ")
     |> Array.filter (fun s -> s <> "")
     |> Array.map (fun s ->
       match s with
@@ -790,8 +772,8 @@ module private Arith =
       let actual =
         try
           parseString s |> sprintf "%A"
-        with
-        | ex -> sprintf "ERROR: %A" ex
+        with ex ->
+          sprintf "ERROR: %A" ex
 
       if actual = x then
         true
@@ -808,9 +790,10 @@ module private Arith =
 
     assert (p "1 + 2 - 3" "BinOp (Subtract, BinOp (Add, Number 1, Number 2), Number 3)")
 
-    assert (p
-              "2 * 3 / 5 * 7"
-              "BinOp\n  (Multiply, BinOp (Divide, BinOp (Multiply, Number 2, Number 3), Number 5),\n   Number 7)")
+    assert
+      (p
+        "2 * 3 / 5 * 7"
+        "BinOp\n  (Multiply, BinOp (Divide, BinOp (Multiply, Number 2, Number 3), Number 5),\n   Number 7)")
 
 /// 数列のパーサの実装例
 module private NumberSequence =
@@ -856,7 +839,8 @@ module private NumberSequence =
       let word = word.Trim()
 
       if word <> "" then
-        if i <> 0 then array.Add(Token.Comma)
+        if i <> 0 then
+          array.Add(Token.Comma)
 
         array.Add(Token.Number(int word))
         i <- i + 1
@@ -872,8 +856,8 @@ module private NumberSequence =
       let actual =
         try
           parseString s |> sprintf "%A"
-        with
-        | ex -> sprintf "ERROR: %A" ex
+        with ex ->
+          sprintf "ERROR: %A" ex
 
       if actual = x then
         true
@@ -1247,6 +1231,10 @@ module private MiniLang =
 
   let private lp = P.expect TokenKind.LeftParen ignore
   let private rp = P.expect TokenKind.RightParen ignore
+  let private lb = P.expect TokenKind.LeftBracket ignore
+  let private rb = P.expect TokenKind.RightBracket ignore
+  let private lc = P.expect TokenKind.LeftBrace ignore
+  let private rc = P.expect TokenKind.RightBrace ignore
   let private colon = P.expect TokenKind.Colon ignore
   let private comma = P.expect TokenKind.Comma ignore
   let private semi = P.expect TokenKind.Semi ignore
@@ -1255,76 +1243,92 @@ module private MiniLang =
     P.expect TokenKind.Ident (fun (Token.Ident it | Unreachable it) -> it)
 
   let private pLiteral =
-    P.choice [ // P.rule2 lp rp (fun _ _ -> Literal.Unit)
+    P.choice
+      [ // P.rule2 lp rp (fun _ _ -> Literal.Unit)
 
-               P.expect TokenKind.Number (fun (Token.Number value | Unreachable value) -> Literal.Int value)
-               P.expect TokenKind.False (fun _ -> Literal.Bool false)
-               P.expect TokenKind.True (fun _ -> Literal.Bool true) ]
+        P.expect TokenKind.Number (fun (Token.Number value | Unreachable value) -> Literal.Int value)
+        P.expect TokenKind.False (fun _ -> Literal.Bool false)
+        P.expect TokenKind.True (fun _ -> Literal.Bool true) ]
+
+  let private pBlockItemsRec = P.recursive "statement or expression"
+
+  // `Stmt* Expr` をパースする。ただしこれは曖昧なので以下の構文に変換する
+  // `μX. Expr (; X)? | Stmt X`
+  let private pBlockItems: P.Rule<_, Stmt list * Expr option> =
+    let p = P.recurse pBlockItemsRec
+
+    P.choice
+      [ P.rule2 pRecExpr (P.opt (P.rule2 semi p (fun _ result -> result)) id) (fun expr restOpt ->
+          match restOpt with
+          | Some (stmts, exprOpt) -> Stmt.Expr expr :: stmts, exprOpt
+          | None -> [], Some expr)
+        P.rule2 pRecStmt p (fun stmt (stmts, exprOpt) -> stmt :: stmts, exprOpt) ]
 
   let private pBlock =
-    let lc = P.expect TokenKind.LeftBrace ignore
-    let rc = P.expect TokenKind.RightBrace ignore
-
-    P.rule4 lc (P.rep pRecStmt) (P.opt pRecExpr id) rc (fun _ stmts e _ -> ({ Items = []; Stmts = stmts; Expr = e }: Block))
+    P.rule3 lc pBlockItems rc (fun _ (stmts, exprOpt) _ ->
+      ({ Items = []
+         Stmts = stmts
+         Expr = exprOpt }: Block))
 
   let private pTy1 =
-    P.choice [ P.rule1 pIdent Ty.Ident
+    P.choice
+      [ P.rule1 pIdent Ty.Ident
 
-               //  P.rule2 lp rp (fun _ _ -> Ty.Tuple [])
-               //  P.rule3 lp pRecTy rp (fun _ it _ -> it)
+        //  P.rule2 lp rp (fun _ _ -> Ty.Tuple [])
+        //  P.rule3 lp pRecTy rp (fun _ it _ -> it)
 
-               P.rule2
-                 lp
-                 (P.choice [ P.rule1 rp (fun _ -> Ty.Tuple [])
-                             P.rule2 pRecTy rp (fun it _ -> it) ])
-                 (fun _ it -> it) ]
+        P.rule2 lp (P.choice [ P.rule1 rp (fun _ -> Ty.Tuple []); P.rule2 pRecTy rp (fun it _ -> it) ]) (fun _ it -> it) ]
 
   let private pPrimary =
-    P.choice [ P.rule1 pLiteral Expr.Literal
-               P.rule1 pIdent Expr.Ident
+    P.choice
+      [ P.rule1 pLiteral Expr.Literal
+        P.rule1 pIdent Expr.Ident
 
-               // P.rule3 lp pRecExpr rp (fun _ e _ -> e)
+        // P.rule3 lp pRecExpr rp (fun _ e _ -> e)
 
-               P.rule2
-                 lp
-                 (P.choice [ P.rule1 rp (fun _ -> Expr.Literal Literal.Unit)
-                             P.rule2 pRecExpr rp (fun e _ -> e) ])
-                 (fun _ it -> it)
+        P.rule2
+          lp
+          (P.choice
+            [ P.rule1 rp (fun _ -> Expr.Literal Literal.Unit)
+              P.rule2 pRecExpr rp (fun e _ -> e) ])
+          (fun _ it -> it)
 
-                ]
+        ]
 
   let private pSuffix =
-    let lb = P.expect TokenKind.LeftBracket ignore
-    let rb = P.expect TokenKind.RightBracket ignore
-
     P.infixLeft
       pPrimary
-      (P.choice [ P.rule2 (P.expect TokenKind.Dot ignore) pIdent (fun _ field lhs -> Expr.Field(lhs, field))
-                  P.rule3 lb pRecExpr rb (fun _ index _ lhs -> Expr.Index(lhs, index)) ])
+      (P.choice
+        [ P.rule2 (P.expect TokenKind.Dot ignore) pIdent (fun _ field lhs -> Expr.Field(lhs, field))
+          P.rule3 lb pRecExpr rb (fun _ index _ lhs -> Expr.Index(lhs, index)) ])
       (P.eps ())
       (fun lhs mid _ -> mid lhs)
 
   let private pPrefix =
-    P.choice [ P.rule2
-                 (P.choice [ P.expect TokenKind.Minus (fun _ -> Unary.Minus)
-                             P.expect TokenKind.Bang (fun _ -> Unary.Not) ])
-                 pSuffix
-                 (fun op arg -> Expr.UniOp(op, arg))
-               pSuffix ]
+    P.choice
+      [ P.rule2
+          (P.choice
+            [ P.expect TokenKind.Minus (fun _ -> Unary.Minus)
+              P.expect TokenKind.Bang (fun _ -> Unary.Not) ])
+          pSuffix
+          (fun op arg -> Expr.UniOp(op, arg))
+        pSuffix ]
 
   let private pMul =
     P.infixLeft
       pPrefix
-      (P.choice [ P.cut TokenKind.Star (fun _ -> Binary.Multiply)
-                  P.cut TokenKind.Slash (fun _ -> Binary.Divide) ])
+      (P.choice
+        [ P.cut TokenKind.Star (fun _ -> Binary.Multiply)
+          P.cut TokenKind.Slash (fun _ -> Binary.Divide) ])
       pPrefix
       (fun l op r -> Expr.BinOp(op, l, r))
 
   let private pAdd =
     P.infixLeft
       pMul
-      (P.choice [ P.cut TokenKind.Plus (fun _ -> Binary.Add)
-                  P.cut TokenKind.Minus (fun _ -> Binary.Subtract) ])
+      (P.choice
+        [ P.cut TokenKind.Plus (fun _ -> Binary.Add)
+          P.cut TokenKind.Minus (fun _ -> Binary.Subtract) ])
       pMul
       (fun l op r -> Expr.BinOp(op, l, r))
 
@@ -1345,17 +1349,17 @@ module private MiniLang =
   let private pExpr1 = P.choice [ pAssign; pIfExpr ]
 
   let private pStmt1 =
-    let pExprStmt =
-      P.rule2 pRecExpr semi (fun e _ -> Stmt.Expr e)
+    let pExprStmt = P.rule2 pRecExpr semi (fun e _ -> Stmt.Expr e)
 
+    // let ;
     let pLetStmt =
-      P.rule2 (P.expect TokenKind.Let ignore) semi (fun _ _ -> Stmt.Let(Pat.Literal Literal.Unit, Expr.Literal Literal.Unit))
+      P.rule2 (P.expect TokenKind.Let ignore) semi (fun _ _ ->
+        Stmt.Let(Pat.Literal Literal.Unit, Expr.Literal Literal.Unit))
 
     P.choice [ pExprStmt; pLetStmt ]
 
   let private pParamList =
-    let pParam =
-      P.rule3 pIdent colon pRecTy (fun name _ ty -> name, ty)
+    let pParam = P.rule3 pIdent colon pRecTy (fun name _ ty -> name, ty)
 
     P.rule3 lp (by0 pParam comma) rp (fun _ it _ -> it)
 
@@ -1384,7 +1388,8 @@ module private MiniLang =
           P.bind pPatRec pRecPat
           P.bind pExprRec pExpr1
           P.bind pStmtRec pStmt1
-          P.bind pItemRec pItem1 ])
+          P.bind pItemRec pItem1
+          P.bind pBlockItemsRec pBlockItems ])
 
   module internal Tokenizer =
     let private punctuations =
@@ -1432,11 +1437,10 @@ module private MiniLang =
         else if isLetter s.[index] then
           let start = index
 
-          while index < s.Length
-                && (isLetter s.[index] || isDigit s.[index]) do
+          while index < s.Length && (isLetter s.[index] || isDigit s.[index]) do
             index <- index + 1
 
-          let token = TokenKind.asKeyword s.[start..index - 1]
+          let token = TokenKind.asKeyword s.[start .. index - 1]
           tokens.Add(token)
         else if isDigit s.[index] then
           let start = index
@@ -1444,11 +1448,12 @@ module private MiniLang =
           while index < s.Length && isDigit s.[index] do
             index <- index + 1
 
-          tokens.Add(Token.Number(int s.[start..index - 1]))
+          tokens.Add(Token.Number(int s.[start .. index - 1]))
         else
-          match punctuations
-                |> Array.tryFindIndex (fun (p, _) -> s.[index..index + p.Length - 1] = p)
-            with
+          match
+            punctuations
+            |> Array.tryFindIndex (fun (p, _) -> s.[index .. index + p.Length - 1] = p)
+          with
           | Some i ->
             let p, t = punctuations.[i]
             index <- index + p.Length
@@ -1474,7 +1479,7 @@ module private MiniLang =
         eprintfn "actual: %s\nexpected: %s" actual expected
         false
 
-    assert (p "fn f(x: int, y: string) -> () { 1 + 2 * 3 }" "Unit")
+    assert (p "fn f(x: int, y: string) -> () { 0; let; 1 + 2 * 3 }" "Unit")
 
 let v2 () = MiniLang.tests ()
 // Arith.tests ()
