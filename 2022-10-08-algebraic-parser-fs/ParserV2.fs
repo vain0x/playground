@@ -38,6 +38,11 @@ module private ParserCombinator =
 
   type private SemanticAction = IParseContext -> unit
 
+  type private Recursive<'T>(name: string, value: 'T) =
+    member inline _.Value = value
+
+    override _.ToString() = $"&{name}"
+
   /// Term of syntax rule.
   [<RequireQualifiedAccess; ReferenceEquality; NoComparison>]
   type private Term<'T> =
@@ -51,14 +56,16 @@ module private ParserCombinator =
     | Seq of Term<'T> list * SemanticAction
     | Choice of Term<'T> list
     | InfixLeft of left: Term<'T> * mid: Term<'T> * right: Term<'T> * SemanticAction
+    | Fix of local: Symbol<'T> * body: Term<'T>
 
-  and private Symbol<'T> = Symbol of id: obj * name: string * Lazy<Term<'T>>
+  and [<ReferenceEqualityAttribute; NoComparisonAttribute; StructuredFormatDisplay("&{name}")>] private Symbol<'T> =
+    private | Symbol of id: obj * name: string * Lazy<Term<'T>>
 
   [<Struct; NoEquality; NoComparison>]
   type Rule<'T, 'N> = private Rule of Term<'T>
 
   [<NoEquality; NoComparison>]
-  type RecRule<'T, 'N> = private RecRule of id: obj * name: string * rule: Rule<'T, 'N> option ref
+  type RecRule<'T, 'N> = private RecRule of Symbol<'T> * termRef: Term<'T> option ref
 
   [<Struct; NoEquality; NoComparison>]
   type Binding<'T> = private Binding of id: obj * name: string * Term<'T>
@@ -68,8 +75,7 @@ module private ParserCombinator =
     private
       { Start: Symbol<'T>
         RuleArray: Symbol<'T> array
-        RuleMemo: HashMap<obj, int>
-        Mapping: (obj -> 'N) }
+        RuleMemo: HashMap<obj, int> }
 
   // tokens:
 
@@ -94,32 +100,45 @@ module private ParserCombinator =
   /// - `recurse` により、定義される規則を他の規則の一部として利用できる
   /// - `build` する際に、再帰的な規則にその定義となる規則を `bind` したものを渡すこと
   ///     そうでなければエラーが発生する ("Rule xxx not bound")
-  let recursive (name: string) : RecRule<_, _> =
-    let r = ref None
-    RecRule(r :> obj, name, r)
+  let recursive (name: string) : RecRule<'T, _> =
+    let termRef: Term<'T> option ref = ref None
+
+    let symbol =
+      Symbol(
+        termRef :> obj,
+        name,
+        lazy
+          (match termRef.contents with
+           | Some it -> it
+           | None -> failwithf "Rule '%s' unbound" name)
+      )
+
+    RecRule(symbol, termRef)
 
   /// 再帰的な規則の利用を表す規則
   let recurse (rule: RecRule<'T, 'N>) : Rule<'T, 'N> =
-    let (RecRule (id, name, ruleRef)) = rule
-
-    Symbol(
-      id,
-      name,
-      lazy
-        (match ruleRef.contents with
-         | Some (Rule it) -> it
-         | None -> failwithf "Rule '%s' unbound" name)
-    )
-    |> Term.Symbol
-    |> Rule
+    let (RecRule (symbol, _)) = rule
+    Rule(Term.Symbol symbol)
 
   /// 再帰的な規則に定義を束縛することを表す
   let bind (recRule: RecRule<'T, 'N>) (actualRule: Rule<'T, 'N>) : Binding<'T> =
-    let (RecRule (id, name, ruleRef)) = recRule
-    ruleRef.contents <- Some actualRule
+    let (RecRule (symbol, termRef)) = recRule
+    let (Symbol (id, name, _)) = symbol
+    let (Rule actualTerm) = actualRule
 
-    let (Rule r) = actualRule
-    Binding(id, name, r)
+    assert (termRef.contents |> Option.isNone)
+    termRef.contents <- Some actualTerm
+
+    Binding(id, name, actualTerm)
+
+  let fix (name: string) (creator: Rule<'T, 'N> -> Rule<'T, 'N>) : Rule<'T, 'N> =
+    let recRule = recursive name
+    let (Rule term) = creator (recurse recRule)
+
+    let (RecRule (symbol, termRef)) = recRule
+    termRef.contents <- Some term
+
+    Rule(Term.Fix(symbol, term))
 
   // let label (name: string) (rule: Rule<'T, 'N>) : Rule<'T, 'N> = todo ()
 
@@ -325,6 +344,12 @@ module private ParserCombinator =
          go rMid
          go rRight
 
+       | Term.Fix (symbol, body) ->
+         // After the pass, Fix behaves the same as Symbol
+         // since the body is registered in the RuleArray (the symbol is now a nominal rule).
+         internSymbol symbol
+         go body
+
      for Binding (id, name, term) in bindings do
        internSymbol (Symbol(id, name, lazy (term)))
        go term)
@@ -352,6 +377,10 @@ module private ParserCombinator =
        | Term.Choice rules -> sprintf "(%s)" (rules |> List.map (go (nl + "  ")) |> String.concat (nl + "| "))
        | Term.InfixLeft (rLeft, rMid, rRight, _) -> sprintf "(%s %%%s %s)" (go nl rLeft) (go nl rMid) (go nl rRight)
 
+       | Term.Fix (local, body) ->
+         let (Symbol (_, name, _)) = local
+         sprintf "(μ%s. %s)" name (go (nl + "  ") body)
+
      for i in 1 .. ruleArray.Count - 1 do
        let rule = ruleArray.[i]
 
@@ -364,8 +393,7 @@ module private ParserCombinator =
 
     ({ Start = start
        RuleArray = ruleArray.ToArray()
-       RuleMemo = ruleRev
-       Mapping = id }: Parser<_, _>)
+       RuleMemo = ruleRev }: Parser<_, _>)
 
   /// パーサを構築する
   ///
@@ -389,8 +417,7 @@ module private ParserCombinator =
 
     ({ Start = p.Start
        RuleArray = p.RuleArray
-       RuleMemo = p.RuleMemo
-       Mapping = fun obj -> p.Mapping obj :?> 'N }: Parser<'T, 'N>)
+       RuleMemo = p.RuleMemo }: Parser<'T, 'N>)
 
   // parser methods:
 
@@ -432,6 +459,10 @@ module private ParserCombinator =
       // left and mid must not be nullable
       | Term.InfixLeft _ -> false
 
+      | Term.Fix (local, _) ->
+        let (Symbol (id, _, _)) = local
+        HashMap.findOr id false nullableMemo
+
     // Compute nullable memo:
     (let mutable workList = Queue(parser.RuleArray)
      let mutable nextList = Queue()
@@ -461,7 +492,8 @@ module private ParserCombinator =
       match term with
       | Term.Expect (k, _) -> set [ k ]
       | Term.Cut (k, _) -> set [ k ]
-      | Term.Symbol (Symbol (id, _, _)) -> HashMap.findOr id Set.empty firstSetMemo
+      | Term.Symbol (Symbol (id, _, _))
+      | Term.Fix (Symbol (id, _, _), _) -> HashMap.findOr id Set.empty firstSetMemo
       | Term.Eps _ -> Set.empty
       | Term.Map (t, _) -> computeFirst t
       | Term.Seq (terms, _) -> computeFirstMany terms
@@ -551,7 +583,8 @@ module private ParserCombinator =
       | Term.Eps _
       | Term.Expect _
       | Term.Cut _
-      | Term.Symbol _ -> ()
+      | Term.Symbol _
+      | Term.Fix _ -> ()
 
       | Term.Map (t, _) -> jumpRec t
       | Term.Seq (terms, _) -> List.iter jumpRec terms
@@ -617,9 +650,12 @@ module private ParserCombinator =
 
       | Term.Eps action -> action ctx
 
-      | Term.Symbol (Symbol (_, name, ruleLazy)) ->
+      | Term.Symbol symbol
+      | Term.Fix (symbol, _) ->
+        let (Symbol (_, name, termLazy)) = symbol
+
         try
-          parseRec ruleLazy.Value
+          parseRec termLazy.Value
         with _ ->
           eprintfn "(While parsing %s at %d)" name index
           reraise ()
@@ -1302,19 +1338,16 @@ module private MiniLang =
         P.expect TokenKind.False (fun _ -> Literal.Bool false)
         P.expect TokenKind.True (fun _ -> Literal.Bool true) ]
 
-  let private pBlockItemsRec = P.recursive "statement or expression"
-
   // `Stmt* Expr` をパースする。ただしこれは曖昧なので以下の構文に変換する
   // `μX. Expr (; X)? | Stmt X`
   let private pBlockItems: P.Rule<_, Stmt list * Expr option> =
-    let p = P.recurse pBlockItemsRec
-
-    P.choice
-      [ P.rule2 pRecExpr (P.opt (P.rule2 semi p (fun _ result -> result)) id) (fun expr restOpt ->
-          match restOpt with
-          | Some (stmts, exprOpt) -> Stmt.Expr expr :: stmts, exprOpt
-          | None -> [], Some expr)
-        P.rule2 pRecStmt p (fun stmt (stmts, exprOpt) -> stmt :: stmts, exprOpt) ]
+    P.fix "BlockItems" (fun pSelf ->
+      P.choice
+        [ P.rule2 pRecExpr (P.opt (P.rule2 semi pSelf (fun _ result -> result)) id) (fun expr restOpt ->
+            match restOpt with
+            | Some (stmts, exprOpt) -> Stmt.Expr expr :: stmts, exprOpt
+            | None -> [], Some expr)
+          P.rule2 pRecStmt pSelf (fun stmt (stmts, exprOpt) -> stmt :: stmts, exprOpt) ])
 
   let private pBlock =
     P.rule3 lc pBlockItems rc (fun _ (stmts, exprOpt) _ ->
@@ -1440,8 +1473,7 @@ module private MiniLang =
           P.bind pPatRec pRecPat
           P.bind pExprRec pExpr1
           P.bind pStmtRec pStmt1
-          P.bind pItemRec pItem1
-          P.bind pBlockItemsRec pBlockItems ])
+          P.bind pItemRec pItem1 ])
 
   module internal Tokenizer =
     let private punctuations =
