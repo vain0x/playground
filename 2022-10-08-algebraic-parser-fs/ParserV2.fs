@@ -3,6 +3,7 @@ module ParserV2
 open System
 
 type private Queue<'T> = System.Collections.Generic.Queue<'T>
+type private Stack<'T> = System.Collections.Generic.Stack<'T>
 type private HashSet<'T> = System.Collections.Generic.HashSet<'T>
 type private HashMap<'K, 'T> = System.Collections.Generic.Dictionary<'K, 'T>
 
@@ -30,19 +31,26 @@ module private ParserCombinator =
   /// Kind of token.
   type private K = int
 
+  type private IParseContext =
+    abstract Shift: unit -> obj
+    abstract Push: obj -> unit
+    abstract Pop: unit -> obj
+
+  type private SemanticAction = IParseContext -> unit
+
   /// Term of syntax rule.
   [<RequireQualifiedAccess; ReferenceEquality; NoComparison>]
   type private Term<'T> =
     private
-    | Expect of K * extractor: ('T -> obj)
-    | Cut of K * extractor: ('T -> obj)
+    | Expect of K * SemanticAction
+    | Cut of K * SemanticAction
 
     | Symbol of Symbol<'T>
-    | Eps of obj
-    | Map of Term<'T> * mapping: (obj -> obj)
-    | Seq of Term<'T> list * decode: (obj list -> obj)
+    | Eps of SemanticAction
+    | Map of Term<'T> * SemanticAction
+    | Seq of Term<'T> list * SemanticAction
     | Choice of Term<'T> list
-    | InfixLeft of left: Term<'T> * mid: Term<'T> * right: Term<'T> * decode: (obj -> obj -> obj -> obj)
+    | InfixLeft of left: Term<'T> * mid: Term<'T> * right: Term<'T> * SemanticAction
 
   and private Symbol<'T> = Symbol of id: obj * name: string * Lazy<Term<'T>>
 
@@ -69,14 +77,15 @@ module private ParserCombinator =
 
   /// 特定の種類のトークンが1つ出現することを表す規則
   let expect (token: int) (extractor: 'T -> 'N) : Rule<'T, 'N> =
-    Rule(Term.Expect(token, extractor >> box))
+    Rule(Term.Expect(token, (fun ctx -> ctx.Push(extractor (ctx.Shift() :?> 'T) :> obj))))
 
   /// 特定の種類のトークンが1つ出現することを表す規則
   /// また、カットを行う
   ///
   /// - カットとは、`choice` オペレータによる構文規則の選択を確定させるということ
   ///   すなわち `choice` は先読みによりこのトークンが出現するか確認して、出現していたらこの `cut` を含む規則を選択する
-  let cut (token: int) (extractor: 'T -> 'N) : Rule<'T, 'N> = Rule(Term.Cut(token, extractor >> box))
+  let cut (token: int) (extractor: 'T -> 'N) : Rule<'T, 'N> =
+    Rule(Term.Cut(token, (fun ctx -> ctx.Push(extractor (ctx.Shift() :?> 'T) :> obj))))
 
   // nominal rules:
 
@@ -122,7 +131,13 @@ module private ParserCombinator =
   let rule1 (r: Rule<'T, 'A>) (mapping: 'A -> 'N) : Rule<'T, 'N> =
     let (Rule r) = r
 
-    Term.Map(r, (fun obj -> mapping (obj :?> 'A) :> obj)) |> Rule
+    Term.Map(
+      r,
+      (fun ctx ->
+        let n = ctx.Pop() :?> 'A
+        ctx.Push(mapping n :> obj))
+    )
+    |> Rule
 
   /// 2つの規則の並び
   ///
@@ -133,10 +148,10 @@ module private ParserCombinator =
 
     Term.Seq(
       [ r1; r2 ],
-      fun objList ->
-        match objList with
-        | [ o1; o2 ] -> decode (o1 :?> 'A) (o2 :?> 'B) :> obj
-        | _ -> unreachable ()
+      fun ctx ->
+        let n2 = ctx.Pop() :?> 'B
+        let n1 = ctx.Pop() :?> 'A
+        ctx.Push(decode n1 n2 :> obj)
     )
     |> Rule
 
@@ -148,10 +163,11 @@ module private ParserCombinator =
 
     Term.Seq(
       [ r1; r2; r3 ],
-      fun objList ->
-        match objList with
-        | [ o1; o2; o3 ] -> decode (o1 :?> 'A) (o2 :?> 'B) (o3 :?> 'C) :> obj
-        | _ -> unreachable ()
+      fun ctx ->
+        let n3 = ctx.Pop() :?> 'C
+        let n2 = ctx.Pop() :?> 'B
+        let n1 = ctx.Pop() :?> 'A
+        ctx.Push(decode n1 n2 n3 :> obj)
     )
     |> Rule
 
@@ -170,10 +186,12 @@ module private ParserCombinator =
 
     Term.Seq(
       [ r1; r2; r3; r4 ],
-      fun objList ->
-        match objList with
-        | [ o1; o2; o3; o4 ] -> decode (o1 :?> 'A) (o2 :?> 'B) (o3 :?> 'C) (o4 :?> 'D) :> obj
-        | _ -> unreachable ()
+      fun ctx ->
+        let n4 = ctx.Pop() :?> 'D
+        let n3 = ctx.Pop() :?> 'C
+        let n2 = ctx.Pop() :?> 'B
+        let n1 = ctx.Pop() :?> 'A
+        ctx.Push(decode n1 n2 n3 n4 :> obj)
     )
     |> Rule
 
@@ -187,7 +205,8 @@ module private ParserCombinator =
     rule4 r1 r2 r3 (rule4 r4 r5 r6 r7 (fun n4 n5 n6 n7 -> n4, n5, n6, n7)) (fun n1 n2 n3 (n4, n5, n6, n7) ->
       decode n1 n2 n3 n4 n5 n6 n7)
 
-  let eps value = Rule(Term.Eps value)
+  let eps value =
+    Rule(Term.Eps(fun ctx -> ctx.Push(value)))
 
   /// 複数の規則のうち、適用可能なものを1つ選択する規則
   ///
@@ -197,7 +216,7 @@ module private ParserCombinator =
     Rule(Term.Choice(List.map (fun (Rule r) -> r) rules))
 
   let opt (rule: Rule<'T, 'A>) (decode: ('A option -> 'N)) : Rule<'T, 'N> =
-    choice [ rule1 rule (fun a -> decode (Some a)); Rule(Term.Eps(decode None)) ]
+    choice [ rule1 rule (fun a -> decode (Some a)); eps None ]
 
   /// 左結合な二項演算の規則
   ///
@@ -222,19 +241,32 @@ module private ParserCombinator =
         rLeft,
         rMid,
         rRight,
-        (fun left mid right -> decode (left :?> 'N) (mid :?> 'A) (right :?> 'B) :> obj)
+        (fun ctx ->
+          let right = ctx.Pop() :?> 'B
+          let mid = ctx.Pop() :?> 'A
+          let left = ctx.Pop() :?> 'N
+          ctx.Push(decode left mid right :> obj))
       )
     )
 
+  // 0+ repetition
   let rep (pItem: Rule<'T, 'N>) : Rule<'T, 'N list> =
     let (Rule item) = pItem
-    let nil: 'N list = []
-    let term: Term<'T> = Term.Eps nil
+    let (Rule e) = eps (([]: 'N list) :> obj)
 
     let t =
-      Term.InfixLeft(term, item, term, (fun left mid _ -> ((mid :?> 'N) :: (left :?> 'N list)) |> box))
+      Term.InfixLeft(
+        e,
+        item,
+        e,
+        (fun ctx ->
+          ctx.Pop() |> ignore
+          let mid = ctx.Pop() :?> 'N
+          let left = ctx.Pop() :?> 'N list
+          ctx.Push((mid :: left) :> obj))
+      )
 
-    Rule(Term.Map(t, (fun xs -> (xs :?> 'N list) |> List.rev |> box)))
+    rule1 (Rule t) List.rev
 
   // build:
 
@@ -530,6 +562,7 @@ module private ParserCombinator =
     // runtime:
 
     let mutable index = 0
+    let stack = Stack<obj>()
 
     let inline tokenAt i = tokens.[i]
 
@@ -538,6 +571,7 @@ module private ParserCombinator =
       let t = tokens.[index]
       eprintfn "shift %d:%A%s %A" index t (if cutting then "!" else "") t
       index <- index + 1
+      t
 
     let fail msg =
       let pos =
@@ -548,33 +582,40 @@ module private ParserCombinator =
 
       failwithf "Parse Error: At %s, %s" pos msg
 
+    let onBeginNode () = stack.Count
+    let onEndNode (previous: int) = assert (stack.Count = previous + 1)
+
+    let ctx =
+      { new IParseContext with
+          override _.Shift() = shift false
+          override _.Push(item) = stack.Push(item)
+          override _.Pop() : obj = stack.Pop() }
+
     let rec parseRec rule =
       match rule with
-      | Term.Expect (token, extractor) ->
+      | Term.Expect (token, action) ->
         if index < tokens.Length then
           let t = tokenAt index
 
           if getKind t = token then
-            shift false
-            extractor t
+            action ctx
           else
             fail (sprintf "expect token '%A'" token)
         else
           fail (sprintf "expect token '%A'" token)
 
-      | Term.Cut (token, extractor) ->
+      | Term.Cut (token, action) ->
         if index < tokens.Length then
           let t = tokens.[index]
 
           if getKind t = token then
-            shift true
-            extractor t
+            action ctx
           else
             fail (sprintf "expect token '%A'" token)
         else
           fail (sprintf "expect token '%A'" token)
 
-      | Term.Eps value -> value
+      | Term.Eps action -> action ctx
 
       | Term.Symbol (Symbol (_, name, ruleLazy)) ->
         try
@@ -583,8 +624,18 @@ module private ParserCombinator =
           eprintfn "(While parsing %s at %d)" name index
           reraise ()
 
-      | Term.Map (r, mapping) -> parseRec r |> mapping
-      | Term.Seq (rules, decode) -> rules |> List.map parseRec |> decode
+      | Term.Map (r, action) ->
+        parseRec r
+        action ctx
+
+      | Term.Seq (rules, action) ->
+        let n = onBeginNode ()
+
+        for r in rules do
+          parseRec r
+
+        action ctx
+        onEndNode n
 
       | Term.Choice rules ->
         let table =
@@ -617,13 +668,15 @@ module private ParserCombinator =
         else
           onFallback ()
 
-      | Term.InfixLeft (rLeft, rMid, rRight, decode) ->
+      | Term.InfixLeft (rLeft, rMid, rRight, action) ->
         let table =
           match HashMap.tryFind rule infixMemo with
           | Some it -> it
           | None -> failwithf "unreachable: infixMemo missing: %A" rule
 
-        let rec infixLoop left =
+        let rec infixLoop () =
+          // here left value (or accumulated value) is on the stack
+
           if index < tokens.Length then
             // try to parse (mid right)
             let token = tokenAt index
@@ -635,35 +688,34 @@ module private ParserCombinator =
               | None -> false
 
             if ok then
-              let mid =
-                try
-                  parseRec rMid
-                with _ ->
-                  eprintfn "can't parse mid"
-                  reraise ()
+              try
+                parseRec rMid
+              with _ ->
+                eprintfn "can't parse mid"
+                reraise ()
 
-              let right = parseRec rRight
+              parseRec rRight
 
-              infixLoop (decode left mid right)
-            else
-              left
-          else
-            left
+              action ctx
+              infixLoop ()
 
-        let left = parseRec rLeft
-        infixLoop left
+        let n = onBeginNode ()
+        parseRec rLeft
+        infixLoop ()
+        onEndNode n
 
     let r =
       let (Symbol (_, _, r)) = parser.Start
       r.Value
 
-    let value = parseRec r |> parser.Mapping
+    parseRec r
 
-    if index = tokens.Length then
-      value
-    else
+    if index <> tokens.Length then
       eprintfn "error: unexpected EOF at %d near %A" index tokens.[index]
-      value
+
+    assert (stack.Count = 1)
+
+    ctx.Pop() :?> 'N
 
   /// トークン列をパースする
   let parseArray (getKind: 'T -> K) (tokens: 'T array) (parser: Parser<'T, 'N>) : 'N = parseV2 getKind tokens parser
