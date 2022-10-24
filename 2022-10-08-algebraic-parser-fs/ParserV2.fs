@@ -66,6 +66,13 @@ module private ParserCombinator =
   [<Struct; NoEquality; NoComparison>]
   type Binding = private Binding of id: obj * name: string * Term
 
+  exception ParseError of msg: string * index: int with
+    override this.ToString() =
+      sprintf "Parse Error: %s\n%s" this.msg this.StackTrace
+
+  exception private ExpectedTokenError of Token: K * Index: int
+  exception private ChoiceError of Tokens: K list * Index: int
+
   [<NoEquality; NoComparison>]
   type GrammarData =
     private
@@ -79,6 +86,10 @@ module private ParserCombinator =
         FallbackMemo: HashMap<Term, Term> }
 
   type Grammar<'T, 'N> = Grammar of GrammarData
+
+  // ---------------------------------------------
+  // Combinators
+  // ---------------------------------------------
 
   // tokens:
 
@@ -407,6 +418,48 @@ module private ParserCombinator =
   // Build
   // ---------------------------------------------
 
+  let private computeNullableWith (nullableMemo: HashMap<_, bool>) (term: Term) =
+    let rec nullableRec term =
+      match term with
+      | Term.Expect _ -> false
+      | Term.Eps _ -> true
+
+      | Term.Symbol (Symbol (id, _, _))
+      | Term.Mu (Symbol (id, _, _), _) -> HashMap.findOr id false nullableMemo
+
+      | Term.Map (t, _) -> nullableRec t
+      | Term.Seq (terms, _) -> terms |> List.forall nullableRec
+      | Term.Choice terms -> terms |> List.exists nullableRec
+      | Term.LeftRec (left, _, _) -> nullableRec left
+
+    nullableRec term
+
+  let private computeFirstSetWith (nullableMemo: HashMap<obj, bool>, firstSetMemo: HashMap<obj, Set<K>>) (term: Term) =
+    let rec firstRec term =
+      match term with
+      | Term.Expect (k, _, _) -> set [ k ]
+
+      | Term.Symbol (Symbol (id, _, _))
+      | Term.Mu (Symbol (id, _, _), _) -> HashMap.findOr id Set.empty firstSetMemo
+
+      | Term.Eps _ -> Set.empty
+      | Term.Map (t, _) -> firstRec t
+      | Term.Seq (terms, _) -> firstManyRec terms
+      | Term.Choice terms -> terms |> List.map firstRec |> Set.unionMany
+      | Term.LeftRec (left, right, _) -> firstManyRec [ left; right ]
+
+    and firstManyRec terms =
+      match terms with
+      | [] -> Set.empty
+
+      | t :: terms ->
+        if computeNullableWith nullableMemo t then
+          Set.union (firstRec t) (firstManyRec terms)
+        else
+          firstRec t
+
+    firstRec term
+
   let private doBuild<'T> (start: Symbol) (bindings: Binding list) : GrammarData =
     // indexing
     let ruleArray = ResizeArray()
@@ -525,24 +578,9 @@ module private ParserCombinator =
     // term -> branchTerm
     let fallbackMemo = HashMap()
 
+    // term -> rhsFirstSet
+    // key must be Term.LeftRec
     let leftRecMemo = HashMap()
-
-    let rec computeNullable (term: Term) =
-      match term with
-      | Term.Expect _ -> false
-      | Term.Eps _ -> true
-      | Term.Symbol (Symbol (id, _, _)) -> HashMap.findOr id false nullableMemo
-
-      | Term.Map (t, _) -> computeNullable t
-      | Term.Seq (terms, _) -> terms |> List.forall computeNullable
-      | Term.Choice terms -> terms |> List.exists computeNullable
-
-      // rhs must not be nullable
-      | Term.LeftRec (left, _, _) -> computeNullable left
-
-      | Term.Mu (local, _) ->
-        let (Symbol (id, _, _)) = local
-        HashMap.findOr id false nullableMemo
 
     // Compute nullable memo:
     (let mutable workList = Queue(ruleArray)
@@ -556,7 +594,7 @@ module private ParserCombinator =
          let (Symbol (id, name, termLazy)) as symbol = workList.Dequeue()
          assert (nullableMemo.ContainsKey(id) |> not)
 
-         let nullable = computeNullable termLazy.Value
+         let nullable = computeNullableWith nullableMemo termLazy.Value
 
          eprintfn
            "trace: compute nullable %s: %s"
@@ -575,26 +613,6 @@ module private ParserCombinator =
        swap &workList &nextList
        nextList.Clear())
 
-    let rec computeFirst (term: Term) =
-      match term with
-      | Term.Expect (k, _, _) -> set [ k ]
-      | Term.Symbol (Symbol (id, _, _))
-      | Term.Mu (Symbol (id, _, _), _) -> HashMap.findOr id Set.empty firstSetMemo
-      | Term.Eps _ -> Set.empty
-      | Term.Map (t, _) -> computeFirst t
-      | Term.Seq (terms, _) -> computeFirstMany terms
-      | Term.Choice terms -> terms |> List.map computeFirst |> Set.unionMany
-      | Term.LeftRec (left, right, _) -> computeFirstMany [ left; right ]
-
-    and computeFirstMany terms =
-      match terms with
-      | [] -> Set.empty
-      | t :: terms ->
-        if computeNullable t then
-          Set.union (computeFirst t) (computeFirstMany terms)
-        else
-          computeFirst t
-
     // Compute first memo:
     (let mutable modified = true
 
@@ -603,7 +621,7 @@ module private ParserCombinator =
 
        for (Symbol (id, name, termLazy)) in ruleArray do
          let oldSet = HashMap.findOr id Set.empty firstSetMemo
-         let firstSet = computeFirst termLazy.Value
+         let firstSet = computeFirstSetWith (nullableMemo, firstSetMemo) termLazy.Value
 
          if firstSet <> oldSet then
            modified <- true
@@ -625,7 +643,7 @@ module private ParserCombinator =
           let table = HashMap()
 
           for branchTerm in terms do
-            let firstSet = computeFirst branchTerm
+            let firstSet = computeFirstSetWith (nullableMemo, firstSetMemo) branchTerm
 
             if Set.isEmpty firstSet then
               if fallbackMemo.ContainsKey(term) then
@@ -664,9 +682,9 @@ module private ParserCombinator =
         if leftRecMemo.ContainsKey(term) |> not then
           leftRecRec left
           leftRecRec right
-          leftRecMemo.Add(term, computeFirst right)
+          leftRecMemo.Add(term, computeFirstSetWith (nullableMemo, firstSetMemo) right)
 
-          if computeNullable right then
+          if computeNullableWith nullableMemo right then
             eprintfn "ambiguous: leftRec right mustn't nullable: %A" term
 
       | Term.Eps _
@@ -715,11 +733,28 @@ module private ParserCombinator =
   /// New parser. Deterministic by 1-token lookahead. Recursive decent.
   let parseV2<'T, 'N> (getKind: 'T -> K) (tokens: 'T array) (grammar: Grammar<'T, 'N>) : 'N =
     let (Grammar grammar) = grammar
-    // let nullableMemo = grammar.NullableMemo
-    // let firstSetMemo = grammar.FirstSetMemo
+    let nullableMemo = grammar.NullableMemo
+    let firstSetMemo = grammar.FirstSetMemo
     let leftRecMemo = grammar.LeftRecMemo
     let jumpMemo = grammar.JumpMemo
     let fallbackMemo = grammar.FallbackMemo
+
+    let termFirstSetMemo = HashMap()
+
+    let getFirstSet term =
+      match term with
+      | Term.Symbol (Symbol (id, _, _))
+      | Term.Mu (Symbol (id, _, _), _) -> grammar.FirstSetMemo.[id]
+
+      | Term.Eps _ -> Set.empty
+
+      | _ ->
+        match HashMap.tryFind term termFirstSetMemo with
+        | Some it -> it
+        | None ->
+          let result = computeFirstSetWith (nullableMemo, firstSetMemo) term
+          termFirstSetMemo.[term] <- result
+          result
 
     // runtime:
 
@@ -735,14 +770,11 @@ module private ParserCombinator =
       index <- index + 1
       t
 
-    let fail msg =
-      let pos =
-        if index < tokens.Length then
-          sprintf "%d:%A" index (tokenAt index)
-        else
-          "EOF"
-
-      failwithf "Parse Error: At %s, %s" pos msg
+    let near index =
+      if index < tokens.Length then
+        sprintf "%d:%A" index (tokenAt index)
+      else
+        "EOF"
 
     let onBeginNode () = stack.Count
     let onEndNode (previous: int) = assert (stack.Count = previous + 1)
@@ -762,9 +794,9 @@ module private ParserCombinator =
           if getKind t = token then
             action ctx
           else
-            fail (sprintf "expect token '%A'" token)
+            raise (ExpectedTokenError(token, index))
         else
-          fail (sprintf "expect token '%A'" token)
+          raise (ExpectedTokenError(token, index))
 
       | Term.Eps action -> action ctx
 
@@ -801,8 +833,11 @@ module private ParserCombinator =
         let onFallback () =
           let fallbackTerm =
             match HashMap.tryFind rule fallbackMemo with
+
             | Some it -> it
-            | None -> failwithf "choice doesn't have fallback choice:%A" rule
+            | None ->
+              eprintfn "trace: choice doesn't have fallback choice:%A" rule
+              raise (ChoiceError(List.ofSeq table.Keys, index))
 
           parseRec fallbackTerm
 
@@ -849,17 +884,32 @@ module private ParserCombinator =
         rightLoop ()
         onEndNode n
 
-    let r =
-      let (Symbol (_, _, r)) = grammar.Start
-      r.Value
+    let findWhat k =
+      match tokens |> Array.tryFind (fun t -> getKind t = k) with
+      | Some t -> sprintf "k:%d e.g. %A" k t
+      | None -> sprintf "k:%d" k
 
-    parseRec r
+    try
+      parseRec (Term.Symbol grammar.Start)
+    with
+    | ExpectedTokenError (k, index) ->
+      let msg = sprintf "At %s, expected a token %s " (near index) (findWhat k)
+      raise (ParseError(msg, index))
+
+    | ChoiceError (kindList, index) ->
+      let what =
+        kindList
+        |> List.sort
+        |> List.map findWhat
+        |> String.concat ", "
+
+      let msg = sprintf "At %s, expected one of [%s]" (near index) what
+      raise (ParseError(msg, index))
 
     if index <> tokens.Length then
-      eprintfn "error: unexpected EOF at %d near %A" index tokens.[index]
+      raise (ParseError(sprintf "error: unexpected EOF at %s" (near index), index))
 
     assert (stack.Count = 1)
-
     ctx.Pop() :?> 'N
 
   /// トークン列をパースする
