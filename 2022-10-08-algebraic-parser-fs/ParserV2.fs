@@ -96,7 +96,7 @@ module private ParserCombinator =
   // let look (token: int) : Rule<'T, unit> = todo ()
 
   /// 特定の種類のトークンが1つ出現することを表す規則
-  let expect (token: int) (extractor: 'T -> 'N) : Rule<'T, 'N> =
+  let expect (token: K) (extractor: 'T -> 'N) : Rule<'T, 'N> =
     Rule(Term.Expect(token, false, (fun ctx -> ctx.Push(extractor (ctx.Shift() :?> 'T) :> obj))))
 
   /// 特定の種類のトークンが1つ出現することを表す規則
@@ -104,7 +104,7 @@ module private ParserCombinator =
   ///
   /// - カットとは、`choice` オペレータによる構文規則の選択を確定させるということ
   ///   すなわち `choice` は先読みによりこのトークンが出現するか確認して、出現していたらこの `cut` を含む規則を選択する
-  let cut (token: int) (extractor: 'T -> 'N) : Rule<'T, 'N> =
+  let cut (token: K) (extractor: 'T -> 'N) : Rule<'T, 'N> =
     Rule(Term.Expect(token, true, (fun ctx -> ctx.Push(extractor (ctx.Shift() :?> 'T) :> obj))))
 
   // nominal rules:
@@ -130,8 +130,8 @@ module private ParserCombinator =
     RecRule(symbol, termRef)
 
   /// 再帰的な規則の利用を表す規則
-  let recurse (rule: RecRule<'T, 'N>) : Rule<'T, 'N> =
-    let (RecRule (symbol, _)) = rule
+  let recurse (recRule: RecRule<'T, 'N>) : Rule<'T, 'N> =
+    let (RecRule (symbol, _)) = recRule
     Rule(Term.Symbol symbol)
 
   /// 再帰的な規則に定義を束縛することを表す
@@ -161,7 +161,9 @@ module private ParserCombinator =
 
   // combinators:
 
-  // let eps () : Rule<'T, 'N> = todo ()
+  /// トークンを消費しない規則
+  let eps<'T, 'N> (value: 'N) : Rule<'T, 'N> =
+    Rule(Term.Eps(fun ctx -> ctx.Push value))
 
   /// 単一の規則とその変換
   let rule1 (r: Rule<'T, 'A>) (mapping: 'A -> 'N) : Rule<'T, 'N> =
@@ -178,7 +180,7 @@ module private ParserCombinator =
   /// 2つの規則の並び
   ///
   /// - `decode`: 規則のパース結果を結合する関数
-  let rule2 (r1: Rule<'T, 'A>) (r2: Rule<'T, 'B>) (decode: 'A -> 'B -> 'N) : Rule<'T, 'N> =
+  let rule2 (r1: Rule<'T, 'A>) (r2: Rule<'T, 'B>) (decoder: 'A -> 'B -> 'N) : Rule<'T, 'N> =
     let (Rule r1) = r1
     let (Rule r2) = r2
 
@@ -187,12 +189,12 @@ module private ParserCombinator =
       fun ctx ->
         let n2 = ctx.Pop() :?> 'B
         let n1 = ctx.Pop() :?> 'A
-        ctx.Push(decode n1 n2 :> obj)
+        ctx.Push(decoder n1 n2 :> obj)
     )
     |> Rule
 
   /// 3つの規則の並び
-  let rule3 (r1: Rule<'T, 'A>) (r2: Rule<'T, 'B>) (r3: Rule<'T, 'C>) (decode: 'A -> 'B -> 'C -> 'N) : Rule<'T, 'N> =
+  let rule3 (r1: Rule<'T, 'A>) (r2: Rule<'T, 'B>) (r3: Rule<'T, 'C>) (decoder: 'A -> 'B -> 'C -> 'N) : Rule<'T, 'N> =
     let (Rule r1) = r1
     let (Rule r2) = r2
     let (Rule r3) = r3
@@ -203,7 +205,7 @@ module private ParserCombinator =
         let n3 = ctx.Pop() :?> 'C
         let n2 = ctx.Pop() :?> 'B
         let n1 = ctx.Pop() :?> 'A
-        ctx.Push(decode n1 n2 n3 :> obj)
+        ctx.Push(decoder n1 n2 n3 :> obj)
     )
     |> Rule
 
@@ -213,7 +215,7 @@ module private ParserCombinator =
     (r2: Rule<'T, 'B>)
     (r3: Rule<'T, 'C>)
     (r4: Rule<'T, 'D>)
-    (decode: 'A -> 'B -> 'C -> 'D -> 'N)
+    (decoder: 'A -> 'B -> 'C -> 'D -> 'N)
     : Rule<'T, 'N> =
     let (Rule r1) = r1
     let (Rule r2) = r2
@@ -227,22 +229,19 @@ module private ParserCombinator =
         let n3 = ctx.Pop() :?> 'C
         let n2 = ctx.Pop() :?> 'B
         let n1 = ctx.Pop() :?> 'A
-        ctx.Push(decode n1 n2 n3 n4 :> obj)
+        ctx.Push(decoder n1 n2 n3 n4 :> obj)
     )
     |> Rule
 
-  let rule5 r1 r2 r3 r4 r5 decode =
-    rule4 r1 r2 r3 (rule2 r4 r5 (fun n4 n5 -> n4, n5)) (fun n1 n2 n3 (n4, n5) -> decode n1 n2 n3 n4 n5)
+  let rule5 r1 r2 r3 r4 r5 decoder =
+    rule4 r1 r2 r3 (rule2 r4 r5 (fun n4 n5 -> n4, n5)) (fun n1 n2 n3 (n4, n5) -> decoder n1 n2 n3 n4 n5)
 
-  let rule6 r1 r2 r3 r4 r5 r6 decode =
-    rule4 r1 r2 r3 (rule3 r4 r5 r6 (fun n4 n5 n6 -> n4, n5, n6)) (fun n1 n2 n3 (n4, n5, n6) -> decode n1 n2 n3 n4 n5 n6)
+  let rule6 r1 r2 r3 r4 r5 r6 decoder =
+    rule4 r1 r2 r3 (rule3 r4 r5 r6 (fun n4 n5 n6 -> n4, n5, n6)) (fun n1 n2 n3 (n4, n5, n6) -> decoder n1 n2 n3 n4 n5 n6)
 
-  let rule7 r1 r2 r3 r4 r5 r6 r7 decode =
+  let rule7 r1 r2 r3 r4 r5 r6 r7 decoder =
     rule4 r1 r2 r3 (rule4 r4 r5 r6 r7 (fun n4 n5 n6 n7 -> n4, n5, n6, n7)) (fun n1 n2 n3 (n4, n5, n6, n7) ->
-      decode n1 n2 n3 n4 n5 n6 n7)
-
-  let eps value =
-    Rule(Term.Eps(fun ctx -> ctx.Push(value)))
+      decoder n1 n2 n3 n4 n5 n6 n7)
 
   /// 複数の規則のうち、適用可能なものを1つ選択する規則
   ///
@@ -251,13 +250,14 @@ module private ParserCombinator =
   let choice (rules: Rule<'T, 'N> list) : Rule<'T, 'N> =
     Rule(Term.Choice(List.map (fun (Rule r) -> r) rules))
 
-  let opt (rule: Rule<'T, 'A>) (decode: ('A option -> 'N)) : Rule<'T, 'N> =
-    choice [ rule1 rule (fun a -> decode (Some a))
-             eps None ]
+  /// 省略可能な規則
+  let opt (rule: Rule<'T, 'A>) (decoder: ('A option -> 'N)) : Rule<'T, 'N> =
+    choice [ rule1 rule (fun a -> decoder (Some a))
+             eps (decoder None) ]
 
-  let leftRec (pLeft: Rule<'T, 'N>) (pRight: Rule<'T, 'A>) (decode: 'N -> 'A -> 'N) : Rule<'T, 'N> =
-    let (Rule left) = pLeft
-    let (Rule right) = pRight
+  let leftRec (left: Rule<'T, 'N>) (right: Rule<'T, 'A>) (decoder: 'N -> 'A -> 'N) : Rule<'T, 'N> =
+    let (Rule left) = left
+    let (Rule right) = right
 
     Rule(
       Term.LeftRec(
@@ -266,7 +266,7 @@ module private ParserCombinator =
         (fun ctx ->
           let right = ctx.Pop() :?> 'A
           let left = ctx.Pop() :?> 'N
-          ctx.Push(decode left right :> obj))
+          ctx.Push(decoder left right :> obj))
       )
     )
 
@@ -282,8 +282,8 @@ module private ParserCombinator =
     leftRec left (rule2 mid right (fun m r -> m, r)) (fun l (m, r) -> decode l m r)
 
   // 0+ repetition
-  let rep (pItem: Rule<'T, 'N>) : Rule<'T, 'N list> =
-    let (Rule item) = pItem
+  let rep (item: Rule<'T, 'N>) : Rule<'T, 'N list> =
+    let (Rule item) = item
     let (Rule e) = eps (([]: 'N list) :> obj)
 
     let t =
@@ -460,7 +460,7 @@ module private ParserCombinator =
 
     firstRec term
 
-  let private doBuild<'T> (start: Symbol) (bindings: Binding list) : GrammarData =
+  let private doBuild (start: Symbol) (bindings: Binding list) : GrammarData =
     // indexing
     let ruleArray = ResizeArray()
     let ruleRev = HashMap()
@@ -470,15 +470,15 @@ module private ParserCombinator =
     ruleArray.Add(dummy)
     ruleRev.Add(dummy :> obj, 0)
 
-    let ruleIdOf (rule: Symbol) =
-      let (Symbol (id, _, _)) = rule
+    let symbolIdOf (symbol: Symbol) =
+      let (Symbol (id, _, _)) = symbol
       id
 
-    let indexOf (rule: Symbol) =
-      let id = ruleIdOf rule
+    let indexOf (symbol: Symbol) =
+      let id = symbolIdOf symbol
 
       if ruleRev.ContainsKey(id) |> not then
-        failwithf "Rule not indexed (id:%A, rule:%A)" id rule
+        failwithf "Rule not indexed (id:%A, rule:%A)" id symbol
 
       ruleRev.[id]
 
@@ -492,78 +492,76 @@ module private ParserCombinator =
         ruleArray.Add(symbol)
         ruleRev.Add(id, index)
 
-     let rec go (rule: Term) =
-       match rule with
+     let rec indexingRec (term: Term) =
+       match term with
        | Term.Expect _
        | Term.Eps _ -> ()
 
        | Term.Symbol symbol -> internSymbol symbol
 
-       | Term.Map (r, _) -> go r
-
-       | Term.Seq (rules, _) ->
-         for r in rules do
-           go r
-
-       | Term.Choice rules ->
-         for r in rules do
-           go r
+       | Term.Map (t, _) -> indexingRec t
+       | Term.Seq (terms, _) -> List.iter indexingRec terms
+       | Term.Choice branches -> List.iter indexingRec branches
 
        | Term.LeftRec (left, right, _) ->
-         go left
-         go right
+         indexingRec left
+         indexingRec right
 
        | Term.Mu (symbol, body) ->
          // After the pass, Mu behaves the same as Symbol
          // since the body is registered in the RuleArray (the symbol is now a nominal rule).
          internSymbol symbol
-         go body
+         indexingRec body
 
      for Binding (id, name, term) in bindings do
-       internSymbol (Symbol(id, name, lazy (term)))
-       go term)
+       internSymbol (Symbol(id, name, lazy term))
+       indexingRec term)
 
     // dump
-    (let rec hasChoice rule =
-      match rule with
+    (let rec hasChoice term =
+      match term with
       | Term.Map (r, _) -> hasChoice r
       | Term.Seq (rules, _) -> rules |> List.exists hasChoice
       | Term.Choice _ -> true
       | _ -> false
 
-     let rec go nl (rule: Term) =
-       match rule with
-       | Term.Symbol symbol ->
+     let rec dumpRec nl (term: Term) =
+       match term with
+       | Term.Symbol symbol
+       | Term.Mu (symbol, _) ->
          let (Symbol (_, name, _)) = symbol
          sprintf "R%d:%s" (indexOf symbol) name
 
-       | Term.Expect (token, _, _) -> sprintf "expect(%A)" token
-       | Term.Eps _ -> "eps"
-       | Term.Map (r, _) -> go nl r
-       | Term.Seq (rules, _) -> sprintf "(%s)" (rules |> List.map (go nl) |> String.concat " ")
+       | Term.Expect (token, _, _) -> sprintf "'%d'" token
 
-       | Term.Choice rules ->
+       | Term.Eps _ -> "eps"
+
+       | Term.Map (t, _) -> dumpRec nl t
+       | Term.Seq (terms, _) ->
          sprintf
            "(%s)"
-           (rules
-            |> List.map (go (nl + "  "))
+           (terms
+            |> List.map (dumpRec nl)
+            |> String.concat " ")
+
+       | Term.Choice branches ->
+         sprintf
+           "(%s)"
+           (branches
+            |> List.map (dumpRec (nl + "  "))
             |> String.concat (nl + "| "))
 
-       | Term.LeftRec (left, right, _) -> sprintf "leftRec(%s, %s)" (go nl left) (go nl right)
-
-       | Term.Mu (local, body) ->
-         let (Symbol (_, name, _)) = local
-         sprintf "(μ%s. %s)" name (go (nl + "  ") body)
+       | Term.LeftRec (left, right, _) -> sprintf "leftRec(%s, %s)" (dumpRec nl left) (dumpRec nl right)
 
      for i in 1 .. ruleArray.Count - 1 do
        let rule = ruleArray.[i]
 
-       let name, rule =
-         let (Symbol (_, name, r)) = rule
-         ":" + name, r.Value
+       let name, term =
+         let (Symbol (_, name, termLazy)) = rule
+         ":" + name, termLazy.Value
 
-       let initial = if hasChoice rule then "\n  " else " "
-       eprintfn "R%d%s :=%s%s" i name initial (go "\n  " rule))
+       let initial = if hasChoice term then "\n  " else " "
+       eprintfn "R%d%s :=%s%s" i name initial (dumpRec "\n  " term))
 
     // for r in ruleArray do
     //   let (Symbol (_, _, termLazy)) = r
@@ -728,9 +726,12 @@ module private ParserCombinator =
 
     Grammar(doBuild start bindings)
 
-  // parser methods:
+  // ---------------------------------------------
+  // Runtime
+  // ---------------------------------------------
 
-  /// New parser. Deterministic by 1-token lookahead. Recursive decent.
+  // Deterministic by 1-token lookahead. Recursive decent.
+
   let parseV2<'T, 'N> (getKind: 'T -> K) (tokens: 'T array) (grammar: Grammar<'T, 'N>) : 'N =
     let (Grammar grammar) = grammar
     let nullableMemo = grammar.NullableMemo
@@ -738,7 +739,6 @@ module private ParserCombinator =
     let leftRecMemo = grammar.LeftRecMemo
     let jumpMemo = grammar.JumpMemo
     let fallbackMemo = grammar.FallbackMemo
-
     let termFirstSetMemo = HashMap()
 
     let getFirstSet term =
@@ -766,7 +766,7 @@ module private ParserCombinator =
     let shift cutting =
       assert (index < tokens.Length)
       let t = tokens.[index]
-      eprintfn "shift %d:%A%s %A" index t (if cutting then "!" else "") t
+      eprintfn "trace: shift %d:%A%s" index t (if cutting then "!" else "")
       index <- index + 1
       t
 
@@ -776,8 +776,15 @@ module private ParserCombinator =
       else
         "EOF"
 
+    // Stack balance check for debugging.
     let onBeginNode () = stack.Count
     let onEndNode (previous: int) = assert (stack.Count = previous + 1)
+
+    // Finds an example of token kind from input.
+    let findWhat k =
+      match tokens |> Array.tryFind (fun t -> getKind t = k) with
+      | Some t -> sprintf "k:%d e.g. %A" k t
+      | None -> sprintf "k:%d" k
 
     let ctx =
       { new IParseContext with
@@ -785,58 +792,58 @@ module private ParserCombinator =
           override _.Push(item) = stack.Push(item)
           override _.Pop() : obj = stack.Pop() }
 
-    let rec parseRec rule =
-      match rule with
-      | Term.Expect (token, _, action) ->
+    let rec parseRec term : unit =
+      match term with
+      | Term.Expect (k, _, action) ->
         if index < tokens.Length then
           let t = tokenAt index
 
-          if getKind t = token then
+          if getKind t = k then
             action ctx
           else
-            raise (ExpectedTokenError(token, index))
+            raise (ExpectedTokenError(k, index))
         else
-          raise (ExpectedTokenError(token, index))
+          raise (ExpectedTokenError(k, index))
 
       | Term.Eps action -> action ctx
 
       | Term.Symbol symbol
       | Term.Mu (symbol, _) ->
         let (Symbol (_, name, termLazy)) = symbol
+        let start = index
 
         try
           parseRec termLazy.Value
         with
         | _ ->
-          eprintfn "(While parsing %s at %d)" name index
+          eprintfn "trace: Error Trace - Parsing %s at %A" name (near start)
           reraise ()
 
-      | Term.Map (r, action) ->
-        parseRec r
+      | Term.Map (t, action) ->
+        parseRec t
         action ctx
 
-      | Term.Seq (rules, action) ->
-        let n = onBeginNode ()
+      | Term.Seq (terms, action) ->
+        let node = onBeginNode ()
 
-        for r in rules do
+        for r in terms do
           parseRec r
 
         action ctx
-        onEndNode n
+        onEndNode node
 
-      | Term.Choice rules ->
+      | Term.Choice branches ->
         let table =
-          match HashMap.tryFind rule jumpMemo with
+          match HashMap.tryFind term jumpMemo with
           | Some it -> it
-          | None -> failwithf "unreachable: jumpMemo missing: %A" rule
+          | None -> failwithf "unreachable: jumpMemo missing: %A" term
 
         let onFallback () =
           let fallbackTerm =
-            match HashMap.tryFind rule fallbackMemo with
-
+            match HashMap.tryFind term fallbackMemo with
             | Some it -> it
             | None ->
-              eprintfn "trace: choice doesn't have fallback choice:%A" rule
+              eprintfn "trace: choice doesn't have fallback: Choice[%A]" branches
               raise (ChoiceError(List.ofSeq table.Keys, index))
 
           parseRec fallbackTerm
@@ -847,11 +854,12 @@ module private ParserCombinator =
 
           match HashMap.tryFind k table with
           | Some branchTerm ->
-            let index =
-              List.tryFindIndex ((=) branchTerm) rules
+            (let index =
+              List.tryFindIndex ((=) branchTerm) branches
               |> Option.defaultValue (-1)
 
-            eprintfn "trace: choice k:%d index:%d" k index
+             eprintfn "trace: choice k:%d index:%d" k index)
+
             parseRec branchTerm
 
           | None ->
@@ -862,9 +870,9 @@ module private ParserCombinator =
 
       | Term.LeftRec (left, right, action) ->
         let rightFirstSet =
-          match HashMap.tryFind rule leftRecMemo with
+          match HashMap.tryFind term leftRecMemo with
           | Some it -> it
-          | None -> failwithf "unreachable: leftRecMemo missed key %A" rule
+          | None -> failwithf "unreachable: leftRecMemo missed key %A" term
 
         let rec rightLoop () =
           // here left value (or accumulated value) is on the stack
@@ -879,15 +887,10 @@ module private ParserCombinator =
               action ctx
               rightLoop ()
 
-        let n = onBeginNode ()
+        let node = onBeginNode ()
         parseRec left
         rightLoop ()
-        onEndNode n
-
-    let findWhat k =
-      match tokens |> Array.tryFind (fun t -> getKind t = k) with
-      | Some t -> sprintf "k:%d e.g. %A" k t
-      | None -> sprintf "k:%d" k
+        onEndNode node
 
     try
       parseRec (Term.Symbol grammar.Start)
