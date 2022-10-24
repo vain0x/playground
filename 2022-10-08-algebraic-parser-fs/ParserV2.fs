@@ -48,7 +48,8 @@ module private ParserCombinator =
     | Map of Term<'T> * SemanticAction
     | Seq of Term<'T> list * SemanticAction
     | Choice of Term<'T> list
-    | InfixLeft of left: Term<'T> * mid: Term<'T> * right: Term<'T> * SemanticAction
+    // infixLeft(L, R) = mu X. (L | X R)
+    | InfixLeft of left: Term<'T> * right: Term<'T> * SemanticAction
     | Fix of local: Symbol<'T> * body: Term<'T>
 
   and [<ReferenceEqualityAttribute; NoComparisonAttribute; StructuredFormatDisplay("&{name}")>] private Symbol<'T> =
@@ -235,32 +236,27 @@ module private ParserCombinator =
   ///
   /// - 典型例としては乗算 (`E * E`) の式をパースするのに使う
   ///     - 仮に乗算の両辺の規則を `primary` とする
-  ///     - 乗算の規則は `infixLeft primary (P.expect '*') primary (fun l _ r -> Mul(l, r))` のように書ける
-  /// - `infixLeft l m r` はBNF風の記法で書けば以下の構文を表す
-  ///     - `A = l | A m r`
+  ///     - 乗算の規則は `infixLeft primary (P.rule2 (P.expect '*') primary (fun _ e -> e)) (fun l r -> Mul(l, r))` のように書ける
+  /// - `infixLeft l r` はBNF風の記法で書けば以下の構文を表す
+  ///     - `A = l | X r`
   ///     - いわゆる「左再帰」の構文である。`choice` と `recurse` の組み合わせで書いてしまうと、パース処理が無限再帰に陥る
-  let infixLeft
-    (pLeft: Rule<'T, 'N>)
-    (pMid: Rule<'T, 'A>)
-    (pRight: Rule<'T, 'B>)
-    (decode: 'N -> 'A -> 'B -> 'N)
-    : Rule<'T, 'N> =
-    let (Rule rLeft) = pLeft
-    let (Rule rMid) = pMid
-    let (Rule rRight) = pRight
+  let leftRec (pLeft: Rule<'T, 'N>) (pRight: Rule<'T, 'A>) (decode: 'N -> 'A -> 'N) : Rule<'T, 'N> =
+    let (Rule left) = pLeft
+    let (Rule right) = pRight
 
     Rule(
       Term.InfixLeft(
-        rLeft,
-        rMid,
-        rRight,
+        left,
+        right,
         (fun ctx ->
-          let right = ctx.Pop() :?> 'B
-          let mid = ctx.Pop() :?> 'A
+          let right = ctx.Pop() :?> 'A
           let left = ctx.Pop() :?> 'N
-          ctx.Push(decode left mid right :> obj))
+          ctx.Push(decode left right :> obj))
       )
     )
+
+  let infixLeft left mid right decode =
+    leftRec left (rule2 mid right (fun m r -> m, r)) (fun l (m, r) -> decode l m r)
 
   // 0+ repetition
   let rep (pItem: Rule<'T, 'N>) : Rule<'T, 'N list> =
@@ -271,12 +267,10 @@ module private ParserCombinator =
       Term.InfixLeft(
         e,
         item,
-        e,
         (fun ctx ->
-          ctx.Pop() |> ignore
-          let mid = ctx.Pop() :?> 'N
+          let right = ctx.Pop() :?> 'N
           let left = ctx.Pop() :?> 'N list
-          ctx.Push((mid :: left) :> obj))
+          ctx.Push((right :: left) :> obj))
       )
 
     rule1 (Rule t) List.rev
@@ -334,7 +328,7 @@ module private ParserCombinator =
 
     | Term.Choice ts -> LTerm([], LTermData.Choice(ts |> List.map leftUp), [])
 
-    | Term.InfixLeft (left, mid, right, action) ->
+    | Term.InfixLeft (_left, _right, action) ->
       // TODO: implement this
       // let left = leftUp left
       // appendLt left (Term.InfixLeft(Term.Eps ignore, mid, right, action))
@@ -449,10 +443,9 @@ module private ParserCombinator =
          for r in rules do
            go r
 
-       | Term.InfixLeft (rLeft, rMid, rRight, _) ->
-         go rLeft
-         go rMid
-         go rRight
+       | Term.InfixLeft (left, right, _) ->
+         go left
+         go right
 
        | Term.Fix (symbol, body) ->
          // After the pass, Fix behaves the same as Symbol
@@ -489,7 +482,7 @@ module private ParserCombinator =
            (rules
             |> List.map (go (nl + "  "))
             |> String.concat (nl + "| "))
-       | Term.InfixLeft (rLeft, rMid, rRight, _) -> sprintf "(%s %%%s %s)" (go nl rLeft) (go nl rMid) (go nl rRight)
+       | Term.InfixLeft (left, right, _) -> sprintf "infixLeft(%s, %s)" (go nl left) (go nl right)
 
        | Term.Fix (local, body) ->
          let (Symbol (_, name, _)) = local
@@ -550,8 +543,7 @@ module private ParserCombinator =
     // term -> branchTerm
     let mutable fallbackMemo = HashMap()
 
-    // lookaheadKind -> way
-    // way: (1: mid, 2: right)
+    // lookaheadKind -> ()
     // key must be Term.InfixLeft
     let mutable infixMemo = HashMap()
 
@@ -613,7 +605,7 @@ module private ParserCombinator =
       | Term.Map (t, _) -> computeFirst t
       | Term.Seq (terms, _) -> computeFirstMany terms
       | Term.Choice terms -> terms |> List.map computeFirst |> Set.unionMany
-      | Term.InfixLeft (left, mid, right, _) -> computeFirstMany [ left; mid; right ]
+      | Term.InfixLeft (left, right, _) -> computeFirstMany [ left; right ]
 
     and computeFirstMany terms =
       match terms with
@@ -671,26 +663,20 @@ module private ParserCombinator =
 
           jumpMemo.Add(term, table)
 
-      | Term.InfixLeft (left, mid, right, _) ->
+      | Term.InfixLeft (left, right, _) ->
         if infixMemo.ContainsKey(term) |> not then
           jumpRec left
-          jumpRec mid
           jumpRec right
 
           let table = HashMap()
-
-          let firstSet = computeFirstMany [ mid; right ]
+          let firstSet = computeFirst right
 
           if Set.isEmpty firstSet then
-            failwithf "infixLeft rhs mustn't have empty first set: %A" term
+            failwithf "bad grammar: infixLeft rhs mustn't have empty first set: %A" term
 
-          for k in computeFirst mid do
-            table.Add(k, 1)
-
-          if computeNullable mid then
-            for k in computeFirst right do
-              if table.ContainsKey(k) |> not then
-                table.Add(k, 2)
+          for k in computeFirst right do
+            if table.ContainsKey(k) |> not then
+              table.Add(k, ())
           // else ambiguous?
 
           infixMemo.Add(term, table)
@@ -810,7 +796,7 @@ module private ParserCombinator =
         else
           onFallback ()
 
-      | Term.InfixLeft (rLeft, rMid, rRight, action) ->
+      | Term.InfixLeft (left, right, action) ->
         let table =
           match HashMap.tryFind rule infixMemo with
           | Some it -> it
@@ -820,7 +806,7 @@ module private ParserCombinator =
           // here left value (or accumulated value) is on the stack
 
           if index < tokens.Length then
-            // try to parse (mid right)
+            // try to parse rhs
             let token = tokenAt index
             let k = getKind token
 
@@ -830,20 +816,12 @@ module private ParserCombinator =
               | None -> false
 
             if ok then
-              try
-                parseRec rMid
-              with
-              | _ ->
-                eprintfn "can't parse mid"
-                reraise ()
-
-              parseRec rRight
-
+              parseRec right
               action ctx
               infixLoop ()
 
         let n = onBeginNode ()
-        parseRec rLeft
+        parseRec left
         infixLoop ()
         onEndNode n
 
