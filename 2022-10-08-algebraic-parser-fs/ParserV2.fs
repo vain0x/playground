@@ -545,15 +545,10 @@ module private ParserCombinator =
     // term -> branchTerm
     let mutable fallbackMemo = HashMap()
 
-    // lookaheadKind -> ()
-    // key must be Term.LeftRec
-    let mutable leftRecMemo = HashMap()
-
     let rec computeNullable (term: Term<'T>) =
       match term with
       | Term.Expect _ -> false
       | Term.Eps _ -> true
-
       | Term.Symbol (Symbol (id, _, _)) -> HashMap.findOr id false nullableMemo
 
       | Term.Map (t, _) -> computeNullable t
@@ -666,22 +661,8 @@ module private ParserCombinator =
           jumpMemo.Add(term, table)
 
       | Term.LeftRec (left, right, _) ->
-        if leftRecMemo.ContainsKey(term) |> not then
-          jumpRec left
-          jumpRec right
-
-          let table = HashMap()
-          let firstSet = computeFirst right
-
-          if Set.isEmpty firstSet then
-            failwithf "bad grammar: leftRec rhs mustn't have empty first set: %A" term
-
-          for k in computeFirst right do
-            if table.ContainsKey(k) |> not then
-              table.Add(k, ())
-          // else ambiguous?
-
-          leftRecMemo.Add(term, table)
+        jumpRec left
+        jumpRec right
 
       | Term.Eps _
       | Term.Expect _
@@ -799,10 +780,7 @@ module private ParserCombinator =
           onFallback ()
 
       | Term.LeftRec (left, right, action) ->
-        let table =
-          match HashMap.tryFind rule leftRecMemo with
-          | Some it -> it
-          | None -> failwithf "unreachable: infixMemo missing: %A" rule
+        let rightFirstSet = computeFirst right
 
         let rec infixLoop () =
           // here left value (or accumulated value) is on the stack
@@ -812,12 +790,7 @@ module private ParserCombinator =
             let token = tokenAt index
             let k = getKind token
 
-            let ok =
-              match HashMap.tryFind k table with
-              | Some _ -> true
-              | None -> false
-
-            if ok then
+            if rightFirstSet.Contains(k) then
               parseRec right
               action ctx
               infixLoop ()
