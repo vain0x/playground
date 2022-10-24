@@ -48,8 +48,10 @@ module private ParserCombinator =
     | Map of Term<'T> * SemanticAction
     | Seq of Term<'T> list * SemanticAction
     | Choice of Term<'T> list
-    // infixLeft(L, R) = mu X. (L | X R)
-    | InfixLeft of left: Term<'T> * right: Term<'T> * SemanticAction
+
+    /// `leftRec(L, R) = mu X. (L | X R)`
+    | LeftRec of left: Term<'T> * right: Term<'T> * folder: SemanticAction
+
     | Fix of local: Symbol<'T> * body: Term<'T>
 
   and [<ReferenceEqualityAttribute; NoComparisonAttribute; StructuredFormatDisplay("&{name}")>] private Symbol<'T> =
@@ -232,20 +234,12 @@ module private ParserCombinator =
     choice [ rule1 rule (fun a -> decode (Some a))
              eps None ]
 
-  /// 左結合な二項演算の規則
-  ///
-  /// - 典型例としては乗算 (`E * E`) の式をパースするのに使う
-  ///     - 仮に乗算の両辺の規則を `primary` とする
-  ///     - 乗算の規則は `infixLeft primary (P.rule2 (P.expect '*') primary (fun _ e -> e)) (fun l r -> Mul(l, r))` のように書ける
-  /// - `infixLeft l r` はBNF風の記法で書けば以下の構文を表す
-  ///     - `A = l | X r`
-  ///     - いわゆる「左再帰」の構文である。`choice` と `recurse` の組み合わせで書いてしまうと、パース処理が無限再帰に陥る
   let leftRec (pLeft: Rule<'T, 'N>) (pRight: Rule<'T, 'A>) (decode: 'N -> 'A -> 'N) : Rule<'T, 'N> =
     let (Rule left) = pLeft
     let (Rule right) = pRight
 
     Rule(
-      Term.InfixLeft(
+      Term.LeftRec(
         left,
         right,
         (fun ctx ->
@@ -255,6 +249,14 @@ module private ParserCombinator =
       )
     )
 
+  /// 左結合な二項演算の規則
+  ///
+  /// - 典型例としては乗算 (`E * E`) の式をパースするのに使う
+  ///     - 仮に乗算の両辺の規則を `primary` とする
+  ///     - 乗算の規則は `infixLeft primary (P.rule2 (P.expect '*') primary (fun _ e -> e)) (fun l r -> Mul(l, r))` のように書ける
+  /// - `infixLeft l r` はBNF風の記法で書けば以下の構文を表す
+  ///     - `A = l | X r`
+  ///     - いわゆる「左再帰」の構文である。`choice` と `recurse` の組み合わせで書いてしまうと、パース処理が無限再帰に陥る
   let infixLeft left mid right decode =
     leftRec left (rule2 mid right (fun m r -> m, r)) (fun l (m, r) -> decode l m r)
 
@@ -264,7 +266,7 @@ module private ParserCombinator =
     let (Rule e) = eps (([]: 'N list) :> obj)
 
     let t =
-      Term.InfixLeft(
+      Term.LeftRec(
         e,
         item,
         (fun ctx ->
@@ -328,10 +330,10 @@ module private ParserCombinator =
 
     | Term.Choice ts -> LTerm([], LTermData.Choice(ts |> List.map leftUp), [])
 
-    | Term.InfixLeft (_left, _right, action) ->
+    | Term.LeftRec (_left, _right, action) ->
       // TODO: implement this
       // let left = leftUp left
-      // appendLt left (Term.InfixLeft(Term.Eps ignore, mid, right, action))
+      // appendLt left (Term.LeftRec(Term.Eps ignore, right, action))
       eprintfn "warn: skip infix"
       LTerm([], LTermData.Eps, [])
 
@@ -443,7 +445,7 @@ module private ParserCombinator =
          for r in rules do
            go r
 
-       | Term.InfixLeft (left, right, _) ->
+       | Term.LeftRec (left, right, _) ->
          go left
          go right
 
@@ -482,7 +484,7 @@ module private ParserCombinator =
            (rules
             |> List.map (go (nl + "  "))
             |> String.concat (nl + "| "))
-       | Term.InfixLeft (left, right, _) -> sprintf "infixLeft(%s, %s)" (go nl left) (go nl right)
+       | Term.LeftRec (left, right, _) -> sprintf "leftRec(%s, %s)" (go nl left) (go nl right)
 
        | Term.Fix (local, body) ->
          let (Symbol (_, name, _)) = local
@@ -544,8 +546,8 @@ module private ParserCombinator =
     let mutable fallbackMemo = HashMap()
 
     // lookaheadKind -> ()
-    // key must be Term.InfixLeft
-    let mutable infixMemo = HashMap()
+    // key must be Term.LeftRec
+    let mutable leftRecMemo = HashMap()
 
     let rec computeNullable (term: Term<'T>) =
       match term with
@@ -558,8 +560,8 @@ module private ParserCombinator =
       | Term.Seq (terms, _) -> terms |> List.forall computeNullable
       | Term.Choice terms -> terms |> List.exists computeNullable
 
-      // left and mid must not be nullable
-      | Term.InfixLeft _ -> false
+      // rhs must not be nullable
+      | Term.LeftRec (left, _, _) -> computeNullable left
 
       | Term.Fix (local, _) ->
         let (Symbol (id, _, _)) = local
@@ -605,7 +607,7 @@ module private ParserCombinator =
       | Term.Map (t, _) -> computeFirst t
       | Term.Seq (terms, _) -> computeFirstMany terms
       | Term.Choice terms -> terms |> List.map computeFirst |> Set.unionMany
-      | Term.InfixLeft (left, right, _) -> computeFirstMany [ left; right ]
+      | Term.LeftRec (left, right, _) -> computeFirstMany [ left; right ]
 
     and computeFirstMany terms =
       match terms with
@@ -663,8 +665,8 @@ module private ParserCombinator =
 
           jumpMemo.Add(term, table)
 
-      | Term.InfixLeft (left, right, _) ->
-        if infixMemo.ContainsKey(term) |> not then
+      | Term.LeftRec (left, right, _) ->
+        if leftRecMemo.ContainsKey(term) |> not then
           jumpRec left
           jumpRec right
 
@@ -672,14 +674,14 @@ module private ParserCombinator =
           let firstSet = computeFirst right
 
           if Set.isEmpty firstSet then
-            failwithf "bad grammar: infixLeft rhs mustn't have empty first set: %A" term
+            failwithf "bad grammar: leftRec rhs mustn't have empty first set: %A" term
 
           for k in computeFirst right do
             if table.ContainsKey(k) |> not then
               table.Add(k, ())
           // else ambiguous?
 
-          infixMemo.Add(term, table)
+          leftRecMemo.Add(term, table)
 
       | Term.Eps _
       | Term.Expect _
@@ -796,9 +798,9 @@ module private ParserCombinator =
         else
           onFallback ()
 
-      | Term.InfixLeft (left, right, action) ->
+      | Term.LeftRec (left, right, action) ->
         let table =
-          match HashMap.tryFind rule infixMemo with
+          match HashMap.tryFind rule leftRecMemo with
           | Some it -> it
           | None -> failwithf "unreachable: infixMemo missing: %A" rule
 
