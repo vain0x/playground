@@ -52,7 +52,7 @@ module private ParserCombinator =
     /// `leftRec(L, R) = mu X. (L | X R)`
     | LeftRec of left: Term * right: Term * folder: SemanticAction
 
-    | Fix of local: Symbol * body: Term
+    | Mu of local: Symbol * body: Term
 
   and [<ReferenceEqualityAttribute; NoComparisonAttribute; StructuredFormatDisplay("&{name}")>] private Symbol =
     private | Symbol of id: obj * name: string * Lazy<Term>
@@ -129,14 +129,17 @@ module private ParserCombinator =
 
     Binding(id, name, actualTerm)
 
-  let fix (name: string) (creator: Rule<'T, 'N> -> Rule<'T, 'N>) : Rule<'T, 'N> =
+  /// μ-operator
+  ///
+  /// `μX. F(X)` is equivalent to `X` with a rule `X → F(X)`.
+  let mu (name: string) (creator: Rule<'T, 'N> -> Rule<'T, 'N>) : Rule<'T, 'N> =
     let recRule = recursive name
     let (Rule term) = creator (recurse recRule)
 
     let (RecRule (symbol, termRef)) = recRule
     termRef.contents <- Some term
 
-    Rule(Term.Fix(symbol, term))
+    Rule(Term.Mu(symbol, term))
 
   // let label (name: string) (rule: Rule<'T, 'N>) : Rule<'T, 'N> = todo ()
 
@@ -307,7 +310,7 @@ module private ParserCombinator =
     | Term.Expect (k, _, action) -> LTerm([], LTermData.Single(LSingle.Token k), [ action ])
 
     | Term.Symbol symbol
-    | Term.Fix (symbol, _) -> LTerm([], LTermData.Single(LSingle.Symbol symbol), [])
+    | Term.Mu (symbol, _) -> LTerm([], LTermData.Single(LSingle.Symbol symbol), [])
 
     | Term.Eps action -> LTerm([], LTermData.Eps, [ action ])
 
@@ -335,7 +338,7 @@ module private ParserCombinator =
       // TODO: implement this
       // let left = leftUp left
       // appendLt left (Term.LeftRec(Term.Eps ignore, right, action))
-      eprintfn "warn: skip infix"
+      eprintfn "warn: skip leftRec"
       LTerm([], LTermData.Eps, [])
 
   and private appendLt t1 (t2: Term) : LTerm =
@@ -450,8 +453,8 @@ module private ParserCombinator =
          go left
          go right
 
-       | Term.Fix (symbol, body) ->
-         // After the pass, Fix behaves the same as Symbol
+       | Term.Mu (symbol, body) ->
+         // After the pass, Mu behaves the same as Symbol
          // since the body is registered in the RuleArray (the symbol is now a nominal rule).
          internSymbol symbol
          go body
@@ -487,7 +490,7 @@ module private ParserCombinator =
             |> String.concat (nl + "| "))
        | Term.LeftRec (left, right, _) -> sprintf "leftRec(%s, %s)" (go nl left) (go nl right)
 
-       | Term.Fix (local, body) ->
+       | Term.Mu (local, body) ->
          let (Symbol (_, name, _)) = local
          sprintf "(μ%s. %s)" name (go (nl + "  ") body)
 
@@ -557,7 +560,7 @@ module private ParserCombinator =
       // rhs must not be nullable
       | Term.LeftRec (left, _, _) -> computeNullable left
 
-      | Term.Fix (local, _) ->
+      | Term.Mu (local, _) ->
         let (Symbol (id, _, _)) = local
         HashMap.findOr id false nullableMemo
 
@@ -596,7 +599,7 @@ module private ParserCombinator =
       match term with
       | Term.Expect (k, _, _) -> set [ k ]
       | Term.Symbol (Symbol (id, _, _))
-      | Term.Fix (Symbol (id, _, _), _) -> HashMap.findOr id Set.empty firstSetMemo
+      | Term.Mu (Symbol (id, _, _), _) -> HashMap.findOr id Set.empty firstSetMemo
       | Term.Eps _ -> Set.empty
       | Term.Map (t, _) -> computeFirst t
       | Term.Seq (terms, _) -> computeFirstMany terms
@@ -666,7 +669,7 @@ module private ParserCombinator =
       | Term.Eps _
       | Term.Expect _
       | Term.Symbol _
-      | Term.Fix _ -> ()
+      | Term.Mu _ -> ()
 
       | Term.Map (t, _) -> jumpRec t
       | Term.Seq (terms, _) -> List.iter jumpRec terms
@@ -722,7 +725,7 @@ module private ParserCombinator =
       | Term.Eps action -> action ctx
 
       | Term.Symbol symbol
-      | Term.Fix (symbol, _) ->
+      | Term.Mu (symbol, _) ->
         let (Symbol (_, name, termLazy)) = symbol
 
         try
@@ -781,7 +784,7 @@ module private ParserCombinator =
       | Term.LeftRec (left, right, action) ->
         let rightFirstSet = computeFirst right
 
-        let rec infixLoop () =
+        let rec rightLoop () =
           // here left value (or accumulated value) is on the stack
 
           if index < tokens.Length then
@@ -792,11 +795,11 @@ module private ParserCombinator =
             if rightFirstSet.Contains(k) then
               parseRec right
               action ctx
-              infixLoop ()
+              rightLoop ()
 
         let n = onBeginNode ()
         parseRec left
-        infixLoop ()
+        rightLoop ()
         onEndNode n
 
     let r =
@@ -1398,7 +1401,7 @@ module private MiniLang =
   // `Stmt* Expr` をパースする。ただしこれは曖昧なので以下の構文に変換する
   // `μX. Expr (; X)? | Stmt X`
   let private pBlockItems: P.Rule<_, Stmt list * Expr option> =
-    P.fix "BlockItems" (fun pSelf ->
+    P.mu "BlockItems" (fun pSelf ->
       P.choice [ P.rule2 pRecExpr (P.opt (P.rule2 semi pSelf (fun _ result -> result)) id) (fun expr restOpt ->
                    match restOpt with
                    | Some (stmts, exprOpt) -> Stmt.Expr expr :: stmts, exprOpt
