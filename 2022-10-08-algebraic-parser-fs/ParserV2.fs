@@ -40,38 +40,40 @@ module private ParserCombinator =
 
   /// Term of syntax rule.
   [<RequireQualifiedAccess; ReferenceEquality; NoComparison>]
-  type private Term<'T> =
+  type private Term =
     private
     | Expect of K * cut: bool * SemanticAction
-    | Symbol of Symbol<'T>
+    | Symbol of Symbol
     | Eps of SemanticAction
-    | Map of Term<'T> * SemanticAction
-    | Seq of Term<'T> list * SemanticAction
-    | Choice of Term<'T> list
+    | Map of Term * SemanticAction
+    | Seq of Term list * SemanticAction
+    | Choice of Term list
 
     /// `leftRec(L, R) = mu X. (L | X R)`
-    | LeftRec of left: Term<'T> * right: Term<'T> * folder: SemanticAction
+    | LeftRec of left: Term * right: Term * folder: SemanticAction
 
-    | Fix of local: Symbol<'T> * body: Term<'T>
+    | Fix of local: Symbol * body: Term
 
-  and [<ReferenceEqualityAttribute; NoComparisonAttribute; StructuredFormatDisplay("&{name}")>] private Symbol<'T> =
-    private | Symbol of id: obj * name: string * Lazy<Term<'T>>
-
-  [<Struct; NoEquality; NoComparison>]
-  type Rule<'T, 'N> = private Rule of Term<'T>
-
-  [<NoEquality; NoComparison>]
-  type RecRule<'T, 'N> = private RecRule of Symbol<'T> * termRef: Term<'T> option ref
+  and [<ReferenceEqualityAttribute; NoComparisonAttribute; StructuredFormatDisplay("&{name}")>] private Symbol =
+    private | Symbol of id: obj * name: string * Lazy<Term>
 
   [<Struct; NoEquality; NoComparison>]
-  type Binding<'T> = private Binding of id: obj * name: string * Term<'T>
+  type Rule<'T, 'N> = private Rule of Term
 
   [<NoEquality; NoComparison>]
-  type Parser<'T, 'N> =
+  type RecRule<'T, 'N> = private RecRule of Symbol * termRef: Term option ref
+
+  [<Struct; NoEquality; NoComparison>]
+  type Binding = private Binding of id: obj * name: string * Term
+
+  [<NoEquality; NoComparison>]
+  type GrammarData =
     private
-      { Start: Symbol<'T>
-        RuleArray: Symbol<'T> array
+      { Start: Symbol
+        RuleArray: Symbol array
         RuleMemo: HashMap<obj, int> }
+
+  type Grammar<'T, 'N> = Grammar of GrammarData
 
   // tokens:
 
@@ -97,7 +99,7 @@ module private ParserCombinator =
   /// - `build` する際に、再帰的な規則にその定義となる規則を `bind` したものを渡すこと
   ///     そうでなければエラーが発生する ("Rule xxx not bound")
   let recursive (name: string) : RecRule<'T, _> =
-    let termRef: Term<'T> option ref = ref None
+    let termRef: Term option ref = ref None
 
     let symbol =
       Symbol(
@@ -117,7 +119,7 @@ module private ParserCombinator =
     Rule(Term.Symbol symbol)
 
   /// 再帰的な規則に定義を束縛することを表す
-  let bind (recRule: RecRule<'T, 'N>) (actualRule: Rule<'T, 'N>) : Binding<'T> =
+  let bind (recRule: RecRule<'T, 'N>) (actualRule: Rule<'T, 'N>) : Binding =
     let (RecRule (symbol, termRef)) = recRule
     let (Symbol (id, name, _)) = symbol
     let (Rule actualTerm) = actualRule
@@ -283,25 +285,24 @@ module private ParserCombinator =
 
   /// Terminal.
   [<RequireQualifiedAccess; NoEquality; NoComparison>]
-  type private LSingle<'T> =
+  type private LSingle =
     | Token of K
-    | Symbol of Symbol<'T>
+    | Symbol of Symbol
 
   /// Lefty term: Terminal and following term, or eps.
   [<RequireQualifiedAccess; NoEquality; NoComparison>]
-  type private LTermData<'T> =
+  type private LTermData =
     | Eps
-    | Single of LSingle<'T>
+    | Single of LSingle
     // notice rhs is non-lefty.
-    | Pair of LSingle<'T> * Term<'T>
-    | Choice of LTerm<'T> list
+    | Pair of LSingle * Term
+    | Choice of LTerm list
 
   /// Lefty-term.
-  and [<NoEquality; NoComparison>] private LTerm<'T> =
-    | LTerm of SemanticAction list * LTermData<'T> * SemanticAction list
+  and [<NoEquality; NoComparison>] private LTerm = LTerm of SemanticAction list * LTermData * SemanticAction list
 
   /// Converts a term to lefty form.
-  let rec private leftUp term : LTerm<_> =
+  let rec private leftUp term : LTerm =
     match term with
     | Term.Expect (k, _, action) -> LTerm([], LTermData.Single(LSingle.Token k), [ action ])
 
@@ -337,7 +338,7 @@ module private ParserCombinator =
       eprintfn "warn: skip infix"
       LTerm([], LTermData.Eps, [])
 
-  and private appendLt t1 (t2: Term<_>) : LTerm<_> =
+  and private appendLt t1 (t2: Term) : LTerm =
     let mergeActions actions =
       match actions with
       | [] -> ignore
@@ -396,7 +397,7 @@ module private ParserCombinator =
 
   // build:
 
-  let private doBuild<'T> (start: Symbol<'T>) (bindings: Binding<'T> list) : Parser<'T, obj> =
+  let private doBuild<'T> (start: Symbol) (bindings: Binding list) : GrammarData =
     // indexing
     let ruleArray = ResizeArray()
     let ruleRev = System.Collections.Generic.Dictionary()
@@ -406,11 +407,11 @@ module private ParserCombinator =
     ruleArray.Add(dummy)
     ruleRev.Add(dummy :> obj, 0)
 
-    let ruleIdOf (rule: Symbol<'T>) =
+    let ruleIdOf (rule: Symbol) =
       let (Symbol (id, _, _)) = rule
       id
 
-    let indexOf (rule: Symbol<'T>) =
+    let indexOf (rule: Symbol) =
       let id = ruleIdOf rule
 
       if ruleRev.ContainsKey(id) |> not then
@@ -418,7 +419,7 @@ module private ParserCombinator =
 
       ruleRev.[id]
 
-    let intern (rule: Symbol<'T>) = ruleArray.[indexOf rule]
+    let intern (rule: Symbol) = ruleArray.[indexOf rule]
 
     (let internSymbol symbol =
       let (Symbol (id, _, _)) = symbol
@@ -428,7 +429,7 @@ module private ParserCombinator =
         ruleArray.Add(symbol)
         ruleRev.Add(id, index)
 
-     let rec go (rule: Term<'T>) =
+     let rec go (rule: Term) =
        match rule with
        | Term.Expect _
        | Term.Eps _ -> ()
@@ -467,7 +468,7 @@ module private ParserCombinator =
       | Term.Choice _ -> true
       | _ -> false
 
-     let rec go nl (rule: Term<'T>) =
+     let rec go nl (rule: Term) =
        match rule with
        | Term.Symbol symbol ->
          let (Symbol (_, name, _)) = symbol
@@ -506,13 +507,13 @@ module private ParserCombinator =
 
     ({ Start = start
        RuleArray = ruleArray.ToArray()
-       RuleMemo = ruleRev }: Parser<_, _>)
+       RuleMemo = ruleRev }: GrammarData)
 
   /// パーサを構築する
   ///
   /// - `start`: 開始規則
   /// - `bindings`: 再帰的な規則に定義をバインド(`bind`)するもの
-  let build<'T, 'N> (start: Rule<'T, 'N>) (bindings: Binding<'T> list) : Parser<'T, 'N> =
+  let build<'T, 'N> (start: Rule<'T, 'N>) (bindings: Binding list) : Grammar<'T, 'N> =
     let start, bindings =
       match start with
       | Rule (Term.Symbol _) -> start, bindings
@@ -526,16 +527,14 @@ module private ParserCombinator =
       | Rule (Term.Symbol it) -> it
       | _ -> unreachable ()
 
-    let p = doBuild start bindings
-
-    ({ Start = p.Start
-       RuleArray = p.RuleArray
-       RuleMemo = p.RuleMemo }: Parser<'T, 'N>)
+    Grammar(doBuild start bindings)
 
   // parser methods:
 
   /// New parser. Deterministic by 1-token lookahead. Recursive decent.
-  let parseV2<'T, 'N> (getKind: 'T -> K) (tokens: 'T array) (parser: Parser<'T, 'N>) : 'N =
+  let parseV2<'T, 'N> (getKind: 'T -> K) (tokens: 'T array) (grammar: Grammar<'T, 'N>) : 'N =
+    let (Grammar grammar) = grammar
+
     let mutable nullableMemo = HashMap()
     let mutable firstSetMemo = HashMap()
 
@@ -545,7 +544,7 @@ module private ParserCombinator =
     // term -> branchTerm
     let mutable fallbackMemo = HashMap()
 
-    let rec computeNullable (term: Term<'T>) =
+    let rec computeNullable (term: Term) =
       match term with
       | Term.Expect _ -> false
       | Term.Eps _ -> true
@@ -563,7 +562,7 @@ module private ParserCombinator =
         HashMap.findOr id false nullableMemo
 
     // Compute nullable memo:
-    (let mutable workList = Queue(parser.RuleArray)
+    (let mutable workList = Queue(grammar.RuleArray)
      let mutable nextList = Queue()
      let mutable modified = true
 
@@ -593,7 +592,7 @@ module private ParserCombinator =
        swap &workList &nextList
        nextList.Clear())
 
-    let rec computeFirst (term: Term<'T>) =
+    let rec computeFirst (term: Term) =
       match term with
       | Term.Expect (k, _, _) -> set [ k ]
       | Term.Symbol (Symbol (id, _, _))
@@ -619,7 +618,7 @@ module private ParserCombinator =
      while modified do
        modified <- false
 
-       for (Symbol (id, name, termLazy)) in parser.RuleArray do
+       for (Symbol (id, name, termLazy)) in grammar.RuleArray do
          let oldSet = HashMap.findOr id Set.empty firstSetMemo
          let firstSet = computeFirst termLazy.Value
 
@@ -633,7 +632,7 @@ module private ParserCombinator =
              firstSetMemo.Add(id, firstSet))
 
     // Compute jump memo:
-    (let rec jumpRec (term: Term<'T>) =
+    (let rec jumpRec (term: Term) =
       match term with
       | Term.Choice terms ->
         if jumpMemo.ContainsKey(term) |> not then
@@ -672,7 +671,7 @@ module private ParserCombinator =
       | Term.Map (t, _) -> jumpRec t
       | Term.Seq (terms, _) -> List.iter jumpRec terms
 
-     for (Symbol (_, _, termLazy)) in parser.RuleArray do
+     for (Symbol (_, _, termLazy)) in grammar.RuleArray do
        jumpRec termLazy.Value)
 
     // runtime:
@@ -801,7 +800,7 @@ module private ParserCombinator =
         onEndNode n
 
     let r =
-      let (Symbol (_, _, r)) = parser.Start
+      let (Symbol (_, _, r)) = grammar.Start
       r.Value
 
     parseRec r
@@ -814,7 +813,7 @@ module private ParserCombinator =
     ctx.Pop() :?> 'N
 
   /// トークン列をパースする
-  let parseArray (getKind: 'T -> K) (tokens: 'T array) (parser: Parser<'T, 'N>) : 'N = parseV2 getKind tokens parser
+  let parseArray (getKind: 'T -> K) (tokens: 'T array) (grammar: Grammar<'T, 'N>) : 'N = parseV2 getKind tokens grammar
 
 /// 算術式のパーサの実装例
 module private Arith =
@@ -892,7 +891,7 @@ module private Arith =
       pMul
       (fun l op r -> Expr.BinOp(op, l, r))
 
-  let private sParserLazy: Lazy<P.Parser<Token, Expr>> =
+  let private sGrammarLazy: Lazy<P.Grammar<Token, Expr>> =
     lazy (P.build (P.recurse pExpr) [ P.bind pExpr pAdd ])
 
   let private tokenize (text: string) : Token array =
@@ -913,7 +912,7 @@ module private Arith =
 
   let internal parseString (text: string) : Expr =
     let tokenArray = tokenize text
-    P.parseV2 TokenKind.ofToken tokenArray sParserLazy.Value
+    P.parseV2 TokenKind.ofToken tokenArray sGrammarLazy.Value
 
   let internal tests () =
     let p s x =
@@ -977,7 +976,7 @@ module private NumberSequence =
         | Some it -> it
         | None -> [])
 
-  let private sParserLazy: Lazy<P.Parser<Token, int list>> = lazy (P.build pSeq [])
+  let private sGrammarLazy: Lazy<P.Grammar<Token, int list>> = lazy (P.build pSeq [])
 
   let private tokenize (text: string) : Token array =
     let array = ResizeArray()
@@ -996,7 +995,7 @@ module private NumberSequence =
 
   let internal parseString (text: string) : int list =
     let tokenArray = tokenize text
-    P.parseArray TokenKind.ofToken tokenArray sParserLazy.Value
+    P.parseArray TokenKind.ofToken tokenArray sGrammarLazy.Value
 
   let internal tests () =
     let p s x =
@@ -1365,13 +1364,13 @@ module private MiniLang =
     P.opt (by1 pItem pSep) (Option.defaultValue [])
 
   let private pTyRec: P.RecRule<_, Ty> = P.recursive "Type"
-  let private pPatRec: P.RecRule<_, Pat> = P.recursive "Pattern"
+  // let private pPatRec: P.RecRule<_, Pat> = P.recursive "Pattern"
   let private pExprRec: P.RecRule<_, Expr> = P.recursive "Expression"
   let private pStmtRec: P.RecRule<_, Stmt> = P.recursive "Statement"
   let private pItemRec: P.RecRule<_, Item> = P.recursive "Item"
 
   let private pRecTy = P.recurse pTyRec
-  let private pRecPat = P.recurse pPatRec
+  // let private pRecPat = P.recurse pPatRec
   let private pRecExpr = P.recurse pExprRec
   let private pRecStmt = P.recurse pStmtRec
   let private pRecItem = P.recurse pItemRec
@@ -1518,12 +1517,14 @@ module private MiniLang =
   let private pRoot =
     P.rule1 (P.rep pRecItem) (fun items -> ({ Items = items }: Root))
 
-  let private sParserLazy: Lazy<P.Parser<Token, Root>> =
+  let private sGrammarLazy: Lazy<P.Grammar<Token, Root>> =
     lazy
       (P.build
         pRoot
         [ P.bind pTyRec pTy1
-          P.bind pPatRec pRecPat
+
+          // P.bind pPatRec pRecPat
+
           P.bind pExprRec pExpr1
           P.bind pStmtRec pStmt1
           P.bind pItemRec pItem1 ])
@@ -1602,7 +1603,7 @@ module private MiniLang =
 
   let internal parseString (text: string) : Root =
     let tokenArray = Tokenizer.tokenize text
-    P.parseV2 TokenKind.ofToken tokenArray sParserLazy.Value
+    P.parseV2 TokenKind.ofToken tokenArray sGrammarLazy.Value
 
   let internal tests () =
     let display (root: Root) = sprintf "%A" root
