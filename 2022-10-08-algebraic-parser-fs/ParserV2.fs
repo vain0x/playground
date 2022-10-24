@@ -320,12 +320,12 @@ module private ParserCombinator =
     | Term.Eps action -> LTerm([], LTermData.Eps, [ action ])
 
     | Term.Map (t, action) ->
-      eprintfn "map"
+      eprintfn "trace: leftUp map"
       let (LTerm (preActions, t, actions)) = leftUp t
       LTerm(preActions, t, List.append actions [ action ])
 
     | Term.Seq (ts, action) ->
-      eprintfn "seq"
+      eprintfn "trace: leftUp seq"
       let (t :: ts | Unreachable (t, ts)) = ts
 
       let t = leftUp t
@@ -343,7 +343,7 @@ module private ParserCombinator =
       // TODO: implement this
       // let left = leftUp left
       // appendLt left (Term.LeftRec(Term.Eps ignore, right, action))
-      eprintfn "warn: skip leftRec"
+      eprintfn "todo: skip leftRec"
       LTerm([], LTermData.Eps, [])
 
   and private appendLt t1 (t2: Term) : LTerm =
@@ -559,7 +559,7 @@ module private ParserCombinator =
          let nullable = computeNullable termLazy.Value
 
          eprintfn
-           "compute nullable %s: %s"
+           "trace: compute nullable %s: %s"
            name
            (if nullable then
               "nullable"
@@ -607,7 +607,7 @@ module private ParserCombinator =
 
          if firstSet <> oldSet then
            modified <- true
-           eprintfn "compute first %s: %A" name (List.ofSeq firstSet)
+           eprintfn "trace: compute first %s: %A" name (List.ofSeq firstSet)
 
            if firstSetMemo.ContainsKey(id) then
              firstSetMemo.[id] <- firstSet
@@ -629,14 +629,14 @@ module private ParserCombinator =
 
             if Set.isEmpty firstSet then
               if fallbackMemo.ContainsKey(term) then
-                eprintfn "choice has multiple fallback paths: %A and %A" fallbackMemo.[term] branchTerm
+                eprintfn "ambiguous: choice has multiple fallback paths: %A and %A" fallbackMemo.[term] branchTerm
                 fallbackMemo.[term] <- branchTerm
               else
                 fallbackMemo.Add(term, branchTerm)
             else
               for k in firstSet do
                 if table.ContainsKey(k) then
-                  eprintfn "choice ambiguous: k:%d" k
+                  eprintfn "ambiguous: choice %d-th branch: %A" k table.[k]
                 else
                   table.Add(k, branchTerm)
 
@@ -665,6 +665,9 @@ module private ParserCombinator =
           leftRecRec left
           leftRecRec right
           leftRecMemo.Add(term, computeFirst right)
+
+          if computeNullable right then
+            eprintfn "ambiguous: leftRec right mustn't nullable: %A" term
 
       | Term.Eps _
       | Term.Expect _
@@ -813,7 +816,7 @@ module private ParserCombinator =
               List.tryFindIndex ((=) branchTerm) rules
               |> Option.defaultValue (-1)
 
-            eprintfn "choice k:%d index:%d" k index
+            eprintfn "trace: choice k:%d index:%d" k index
             parseRec branchTerm
 
           | None ->
@@ -972,7 +975,7 @@ module private Arith =
       if actual = x then
         true
       else
-        eprintfn "Assertion violated:\nactual: '%s'\nexpected: '%s'" actual x
+        eprintfn "error: Assertion violated:\nactual: '%s'\nexpected: '%s'" actual x
         false
 
     assert (p "42" "Number 42")
@@ -1055,7 +1058,7 @@ module private NumberSequence =
       if actual = x then
         true
       else
-        eprintfn "Assertion violated:\nactual: '%s'\nexpected: '%s'" actual x
+        eprintfn "error: Assertion violated:\nactual: '%s'\nexpected: '%s'" actual x
         false
 
     assert (p "" "[]")
@@ -1661,11 +1664,25 @@ module private MiniLang =
       if actual = expected then
         true
       else
-        eprintfn "actual: %s\nexpected: %s" actual expected
+        eprintfn "  actual: %s\n  expected: %s" actual expected
         false
 
     assert (p "fn f(x: int, y: string) -> () { 0; let; 1 + 2 * 3 }" "Unit")
 
-let v2 () = MiniLang.tests ()
+module private BadLang =
+  module P = ParserCombinator
+
+  let private newGrammar () : P.Grammar<unit, _> =
+    // expects an ambiguity warning: rhs mustn't nullable
+    P.build (P.leftRec (P.eps ()) (P.eps ()) (fun _ _ -> ())) []
+
+  let internal tests () =
+    let grammar = newGrammar ()
+    P.parseV2 (fun _ -> 0) Array.empty grammar
+
+let v2 () =
+  BadLang.tests ()
+  MiniLang.tests ()
+
 // Arith.tests ()
 // NumberSequence.tests ()
