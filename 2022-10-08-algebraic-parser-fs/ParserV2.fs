@@ -71,7 +71,12 @@ module private ParserCombinator =
     private
       { Start: Symbol
         RuleArray: Symbol array
-        RuleMemo: HashMap<obj, int> }
+        RuleMemo: HashMap<obj, int>
+        NullableMemo: HashMap<obj, bool>
+        FirstSetMemo: HashMap<obj, Set<K>>
+        LeftRecMemo: HashMap<Term, Set<K>>
+        JumpMemo: HashMap<Term, HashMap<K, Term>>
+        FallbackMemo: HashMap<Term, Term> }
 
   type Grammar<'T, 'N> = Grammar of GrammarData
 
@@ -398,12 +403,14 @@ module private ParserCombinator =
 
       LTerm(preActions1, LTermData.Choice branches, [])
 
-  // build:
+  // ---------------------------------------------
+  // Build
+  // ---------------------------------------------
 
   let private doBuild<'T> (start: Symbol) (bindings: Binding list) : GrammarData =
     // indexing
     let ruleArray = ResizeArray()
-    let ruleRev = System.Collections.Generic.Dictionary()
+    let ruleRev = HashMap()
 
     let dummy = Symbol(obj (), "dummy", lazy (Term.Choice []))
 
@@ -488,6 +495,7 @@ module private ParserCombinator =
            (rules
             |> List.map (go (nl + "  "))
             |> String.concat (nl + "| "))
+
        | Term.LeftRec (left, right, _) -> sprintf "leftRec(%s, %s)" (go nl left) (go nl right)
 
        | Term.Mu (local, body) ->
@@ -504,48 +512,20 @@ module private ParserCombinator =
        let initial = if hasChoice rule then "\n  " else " "
        eprintfn "R%d%s :=%s%s" i name initial (go "\n  " rule))
 
-    for r in ruleArray do
-      let (Symbol (_, _, termLazy)) = r
-      eprintfn "leftUp: %A" (leftUp termLazy.Value)
+    // for r in ruleArray do
+    //   let (Symbol (_, _, termLazy)) = r
+    //   eprintfn "leftUp: %A" (leftUp termLazy.Value)
 
-    ({ Start = start
-       RuleArray = ruleArray.ToArray()
-       RuleMemo = ruleRev }: GrammarData)
-
-  /// パーサを構築する
-  ///
-  /// - `start`: 開始規則
-  /// - `bindings`: 再帰的な規則に定義をバインド(`bind`)するもの
-  let build<'T, 'N> (start: Rule<'T, 'N>) (bindings: Binding list) : Grammar<'T, 'N> =
-    let start, bindings =
-      match start with
-      | Rule (Term.Symbol _) -> start, bindings
-
-      | _ ->
-        let startRec = recursive "start"
-        recurse startRec, bind startRec start :: bindings
-
-    let start =
-      match start with
-      | Rule (Term.Symbol it) -> it
-      | _ -> unreachable ()
-
-    Grammar(doBuild start bindings)
-
-  // parser methods:
-
-  /// New parser. Deterministic by 1-token lookahead. Recursive decent.
-  let parseV2<'T, 'N> (getKind: 'T -> K) (tokens: 'T array) (grammar: Grammar<'T, 'N>) : 'N =
-    let (Grammar grammar) = grammar
-
-    let mutable nullableMemo = HashMap()
-    let mutable firstSetMemo = HashMap()
+    let nullableMemo = HashMap()
+    let firstSetMemo = HashMap()
 
     // term -> (lookaheadKind -> branchTerm)
     // key must be Term.Choice
-    let mutable jumpMemo = HashMap()
+    let jumpMemo = HashMap()
     // term -> branchTerm
-    let mutable fallbackMemo = HashMap()
+    let fallbackMemo = HashMap()
+
+    let leftRecMemo = HashMap()
 
     let rec computeNullable (term: Term) =
       match term with
@@ -565,7 +545,7 @@ module private ParserCombinator =
         HashMap.findOr id false nullableMemo
 
     // Compute nullable memo:
-    (let mutable workList = Queue(grammar.RuleArray)
+    (let mutable workList = Queue(ruleArray)
      let mutable nextList = Queue()
      let mutable modified = true
 
@@ -621,7 +601,7 @@ module private ParserCombinator =
      while modified do
        modified <- false
 
-       for (Symbol (id, name, termLazy)) in grammar.RuleArray do
+       for (Symbol (id, name, termLazy)) in ruleArray do
          let oldSet = HashMap.findOr id Set.empty firstSetMemo
          let firstSet = computeFirst termLazy.Value
 
@@ -674,8 +654,69 @@ module private ParserCombinator =
       | Term.Map (t, _) -> jumpRec t
       | Term.Seq (terms, _) -> List.iter jumpRec terms
 
-     for (Symbol (_, _, termLazy)) in grammar.RuleArray do
+     for (Symbol (_, _, termLazy)) in ruleArray do
        jumpRec termLazy.Value)
+
+    // Compute leftRecMemo:
+    (let rec leftRecRec (term: Term) =
+      match term with
+      | Term.LeftRec (left, right, _) ->
+        if leftRecMemo.ContainsKey(term) |> not then
+          leftRecRec left
+          leftRecRec right
+          leftRecMemo.Add(term, computeFirst right)
+
+      | Term.Eps _
+      | Term.Expect _
+      | Term.Symbol _
+      | Term.Mu _ -> ()
+
+      | Term.Map (t, _) -> leftRecRec t
+      | Term.Seq (terms, _) -> List.iter leftRecRec terms
+      | Term.Choice terms -> List.iter leftRecRec terms
+
+     for (Symbol (_, _, termLazy)) in ruleArray do
+       leftRecRec termLazy.Value)
+
+    ({ Start = start
+       RuleArray = ruleArray.ToArray()
+       RuleMemo = ruleRev
+       NullableMemo = nullableMemo
+       FirstSetMemo = firstSetMemo
+       JumpMemo = jumpMemo
+       LeftRecMemo = leftRecMemo
+       FallbackMemo = fallbackMemo }: GrammarData)
+
+  /// パーサを構築する
+  ///
+  /// - `start`: 開始規則
+  /// - `bindings`: 再帰的な規則に定義をバインド(`bind`)するもの
+  let build<'T, 'N> (start: Rule<'T, 'N>) (bindings: Binding list) : Grammar<'T, 'N> =
+    let start, bindings =
+      match start with
+      | Rule (Term.Symbol _) -> start, bindings
+
+      | _ ->
+        let startRec = recursive "start"
+        recurse startRec, bind startRec start :: bindings
+
+    let start =
+      match start with
+      | Rule (Term.Symbol it) -> it
+      | _ -> unreachable ()
+
+    Grammar(doBuild start bindings)
+
+  // parser methods:
+
+  /// New parser. Deterministic by 1-token lookahead. Recursive decent.
+  let parseV2<'T, 'N> (getKind: 'T -> K) (tokens: 'T array) (grammar: Grammar<'T, 'N>) : 'N =
+    let (Grammar grammar) = grammar
+    // let nullableMemo = grammar.NullableMemo
+    // let firstSetMemo = grammar.FirstSetMemo
+    let leftRecMemo = grammar.LeftRecMemo
+    let jumpMemo = grammar.JumpMemo
+    let fallbackMemo = grammar.FallbackMemo
 
     // runtime:
 
@@ -782,7 +823,10 @@ module private ParserCombinator =
           onFallback ()
 
       | Term.LeftRec (left, right, action) ->
-        let rightFirstSet = computeFirst right
+        let rightFirstSet =
+          match HashMap.tryFind rule leftRecMemo with
+          | Some it -> it
+          | None -> failwithf "unreachable: leftRecMemo missed key %A" rule
 
         let rec rightLoop () =
           // here left value (or accumulated value) is on the stack
@@ -792,7 +836,7 @@ module private ParserCombinator =
             let token = tokenAt index
             let k = getKind token
 
-            if rightFirstSet.Contains(k) then
+            if Set.contains k rightFirstSet then
               parseRec right
               action ctx
               rightLoop ()
