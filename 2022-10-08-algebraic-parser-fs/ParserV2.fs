@@ -17,12 +17,12 @@ let inline private swap<'T> (x: 'T byref) (y: 'T byref) =
   y <- t
 
 module private HashMap =
-  let internal findOr key alt (map: HashMap<_, _>) =
+  let inline internal findOr key alt (map: HashMap<_, _>) =
     match map.TryGetValue(key) with
     | true, it -> it
     | _ -> alt
 
-  let internal tryFind key (map: HashMap<_, _>) =
+  let inline internal tryFind key (map: HashMap<_, _>) =
     match map.TryGetValue(key) with
     | true, value -> Some value
     | _ -> None
@@ -38,18 +38,11 @@ module private ParserCombinator =
 
   type private SemanticAction = IParseContext -> unit
 
-  type private Recursive<'T>(name: string, value: 'T) =
-    member inline _.Value = value
-
-    override _.ToString() = $"&{name}"
-
   /// Term of syntax rule.
   [<RequireQualifiedAccess; ReferenceEquality; NoComparison>]
   type private Term<'T> =
     private
-    | Expect of K * SemanticAction
-    | Cut of K * SemanticAction
-
+    | Expect of K * cut: bool * SemanticAction
     | Symbol of Symbol<'T>
     | Eps of SemanticAction
     | Map of Term<'T> * SemanticAction
@@ -83,7 +76,7 @@ module private ParserCombinator =
 
   /// 特定の種類のトークンが1つ出現することを表す規則
   let expect (token: int) (extractor: 'T -> 'N) : Rule<'T, 'N> =
-    Rule(Term.Expect(token, (fun ctx -> ctx.Push(extractor (ctx.Shift() :?> 'T) :> obj))))
+    Rule(Term.Expect(token, false, (fun ctx -> ctx.Push(extractor (ctx.Shift() :?> 'T) :> obj))))
 
   /// 特定の種類のトークンが1つ出現することを表す規則
   /// また、カットを行う
@@ -91,7 +84,7 @@ module private ParserCombinator =
   /// - カットとは、`choice` オペレータによる構文規則の選択を確定させるということ
   ///   すなわち `choice` は先読みによりこのトークンが出現するか確認して、出現していたらこの `cut` を含む規則を選択する
   let cut (token: int) (extractor: 'T -> 'N) : Rule<'T, 'N> =
-    Rule(Term.Cut(token, (fun ctx -> ctx.Push(extractor (ctx.Shift() :?> 'T) :> obj))))
+    Rule(Term.Expect(token, true, (fun ctx -> ctx.Push(extractor (ctx.Shift() :?> 'T) :> obj))))
 
   // nominal rules:
 
@@ -314,8 +307,7 @@ module private ParserCombinator =
   /// Converts a term to lefty form.
   let rec private leftUp term : LTerm<_> =
     match term with
-    | Term.Expect (k, action)
-    | Term.Cut (k, action) -> LTerm([], LTermData.Single(LSingle.Token k), [ action ])
+    | Term.Expect (k, _, action) -> LTerm([], LTermData.Single(LSingle.Token k), [ action ])
 
     | Term.Symbol symbol
     | Term.Fix (symbol, _) -> LTerm([], LTermData.Single(LSingle.Symbol symbol), [])
@@ -443,7 +435,6 @@ module private ParserCombinator =
      let rec go (rule: Term<'T>) =
        match rule with
        | Term.Expect _
-       | Term.Cut _
        | Term.Eps _ -> ()
 
        | Term.Symbol symbol -> internSymbol symbol
@@ -487,8 +478,7 @@ module private ParserCombinator =
          let (Symbol (_, name, _)) = symbol
          sprintf "R%d:%s" (indexOf symbol) name
 
-       | Term.Expect (token, _) -> sprintf "expect(%A)" token
-       | Term.Cut (token, _) -> sprintf "cut(%A)" token
+       | Term.Expect (token, _, _) -> sprintf "expect(%A)" token
        | Term.Eps _ -> "eps"
        | Term.Map (r, _) -> go nl r
        | Term.Seq (rules, _) -> sprintf "(%s)" (rules |> List.map (go nl) |> String.concat " ")
@@ -560,12 +550,6 @@ module private ParserCombinator =
     // term -> branchTerm
     let mutable fallbackMemo = HashMap()
 
-    // term -> ((index, lookaheadKind) -> termIndex)
-    // key must be Term.Seq
-    // (term, index)をパースする時点で先読みトークンがkなら、n個のルールを飛ばす
-    // バックトラックは起きないからいらないはず
-    // let mutable skipMemo = HashMap()
-
     // lookaheadKind -> way
     // way: (1: mid, 2: right)
     // key must be Term.InfixLeft
@@ -573,9 +557,7 @@ module private ParserCombinator =
 
     let rec computeNullable (term: Term<'T>) =
       match term with
-      | Term.Expect _
-      | Term.Cut _ -> false
-
+      | Term.Expect _ -> false
       | Term.Eps _ -> true
 
       | Term.Symbol (Symbol (id, _, _)) -> HashMap.findOr id false nullableMemo
@@ -624,8 +606,7 @@ module private ParserCombinator =
 
     let rec computeFirst (term: Term<'T>) =
       match term with
-      | Term.Expect (k, _) -> set [ k ]
-      | Term.Cut (k, _) -> set [ k ]
+      | Term.Expect (k, _, _) -> set [ k ]
       | Term.Symbol (Symbol (id, _, _))
       | Term.Fix (Symbol (id, _, _), _) -> HashMap.findOr id Set.empty firstSetMemo
       | Term.Eps _ -> Set.empty
@@ -716,7 +697,6 @@ module private ParserCombinator =
 
       | Term.Eps _
       | Term.Expect _
-      | Term.Cut _
       | Term.Symbol _
       | Term.Fix _ -> ()
 
@@ -760,20 +740,9 @@ module private ParserCombinator =
 
     let rec parseRec rule =
       match rule with
-      | Term.Expect (token, action) ->
+      | Term.Expect (token, _, action) ->
         if index < tokens.Length then
           let t = tokenAt index
-
-          if getKind t = token then
-            action ctx
-          else
-            fail (sprintf "expect token '%A'" token)
-        else
-          fail (sprintf "expect token '%A'" token)
-
-      | Term.Cut (token, action) ->
-        if index < tokens.Length then
-          let t = tokens.[index]
 
           if getKind t = token then
             action ctx
