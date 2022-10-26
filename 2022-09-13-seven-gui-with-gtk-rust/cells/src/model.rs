@@ -18,8 +18,8 @@ impl Debug for CellValue {
         match self {
             CellValue::Null => write!(f, ""),
             CellValue::Number(value) => write!(f, "{value:.2}"),
-            CellValue::Invalid => write!(f, "#invalid"),
-            CellValue::Recursive => write!(f, "#recursive"),
+            CellValue::Invalid => write!(f, "#VALUE!"),
+            CellValue::Recursive => write!(f, "#REF!"),
             CellValue::DividedByZero => write!(f, "#DIV/0!"),
         }
     }
