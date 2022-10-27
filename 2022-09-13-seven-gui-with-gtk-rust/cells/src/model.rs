@@ -3,7 +3,7 @@ use std::{collections::HashSet, fmt::Debug};
 
 #[allow(unused)]
 #[derive(Clone, Copy, PartialEq)]
-enum CellValue {
+pub(crate) enum CellValue {
     Null,
     Number(f64),
 
@@ -11,6 +11,12 @@ enum CellValue {
     Invalid,
     Recursive,
     DividedByZero,
+}
+
+impl CellValue {
+    pub(crate) fn to_string(&self) -> String {
+        format!("{:?}", self)
+    }
 }
 
 impl Debug for CellValue {
@@ -27,7 +33,7 @@ impl Debug for CellValue {
 
 #[allow(unused)]
 #[derive(Clone)]
-enum CellInput {
+pub(crate) enum CellInput {
     Null,
     Number(f64),
     Formula(Formula),
@@ -223,7 +229,7 @@ fn number_binary(
     }
 }
 
-struct TableData {
+pub(crate) struct TableData {
     /// input[p] = (セルpに入力された値または数式)
     input: GridArray<CellInput>,
     /// values[p] = (セルpの数式を評価した値)
@@ -246,7 +252,7 @@ struct TableData {
 
 #[allow(unused)]
 impl TableData {
-    fn new(size: Coord) -> Self {
+    pub(crate) fn new(size: Coord) -> Self {
         Self {
             input: GridArray::new_with_value(CellInput::Null, size),
             values: GridArray::new_with_value(CellValue::Null, size),
@@ -254,23 +260,23 @@ impl TableData {
             dirty: GridArray::new_with_value(true, size),
             back_deps: GridArray::new(size),
             dirty_set: HashSet::new(),
+            modified_set: HashSet::new(),
             size,
         }
     }
 
     #[allow(unused)]
-    fn input_at(&self, p: impl Into<Coord>) -> CellInput {
+    pub(crate) fn input_at(&self, p: impl Into<Coord>) -> CellInput {
         let p = Into::<Coord>::into(p);
         self.input[p].clone()
     }
-
     #[allow(unused)]
-    fn value_at(&self, p: impl Into<Coord>) -> CellValue {
+    pub(crate) fn value_at(&self, p: impl Into<Coord>) -> CellValue {
         let p = Into::<Coord>::into(p);
         self.values[p]
     }
 
-    fn set(&mut self, p: Coord, s: &str) {
+    pub(crate) fn set(&mut self, p: Coord, s: &str) {
         let input = match CellInput::parse(s) {
             Some(it) => it,
             None => {

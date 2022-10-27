@@ -7,7 +7,8 @@ mod formula;
 mod model;
 
 use coord::*;
-use gtk::{gdk, prelude::*, ApplicationWindow, WindowPosition};
+use gtk::{gdk, glib, prelude::*, ApplicationWindow, WindowPosition};
+use model::TableData;
 use std::{cell::RefCell, rc::Rc};
 
 static STYLES: &[u8] = include_bytes!("styles.css");
@@ -15,9 +16,7 @@ static STYLES: &[u8] = include_bytes!("styles.css");
 #[allow(unused)]
 #[derive(Debug)]
 enum Msg {
-    OnEditBegin(Coord),
-    OnEditEnd,
-    OnEntryChanged(String),
+    OnChangePropagationRequested,
 }
 
 #[derive(Default)]
@@ -26,7 +25,8 @@ struct State;
 struct Sheet {
     #[allow(unused)]
     size: Coord,
-    inputs: Vec<Vec<String>>,
+    inputs: GridArray<String>,
+    table: TableData,
 
     editor_rect: Option<gtk::Rectangle>,
     edit_state: Option<EditState>,
@@ -34,11 +34,10 @@ struct Sheet {
 
 impl Sheet {
     fn new(size: Coord) -> Self {
-        let (h, w) = size.pair();
-
         Self {
             size,
-            inputs: vec![vec!["".into(); h]; w],
+            inputs: GridArray::new(size),
+            table: TableData::new(size),
             editor_rect: None,
             edit_state: None,
         }
@@ -57,7 +56,7 @@ fn nth_alphabet(n: usize) -> char {
 fn build_ui(application: &gtk::Application) {
     let row_count = 100;
     let column_count = 26;
-    let size = Coord::from((column_count, row_count));
+    let size = Coord::from((row_count, column_count));
 
     let sheet_ref: Rc<RefCell<Sheet>> = Rc::new(RefCell::new(Sheet::new(size)));
 
@@ -65,12 +64,16 @@ fn build_ui(application: &gtk::Application) {
         let mut sheet = sheet_ref.borrow_mut();
         for y in 0..row_count {
             for x in 0..column_count {
-                sheet.inputs[y][x] = format!("{},{}", nth_alphabet(x), y + 1);
+                let text = format!("{},{}", nth_alphabet(x), y + 1);
+                let pos = Coord::from((y, x));
+                sheet.table.set(pos, &text);
+                sheet.inputs[pos] = text;
             }
         }
+        sheet.table.update();
     }
 
-    // let (tx, rx) = glib::MainContext::channel(glib::PRIORITY_DEFAULT);
+    let (tx, rx) = glib::MainContext::channel(glib::PRIORITY_DEFAULT);
 
     // ## UIを組み立てる
 
@@ -158,7 +161,8 @@ fn build_ui(application: &gtk::Application) {
         let sheet = sheet_ref.borrow();
         for y in 0..row_count {
             for x in 0..column_count {
-                let label = gtk::Label::new(Some(&sheet.inputs[y][x]));
+                let pos = Coord::from((y, x));
+                let label = gtk::Label::new(Some(&sheet.inputs[pos]));
                 label.set_size_request(60, 25);
                 label.style_context().add_class("cell-label");
 
@@ -178,6 +182,7 @@ fn build_ui(application: &gtk::Application) {
                     let overlay = overlay.clone();
                     let scroll = scroll.clone();
                     let sheet_ref = Rc::clone(&sheet_ref);
+                    let tx = tx.clone();
 
                     move |eb, ev| {
                         if ev.button() != gdk::BUTTON_PRIMARY {
@@ -203,15 +208,20 @@ fn build_ui(application: &gtk::Application) {
                         let input;
                         {
                             let pos = Coord::from((y, x));
+                            let tx = tx.clone();
                             let mut sheet = sheet_ref.borrow_mut();
                             input = sheet.inputs[y][x].clone();
                             sheet.editor_rect = Some(size);
                             sheet.edit_state = Some(EditState {
                                 pos,
                                 on_changed: Box::new(move |sheet, state, text| {
-                                    let (y, x) = state.pos.pair();
+                                    let pos = state.pos;
+                                    let (y, x) = pos.pair();
                                     label.set_text(&text);
+                                    sheet.table.set(pos, &text);
                                     sheet.inputs[y][x] = text;
+
+                                    tx.send(Msg::OnChangePropagationRequested).unwrap();
                                 }),
                             });
                         };
@@ -293,18 +303,30 @@ fn build_ui(application: &gtk::Application) {
 
     // ## イベントを処理する
 
-    // rx.attach(None, {
-    //     let mut state = State::default();
+    rx.attach(None, {
+        // let mut state = State::default();
 
-    //     move |msg| {
-    //         eprintln!("msg {:?}", msg);
+        move |msg| {
+            eprintln!("msg {:?}", msg);
 
-    //         match msg {
-    //             Msg::OnInit => {}
-    //         }
-    //         Continue(true)
-    //     }
-    // });
+            match msg {
+                Msg::OnChangePropagationRequested => {
+                    let mut sheet = sheet_ref.borrow_mut();
+                    sheet.table.update();
+
+                    let changed_pos_list =
+                        sheet.table.drain_changes().into_iter().collect::<Vec<_>>();
+
+                    for pos in changed_pos_list {
+                        let (y, x) = pos.pair();
+                        let label = &data_cells[y][x];
+                        label.set_text(&sheet.table.value_at(pos).to_string());
+                    }
+                }
+            }
+            Continue(true)
+        }
+    });
 
     // ## UIを初期化する
 
