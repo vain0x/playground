@@ -238,6 +238,8 @@ struct TableData {
     back_deps: GridArray<HashSet<Coord>>,
     /// 最後の更新より後に入力が変更されたセルの集合
     dirty_set: HashSet<Coord>,
+    /// 最後の更新より後に値が変化したセルの集合
+    modified_set: HashSet<Coord>,
     /// テーブルの大きさ。`size = (h, w)` はテーブルの行数がh、列数がwであることを表す
     size: Coord,
 }
@@ -282,8 +284,12 @@ impl TableData {
         self.dirty_set.insert(p);
     }
 
+    pub(crate) fn drain_changes<'a>(&'a mut self) -> impl IntoIterator<Item = Coord> + 'a {
+        self.modified_set.drain()
+    }
+
     /// 差分更新を行う
-    fn update(&mut self) {
+    pub(crate) fn update(&mut self) {
         // 手順:
         // 入力が変更されたセルの依存関係を再計算する
         //      そのセルが参照していた他のセルから、そのセル自身へのback_depを取り除く
@@ -428,6 +434,8 @@ impl TableData {
                             self.dirty[p] = false;
 
                             if value != old_value {
+                                self.modified_set.insert(p);
+
                                 for &q in &self.back_deps[p] {
                                     if !done.contains(&q) {
                                         #[cfg(test)]
