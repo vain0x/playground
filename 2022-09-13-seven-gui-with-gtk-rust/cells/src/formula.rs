@@ -38,7 +38,7 @@ pub(crate) enum Formula {
     Null,
     /// 空でない文字列
     String(String),
-    Number(String),
+    Number(f64),
     Call(Fn, Vec<Formula>),
     Ref(Coord),
     Range(CoordRange),
@@ -142,7 +142,10 @@ fn tokenize(s: &str) -> Option<Vec<Token>> {
 
 fn parse_expr(tokens: &mut VecDeque<Token>) -> Option<Formula> {
     match tokens.pop_front()? {
-        Token::Number(value) => Some(Formula::Number(value)),
+        Token::Number(s) => {
+            let value = s.parse::<f64>().ok()?;
+            Some(Formula::Number(value))
+        }
         Token::Ident(name) => {
             let fn_kind = Fn::parse(&name)?;
 
@@ -233,27 +236,27 @@ mod tests {
             }
         }
 
-        assert_eq!(p("0"), r#"Number("0")"#);
-        assert_eq!(p("-1"), r#"Number("-1")"#);
-        assert_eq!(p("01.10"), r#"Number("01.10")"#);
-        assert_eq!(p("42.159"), r#"Number("42.159")"#);
+        assert_eq!(p("0"), r#"Number(0.0)"#);
+        assert_eq!(p("-1"), r#"Number(-1.0)"#);
+        assert_eq!(p("01.10"), r#"Number(1.1)"#);
+        assert_eq!(p("42.159"), r#"Number(42.159)"#);
 
         assert_eq!(p("A0"), "Ref((0, 0))");
         assert_eq!(p("A1:B2"), "Range((1, 0)-(3, 2))");
 
-        assert_eq!(p("( 42.0 )"), r#"Number("42.0")"#);
-
         assert_eq!(p(""), "None");
+        assert_eq!(p("( 42.0 )"), r#"Number(42.0)"#);
+
         assert_eq!(p("0 1"), "None");
         assert_eq!(p("0x7f"), "None");
         assert_eq!(p("A0:"), "None");
         assert_eq!(p("A0::"), "None");
         assert_eq!(p(":A0"), "None");
 
-        assert_eq!(p("add(A1, 1)"), r#"Call(Add, [Ref((1, 0)), Number("1")])"#);
+        assert_eq!(p("add(A1, 1)"), r#"Call(Add, [Ref((1, 0)), Number(1.0)])"#);
         assert_eq!(
             p("div(sum(A1:A2), 2)"),
-            r#"Call(Divide, [Call(Sum, [Range((1, 0)-(3, 1))]), Number("2")])"#
+            r#"Call(Divide, [Call(Sum, [Range((1, 0)-(3, 1))]), Number(2.0)])"#
         );
         assert_eq!(p("add("), "None");
         assert_eq!(p("add )"), "None");

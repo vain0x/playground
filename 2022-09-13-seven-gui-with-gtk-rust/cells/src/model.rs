@@ -124,7 +124,7 @@ impl<'a> EvalFn<'a> {
         match formula {
             Formula::Null => CellValue::Null,
             Formula::String(s) => CellValue::String(s.to_string()),
-            Formula::Number(s) => CellValue::Number(s.parse().unwrap()),
+            &Formula::Number(value) => CellValue::Number(value),
 
             Formula::Call(fn_kind, args) => match (fn_kind, args.as_slice()) {
                 (Fn::Add, [l, r]) => number_binary(self.compute(l), self.compute(r), |l, r| l + r),
