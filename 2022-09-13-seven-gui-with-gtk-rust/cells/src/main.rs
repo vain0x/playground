@@ -13,7 +13,6 @@ use std::{cell::RefCell, rc::Rc};
 
 static STYLES: &[u8] = include_bytes!("styles.css");
 
-#[allow(unused)]
 #[derive(Debug)]
 enum Msg {
     OnChangePropagationRequested,

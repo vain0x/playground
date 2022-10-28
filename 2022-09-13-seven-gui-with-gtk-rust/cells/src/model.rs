@@ -1,7 +1,6 @@
 use crate::{coord::*, formula::*};
 use std::{collections::HashSet, fmt::Debug};
 
-#[allow(unused)]
 #[derive(Clone, Copy, PartialEq)]
 pub(crate) enum CellValue {
     Null,
@@ -31,7 +30,6 @@ impl Debug for CellValue {
     }
 }
 
-#[allow(unused)]
 #[derive(Clone)]
 pub(crate) enum CellInput {
     Null,
@@ -62,6 +60,7 @@ struct FormulaDeps {
 }
 
 impl FormulaDeps {
+    #[allow(unused)]
     fn is_empty(&self) -> bool {
         self.refs.is_empty() && self.ranges.is_empty()
     }
@@ -250,7 +249,6 @@ pub(crate) struct TableData {
     size: Coord,
 }
 
-#[allow(unused)]
 impl TableData {
     pub(crate) fn new(size: Coord) -> Self {
         Self {
@@ -333,18 +331,13 @@ impl TableData {
         let mut next_set: HashSet<Coord> = HashSet::new();
         let mut done: HashSet<Coord> = HashSet::new();
 
-        let (h, w) = self.size.pair();
-
         // 依存関係の更新:
         {
             for &p in &self.dirty_set {
-                let (py, px) = p.pair();
-
                 #[cfg(test)]
                 let mut old_refs = self.deps[p].iter_cells().collect::<HashSet<_>>();
 
                 for q in self.deps[p].iter_cells() {
-                    let (qy, qx) = q.pair();
                     let removed = self.back_deps[q].remove(&p);
                     debug_assert!(removed);
                 }
@@ -354,7 +347,6 @@ impl TableData {
                         self.deps[p].recompute(f);
 
                         for q in self.deps[p].iter_cells() {
-                            let (qy, qx) = q.pair();
                             self.back_deps[q].insert(p);
                         }
 
@@ -408,14 +400,12 @@ impl TableData {
                 }
 
                 while let Some(p) = stack.pop() {
-                    let (py, px) = p.pair();
                     match state[p] {
                         0 => {
                             state[p] = 1;
                             stack.push(p);
 
                             for q in self.deps[p].iter_cells() {
-                                let (qy, qx) = q.pair();
                                 if work_set.contains(&q) && state[q] == 0 {
                                     stack.push(q);
                                 }
@@ -477,8 +467,8 @@ impl TableData {
     }
 
     /// 全体を更新する
+    #[allow(unused)]
     fn recompute(&mut self) {
-        let (h, w) = self.size.pair();
         for p in CoordRange::from(..self.size).iter_cells() {
             self.back_deps[p].clear();
         }
