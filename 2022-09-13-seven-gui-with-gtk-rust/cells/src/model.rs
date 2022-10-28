@@ -227,8 +227,8 @@ fn number_binary(
 }
 
 pub(crate) struct TableData {
-    /// `input[p]` = (セルpに入力された値または数式)
-    input: GridArray<Formula>,
+    /// `inputs[p]` = (セルpに入力された値または数式)
+    inputs: GridArray<Formula>,
     /// `values[p]` = (セルpの数式を評価した値)
     values: GridArray<CellValue>,
     /// `deps[p]` = (セルpの数式が他のどのセルに対する参照を持つかを計算したもの)
@@ -250,7 +250,7 @@ pub(crate) struct TableData {
 impl TableData {
     pub(crate) fn new(size: Coord) -> Self {
         Self {
-            input: GridArray::new_with_value(Formula::Null, size),
+            inputs: GridArray::new_with_value(Formula::Null, size),
             values: GridArray::new_with_value(CellValue::Null, size),
             deps: GridArray::new(size),
             dirty: GridArray::new(size),
@@ -264,7 +264,7 @@ impl TableData {
     #[allow(unused)]
     pub(crate) fn input_at(&self, p: impl Into<Coord>) -> Formula {
         let p = Into::<Coord>::into(p);
-        self.input[p].clone()
+        self.inputs[p].clone()
     }
 
     #[allow(unused)]
@@ -283,7 +283,7 @@ impl TableData {
             }
         };
 
-        self.input[p] = input;
+        self.inputs[p] = input;
         self.dirty_set.insert(p);
     }
 
@@ -341,7 +341,7 @@ impl TableData {
                     debug_assert!(removed);
                 }
 
-                self.deps[p].recompute(&self.input[p]);
+                self.deps[p].recompute(&self.inputs[p]);
 
                 for q in self.deps[p].iter_cells() {
                     self.back_deps[q].insert(p);
@@ -418,7 +418,7 @@ impl TableData {
                                 values: &self.values,
                                 dirty: &self.dirty,
                             }
-                            .compute(&self.input[p]);
+                            .compute(&self.inputs[p]);
                             self.values[p] = value;
                             self.dirty[p] = false;
 
