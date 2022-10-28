@@ -1,10 +1,11 @@
 use crate::{coord::*, formula::*};
 use std::{collections::HashSet, fmt::Debug};
 
-#[derive(Clone, Copy, PartialEq)]
+#[derive(Clone, PartialEq)]
 pub(crate) enum CellValue {
     Null,
     Number(f64),
+    String(String),
 
     // Bad
     Invalid,
@@ -23,6 +24,7 @@ impl Debug for CellValue {
         match self {
             CellValue::Null => write!(f, ""),
             CellValue::Number(value) => write!(f, "{value:.2}"),
+            CellValue::String(value) => f.write_str(&value),
             CellValue::Invalid => write!(f, "#VALUE!"),
             CellValue::Recursive => write!(f, "#REF!"),
             CellValue::DividedByZero => write!(f, "#DIV/0!"),
@@ -48,8 +50,10 @@ impl CellInput {
             return Some(CellInput::Null);
         }
 
-        let value = s.parse::<f64>().ok()?;
-        Some(CellInput::Number(value))
+        match s.parse::<f64>() {
+            Ok(value) => Some(CellInput::Number(value)),
+            Err(_) => Some(CellInput::Formula(Formula::String(s.to_string()))),
+        }
     }
 }
 
@@ -86,7 +90,7 @@ impl FormulaDeps {
 
             while let Some(formula) = stack.pop() {
                 match *formula {
-                    Formula::Number(_) => {}
+                    Formula::Null | Formula::String(_) | Formula::Number(_) => {}
                     Formula::Call(_, ref args) => {
                         for arg in args {
                             stack.push(arg);
@@ -118,6 +122,8 @@ struct EvalFn<'a> {
 impl<'a> EvalFn<'a> {
     fn compute(&self, formula: &Formula) -> CellValue {
         match formula {
+            Formula::Null => CellValue::Null,
+            Formula::String(s) => CellValue::String(s.to_string()),
             Formula::Number(s) => CellValue::Number(s.parse().unwrap()),
 
             Formula::Call(fn_kind, args) => match (fn_kind, args.as_slice()) {
@@ -220,26 +226,28 @@ fn number_binary(
 ) -> CellValue {
     match (l, r) {
         (CellValue::Number(l), CellValue::Number(r)) => CellValue::Number(combinator(l, r)),
-        _ => {
-            #[cfg(test)]
+        #[cfg(test)]
+        (l, r) => {
             eprintln!("invalid pair: {l:?}, {r:?}");
             CellValue::Invalid
         }
+        #[cfg(not(test))]
+        _ => CellValue::Invalid,
     }
 }
 
 pub(crate) struct TableData {
-    /// input[p] = (セルpに入力された値または数式)
+    /// `input[p]` = (セルpに入力された値または数式)
     input: GridArray<CellInput>,
-    /// values[p] = (セルpの数式を評価した値)
+    /// `values[p]` = (セルpの数式を評価した値)
     values: GridArray<CellValue>,
-    /// deps[p] = (セルpの数式が他のどのセルに対する参照を持つかを計算したもの)
+    /// `deps[p]` = (セルpの数式が他のどのセルに対する参照を持つかを計算したもの)
     deps: GridArray<FormulaDeps>,
-    /// dirty[p] = (true: 再評価が必要, false: 評価済み)
+    /// `dirty[p]` = (true: 再評価が必要, false: 評価済み)
     ///
     /// `dirty[p] == true` であるセルの `values[p]` を参照してはいけない
     dirty: GridArray<bool>,
-    /// back_deps[p] = (セルpを参照する数式を持つセルの集合)
+    /// `back_deps[p]` = (セルpを参照する数式を持つセルの集合)
     back_deps: GridArray<HashSet<Coord>>,
     /// 最後の更新より後に入力が変更されたセルの集合
     dirty_set: HashSet<Coord>,
@@ -272,7 +280,7 @@ impl TableData {
     #[allow(unused)]
     pub(crate) fn value_at(&self, p: impl Into<Coord>) -> CellValue {
         let p = Into::<Coord>::into(p);
-        self.values[p]
+        self.values[p].clone()
     }
 
     pub(crate) fn set(&mut self, p: Coord, s: &str) {
@@ -425,7 +433,7 @@ impl TableData {
                             state[p] = 2;
 
                             debug_assert!(self.dirty[p]);
-                            let old_value = self.values[p];
+                            let old_value = self.values[p].clone();
 
                             // セルの値を計算する
                             // (この時点で、セルが参照している他のセルの値はすべて計算済みのはず
@@ -442,7 +450,7 @@ impl TableData {
                             self.values[p] = value;
                             self.dirty[p] = false;
 
-                            if value != old_value {
+                            if self.values[p] != old_value {
                                 self.modified_set.insert(p);
 
                                 for &q in &self.back_deps[p] {
@@ -456,7 +464,8 @@ impl TableData {
 
                             #[cfg(test)]
                             {
-                                if value != old_value {
+                                let value = &self.values[p];
+                                if *value != old_value {
                                     eprintln!("eval {p:?} changed ({old_value:?} -> {value:?})");
                                 } else {
                                     eprintln!("eval {p:?} unchanged ({value:?})");
@@ -545,6 +554,26 @@ mod tests {
         assert_eq!(values[1][1], CellValue::Number(2.0));
 
         assert_eq!(values[2][1], CellValue::Number(3.0 + 4.0));
+    }
+
+    // 数値でないセルを参照できること
+    #[test]
+    fn test_ref_non_number() {
+        let table = make_table(
+            (2, 2),
+            &[
+                // A0 -> B0 (null値)
+                ((0, 0), "=B0"),
+                ((0, 1), ""),
+                // A1 -> B1 (文字列値)
+                ((1, 0), "=B1"),
+                ((1, 0), "Hello"),
+            ],
+        );
+        let values = table.values;
+
+        assert_eq!(values[0][0], CellValue::Null);
+        assert_eq!(values[1][0], CellValue::String("Hello".into()));
     }
 
     // 推移的に他のセルを参照できること

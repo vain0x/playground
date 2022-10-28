@@ -33,6 +33,11 @@ impl Fn {
 
 #[derive(Clone, Debug)]
 pub(crate) enum Formula {
+    /// NULL, 空の文字列
+    #[allow(unused)]
+    Null,
+    /// 空でない文字列
+    String(String),
     Number(String),
     Call(Fn, Vec<Formula>),
     Ref(Coord),
