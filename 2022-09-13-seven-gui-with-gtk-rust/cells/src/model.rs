@@ -255,7 +255,7 @@ impl TableData {
             input: GridArray::new_with_value(CellInput::Null, size),
             values: GridArray::new_with_value(CellValue::Null, size),
             deps: GridArray::new(size),
-            dirty: GridArray::new_with_value(true, size),
+            dirty: GridArray::new(size),
             back_deps: GridArray::new(size),
             dirty_set: HashSet::new(),
             modified_set: HashSet::new(),
@@ -268,6 +268,7 @@ impl TableData {
         let p = Into::<Coord>::into(p);
         self.input[p].clone()
     }
+
     #[allow(unused)]
     pub(crate) fn value_at(&self, p: impl Into<Coord>) -> CellValue {
         let p = Into::<Coord>::into(p);
@@ -403,7 +404,16 @@ impl TableData {
                     match state[p] {
                         0 => {
                             state[p] = 1;
+
+                            // セル自身をスタックに積み直す
+                            // (後で再訪し、帰りがけの処理を行う)
                             stack.push(p);
+
+                            // 依存しているセルをスタックに積む
+                            // (依存しているセルの状態が 0:訪問前 であるときだけスタックに積む
+                            //  そうでないセルをスタックに積まない理由は以下の通り:
+                            //  - 訪問中のときは、循環参照が起こっている。そのセルをスタックに積むと無限ループに陥る
+                            //  - 訪問後のときは、スタックに積んでも何も起きない)
 
                             for q in self.deps[p].iter_cells() {
                                 if work_set.contains(&q) && state[q] == 0 {
@@ -417,6 +427,9 @@ impl TableData {
                             debug_assert!(self.dirty[p]);
                             let old_value = self.values[p];
 
+                            // セルの値を計算する
+                            // (この時点で、セルが参照している他のセルの値はすべて計算済みのはず
+                            //  そうでなければ循環参照が起こっている)
                             let value = match self.input[p] {
                                 CellInput::Null => CellValue::Null,
                                 CellInput::Number(value) => CellValue::Number(value),
@@ -465,134 +478,6 @@ impl TableData {
         });
         self.dirty_set.clear();
     }
-
-    /// 全体を更新する
-    #[allow(unused)]
-    fn recompute(&mut self) {
-        for p in CoordRange::from(..self.size).iter_cells() {
-            self.back_deps[p].clear();
-        }
-
-        init_deps(&mut self.deps, &mut self.back_deps, &self.input);
-        init_values(&mut self.values, &mut self.dirty, &self.input, &self.deps);
-
-        debug_assert!({
-            let is_clean = self.dirty.iter().all(|&dirty| !dirty);
-            is_clean
-        });
-        self.dirty_set.clear();
-    }
-}
-
-fn init_deps(
-    deps: &mut GridArray<FormulaDeps>,
-    back_deps: &mut GridArray<HashSet<Coord>>,
-    input: &GridArray<CellInput>,
-) {
-    let size = input.size();
-
-    for p in CoordRange::from(..size).iter_cells() {
-        let f = match &input[p] {
-            CellInput::Formula(f) => f,
-            _ => continue,
-        };
-
-        deps[p].recompute(f);
-
-        // 逆方向の依存関係を記録する
-        {
-            let d = &deps[p];
-            if !d.is_empty() {
-                for q in deps[p].iter_cells() {
-                    back_deps[q].insert(p);
-                }
-            }
-        }
-
-        #[cfg(test)]
-        {
-            let d = &deps[p];
-            if !d.is_empty() {
-                eprintln!("dep: {p:?} ({f:?}) -> {:?} {:?}", d.refs, d.ranges);
-            }
-        }
-    }
-}
-
-fn init_values(
-    values: &mut GridArray<CellValue>,
-    dirty: &mut GridArray<bool>,
-    input: &GridArray<CellInput>,
-    deps: &GridArray<FormulaDeps>,
-) {
-    let size = input.size();
-    let (h, w) = size.pair();
-
-    for value in dirty.iter_mut() {
-        *value = true;
-    }
-
-    // 再帰処理のスタック
-    let mut stack = vec![];
-
-    // 再帰の状態を持つテーブル
-    // (0: 訪問前, 1: 訪問中, 2: 訪問後)
-    // (典型的にはWhite-Gray-Blackの3色を使う)
-    let mut state = GridArray::<i32>::new(size);
-
-    // すべてのセルを逆順にスタックに積む
-    // (すべてのセルを前方から順に訪問するため)
-    for y in (0..h).rev() {
-        for x in (0..w).rev() {
-            stack.push(Coord::from((y, x)));
-        }
-    }
-
-    while let Some(p) = stack.pop() {
-        match state[p] {
-            0 => {
-                state[p] = 1;
-
-                // セル自身をスタックに積み直す
-                // (後で再訪し、帰りがけの処理を行う)
-                stack.push(p);
-
-                // 依存しているセルをスタックに積む
-                // (依存しているセルの状態が 0:訪問前 であるときだけスタックに積む
-                //  そうでないセルをスタックに積まない理由は以下の通り:
-                //  - 訪問中のときは、循環参照が起こっている。そのセルをスタックに積むと無限ループに陥る
-                //  - 訪問後のときは、スタックに積んでも何も起きない)
-                for &q in &deps[p].refs {
-                    if state[q] == 0 {
-                        stack.push(q);
-                    }
-                }
-
-                for &range in &deps[p].ranges {
-                    for q in range.iter_cells() {
-                        if state[q] == 0 {
-                            stack.push(q);
-                        }
-                    }
-                }
-            }
-            1 => {
-                state[p] = 2;
-
-                // セルの値を計算する
-                // (この時点で、セルが参照している他のセルの値はすべて計算済みのはず
-                //  そうでなければ循環参照が起こっている)
-                let value = match input[p] {
-                    CellInput::Null => CellValue::Null,
-                    CellInput::Number(value) => CellValue::Number(value),
-                    CellInput::Formula(ref formula) => EvalFn { values, dirty }.compute(formula),
-                };
-                values[p] = value;
-                dirty[p] = false;
-            }
-            _ => {}
-        }
-    }
 }
 
 #[cfg(test)]
@@ -606,7 +491,7 @@ mod tests {
             table.set(p.into(), s);
         }
 
-        table.recompute();
+        table.update();
         table
     }
 
