@@ -1,11 +1,11 @@
 use crate::{coord::*, formula::*};
-use std::{collections::HashSet, fmt::Debug};
+use std::{collections::HashSet, fmt::Debug, rc::Rc};
 
 #[derive(Clone, PartialEq)]
 pub(crate) enum CellValue {
     Null,
     Number(f64),
-    String(String),
+    String(Rc<str>),
 
     // Bad
     Invalid,
@@ -43,7 +43,7 @@ fn parse_input(s: &str) -> Option<Formula> {
 
     match s.parse::<f64>() {
         Ok(value) => Some(Formula::Number(value)),
-        Err(_) => Some(Formula::String(s.to_string())),
+        Err(_) => Some(Formula::String(Rc::from(s))),
     }
 }
 
@@ -113,7 +113,7 @@ impl<'a> EvalFn<'a> {
     fn compute(&self, formula: &Formula) -> CellValue {
         match formula {
             Formula::Null => CellValue::Null,
-            Formula::String(s) => CellValue::String(s.to_string()),
+            Formula::String(s) => CellValue::String(Rc::clone(&s)),
             &Formula::Number(value) => CellValue::Number(value),
 
             Formula::Call(fn_kind, args) => match (fn_kind, args.as_slice()) {

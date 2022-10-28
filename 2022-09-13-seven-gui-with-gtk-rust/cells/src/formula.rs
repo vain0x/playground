@@ -1,5 +1,5 @@
 use crate::coord::*;
-use std::{collections::VecDeque, fmt::Debug};
+use std::{collections::VecDeque, fmt::Debug, rc::Rc};
 
 #[derive(Clone, Debug)]
 pub(crate) enum Fn {
@@ -36,7 +36,7 @@ pub(crate) enum Formula {
     /// NULL, 空の文字列
     Null,
     /// 空でない文字列
-    String(String),
+    String(Rc<str>),
     Number(f64),
     Call(Fn, Vec<Formula>),
     Ref(Coord),
@@ -65,11 +65,11 @@ fn parse_ref(s: &str) -> Option<Coord> {
 }
 
 #[derive(Debug)]
-enum Token {
+enum Token<'a> {
     Blank,
-    Number(String),
+    Number(&'a str),
     Ref(Coord),
-    Ident(String),
+    Ident(&'a str),
     LeftParen,
     RightParen,
     Colon,
@@ -101,7 +101,7 @@ fn tokenize_next(s: &str, i: usize) -> Option<(Token, usize)> {
                 return None;
             }
 
-            Some((Token::Number(text.into()), r - i))
+            Some((Token::Number(text), r - i))
         }
 
         c if c.is_ascii_alphabetic() => {
@@ -112,7 +112,7 @@ fn tokenize_next(s: &str, i: usize) -> Option<(Token, usize)> {
             let text = &s[i..r];
             let token = match parse_ref(text) {
                 Some(v) => Token::Ref(v),
-                None => Token::Ident(text.into()),
+                None => Token::Ident(text),
             };
             Some((token, r - i))
         }
