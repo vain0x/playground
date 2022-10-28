@@ -34,7 +34,6 @@ impl Fn {
 #[derive(Clone, Debug)]
 pub(crate) enum Formula {
     /// NULL, 空の文字列
-    #[allow(unused)]
     Null,
     /// 空でない文字列
     String(String),
@@ -45,7 +44,6 @@ pub(crate) enum Formula {
 }
 
 impl Formula {
-    #[allow(unused)]
     pub(crate) fn parse(s: &str) -> Option<Formula> {
         parse_formula(s)
     }
@@ -212,10 +210,12 @@ fn parse_expr(tokens: &mut VecDeque<Token>) -> Option<Formula> {
 
 fn parse_formula(s: &str) -> Option<Formula> {
     let tokens = tokenize(s)?;
+    if tokens.is_empty() {
+        return Some(Formula::Null);
+    }
 
     let mut tokens = VecDeque::from(tokens);
     let f = parse_expr(&mut tokens)?;
-
     if !tokens.is_empty() {
         return None;
     }
@@ -244,7 +244,7 @@ mod tests {
         assert_eq!(p("A0"), "Ref((0, 0))");
         assert_eq!(p("A1:B2"), "Range((1, 0)-(3, 2))");
 
-        assert_eq!(p(""), "None");
+        assert_eq!(p(""), "Null");
         assert_eq!(p("( 42.0 )"), r#"Number(42.0)"#);
 
         assert_eq!(p("0 1"), "None");

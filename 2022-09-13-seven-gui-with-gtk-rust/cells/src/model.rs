@@ -32,28 +32,18 @@ impl Debug for CellValue {
     }
 }
 
-#[derive(Clone)]
-pub(crate) enum CellInput {
-    Null,
-    Number(f64),
-    Formula(Formula),
-}
+fn parse_input(s: &str) -> Option<Formula> {
+    if s.starts_with('=') {
+        return Formula::parse(s[1..].trim());
+    }
 
-impl CellInput {
-    fn parse(s: &str) -> Option<Self> {
-        if s.starts_with('=') {
-            let f = Formula::parse(s[1..].trim())?;
-            return Some(CellInput::Formula(f));
-        }
+    if s.trim().is_empty() {
+        return Some(Formula::Null);
+    }
 
-        if s.trim().is_empty() {
-            return Some(CellInput::Null);
-        }
-
-        match s.parse::<f64>() {
-            Ok(value) => Some(CellInput::Number(value)),
-            Err(_) => Some(CellInput::Formula(Formula::String(s.to_string()))),
-        }
+    match s.parse::<f64>() {
+        Ok(value) => Some(Formula::Number(value)),
+        Err(_) => Some(Formula::String(s.to_string())),
     }
 }
 
@@ -238,7 +228,7 @@ fn number_binary(
 
 pub(crate) struct TableData {
     /// `input[p]` = (セルpに入力された値または数式)
-    input: GridArray<CellInput>,
+    input: GridArray<Formula>,
     /// `values[p]` = (セルpの数式を評価した値)
     values: GridArray<CellValue>,
     /// `deps[p]` = (セルpの数式が他のどのセルに対する参照を持つかを計算したもの)
@@ -260,7 +250,7 @@ pub(crate) struct TableData {
 impl TableData {
     pub(crate) fn new(size: Coord) -> Self {
         Self {
-            input: GridArray::new_with_value(CellInput::Null, size),
+            input: GridArray::new_with_value(Formula::Null, size),
             values: GridArray::new_with_value(CellValue::Null, size),
             deps: GridArray::new(size),
             dirty: GridArray::new(size),
@@ -272,7 +262,7 @@ impl TableData {
     }
 
     #[allow(unused)]
-    pub(crate) fn input_at(&self, p: impl Into<Coord>) -> CellInput {
+    pub(crate) fn input_at(&self, p: impl Into<Coord>) -> Formula {
         let p = Into::<Coord>::into(p);
         self.input[p].clone()
     }
@@ -284,12 +274,12 @@ impl TableData {
     }
 
     pub(crate) fn set(&mut self, p: Coord, s: &str) {
-        let input = match CellInput::parse(s) {
+        let input = match parse_input(s) {
             Some(it) => it,
             None => {
                 #[cfg(test)]
                 eprintln!("input parse failed {s:?}");
-                CellInput::Null
+                Formula::Null
             }
         };
 
@@ -351,39 +341,25 @@ impl TableData {
                     debug_assert!(removed);
                 }
 
-                match &self.input[p] {
-                    CellInput::Formula(f) => {
-                        self.deps[p].recompute(f);
+                self.deps[p].recompute(&self.input[p]);
 
-                        for q in self.deps[p].iter_cells() {
-                            self.back_deps[q].insert(p);
-                        }
+                for q in self.deps[p].iter_cells() {
+                    self.back_deps[q].insert(p);
+                }
 
-                        #[cfg(test)]
-                        {
-                            // 参照の差分を出力する
-                            let mut new_refs = vec![];
-                            for q in self.deps[p].iter_cells() {
-                                if !old_refs.remove(&q) {
-                                    new_refs.push(q);
-                                }
-                            }
-                            let mut old_refs = old_refs.iter().collect::<Vec<_>>();
-                            old_refs.sort();
-                            if !(old_refs.is_empty() && new_refs.is_empty()) {
-                                eprintln!("dep changed: {p:?} -> +{:?} -{:?}", new_refs, old_refs);
-                            }
+                #[cfg(test)]
+                {
+                    // 参照の差分を出力する
+                    let mut new_refs = vec![];
+                    for q in self.deps[p].iter_cells() {
+                        if !old_refs.remove(&q) {
+                            new_refs.push(q);
                         }
                     }
-                    _ => {
-                        self.deps[p].clear();
-
-                        #[cfg(test)]
-                        if !old_refs.is_empty() {
-                            let mut old_refs = old_refs.iter().collect::<Vec<_>>();
-                            old_refs.sort();
-                            eprintln!("dep changed: {p:?} -> -{:?} (clear)", old_refs);
-                        }
+                    let mut old_refs = old_refs.iter().collect::<Vec<_>>();
+                    old_refs.sort();
+                    if !(old_refs.is_empty() && new_refs.is_empty()) {
+                        eprintln!("dep changed: {p:?} -> +{:?} -{:?}", new_refs, old_refs);
                     }
                 }
             }
@@ -438,15 +414,11 @@ impl TableData {
                             // セルの値を計算する
                             // (この時点で、セルが参照している他のセルの値はすべて計算済みのはず
                             //  そうでなければ循環参照が起こっている)
-                            let value = match self.input[p] {
-                                CellInput::Null => CellValue::Null,
-                                CellInput::Number(value) => CellValue::Number(value),
-                                CellInput::Formula(ref formula) => EvalFn {
-                                    values: &self.values,
-                                    dirty: &self.dirty,
-                                }
-                                .compute(formula),
-                            };
+                            let value = EvalFn {
+                                values: &self.values,
+                                dirty: &self.dirty,
+                            }
+                            .compute(&self.input[p]);
                             self.values[p] = value;
                             self.dirty[p] = false;
 
