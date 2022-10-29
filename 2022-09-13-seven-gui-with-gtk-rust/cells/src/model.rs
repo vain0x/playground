@@ -38,13 +38,17 @@ fn parse_input(s: &str) -> Option<Formula> {
         return Formula::parse(s[1..].trim());
     }
 
+    if s.starts_with('\'') {
+        return Some(Formula::String(Rc::from(s[1..].trim())));
+    }
+
     if s.trim().is_empty() {
         return Some(Formula::Null);
     }
 
     match s.parse::<f64>() {
         Ok(value) => Some(Formula::Number(value)),
-        Err(_) => Some(Formula::String(Rc::from(s))),
+        Err(_) => Some(Formula::String(Rc::from(s.trim()))),
     }
 }
 
@@ -762,5 +766,29 @@ mod tests {
         table.update();
 
         assert_eq!(table.values[0][3], CellValue::Number(17.0 * 13.0));
+    }
+
+    // クオートで始まる入力が文字列になること、入力がトリムされること
+    #[test]
+    fn test_quote() {
+        let table = make_table(
+            (2, 3),
+            &[
+                // A0, B0, C0
+                ((0, 0), "'="),
+                ((0, 1), "''x'"),
+                ((0, 2), "'0"),
+                ((1, 0), "      "),
+                ((1, 1), "  x  "),
+                ((1, 2), "'  x  "),
+            ],
+        );
+        assert_eq!(table.values[0][0], CellValue::String("=".into()));
+        assert_eq!(table.values[0][1], CellValue::String("'x'".into()));
+        assert_eq!(table.values[0][2], CellValue::String("0".into()));
+
+        assert_eq!(table.values[1][0], CellValue::Null);
+        assert_eq!(table.values[1][1], CellValue::String("x".into()));
+        assert_eq!(table.values[1][2], CellValue::String("x".into()));
     }
 }
