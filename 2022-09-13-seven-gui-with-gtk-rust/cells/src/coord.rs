@@ -17,6 +17,16 @@ impl Coord {
     pub(crate) fn pair(self) -> (usize, usize) {
         (self.y as usize, self.x as usize)
     }
+
+    /// Get whether `p` is a point in an area with size equal to `self`, exclusively.
+    pub(crate) fn contains(&self, p: Coord) -> bool {
+        p.y < self.y && p.x < self.x
+    }
+
+    /// Get whether `p` is a point in an area with size equal to `self`, inclusively.
+    pub(crate) fn contains_inclusive(self, p: Coord) -> bool {
+        p.y <= self.y && p.x <= self.x
+    }
 }
 
 impl From<(usize, usize)> for Coord {

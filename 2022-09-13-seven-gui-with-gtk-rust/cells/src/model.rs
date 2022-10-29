@@ -9,6 +9,7 @@ pub(crate) enum CellValue {
 
     // Bad
     Invalid,
+    InvalidRef,
     Recursive,
     DividedByZero,
 }
@@ -26,7 +27,7 @@ impl Debug for CellValue {
             CellValue::Number(value) => write!(f, "{value:.2}"),
             CellValue::String(value) => f.write_str(&value),
             CellValue::Invalid => write!(f, "#VALUE!"),
-            CellValue::Recursive => write!(f, "#REF!"),
+            CellValue::InvalidRef | CellValue::Recursive => write!(f, "#REF!"),
             CellValue::DividedByZero => write!(f, "#DIV/0!"),
         }
     }
@@ -71,7 +72,7 @@ impl FormulaDeps {
         self.ranges.clear();
     }
 
-    fn recompute(&mut self, formula: &Formula) {
+    fn recompute(&mut self, formula: &Formula, size: Coord) {
         self.clear();
 
         // extend:
@@ -86,8 +87,16 @@ impl FormulaDeps {
                             stack.push(arg);
                         }
                     }
-                    Formula::Ref(v) => self.refs.push(v),
-                    Formula::Range(range) => self.ranges.push(range),
+                    Formula::Ref(p) => {
+                        if size.contains(p) {
+                            self.refs.push(p);
+                        }
+                    }
+                    Formula::Range(range) => {
+                        if size.contains_inclusive(range.t) {
+                            self.ranges.push(range);
+                        }
+                    }
                 }
             }
         }
@@ -145,6 +154,10 @@ impl<'a> EvalFn<'a> {
                     _ => CellValue::Invalid,
                 },
                 (Fn::Sum, [Formula::Range(range)]) => {
+                    if !self.values.size().contains_inclusive(range.t) {
+                        return CellValue::InvalidRef;
+                    }
+
                     let mut sum = 0.0;
                     for p in range.iter_cells() {
                         if self.dirty[p] {
@@ -164,6 +177,10 @@ impl<'a> EvalFn<'a> {
                     CellValue::Number(sum)
                 }
                 (Fn::Prod, [Formula::Range(range)]) => {
+                    if !self.values.size().contains_inclusive(range.t) {
+                        return CellValue::InvalidRef;
+                    }
+
                     let mut prod = 1.0;
                     for p in range.iter_cells() {
                         if self.dirty[p] {
@@ -195,6 +212,10 @@ impl<'a> EvalFn<'a> {
                 }
             },
             &Formula::Ref(p) => {
+                if !self.values.size().contains(p) {
+                    return CellValue::InvalidRef;
+                }
+
                 if self.dirty[p] {
                     return CellValue::Recursive;
                 }
@@ -341,7 +362,7 @@ impl TableData {
                     debug_assert!(removed);
                 }
 
-                self.deps[p].recompute(&self.inputs[p]);
+                self.deps[p].recompute(&self.inputs[p], self.size);
 
                 for q in self.deps[p].iter_cells() {
                     self.back_deps[q].insert(p);
@@ -565,6 +586,24 @@ mod tests {
         assert_eq!(values[0][0], CellValue::Number(3.0));
         assert_eq!(values[0][1], CellValue::Number(3.0));
         assert_eq!(values[0][2], CellValue::Number(3.0));
+    }
+
+    // 範囲外の参照がエラーになること
+    #[test]
+    fn test_invalid_ref() {
+        let table = make_table(
+            (3, 3),
+            &[
+                // A0 -> A99
+                // B0 -> D1:D4
+                ((0, 0), "=A99"),
+                ((1, 0), "=sum(D1:D4)"),
+            ],
+        );
+        let values = table.values;
+
+        assert_eq!(values[0][0], CellValue::InvalidRef);
+        assert_eq!(values[1][0], CellValue::InvalidRef);
     }
 
     // 循環参照がエラーになること

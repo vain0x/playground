@@ -59,7 +59,6 @@ fn parse_ref(s: &str) -> Option<Coord> {
     debug_assert!(column < 26);
 
     let row = s[1..].parse::<u32>().ok()?;
-    debug_assert!(row < 100);
 
     Some(Coord::new(row, column))
 }
