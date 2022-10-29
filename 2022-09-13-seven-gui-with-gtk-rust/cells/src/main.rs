@@ -13,39 +13,31 @@ use std::{cell::RefCell, rc::Rc};
 
 static STYLES: &[u8] = include_bytes!("styles.css");
 
-#[derive(Debug)]
-enum Msg {
-    OnChangePropagationRequested,
-}
-
-#[derive(Default)]
-struct State;
-
 struct Sheet {
-    #[allow(unused)]
-    size: Coord,
     inputs: GridArray<String>,
     table: TableData,
-
-    editor_rect: Option<gtk::Rectangle>,
-    edit_state: Option<EditState>,
+    editing_cell_opt: Option<Coord>,
 }
 
 impl Sheet {
     fn new(size: Coord) -> Self {
         Self {
-            size,
             inputs: GridArray::new(size),
             table: TableData::new(size),
-            editor_rect: None,
-            edit_state: None,
+            editing_cell_opt: None,
         }
     }
 }
 
-struct EditState {
-    pos: Coord,
-    on_changed: Box<dyn Fn(&mut Sheet, &EditState, String) + 'static>,
+#[derive(Default)]
+struct ViewState {
+    editor_rect_opt: Option<gtk::Rectangle>,
+}
+
+#[derive(Debug)]
+enum Msg {
+    OnCellClick(Coord),
+    OnEditEnd { input: String },
 }
 
 fn nth_alphabet(n: usize) -> char {
@@ -57,10 +49,10 @@ fn build_ui(application: &gtk::Application) {
     let column_count = 26;
     let size = Coord::from((row_count, column_count));
 
-    let sheet_ref: Rc<RefCell<Sheet>> = Rc::new(RefCell::new(Sheet::new(size)));
+    let view_state_ref: Rc<RefCell<ViewState>> = Rc::default();
+    let mut sheet = Sheet::new(size);
 
     {
-        let mut sheet = sheet_ref.borrow_mut();
         for y in 0..row_count {
             for x in 0..column_count {
                 let text = format!("{},{}", nth_alphabet(x), y + 1);
@@ -69,7 +61,29 @@ fn build_ui(application: &gtk::Application) {
                 sheet.inputs[pos] = text;
             }
         }
+
+        // 数式の記述例を初期状態に書き込んでおく:
+        for &(y, input) in &[
+            (1, "Examples:"),
+            (2, ";(add);20;+;22;->;=add(C2,E2)"),
+            (3, ";(sum);1;2;3;->;=sum(C3:E3)"),
+        ] {
+            for (x, input) in input.split(';').enumerate() {
+                if input.is_empty() {
+                    continue;
+                }
+                let p = Coord::new(y as u32, x as u32);
+                sheet.table.set(p, input);
+                sheet.inputs[p] = input.into();
+            }
+        }
+
         sheet.table.update();
+
+        for p in Vec::from_iter(sheet.table.drain_changes()) {
+            let value = sheet.table.value_at(p);
+            sheet.inputs[p] = value.to_string();
+        }
     }
 
     let (tx, rx) = glib::MainContext::channel(glib::PRIORITY_DEFAULT);
@@ -157,7 +171,6 @@ fn build_ui(application: &gtk::Application) {
     let mut data_cells = vec![vec![]; row_count];
 
     {
-        let sheet = sheet_ref.borrow();
         for y in 0..row_count {
             for x in 0..column_count {
                 let pos = Coord::from((y, x));
@@ -176,68 +189,20 @@ fn build_ui(application: &gtk::Application) {
                 eb.add(&label);
 
                 eb.connect_button_press_event({
-                    let editor = editor.clone();
-                    let label = label.clone();
-                    let overlay = overlay.clone();
-                    let scroll = scroll.clone();
-                    let sheet_ref = Rc::clone(&sheet_ref);
                     let tx = tx.clone();
 
-                    move |eb, ev| {
-                        if ev.button() != gdk::BUTTON_PRIMARY {
-                            return Inhibit(false);
+                    move |_, ev| {
+                        if ev.button() == gdk::BUTTON_PRIMARY {
+                            tx.send(Msg::OnCellClick(Coord::from((y, x)))).unwrap();
+                            Inhibit(true)
+                        } else {
+                            Inhibit(false)
                         }
-
-                        let label = label.clone();
-                        let rect = eb.allocation();
-                        eprintln!("click ({y}, {x}) ({}x{})", rect.width(), rect.height());
-
-                        let p = 4; // margin, padding of grid
-                        let offset_y = scroll.vadjustment().value() as i32;
-                        let offset_x = scroll.hadjustment().value() as i32;
-                        let size = gtk::Rectangle::new(
-                            rect.x() - offset_x + p,
-                            rect.y() - offset_y + p,
-                            rect.width().max(100),
-                            rect.height(),
-                        );
-
-                        // Update model:
-
-                        let input;
-                        {
-                            let pos = Coord::from((y, x));
-                            let tx = tx.clone();
-                            let mut sheet = sheet_ref.borrow_mut();
-                            input = sheet.inputs[y][x].clone();
-                            sheet.editor_rect = Some(size);
-                            sheet.edit_state = Some(EditState {
-                                pos,
-                                on_changed: Box::new(move |sheet, state, text| {
-                                    let pos = state.pos;
-                                    let (y, x) = pos.pair();
-                                    label.set_text(&text);
-                                    sheet.table.set(pos, &text);
-                                    sheet.inputs[y][x] = text;
-
-                                    tx.send(Msg::OnChangePropagationRequested).unwrap();
-                                }),
-                            });
-                        };
-
-                        // Update view:
-
-                        editor.buffer().set_text(&input);
-                        editor.set_visible(true);
-                        editor.set_allocation(&size);
-                        editor.set_has_focus(true);
-                        overlay.queue_resize();
-                        Inhibit(true)
                     }
                 });
 
                 grid.attach(&eb, (1 + x) as i32, (1 + y) as i32, 1, 1);
-                data_cells[y].push(label);
+                data_cells[y].push((eb, label));
             }
         }
     }
@@ -252,47 +217,52 @@ fn build_ui(application: &gtk::Application) {
     // オーバーレイの外側のクリックでエディタを非表示にする
     window.connect_button_press_event({
         let editor = editor.clone();
-        let sheet_ref = Rc::clone(&sheet_ref);
+        let tx = tx.clone();
+        let view_state_ref = Rc::clone(&view_state_ref);
 
         move |_, _| {
-            sheet_ref.borrow_mut().editor_rect = None;
-            editor.set_visible(false);
+            if gtk::prelude::EntryExt::is_visible(&editor) {
+                let input = editor.buffer().text();
+                view_state_ref.borrow_mut().editor_rect_opt = None;
+                editor.set_visible(false);
+                tx.send(Msg::OnEditEnd { input }).unwrap();
+            }
+
             Inhibit(false)
         }
     });
 
     // オーバーレイ上のマウス操作が下にあるグリッドに貫通 (pass-through) するように設定する
-    overlay.connect_realize(|p| {
-        p.window().unwrap().set_pass_through(true);
+    overlay.connect_realize(|overlay| {
+        overlay.window().unwrap().set_pass_through(true);
     });
 
     // オーバーレイ上のエディタの表示位置を絶対座標で決める
     overlay.connect_get_child_position({
-        let sheet_ref = Rc::clone(&sheet_ref);
-        move |_, _| sheet_ref.borrow().editor_rect
+        let view_state_ref = Rc::clone(&view_state_ref);
+        move |_, _| view_state_ref.borrow().editor_rect_opt
     });
 
     // editorのEscapeキーでエディタを非表示にする
     editor.connect_key_press_event({
-        let sheet_ref = Rc::clone(&sheet_ref);
+        let tx = tx.clone();
+        let view_state_ref = Rc::clone(&view_state_ref);
 
         move |editor, ev| {
             let mut close = false;
 
             if ev.keyval() == gdk::keys::constants::Return {
                 close = true;
-
                 let input = editor.buffer().text();
-                let mut sheet = sheet_ref.borrow_mut();
-                if let Some(edit) = sheet.edit_state.take() {
-                    (edit.on_changed)(&mut *sheet, &edit, input);
-                }
+                tx.send(Msg::OnEditEnd { input }).unwrap();
             } else if ev.keyval() == gdk::keys::constants::Escape {
                 close = true;
+                let input = editor.buffer().text();
+                tx.send(Msg::OnEditEnd { input }).unwrap();
             }
 
             if close {
-                sheet_ref.borrow_mut().editor_rect = None;
+                view_state_ref.borrow_mut().editor_rect_opt = None;
                 editor.set_visible(false);
             }
 
@@ -303,23 +273,63 @@ fn build_ui(application: &gtk::Application) {
     // ## イベントを処理する
 
     rx.attach(None, {
-        // let mut state = State::default();
-
+        // moves sheet
         move |msg| {
             eprintln!("msg {:?}", msg);
 
             match msg {
-                Msg::OnChangePropagationRequested => {
-                    let mut sheet = sheet_ref.borrow_mut();
-                    sheet.table.update();
+                Msg::OnCellClick(p) => {
+                    let (y, x) = p.pair();
+                    let (eb, _) = &data_cells[y][x];
+                    let rect = eb.allocation();
+                    eprintln!("click ({y}, {x}) ({}x{})", rect.width(), rect.height());
 
-                    let changed_pos_list =
-                        sheet.table.drain_changes().into_iter().collect::<Vec<_>>();
+                    let p = 4; // margin, padding of grid
+                    let offset_y = scroll.vadjustment().value() as i32;
+                    let offset_x = scroll.hadjustment().value() as i32;
+                    let size = gtk::Rectangle::new(
+                        rect.x() - offset_x + p,
+                        rect.y() - offset_y + p,
+                        rect.width().max(100),
+                        rect.height(),
+                    );
 
-                    for pos in changed_pos_list {
-                        let (y, x) = pos.pair();
-                        let label = &data_cells[y][x];
-                        label.set_text(&sheet.table.value_at(pos).to_string());
+                    // Update model:
+
+                    let input;
+                    {
+                        let pos = Coord::from((y, x));
+                        input = sheet.inputs[y][x].clone();
+                        sheet.editing_cell_opt = Some(pos);
+                    };
+
+                    // Update view:
+
+                    view_state_ref.borrow_mut().editor_rect_opt = Some(size);
+
+                    editor.buffer().set_text(&input);
+                    editor.set_visible(true);
+                    editor.set_allocation(&size);
+                    editor.set_has_focus(true);
+                    overlay.queue_resize();
+                }
+                Msg::OnEditEnd { input } => {
+                    if let Some(pos) = sheet.editing_cell_opt.take() {
+                        // Update cell:
+                        {
+                            let (y, x) = pos.pair();
+                            sheet.table.set(pos, &input);
+                            sheet.inputs[y][x] = input;
+                        }
+
+                        // Propagate changes:
+                        sheet.table.update();
+
+                        for pos in Vec::from_iter(sheet.table.drain_changes()) {
+                            let (y, x) = pos.pair();
+                            let (_, label) = &data_cells[y][x];
+                            label.set_text(&sheet.table.value_at(pos).to_string());
+                        }
                     }
                 }
             }
@@ -329,7 +339,6 @@ fn build_ui(application: &gtk::Application) {
 
     // ## UIを初期化する
 
-    // tx.send(Msg::OnInit).unwrap();
     window.show_all();
 }
 
