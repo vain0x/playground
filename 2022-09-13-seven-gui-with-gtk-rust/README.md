@@ -9,8 +9,8 @@
 - [x] Flight Booker
 - [x] Timer
 - [x] CRUD
-- [ ] Circle Drawer
-- [ ] Cells
+- [x] Circle Drawer
+- [x] Cells
 
 ## 動かしかた
 
@@ -21,6 +21,14 @@
 # 実行
 cargo run --bin counter
 ```
+
+### テスト
+
+```sh
+cargo test --bin cells
+```
+
+(テストがあるのはCellsのみ)
 
 ## リンク
 
