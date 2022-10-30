@@ -10,7 +10,7 @@
 - [x] Timer
 - [x] CRUD
 - [x] Circle Drawer
-- [ ] Cells
+- [x] Cells
 
 ## 動かしかた
 
