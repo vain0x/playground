@@ -2,7 +2,7 @@
 
 7種類のGUIアプリケーションのサンプルを作る試み
 
-参考: [7GUIs](https://eugenkiss.github.io/7guis/)
+参考: [7GUIs](https://7guis.github.io/7guis/)
 
 - [x] Counter
 - [x] Temperature Converter
