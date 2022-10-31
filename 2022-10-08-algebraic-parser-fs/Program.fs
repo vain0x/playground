@@ -1,8 +1,9 @@
 module private Program
 
-open ParserV2
-
 [<EntryPoint>]
 let main _ =
-  v2 ()
+  ExArith.tests ()
+  ExBadGrammar.tests ()
+  ExMiniLang.tests ()
+  ExNumberSequence.tests ()
   0
