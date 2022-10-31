@@ -1,9 +1,6 @@
 module private ParserV1
 
-type private HashMap<'K, 'T> = System.Collections.Generic.Dictionary<'K, 'T>
-
-let inline private unreachable () = failwith "unreachable"
-let inline private (|Unreachable|) _ = unreachable ()
+open Util
 
 module private ParserCombinator =
   /// Kind of token.
@@ -222,8 +219,7 @@ module private ParserCombinator =
     let ruleArray = ResizeArray()
     let ruleRev = System.Collections.Generic.Dictionary()
 
-    let dummy =
-      Symbol(obj (), "dummy", lazy (Term.Choice []))
+    let dummy = Symbol(obj (), "dummy", lazy (Term.Choice []))
 
     ruleArray.Add(dummy)
     ruleRev.Add(dummy :> obj, 0)
@@ -594,9 +590,10 @@ module private Arith =
 
     assert (p "1 + 2 - 3" "BinOp (Subtract, BinOp (Add, Number 1, Number 2), Number 3)")
 
-    assert (p
-              "2 * 3 / 5 * 7"
-              "BinOp\n  (Multiply, BinOp (Divide, BinOp (Multiply, Number 2, Number 3), Number 5),\n   Number 7)")
+    assert
+      (p
+        "2 * 3 / 5 * 7"
+        "BinOp\n  (Multiply, BinOp (Divide, BinOp (Multiply, Number 2, Number 3), Number 5),\n   Number 7)")
 
 /// 数列のパーサの実装例
 module private NumberSequence =

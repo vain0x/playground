@@ -1,31 +1,7 @@
 module ParserV2
 
 open System
-
-type private Queue<'T> = System.Collections.Generic.Queue<'T>
-type private Stack<'T> = System.Collections.Generic.Stack<'T>
-type private HashSet<'T> = System.Collections.Generic.HashSet<'T>
-type private HashMap<'K, 'T> = System.Collections.Generic.Dictionary<'K, 'T>
-
-let inline private todo () = failwith "todo"
-let inline private unreachable () = failwith "unreachable"
-let inline private (|Unreachable|) _ = unreachable ()
-
-let inline private swap<'T> (x: 'T byref) (y: 'T byref) =
-  let t = x
-  x <- y
-  y <- t
-
-module private HashMap =
-  let inline internal findOr key alt (map: HashMap<_, _>) =
-    match map.TryGetValue(key) with
-    | true, it -> it
-    | _ -> alt
-
-  let inline internal tryFind key (map: HashMap<_, _>) =
-    match map.TryGetValue(key) with
-    | true, value -> Some value
-    | _ -> None
+open Util
 
 module private ParserCombinator =
   /// Kind of token.
@@ -35,6 +11,8 @@ module private ParserCombinator =
     abstract Shift: unit -> obj
     abstract Push: obj -> unit
     abstract Pop: unit -> obj
+    abstract OnBegin: unit -> int
+    abstract OnEnd: int -> unit
 
   type private SemanticAction = IParseContext -> unit
 
@@ -155,7 +133,7 @@ module private ParserCombinator =
     let (RecRule (symbol, termRef)) = recRule
     termRef.contents <- Some term
 
-    Rule(Term.Mu(symbol, term))
+    Rule(Term.Symbol symbol)
 
   // let label (name: string) (rule: Rule<'T, 'N>) : Rule<'T, 'N> = todo ()
 
@@ -297,6 +275,117 @@ module private ParserCombinator =
       )
 
     rule1 (Rule t) List.rev
+
+  // ---------------------------------------------
+  // LeftRecDetection
+  // ---------------------------------------------
+
+  let inline private equalsByRef (x: obj) (y: obj) = Object.ReferenceEquals(x, y)
+
+  let private leftRecDetectionWith (isNullable: Term -> bool) (memo: HashMap<obj, bool>) (symbol: Symbol) =
+    let mutable current: obj = null
+    let status = HashMap()
+
+    let rec detectRec term =
+      match term with
+      | Term.Expect _
+      | Term.Eps _ -> ()
+
+      | Term.Symbol symbol
+      | Term.Mu (symbol, _) ->
+        let (Symbol (id, name, termLazy)) = symbol
+
+        if memo.ContainsKey(id) then
+          let parent = current
+          current <- id
+
+          status.Add(id, false)
+          detectRec termLazy.Value
+          status.[id] <- true
+
+          current <- parent
+        else
+          match HashMap.tryFind id status with
+          | Some false ->
+            // Detected!
+            status.[id] <- true
+            let direct = equalsByRef current id
+            memo.Add(id, direct)
+            eprintfn "trace: Symbol %s is%s left-recursive)" name (if direct then " directly" else "")
+
+          | Some true -> ()
+
+          | None ->
+            let parent = current
+            current <- id
+
+            status.Add(id, false)
+            detectRec termLazy.Value
+            status.[id] <- true
+
+            if memo.ContainsKey(id) |> not then
+              eprintfn "trace: Symbol %s isn't left-recursive" name
+
+            current <- parent
+
+      | Term.Map (t, _) -> detectRec t
+
+      | Term.Seq (terms, _) ->
+        let rec seqLoop terms =
+          match terms with
+          | t :: terms ->
+            detectRec t
+            if isNullable t then seqLoop terms
+
+          | [] -> ()
+
+        seqLoop terms
+
+      | Term.Choice branches -> List.iter detectRec branches
+
+      | Term.LeftRec (left, right, _) -> if isNullable left then detectRec right
+
+    detectRec (Term.Symbol symbol)
+
+  // ---------------------------------------------
+  // LeftRecElimination
+  // ---------------------------------------------
+
+  let private leftRecElimination (term: Term) =
+    let rec elimRec term =
+      match term with
+      | Term.Expect _
+      | Term.Symbol _
+      | Term.Eps _ -> term
+
+      | Term.Map (t, action) -> Term.Map(elimRec t, action)
+      | Term.Seq (terms, action) -> Term.Seq(List.map elimRec terms, action)
+      | Term.Choice branches -> Term.Choice(List.map elimRec branches)
+
+      | Term.LeftRec (left, right, action) ->
+        let left = elimRec left
+        let right = elimRec right
+
+        // leftRec(L, R)
+        //    ==> L (R action)*
+        //    ==> L (mu X. (R action X)?)
+        let (RecRule (symbol, termRef)) = recursive "leftRec"
+
+        let body =
+          Term.Choice [ Term.Seq(
+                          [ Term.Map(right, action)
+                            Term.Symbol symbol ],
+                          ignore
+                        )
+                        Term.Eps ignore ]
+
+        termRef.contents <- Some body
+
+        Term.Seq([ left; Term.Symbol symbol ], ignore)
+
+      | Term.Mu (symbol, body) -> Term.Mu(symbol, elimRec body)
+
+    elimRec term
 
   // ---------------------------------------------
   // Left-up
@@ -484,20 +573,35 @@ module private ParserCombinator =
 
     let intern (rule: Symbol) = ruleArray.[indexOf rule]
 
-    (let internSymbol symbol =
-      let (Symbol (id, _, _)) = symbol
+    (let rec internSymbol symbol =
+      let (Symbol (id, name, termLazy)) = symbol
 
-      if ruleRev.ContainsKey(id) |> not then
+      match HashMap.tryFind id ruleRev with
+      | Some i ->
+        // ruleArray.[i]
+        ()
+
+      | None ->
+        // let termRef = ref None
+
+        // let symbol =
+        //   Symbol(id, name, lazy (termRef.contents |> Option.get))
+
         let index = ruleArray.Count
         ruleArray.Add(symbol)
         ruleRev.Add(id, index)
 
-     let rec indexingRec (term: Term) =
+        indexingRec termLazy.Value
+     // termRef.contents <- Some()
+     // symbol
+
+     and indexingRec (term: Term) =
        match term with
        | Term.Expect _
        | Term.Eps _ -> ()
 
-       | Term.Symbol symbol -> internSymbol symbol
+       | Term.Symbol symbol
+       | Term.Mu (symbol, _) -> internSymbol symbol
 
        | Term.Map (t, _) -> indexingRec t
        | Term.Seq (terms, _) -> List.iter indexingRec terms
@@ -507,15 +611,8 @@ module private ParserCombinator =
          indexingRec left
          indexingRec right
 
-       | Term.Mu (symbol, body) ->
-         // After the pass, Mu behaves the same as Symbol
-         // since the body is registered in the RuleArray (the symbol is now a nominal rule).
-         internSymbol symbol
-         indexingRec body
-
      for Binding (id, name, term) in bindings do
-       internSymbol (Symbol(id, name, lazy term))
-       indexingRec term)
+       internSymbol (Symbol(id, name, lazy (term))))
 
     // dump
     (let rec hasChoice term =
@@ -569,6 +666,8 @@ module private ParserCombinator =
 
     let nullableMemo = HashMap()
     let firstSetMemo = HashMap()
+    let symbolFollowSetMemo = HashMap() // symbolId -> FOLLOW
+    let dotFollowSetMemo = HashMap() // (term, dotIndex) -> FOLLOW
 
     // term -> (lookaheadKind -> branchTerm)
     // key must be Term.Choice
@@ -619,6 +718,7 @@ module private ParserCombinator =
 
        for (Symbol (id, name, termLazy)) in ruleArray do
          let oldSet = HashMap.findOr id Set.empty firstSetMemo
+
          let firstSet = computeFirstSetWith (nullableMemo, firstSetMemo) termLazy.Value
 
          if firstSet <> oldSet then
@@ -697,7 +797,91 @@ module private ParserCombinator =
      for (Symbol (_, _, termLazy)) in ruleArray do
        leftRecRec termLazy.Value)
 
-    ({ Start = start
+    // Perform left-rec detection:
+
+    (let memo = HashMap()
+     let isNullableFn = computeNullableWith nullableMemo
+
+     for symbol in ruleArray do
+       let (Symbol (id, _, _)) = symbol
+
+       if memo.ContainsKey(id) |> not then
+         leftRecDetectionWith isNullableFn memo symbol)
+
+    // Compute FOLLOW sets:
+    (let isNullable term = computeNullableWith nullableMemo term
+
+     let getFirstSet term =
+       computeFirstSetWith (nullableMemo, firstSetMemo) term
+
+     let lookup (Symbol (id, _, _)) =
+       HashMap.tryFind id symbolFollowSetMemo
+       |> Option.defaultValue Set.empty
+
+     let mutable modified = true
+
+     let merge followSet symbol =
+       let oldSet = lookup symbol
+
+       if Set.isSubset followSet oldSet |> not then
+         symbolFollowSetMemo.Add(symbol, followSet)
+         modified <- true
+
+     let rec followRec current term =
+       match term with
+       | Term.Expect _
+       | Term.Eps _ -> ()
+
+       | Term.Symbol symbol
+       | Term.Mu (symbol, _) -> merge current symbol
+
+       | Term.Map (t, _) -> followRec current t
+       | Term.Seq (terms, _) -> followSeqRec current terms
+       | Term.Choice terms -> terms |> List.iter (followRec current)
+
+       | Term.LeftRec (left, right, _) ->
+         // FOLLOW(L) += FIRST(R) (since L R can appear)
+         // FOLLOW(R) += FIRST(R) (since R R can appear)
+         // FOLLOW(R) += k
+
+         // Term.Choice [ left
+         //               Term.Seq([ left; right ], ignore) ]
+
+         // followSeqRec [ left; right ]
+         todo ()
+
+     and followSeqRec current terms =
+       // heads is terms in reversed order
+       // `current` is set of tokens that may follow heads
+       let rec seqLoop current heads =
+         match heads with
+         | [] -> ()
+         | [ t ] -> followRec current t
+
+         | t :: heads ->
+           followRec current t
+
+           // follow of terms is: FIRST(T) | (if null(t) then k else {})
+           let f =
+             let f = getFirstSet t
+
+             if isNullable t then
+               Set.union f current
+             else
+               f
+
+           seqLoop f heads
+
+       seqLoop current (List.rev terms)
+
+     while modified do
+       modified <- false
+
+       for symbol in ruleArray do
+         let (Symbol (_, _, termLazy)) = symbol
+         followRec (lookup symbol) termLazy.Value)
+
+    ({ Start = intern start
        RuleArray = ruleArray.ToArray()
        RuleMemo = ruleRev
        NullableMemo = nullableMemo
@@ -731,7 +915,6 @@ module private ParserCombinator =
   // ---------------------------------------------
 
   // Deterministic by 1-token lookahead. Recursive decent.
-
   let parseV2<'T, 'N> (getKind: 'T -> K) (tokens: 'T array) (grammar: Grammar<'T, 'N>) : 'N =
     let (Grammar grammar) = grammar
     let nullableMemo = grammar.NullableMemo
@@ -753,6 +936,7 @@ module private ParserCombinator =
         | Some it -> it
         | None ->
           let result = computeFirstSetWith (nullableMemo, firstSetMemo) term
+
           termFirstSetMemo.[term] <- result
           result
 
@@ -776,10 +960,6 @@ module private ParserCombinator =
       else
         "EOF"
 
-    // Stack balance check for debugging.
-    let onBeginNode () = stack.Count
-    let onEndNode (previous: int) = assert (stack.Count = previous + 1)
-
     // Finds an example of token kind from input.
     let findWhat k =
       match tokens |> Array.tryFind (fun t -> getKind t = k) with
@@ -790,7 +970,11 @@ module private ParserCombinator =
       { new IParseContext with
           override _.Shift() = shift false
           override _.Push(item) = stack.Push(item)
-          override _.Pop() : obj = stack.Pop() }
+          override _.Pop() : obj = stack.Pop()
+
+          // Stack balance check for debugging.
+          override _.OnBegin() = stack.Count
+          override _.OnEnd(previous: int) = assert (stack.Count = previous + 1) }
 
     let rec parseRec term : unit =
       match term with
@@ -824,13 +1008,10 @@ module private ParserCombinator =
         action ctx
 
       | Term.Seq (terms, action) ->
-        let node = onBeginNode ()
-
         for r in terms do
           parseRec r
 
         action ctx
-        onEndNode node
 
       | Term.Choice branches ->
         let table =
@@ -887,16 +1068,15 @@ module private ParserCombinator =
               action ctx
               rightLoop ()
 
-        let node = onBeginNode ()
         parseRec left
         rightLoop ()
-        onEndNode node
 
     try
       parseRec (Term.Symbol grammar.Start)
     with
     | ExpectedTokenError (k, index) ->
       let msg = sprintf "At %s, expected a token %s " (near index) (findWhat k)
+
       raise (ParseError(msg, index))
 
     | ChoiceError (kindList, index) ->
@@ -907,6 +1087,7 @@ module private ParserCombinator =
         |> String.concat ", "
 
       let msg = sprintf "At %s, expected one of [%s]" (near index) what
+
       raise (ParseError(msg, index))
 
     if index <> tokens.Length then
@@ -1536,9 +1717,7 @@ module private MiniLang =
                  lp
                  (P.choice [ P.rule1 rp (fun _ -> Expr.Literal Literal.Unit)
                              P.rule2 pRecExpr rp (fun e _ -> e) ])
-                 (fun _ it -> it)
-
-                ]
+                 (fun _ it -> it) ]
 
   let private pSuffix =
     P.infixLeft
@@ -1727,7 +1906,22 @@ module private BadLang =
 
   let private newGrammar () : P.Grammar<unit, _> =
     // expects an ambiguity warning: rhs mustn't nullable
-    P.build (P.leftRec (P.eps ()) (P.eps ()) (fun _ _ -> ())) []
+    let r1 = P.leftRec (P.eps ()) (P.eps ()) (fun _ _ -> ())
+
+    // it should detect direct left-recursion
+    let r2 =
+      P.mu "DirectLeftRec" (fun local -> P.opt (P.rule2 local (P.expect 1 ignore) (fun _ _ -> ())) ignore)
+
+    // it should detect indirect left-recursion
+    // mu X. (mu Y. X?) '2'
+    // (same as '2'+)
+    let r3 =
+      P.mu "IndirectLeftRec" (fun local ->
+        let inner = P.mu "Inner" (fun _ -> P.opt local ignore)
+
+        P.opt (P.rule2 inner (P.expect 2 ignore) (fun _ _ -> ())) ignore)
+
+    P.build (P.choice [ r1; r2; r3 ]) []
 
   let internal tests () =
     let grammar = newGrammar ()
