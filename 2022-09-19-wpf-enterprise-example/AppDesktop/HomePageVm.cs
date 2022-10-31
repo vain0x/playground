@@ -37,6 +37,7 @@ namespace AppDesktop
 
         public Command<object?> AttendCommand { get; }
         public Command<object?> LeaveCommand { get; }
+        public EventCommand<object?> GoRecordsCommand { get; }
         public EventCommand<object?> GoEmployeesCommand { get; }
         public EventCommand<object?> GoAttendancesCommand { get; }
 
@@ -55,6 +56,7 @@ namespace AppDesktop
                 _ => Left?.Invoke(this, EventArgs.Empty)
             );
 
+            GoRecordsCommand = EventCommand.Create<object?>(this);
             GoEmployeesCommand = EventCommand.Create<object?>(this);
             GoAttendancesCommand = EventCommand.Create<object?>(this);
         }

@@ -1,5 +1,5 @@
-using AppCore;
 using System.Windows;
+using System.Windows.Input;
 
 namespace AppDesktop
 {
@@ -18,8 +18,9 @@ namespace AppDesktop
                 {
                     if (e.PropertyName == nameof(MainWindowVm.IsBusy))
                     {
-                        // インディケーター代わりにタイトルを変更する
+                        // インディケーター代わりにタイトルとカーソルを変更する
                         Title = (vm.IsBusy ? $"[処理中] " : "") + title;
+                        Cursor = vm.IsBusy ? Cursors.Wait : Cursors.Arrow;
                     }
                 };
             };

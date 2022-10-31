@@ -129,36 +129,9 @@ namespace AppDesktop
         }
     }
 
-    // model:
-    internal sealed class AttendanceSummaryData
-    {
-        public DateOnly Month { get; }
-        public AttendanceSummaryEntry[] Entries { get; }
-
-        public AttendanceSummaryData(DateOnly month, AttendanceSummaryEntry[] entries)
-        {
-            Month = month;
-            Entries = entries;
-        }
-    }
-
-    internal sealed class AttendanceSummaryEntry
-    {
-        public DateOnly Date { get; }
-        public DateTime? AttendedAt { get; }
-        public DateTime? LeftAt { get; }
-
-        public AttendanceSummaryEntry(DateOnly date, DateTime? attendedAt, DateTime? leftAt)
-        {
-            Date = date;
-            AttendedAt = attendedAt;
-            LeftAt = leftAt;
-        }
-    }
-
     internal sealed class AttendanceSummaryDataRequest
     {
-        public DateOnly Month { get; }
+        public AttendanceSummaryFetchingRequest Payload { get; }
         public Action<AttendanceSummaryData> OnSuccess { get; }
         public Action? OnError { get; set; }
         public Action? OnFinally { get; set; }
@@ -166,7 +139,7 @@ namespace AppDesktop
 
         public AttendanceSummaryDataRequest(DateOnly month, Action<AttendanceSummaryData> onSuccess)
         {
-            Month = month;
+            Payload = new(month);
             OnSuccess = onSuccess;
         }
     }

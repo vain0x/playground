@@ -1,8 +1,6 @@
 using System;
-using System.Collections.Generic;
 using System.ComponentModel;
 using System.Diagnostics;
-using System.Linq;
 using System.Runtime.CompilerServices;
 using System.Threading;
 using System.Threading.Tasks;
@@ -12,20 +10,10 @@ namespace AppDesktop
 {
     internal sealed class MainWindowVm : BindableBase
     {
-        private INotifyPropertyChanged currentPage;
-        public INotifyPropertyChanged CurrentPage
-        {
-            get => currentPage;
-            set
-            {
-                var oldPage = currentPage;
+        private readonly AppModel model = new();
+        private readonly NavigationFrame navigationFrame;
 
-                currentPage = value;
-                RaisePropertyChanged();
-
-                (oldPage as IDisposable)?.Dispose();
-            }
-        }
+        public INotifyPropertyChanged CurrentPage => navigationFrame.Page;
 
         private bool isBusy;
         public bool IsBusy
@@ -34,138 +22,181 @@ namespace AppDesktop
             set { isBusy = value; RaisePropertyChanged(); }
         }
 
-        private LoginInfo? loginInfo;
-        public LoginInfo? LoginInfo
+        private LoginInfoVm? loginInfo;
+        public LoginInfoVm? LoginInfo
         {
             get => loginInfo;
             set { loginInfo = value; RaisePropertyChanged(); }
         }
 
-        private readonly List<EmployeeListItem> dummyEmployees =
-            "Alice,Bob,Charlotte,Don,Eve"
-                .Split(",")
-                .Select((name, index) => new EmployeeListItem(1 + index, name))
-                .ToList();
+        private bool isProfileDialogOpen;
+        public bool IsProfileDialogOpen
+        {
+            get => isProfileDialogOpen;
+            set { isProfileDialogOpen = value; RaisePropertyChanged(); }
+        }
 
-        private bool isAttended;
-        private DateTime? attendanceTime;
+        private UsersProfilePageVm? profileDialogVm;
+        public UsersProfilePageVm? ProfileDialog
+        {
+            get => profileDialogVm;
+            set { profileDialogVm = value; RaisePropertyChanged(); }
+        }
 
-        private int lastEmployeeId = 5;
+        public Command<object?> GoProfileCommand { get; }
+        public Command<object?> GoPasswordChangeCommand { get; }
+
         private int busyLevel;
-
         private event EventHandler<Exception>? AsyncOperationFailed;
 
         public MainWindowVm()
         {
-            var loginPage = new LoginPageVm();
-            loginPage.OnLoginRequested += (_, request) => Login(request);
-            currentPage = loginPage;
+            GoProfileCommand = Command.Create<object?>(_ => OpenProfileDialog());
+            GoPasswordChangeCommand = Command.Create<object?>(_ => OpenUsersPasswordChangePage());
+
+            navigationFrame = new(CreateLoginPage())
+            {
+                OnPageChanged = () => RaisePropertyChanged(nameof(CurrentPage)),
+            };
 
 #if DEBUG
             // デバッグ用: 毎回ログインするのは面倒なので自動でログインする
-            var loginRequest = new LoginRequest("john", "john_password", () => { }, () => { });
-            loginPage.LoginId = loginRequest.LoginId;
-            loginPage.Password = loginRequest.Password;
-            loginPage.LoginCommand.Execute(loginRequest);
+            LoginInfo = new() { Username = "John" };
+            OpenHomePage();
 #endif
+        }
+
+        private LoginPageVm CreateLoginPage()
+        {
+            var page = new LoginPageVm();
+            page.OnLoginRequested += (_, request) => Login(request);
+            return page;
+        }
+
+        private void OpenProfileDialog()
+        {
+            Debug.Assert(LoginInfo != null);
+
+            var dialog = new UsersProfilePageVm(LoginInfo);
+            dialog.GoPasswordChangeCommand.Executed += (_, _) =>
+            {
+                CloseProfileDialog();
+                OpenUsersPasswordChangePage();
+            };
+            dialog.CloseCommand.Executed += (_, _) => CloseProfileDialog();
+
+            ProfileDialog = dialog;
+            IsProfileDialogOpen = true;
+        }
+
+        private void CloseProfileDialog()
+        {
+            IsProfileDialogOpen = false;
+            ProfileDialog = null;
+        }
+
+        private void OpenUsersPasswordChangePage()
+        {
+            RequestNavigate(() =>
+            {
+                var page = new UsersPasswordChangePageVm();
+                page.Requested += (_, request) => SavePassword(request);
+                page.CancelCommand.Executed += (_, _) => OpenHomePage();
+                return page;
+            });
+        }
+
+        private void SavePassword(PasswordChangeRequest request)
+        {
+            StartAsync(async ct =>
+            {
+                await model.SavePasswordAsync(request, ct);
+            });
         }
 
         private void Login(LoginRequest request)
         {
             StartAsync(async ct =>
             {
-                var verified = await VerifyLoginAsync(request, ct);
-                if (!verified)
+                try
                 {
-                    request.OnFailed();
-                    request.OnFinally();
-                    return;
+                    var loginInfo = await model.VerifyLoginAsync(request, ct);
+                    if (loginInfo == null)
+                    {
+                        request.OnFailed();
+                        return;
+                    }
+
+                    LoginInfo = new LoginInfoVm() { Username = loginInfo.EmployeeName };
+                    await OpenHomePageAsync(ct);
                 }
-
-                // ログイン成功時:
-                LoginInfo = new LoginInfo()
+                finally
                 {
-                    Username = string.Concat(request.LoginId[..1].ToUpper(), request.LoginId[1..]),
-                };
-
-                OpenHomePage();
-                request.OnFinally();
+                    request.OnFinally();
+                }
             });
         }
 
-        // note: モデル層に書く
-        private async Task<bool> VerifyLoginAsync(LoginRequest request, CancellationToken ct)
+        private void OpenHomePage() =>
+            StartAsync(ct => OpenHomePageAsync(ct));
+
+        private async Task OpenHomePageAsync(CancellationToken ct)
         {
-            // note: 実際にはデータベースにアクセスする
-            await Task.Delay(request.Password.Length * 501 / 8, ct);
+            Debug.Assert(LoginInfo != null);
 
-            return request.Password != "password";
-        }
-
-        private void OpenHomePage()
-        {
-            var page = new HomePageVm()
+            await NavigateAsync(async () =>
             {
-                IsAttended = isAttended,
-                AttendanceTime = attendanceTime,
-            };
-            page.Attended += (_, _) =>
-            {
-                Attend();
-                page.AttendanceTime = attendanceTime;
-                page.IsAttended = isAttended;
-            };
-            page.Left += (_, _) =>
-            {
-                Leave();
-                page.IsAttended = isAttended;
-            };
-            page.GoEmployeesCommand.Executed += (_, _) => OpenEmployeesListPage();
-            page.GoAttendancesCommand.Executed += (_, _) => OpenAttendancesSummaryPage();
+                await Task.Delay(100, ct);
+                var status = model.GetAttendanceStatus();
 
-            CurrentPage = page;
-        }
+                var page = new HomePageVm()
+                {
+                    IsAttended = status.IsAttended,
+                    AttendanceTime = status.AttendanceTime,
+                };
+                page.Attended += (_, _) =>
+                {
+                    var (changed, status) = model.SetAttend();
+                    if (!changed)
+                    {
+                        Debug.WriteLine("すでに出勤しています");
+                    }
 
-        private void Attend()
-        {
-            if (isAttended)
-            {
-                Debug.WriteLine("すでに出勤しています");
-                return;
-            }
+                    page.AttendanceTime = status.AttendanceTime;
+                    page.IsAttended = status.IsAttended;
+                };
+                page.Left += (_, _) =>
+                {
+                    var (changed, status) = model.SetLeave();
+                    if (!changed)
+                    {
+                        Debug.WriteLine("出勤していません");
+                    }
 
-            isAttended = true;
-            attendanceTime = DateTime.Now;
-        }
-
-        private void Leave()
-        {
-            if (!isAttended)
-            {
-                Debug.WriteLine("出勤していません");
-                return;
-            }
-
-            isAttended = false;
+                    page.IsAttended = status.IsAttended;
+                };
+                page.GoRecordsCommand.Executed += (_, _) => OpenRecordsListPage();
+                page.GoEmployeesCommand.Executed += (_, _) => OpenEmployeesListPage();
+                page.GoAttendancesCommand.Executed += (_, _) => OpenAttendancesSummaryPage();
+                return page;
+            }, ct);
         }
 
         private void OpenAttendancesSummaryPage()
         {
-            // Generate dummy data.
-            var month = DateOnly.FromDateTime(DateTime.Now);
-            month = month.AddDays(1 - month.Day);
-
-            var data = new AttendanceSummaryData(month, new AttendanceSummaryEntry[]
+            StartAsync(async ct =>
             {
-                new(month, month.ToDateTime(TimeOnly.FromTimeSpan(TimeSpan.FromHours(9.5))), null),
-                new(month.AddDays(1), month.AddDays(1).ToDateTime(TimeOnly.FromTimeSpan(TimeSpan.FromHours(9.5))), month.AddDays(1).ToDateTime(TimeOnly.FromTimeSpan(TimeSpan.FromHours(17.5)))),
+                await NavigateAsync(async () =>
+                {
+                    await Task.Delay(100, ct);
+                    var data = model.GenerateDummyAttendanceSummary();
+
+                    var page = new AttendancesSummaryPageVm(data);
+                    page.BackCommand.Executed += (_, _) => OpenHomePage();
+                    page.FetchEffect.Invoked += (_, request) => FetchAttendancesSummary(request);
+                    return page;
+                }, ct);
             });
-
-            var page = new AttendancesSummaryPageVm(data);
-            page.BackCommand.Executed += (_, _) => OpenHomePage();
-            page.FetchEffect.Invoked += (_, request) => FetchAttendancesSummary(request);
-
-            CurrentPage = page;
         }
 
         private void FetchAttendancesSummary(AttendanceSummaryDataRequest request)
@@ -174,23 +205,7 @@ namespace AppDesktop
             {
                 try
                 {
-                    Debug.WriteLine($"Fetch attendances {request.Month:yyyy-MM}");
-                    var month = request.Month;
-
-                    await Task.Delay(200 * month.Month, ct);
-
-                    if (month.Month == 11)
-                    {
-                        // サーバー側のエラーをシミュレーションする
-                        throw new Exception("11月のデータを取得できません");
-                    }
-
-                    var data = new AttendanceSummaryData(month, new AttendanceSummaryEntry[]
-                    {
-                        new(month, month.ToDateTime(TimeOnly.FromTimeSpan(TimeSpan.FromHours(9.5))), null),
-                        new(month.AddDays(1),  month.AddDays(1).ToDateTime(TimeOnly.FromTimeSpan(TimeSpan.FromHours(9.5))), month.AddDays(1).ToDateTime(TimeOnly.FromTimeSpan(TimeSpan.FromHours(17.5)))),
-                    });
-
+                    var data = await model.FetchAttendancesSummaryAsync(request.Payload, ct);
                     request.OnSuccess(data);
                 }
                 catch
@@ -207,30 +222,135 @@ namespace AppDesktop
 
         private void OpenEmployeesListPage()
         {
-            var page = new EmployeesListPageVm(dummyEmployees.ToArray());
-            page.OnCreateRequested += (_, request) => CreateEmployee(request);
-            page.OnDeleteRequested += (_, ids) => DeleteEmployees(ids);
-            page.BackCommand.Executed += (_, _) => OpenHomePage();
-
-            CurrentPage = page;
+            RequestNavigate(() =>
+            {
+                var page = new EmployeesListPageVm(model.GetEmployeeList());
+                page.OnCreateRequested += (_, request) => CreateEmployee(request);
+                page.OnDeleteRequested += (_, ids) => DeleteEmployees(ids);
+                page.BackCommand.Executed += (_, _) => OpenHomePage();
+                return page;
+            });
         }
 
         private void CreateEmployee(CreateEmployeeRequest request)
         {
-            lastEmployeeId++;
-            var id = lastEmployeeId;
-            var employee = new EmployeeListItem(id, request.EmployeeName);
-            dummyEmployees.Add(employee);
-
+            model.CreateEmployee(request);
             OpenEmployeesListPage();
         }
 
         private void DeleteEmployees(int[] employeeIds)
         {
-            dummyEmployees.RemoveAll(e => employeeIds.Contains(e.EmployeeId));
+            model.DeleteEmployees(employeeIds);
 
             // TODO: update employeesList in-place
             OpenEmployeesListPage();
+        }
+
+        private void OpenRecordsListPage()
+        {
+            RequestNavigate(() =>
+            {
+                var items = model.GetRecordList();
+
+                var page = new RecordsListPageVm(items);
+                page.BackCommand.Executed += (_, _) => OpenHomePage();
+                page.CreateCommand.Executed += (_, _) => OpenRecordsCreatePage();
+                page.EditCommand.Executed += (_, id) => OpenRecordsEditPage(id);
+                return page;
+            });
+        }
+
+        private void OpenRecordsCreatePage()
+        {
+            RequestNavigate(() =>
+            {
+                var page = new RecordsCreatePageVm();
+                page.CancelCommand.Executed += (_, _) => OpenRecordsListPage();
+                page.RequestEffect.Invoked += (_, request) => CreateRecord(request);
+                return page;
+            });
+        }
+
+        private void OpenRecordsEditPage(int? recordId)
+        {
+            RequestNavigate(() =>
+            {
+                if (recordId == null)
+                    throw new Exception("no id");
+
+                var recordData = model.FindRecordById(recordId.Value);
+                if (recordData == null)
+                    throw new Exception("record missing");
+
+                var page = new RecordsCreatePageVm
+                {
+                    Subject = recordData.Subject,
+                    Contents = recordData.Contents
+                };
+                page.CancelCommand.Executed += (_, _) => OpenRecordsListPage();
+                page.RequestEffect.Invoked += (_, request) => UpdateRecord(recordId.Value, request);
+
+                return page;
+            });
+        }
+
+        private void CreateRecord(RecordsAddRequest request)
+        {
+            StartAsync(async ct =>
+            {
+                try
+                {
+                    await model.CreateRecordAsync(request, ct);
+                    OpenRecordsListPage();
+                }
+                finally
+                {
+                    request.OnFinally?.Invoke();
+                }
+            });
+        }
+
+        private void UpdateRecord(int recordId, RecordsAddRequest request)
+        {
+            StartAsync(async ct =>
+            {
+                try
+                {
+                    await model.UpdateRecordAsync(recordId, request, ct);
+                    OpenRecordsListPage();
+                }
+                finally
+                {
+                    request.OnFinally?.Invoke();
+                }
+            });
+        }
+
+        /// <summary>
+        /// ページ遷移を要求する
+        ///
+        /// <para>
+        /// 注意: 呼び出しの完了時にページ遷移が完了するわけではない
+        /// </para>
+        /// </summary>
+        /// <param name="creator">
+        /// ページを生成する関数
+        /// </param>
+        private void RequestNavigate(Func<INotifyPropertyChanged> creator)
+        {
+            navigationFrame.RequestNavigate(creator);
+        }
+
+        // asyncCreatorの提供者がCancellationTokenを持っているはずなので、トークンを関数に渡す必要はない
+        /// <summary>
+        /// 非同期でページ遷移を要求する
+        /// </summary>
+        /// <param name="asyncCreator">
+        /// 非同期でページを生成する関数
+        /// </param>
+        private async Task NavigateAsync(Func<Task<INotifyPropertyChanged>> asyncCreator, CancellationToken ct)
+        {
+            await navigationFrame.NavigateAsync(asyncCreator, ct);
         }
 
         private async void StartAsync(Func<CancellationToken, Task> funcAsync, CancellationTokenSource? cts = null, [CallerMemberName] string? name = null)
@@ -306,7 +426,7 @@ namespace AppDesktop
         }
     }
 
-    internal sealed class LoginInfo : BindableBase
+    internal sealed class LoginInfoVm : BindableBase
     {
         private string username = "";
         public string Username
