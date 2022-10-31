@@ -1,0 +1,72 @@
+BNF-like Grammar of MiniLang
+
+Legends:
+  T? = T | ε
+  T+ = μM. (T | M T)
+  T* = (T+)?
+  T sepBy1(S) = μM. (T | T S M)
+  T sepBy0(S) = (T sepBy1(S))?
+  T by1(S) = (μM. (T | T S M)) S?
+  T by0(S) = (T by(S))?
+
+Literal =
+  '(' ')'
+| 'false' | 'true'
+| 'number_literal'
+| 'string_literal'
+
+Ty =
+  'ident'
+| '(' Ty by1(',') ')'
+
+Pat =
+  Literal
+| '_'
+| '(' Pat by1(',') ')'
+| Pat '|' Pat
+
+Expr =
+  Literal
+| 'ident'
+| '(' Expr by1(',') ')'
+| Expr '(' Expr by0(',') ')'
+| Expr '[' Expr ']'
+| Expr '.' 'ident'
+| 'prefix_op' Expr
+| Expr 'infix_op' Expr
+| 'break' | 'continue' | 'return' Expr?
+| Block | IfExpr | LoopExpr
+where
+  IfExpr =
+    'if' Expr Block ('else' (IfExpr | Paren | Block))?
+  MatchExpr =
+    'match' Expr '{'
+      (Pat '=>' (Block | Expr ','))*
+    '}'
+  LoopExpr =
+    'loop' Block
+
+Stmt =
+  Expr ';'
+| 'let' Pat '=' (Block | Expr) ';'
+
+Item =
+  TypeItem
+| FnItem
+where
+  TypeItem =
+    'enum' 'ident'
+    '{' ('ident' ('(' Ty ')')?)) by0(',') '}'
+  | 'struct' 'ident'
+    '{' ('ident' ':' Ty) by0(',') '}'
+
+  FnItem =
+  | 'fn' 'ident'
+    '(' ('ident' ':' Ty) by0(',') ')'
+    ('->' Ty)?
+    Block
+
+Block =
+  '{' (Item | Stmt)* Expr '}'
+
+Root = Item*

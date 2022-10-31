@@ -6,6 +6,13 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <Compile Include="Util.fs" />
+    <Compile Include="ParserV1.fs" />
+    <Compile Include="ParserV2.fs" />
+    <Compile Include="ExArith.fs" />
+    <Compile Include="ExBadGrammar.fs" />
+    <Compile Include="ExMiniLang.fs" />
+    <Compile Include="ExSequence.fs" />
     <Compile Include="Program.fs" />
   </ItemGroup>
 
