@@ -5,6 +5,7 @@ open System.Text
 open OptLang.Inline
 open OptLang.MirGen
 open OptLang.Parse
+open OptLang.SingleAssignment
 open OptLang.Symbol
 open OptLang.Tir
 open OptLang.Tokenize
@@ -82,6 +83,7 @@ let main _ =
       let tir = typeCheck ast
       let mir = genMir tir
       let mir = performInlineExpansion mir
+      let mir = performSingleAssignment mir
 
       let output =
         sprintf "ast: %A\n\n\n\ntir: %A\n\n\n\nmir: %s\n" ast (dumpTir tir) (MirDump.dumpMir mir)
