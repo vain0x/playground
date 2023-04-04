@@ -1,0 +1,14 @@
+---
+[{"namespace": "example.avro",
+ "type": "record",
+ "name": "User",
+ "fields": [
+     {"name": "name", "type": "string"},
+     {"name": "favorite_number",  "type": ["int", "null"]},
+     {"name": "favorite_color", "type": ["string", "null"]}
+ ]
+}]
+---
+{"name": "Alyssa", "favorite_number": 256, "favorite_color": null}
+{"name": "Ben", "favorite_number": 7, "favorite_color": "red"}
+{"name": "Charlie", "favorite_number": null, "favorite_color": "blue"}
