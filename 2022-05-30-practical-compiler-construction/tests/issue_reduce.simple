@@ -1,0 +1,7 @@
+{
+    type T = int;
+    int a, b, c, d;
+
+    T f() { a = b; }
+    c = d;
+}

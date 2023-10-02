@@ -23,3 +23,9 @@ find tests -type f -name '*.simple' | \
 ## 状況
 
 testsにあるファイルはすべてパースできる。ただし結果の検証はしていない
+
+## 衝突
+
+このプロジェクトをコンパイルするとぶら下がりif文の衝突について指摘される (動作上の問題はない)
+
+> shift/reduce error at state 57 on terminal ELSE between {noprec shift(58)} and {noprec reduce(stmt:'IF' 'LP' cond 'RP' stmt)} - assuming the former because we prefer shift when unable to compare precedences
