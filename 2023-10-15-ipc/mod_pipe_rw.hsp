@@ -1,0 +1,193 @@
+; LICENSE: CC0-1.0 <https://creativecommons.org/publicdomain/zero/1.0/deed.ja>
+; v0.1.0
+
+#ifndef included_mod_pipe_rw_hsp
+#define included_mod_pipe_rw_hsp
+
+#include "kernel32.as"
+
+; ファイルの読み書きを行うためのモジュール
+;
+; Win32 API の CreateFile, ReadFile, WriteFile 関数を使ってファイルの読み書きを行う機能を提供します
+;
+; %note
+; Win32 API を使用するため、Windows 上でのみ動作する
+#module m_pipe_rw
+
+#define true 1
+#define false 0
+
+#define NULL                            0
+#define INVALID_HANDLE_VALUE            (-1)
+; #define STD_INPUT_HANDLE                (-10)
+; #define ERROR_BROKEN_PIPE               109
+; #define ERROR_IO_PENDING                997
+; #define WAIT_TIMEOUT                    0x102
+
+#define GENERIC_READ 0x80000000
+#define GENERIC_WRITE 0x40000000
+#define OPEN_EXISTING 3
+#define FILE_ATTRIBUTE_NORMAL 0x80
+
+; 終了時の処理を行う (自動で呼ばれる)
+#deffunc local pipe_rw_onexit onexit
+
+	repeat s_handle_count
+		if s_handles(cnt) {
+			CloseHandle s_handles(cnt)
+		}
+	loop
+	s_handle_count = 0
+	return
+
+; ファイルを読み取り用に開く
+;
+; %prm
+; fname
+;
+; str fname: ファイルパス
+; stat: ファイルID。失敗した場合は -1 が返されます
+#deffunc pipe_rw_open_read str fname, \
+	local os_filename, local h_file
+
+	logmes "pipe_rw_open_read " + fname
+
+	sdim os_filename, 522
+	cnvstow os_filename, fname
+
+	; (filename, access, share, security, disposition, flags, template)
+	CreateFileA fname, GENERIC_READ, 0, NULL, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, NULL
+	h_file = stat
+	if h_file == INVALID_HANDLE_VALUE {
+		return -1
+	}
+
+	s_handles(s_handle_count) = h_file
+	s_handle_count++
+	return s_handle_count - 1
+
+; ファイルを読み書き用に開く
+;
+; %prm
+; str fname: ファイルパス
+; stat: ファイルID。失敗した場合は -1 が返されます
+#deffunc pipe_rw_open_write str fname, \
+	local os_filename, local h_file
+
+logmes "pipe_rw_open_write " + fname
+
+	sdim os_filename, 522
+	cnvstow os_filename, fname
+
+	; (filename, access, share, security, disposition, flags, template)
+	CreateFileA fname, GENERIC_WRITE, 0, NULL, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, NULL
+	h_file = stat
+	if h_file == INVALID_HANDLE_VALUE {
+		return -1
+	}
+
+	s_handles(s_handle_count) = h_file
+	s_handle_count++
+	return s_handle_count - 1
+
+; ファイルから読み込む (サイズ指定)
+;
+; %prm
+; file_id, buf, size
+;
+; int file_id: ファイルID
+; var buf: データを書き込む変数
+; int size: 読み取るデータのサイズ (バイト単位)
+;
+; stat: 成功したら size、失敗したら -1
+;
+; %inst
+; ファイルから指定したサイズのデータを読み取ります
+;
+; 変数 buf はあらかじめ size バイトのデータを格納できるように、
+; sdim、memexpand などの命令で初期化しておいてください
+#deffunc pipe_rw_read_block int file_id, var buf, int size, \
+	local read_len
+
+	assert size >= 2
+	; assert varsize(buf) >= size
+
+	if file_id < 0 || file_id >= s_handle_count {
+		logmes "ERROR: file_id が不正です: " + file_id
+		assert
+		return -1
+	}
+
+	PeekNamedPipe s_handles(file_id), NULL, 0, NULL, varptr(read_len), NULL
+	if stat == 0 {
+		GetLastError
+		logmes "PeekNamedPipe error=" + stat
+		assert
+		return -1
+	}
+
+	if read_len == 0 {
+		; No data
+		return 0
+	}
+
+	ReadFile s_handles(file_id), varptr(buf), size - 1, varptr(read_len), NULL
+	if stat == 0 {
+		GetLastError
+		logmes "ReadFile error=" + stat
+		assert
+		return -1
+	}
+
+	assert read_len >= 0
+	if read_len == 0 {
+		return 0
+	}
+
+	poke buf, read_len, 0
+	return read_len
+
+; ファイルに書き込む (サイズ指定)
+;
+; %prm
+; file_id, buf, size [, offset]
+;
+; int file_id: ファイルID
+; var buf: 書き込むデータが格納されている変数
+; int size = 0～: 読み取るデータのサイズ (バイト単位)
+;
+; stat: 成功したら size、失敗したら -1
+;
+; %inst
+; ファイルに変数 buf のデータを書き込みます
+;
+; ファイルは pipe_rw_open_write で開かれている必要があります
+;
+; 変数 buf にはあらかじめ size バイト以上のデータがセットされている必要があります。
+; サイズが足りない場合、意図しない動作が発生するおそれがあるため、注意してください
+#deffunc pipe_rw_write_block int file_id, var buf, int size, \
+	local written_len
+
+	assert size >= 0
+	; assert offset >= 0
+	; assert varsize(buf) >= size
+
+	if file_id < 0 || file_id >= s_handle_count {
+		logmes "ERROR: file_id が不正です: " + file_id
+		assert
+		return -1
+	}
+
+	WriteFile s_handles(file_id), varptr(buf), size, varptr(written_len), NULL
+	if stat == 0 {
+		GetLastError
+		logmes "WriteFile error=" + stat
+		assert
+		return -1
+	}
+
+	return size
+
+#global
+
+#endif
