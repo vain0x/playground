@@ -1,0 +1,13 @@
+#!/bin/sh
+
+set -eu
+
+KNOWBUG_DIR="$PWD/../../knowbug"
+HSP3_ROOT="$KNOWBUG_DIR/bin/client"
+HSP3_MAKE="$KNOWBUG_DIR/bin/client/hsp3_make.exe"
+
+# generates client.exe
+# $ hsp3_make.exe src workDir sysroot
+"$HSP3_MAKE" "$PWD/client.hsp" "$PWD" "$HSP3_ROOT"
+
+rm packfile start.ax || :

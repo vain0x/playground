@@ -1,0 +1,118 @@
+
+#packopt name "client"
+
+#include "mod_pipe_rw.hsp"
+
+#module
+
+#define error(%1) logmes (%1) : dialog ("ERROR: " + (%1)), 1 : end : end
+
+#deffunc app_entrypoint
+
+	title "client"
+
+	; parse cmdline
+	logmes "cmdline = " + dir_cmdline
+	mes dir_cmdline
+	cmdline = dir_cmdline
+	split cmdline, " ", args
+	input_pipe = ""
+	output_pipe = ""
+	; this process should set the event signaled after writing a message.
+	written_event = ""
+	repeat length(args)
+		if strmid(args(cnt), 0, 8) == "--input=" {
+			input_pipe = strmid(args(cnt), 8, 0xFFFF)
+			continue
+		}
+		if strmid(args(cnt), 0, 9) == "--output=" {
+			output_pipe = strmid(args(cnt), 9, 0xFFFF)
+			continue
+		}
+		if strmid(args(cnt), 0, 10) == "--written=" {
+			written_event = strmid(args(cnt), 10, 0xFFFF)
+			continue
+		}
+	loop
+
+	if input_pipe == "" {
+		error "WARN: --input missing"
+	}
+	if output_pipe == "" {
+		error "WARN: --output missing"
+	}
+	if written_event == "" {
+		error "WARN: --written missing"
+	}
+
+	mes "input = " + input_pipe
+	mes "output = " + output_pipe
+	mes "written = " + written_event
+
+	pipe_rw_open_read input_pipe
+	s_input_pipe_id = stat
+	if s_input_pipe_id < 0 {
+		error "WARN: input_pipe not opened"
+	}
+	s_input_available = true
+	mes "input connected"
+
+	pipe_rw_open_write output_pipe
+	s_output_pipe_id = stat
+	if s_output_pipe_id < 0 {
+		error "WARN: output_pipe not opened"
+	}
+	s_output_available = true
+	mes "output connected"
+
+	; (2: EVENT_MODIFY_STATE)
+	OpenEventA 2, 0, written_event
+	h_event = stat
+	if h_event == 0 || h_event == -1 { ; (-1: INVALID_HANDLE_VALUE)
+		error "WARN: written event not opened"
+	}
+	mes "event opened " + h_event
+
+	buf_size = 0x1000
+	sdim buf, buf_size
+	pong_count = 0
+	wait_count = 0
+
+	repeat
+		if wait_count == 0 || wait_count \ 1000 == 0 {
+			mes "waiting..."
+		}
+		wait_count++
+
+		pipe_rw_read_block s_input_pipe_id, buf, buf_size - 1
+		read_size = stat
+		if read_size < 0 {
+			error "read"
+		}
+
+		if read_size > 0 {
+			mes "received: '" + strmid(buf, 0, read_size) + "'"
+
+			buf = "pong: " + pong_count
+			pong_count++
+			mes "writing: '" + buf + "' (" + strlen(buf) + ")"
+			pipe_rw_write_block s_output_pipe_id, buf, strlen(buf)
+			SetEvent h_event
+			if stat == 0 {
+				GetLastError
+				mes "SetEvent err=" + stat
+			}
+			; cx = ginfo_cx : cy = ginfo_cy
+			; pos cx + ginfo_mesx + 10, cy - ginfo_mesy
+			; mes ", written"
+			; pos cx, cy
+		}
+
+		await 100
+	loop
+
+	return
+
+#global
+
+	app_entrypoint
