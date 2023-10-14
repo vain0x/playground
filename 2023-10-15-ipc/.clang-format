@@ -22,6 +22,6 @@ BreakBeforeBraces: Attach
 # ポインターや参照の記号は左に寄せる。(T* など) (C++ ではこの方が一般的な気がするため。)
 PointerAlignment: Left
 
-# カッコの中身を揃えない。
+# カッコの中身を1段階だけ字下げする。
 # (https://clang.llvm.org/docs/ClangFormatStyleOptions.html#alignafteropenbracket)
 AlignAfterOpenBracket: BlockIndent

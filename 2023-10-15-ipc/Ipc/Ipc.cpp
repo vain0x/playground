@@ -1,12 +1,11 @@
-// Ipc.cpp : アプリケーションのエントリ ポイントを定義します。
+// ipc.cpp : アプリケーションのエントリ ポイントを定義します。
 //
 
 // プログラムは wWinMain からスタートします
 
 #include "pch.h"
 
-#include "Ipc.h"
-#include "framework.h"
+#include "resource.h"
 
 // for CommCtrl
 #pragma comment(lib, "comctl32")
