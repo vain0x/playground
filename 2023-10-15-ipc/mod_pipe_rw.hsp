@@ -29,6 +29,8 @@
 #define OPEN_EXISTING 3
 #define FILE_ATTRIBUTE_NORMAL 0x80
 
+; #define FILE_FLAG_NO_BUFFERING          0x20000000
+
 ; 終了時の処理を行う (自動で呼ばれる)
 #deffunc local pipe_rw_onexit onexit
 
@@ -56,6 +58,7 @@
 	cnvstow os_filename, fname
 
 	; (filename, access, share, security, disposition, flags, template)
+	; CreateFileA fname, GENERIC_READ, 0, NULL, OPEN_EXISTING, FILE_FLAG_NO_BUFFERING, NULL
 	CreateFileA fname, GENERIC_READ, 0, NULL, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, NULL
 	h_file = stat
 	if h_file == INVALID_HANDLE_VALUE {
@@ -80,6 +83,7 @@ logmes "pipe_rw_open_write " + fname
 	cnvstow os_filename, fname
 
 	; (filename, access, share, security, disposition, flags, template)
+	; CreateFileA fname, GENERIC_WRITE, 0, NULL, OPEN_EXISTING, FILE_FLAG_NO_BUFFERING, NULL
 	CreateFileA fname, GENERIC_WRITE, 0, NULL, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, NULL
 	h_file = stat
 	if h_file == INVALID_HANDLE_VALUE {
@@ -185,6 +189,13 @@ logmes "pipe_rw_open_write " + fname
 		assert
 		return -1
 	}
+	; FlushFileBuffers s_handles(file_id)
+	; if stat == 0 {
+	; 	GetLastError
+	; 	logmes "FlushFileBuffers error=" + stat
+	; 	assert
+	; 	return -1
+	; }
 
 	return size
 

@@ -104,6 +104,17 @@ static auto os_to_utf8_str(LPCTSTR os_str, std::size_t os_str_len)
 	return utf8_str;
 }
 
+static auto compute_event_name(char const* prefix) -> OsString {
+	auto pid = GetCurrentProcessId();
+
+	// https://learn.microsoft.com/en-us/windows/win32/termserv/kernel-object-namespaces
+	// `Local\` というプリフィックスをつける(?)
+	char buf[128] = "";
+	sprintf_s(buf, "knowbug_event_%s_%u", prefix, (unsigned)pid);
+	auto s = std::u8string{(const char8_t*)buf};
+	return utf8_to_os_str(s.data(), s.size());
+}
+
 static constexpr auto PIPE_BUFFER_SIZE = DWORD{0x10000};
 
 static auto compute_pipe_name(char const* prefix) -> OsString {
@@ -117,13 +128,18 @@ static auto compute_pipe_name(char const* prefix) -> OsString {
 	return utf8_to_os_str(s.data(), s.size());
 }
 
-static auto create_named_pipe(OsStringView name) -> HANDLE {
+static auto create_named_pipe(OsStringView name, bool is_overlapped) -> HANDLE {
 	auto security_attrs = SECURITY_ATTRIBUTES{sizeof(SECURITY_ATTRIBUTES)};
 	security_attrs.bInheritHandle = TRUE;
 
+	auto open_mode = (DWORD)PIPE_ACCESS_DUPLEX;
+	if (is_overlapped) {
+		open_mode |= FILE_FLAG_OVERLAPPED;
+	}
+
 	auto h_pipe = CreateNamedPipeW(
-	    (LPCWSTR)name.data(), PIPE_ACCESS_DUPLEX, PIPE_TYPE_BYTE, 1,
-	    PIPE_BUFFER_SIZE, PIPE_BUFFER_SIZE, 0, &security_attrs
+	    (LPCWSTR)name.data(), open_mode, PIPE_TYPE_BYTE, 1, PIPE_BUFFER_SIZE,
+	    PIPE_BUFFER_SIZE, 0, &security_attrs
 	);
 	if (h_pipe == INVALID_HANDLE_VALUE) {
 		throw error_api("CreateNamedPipe");
@@ -143,6 +159,10 @@ static HINSTANCE s_instance;
 static HWND s_input, s_send_button;
 static TCHAR s_work_dir[1024];
 static HANDLE s_in_read_pipe, s_out_write_pipe, s_child_process;
+
+static HANDLE s_write_pipe_connected_et, s_write_pipe_read_et,
+    s_write_pipe_written_et;
+static HANDLE s_connected_waiter, s_written_waiter;
 
 static auto on_start_up() -> void {
 	InitCommonControls();
@@ -170,8 +190,30 @@ static auto on_main_window_shown() -> void {
 	SetFocus(s_input);
 }
 
+// (WaitOrTimerCallback)
+static auto CALLBACK on_connected_signaled(PVOID _context, BOOLEAN is_timed_out)
+    -> void {
+	debug(L"connected signeled");
+	SendMessage(s_main_hwnd, WM_APP, 1, 0);
+}
+
+static auto CALLBACK on_written_signaled(PVOID _context, BOOLEAN is_timed_out)
+    -> void {
+	debug(L"written signeled t=%d", GetCurrentThreadId());
+	SendMessage(s_main_hwnd, WM_APP, 3, 0);
+}
+
+// (LPOVERLAPPED_COMPLETION_ROUTINE)
+static auto WINAPI
+on_read_completed(DWORD err, DWORD read_size, LPOVERLAPPED p_ol) -> void {
+	debug(L"on_read_completed err=%d", err);
+	SendMessage(s_main_hwnd, WM_APP, 2, (LPARAM)read_size);
+}
+
 // on WM_CREATE
-static auto on_create() -> void {
+static auto on_create(HWND hwnd) -> void {
+	s_main_hwnd = hwnd;
+
 	// create pipes, spawn subprocess
 	auto name = OsString{s_work_dir};
 	if (name.ends_with(L"\\")) {
@@ -189,12 +231,30 @@ static auto on_create() -> void {
 	cmdline += name;
 	cmdline += L"\"";
 
+	// パイプが使うイベントを生成する
+	// (security, manual, initial, name)
+	auto event_name = compute_event_name("written");
+	s_write_pipe_connected_et = CreateEventW(nullptr, true, false, nullptr);
+	if (s_write_pipe_connected_et == INVALID_HANDLE_VALUE) {
+		throw error_api("CreateEvent");
+	}
+	s_write_pipe_written_et =
+	    CreateEventW(nullptr, true, false, event_name.data());
+	if (s_write_pipe_written_et == INVALID_HANDLE_VALUE) {
+		throw error_api("CreateEvent");
+	}
+	s_write_pipe_read_et = CreateEventW(nullptr, true, false, nullptr);
+	if (s_write_pipe_read_et == INVALID_HANDLE_VALUE) {
+		throw error_api("CreateEvent");
+	}
+
 	// クライアントとの通信用のパイプを作成する。
 	// (in: サーバーからクライアントへ、out: クライアントからサーバーへ)
 	auto in_read_pipe_name = compute_pipe_name("in_read");
 	auto out_write_pipe_name = compute_pipe_name("out_write");
-	auto in_read_pipe = create_named_pipe(in_read_pipe_name);
-	auto out_write_pipe = create_named_pipe(out_write_pipe_name);
+	auto in_read_pipe = create_named_pipe(in_read_pipe_name, /* is_overlapped */ false);
+	auto out_write_pipe =
+	    create_named_pipe(out_write_pipe_name, /* is_overlapped */ true);
 
 	s_in_read_pipe = in_read_pipe;
 	s_out_write_pipe = out_write_pipe;
@@ -203,6 +263,8 @@ static auto on_create() -> void {
 	cmdline += in_read_pipe_name;
 	cmdline += L" --output=";
 	cmdline += out_write_pipe_name;
+	cmdline += L" --written=";
+	cmdline += event_name;
 
 	// サーバーが使うパイプをクライアントプロセスに継承しないように設定する。
 	// (標準入力への書き込みと、標準出力からの読み取り。)
@@ -255,56 +317,115 @@ static auto on_create() -> void {
 		}
 		debug(L"in_read_pipe connected");
 
-		if (!ConnectNamedPipe(out_write_pipe, nullptr)) {
+		// needs overlapped
+		static auto ol = OVERLAPPED{};
+		ol.hEvent = s_write_pipe_connected_et;
+		assert(s_write_pipe_connected_et != nullptr);
+
+		//auto connect_timeout = (DWORD)1000;
+		auto connect_timeout = (DWORD)INFINITE;
+		if (!RegisterWaitForSingleObject(
+		        &s_connected_waiter, s_write_pipe_connected_et,
+		        on_connected_signaled, nullptr, INFINITE, 0
+		    )) {
+			throw error_api("RegisterWaitForSingleObject");
+		}
+
+		if (!ConnectNamedPipe(out_write_pipe, &ol)) {
 			auto e = GetLastError();
 			if (e != ERROR_PIPE_CONNECTED) {
 				throw error_api("ConnectNamedPipe");
 			}
+			debug(L"out_write_pipe already connected");
+			if (!UnregisterWait(s_connected_waiter)) {
+				throw error_api("UnregisterWait");
+			}
+			on_connected_signaled(nullptr, FALSE);
+		} else {
+			debug(L"out_write_pipe connected begin waiting");
 		}
-		debug(L"out_write_pipe connected");
 	}
+
+	assert(s_write_pipe_written_et != nullptr);
+	if (!RegisterWaitForSingleObject(
+	        &s_written_waiter, s_write_pipe_written_et, on_written_signaled,
+	        nullptr, INFINITE, 0
+	    )) {
+		throw error_api("RegisterWaitForSingleObject");
+	}
+	debug(L"written waiter is set");
 }
 
 static std::string s_read_buffer;
+static auto s_read_ol = OVERLAPPED{};
 
 static void try_read() {
 	auto stdout_handle = s_out_write_pipe;
 	auto& s_buffer = s_read_buffer;
 
 	if (s_buffer.size() == 0) {
-		s_buffer.resize(0x1000);
+		s_buffer.resize(8);
 	}
 
 	//DWORD peek_size;
-	DWORD total_size;
+	//DWORD total_size;
 	//DWORD left_size;
-	if (!PeekNamedPipe(
-	        stdout_handle, nullptr, 0, nullptr, &total_size, nullptr
-	    )) {
-		auto e = GetLastError();
-		debug(L"WARN PeekNamedPipe e=%d", e);
-		return;
-	}
-	if (total_size == 0) {
-		debug(L"No data");
-		return;
-	}
+	//if (!PeekNamedPipe(stdout_handle, nullptr, 0, nullptr, &total_size, nullptr)) {
+	//	auto e = GetLastError();
+	//	debug(L"WARN PeekNamedPipe e=%d", e);
+	//	return;
+	//}
+	//if (total_size == 0) {
+	//	debug(L"No data");
+	//	return;
+	//}
 
-	auto read_size = DWORD{};
-	if (!ReadFile(
-	        stdout_handle, s_buffer.data(), (DWORD)s_buffer.size(), &read_size,
-	        LPOVERLAPPED{}
+	//auto read_size = DWORD{};
+	//if (!ReadFile(stdout_handle, s_buffer.data(), (DWORD)s_buffer.size(), &read_size, LPOVERLAPPED{})) {
+	//	auto e = GetLastError();
+	//	if (e != ERROR_BROKEN_PIPE) {
+	//		assert(false && "ReadFile");
+	//	}
+	//	debug(L"WARN ReadFile e=%d", e);
+	//	return;
+	//}
+
+	//auto data = utf8_to_os_str((char8_t const*)s_buffer.data(), read_size);
+	//debug(L"OK receive: '%s' (%d)", data.data(), (int)data.size());
+
+	auto h_pipe = s_out_write_pipe;
+	auto& ol = s_read_ol;
+
+	if (!ReadFileEx(
+	        h_pipe, s_buffer.data(), (DWORD)s_buffer.size(), &ol,
+	        on_read_completed
 	    )) {
-		auto e = GetLastError();
-		if (e != ERROR_BROKEN_PIPE) {
-			assert(false && "ReadFile");
+		auto err = GetLastError();
+		if (err != ERROR_BROKEN_PIPE) {
+			throw error_api("ReadFileEx");
 		}
-		debug(L"WARN ReadFile e=%d", e);
+		debug(L"ReadFile: broken pipe");
 		return;
 	}
+	debug(L"ReadFile begin");
+}
+
+static void after_read(DWORD read_size) {
+	auto& s_buffer = s_read_buffer;
 
 	auto data = utf8_to_os_str((char8_t const*)s_buffer.data(), read_size);
 	debug(L"OK receive: '%s' (%d)", data.data(), (int)data.size());
+
+	// queue next
+	try_read();
+}
+
+static void after_written_signaled() {
+	ResetEvent(s_write_pipe_written_et);
+	// alertable wait
+	//WaitForSingleObjectEx(s_written_waiter, 1, TRUE);
+	// enter an alertable wait state for 1millis
+	SleepEx(0, TRUE);
 }
 
 static void try_write(OsStringView data) {
@@ -349,12 +470,37 @@ static void on_destroy() {
 	CloseHandle(s_in_read_pipe);
 	CloseHandle(s_out_write_pipe);
 
+	CloseHandle(s_write_pipe_connected_et);
+	CloseHandle(s_write_pipe_written_et);
+	//CloseHandle(s_connected_waiter);
+
 	if (s_child_process) {
 		if (!TerminateProcess(s_child_process, EXIT_SUCCESS)) {
-			debug(L"TerminateProecss");
-			assert(false && "TerminateProcess");
+			auto err = GetLastError();
+			if (err != ERROR_ACCESS_DENIED) {
+				debug(L"TerminateProecss, err=%d", err);
+				assert(false && "TerminateProcess");
+			}
 		}
 		s_child_process = nullptr;
+	}
+}
+
+static void on_wm_app(WPARAM wp, LPARAM lp) {
+	debug(L"WM_APP %d", wp);
+	switch (wp) {
+	case 1:
+		try_read();
+		break;
+	case 2:
+		after_read((DWORD)lp);
+		break;
+	case 3:
+		after_written_signaled();
+		break;
+	default:
+		debug(L"unknown WM_APP message %d", wp);
+		assert(false && "on_wm_app");
 	}
 }
 
@@ -400,6 +546,7 @@ int APIENTRY wWinMain(
 
 	// メイン メッセージ ループ:
 	while (GetMessage(&msg, nullptr, 0, 0)) {
+		//debug(L"Msg %d w=%d l=%d", msg.message, msg.wParam, msg.lParam);
 		//if (!TranslateAccelerator(msg.hwnd, hAccelTable, &msg))
 		if (!IsDialogMessage(s_main_hwnd, &msg)) {
 			TranslateMessage(&msg);
@@ -513,8 +660,12 @@ WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam) {
 		// TODO: HDC を使用する描画コードをここに追加してください...
 		EndPaint(hWnd, &ps);
 	} break;
+	case WM_APP: {
+		on_wm_app(wParam, lParam);
+		break;
+	}
 	case WM_CREATE: {
-		on_create();
+		on_create(hWnd);
 		break;
 	}
 	case WM_DESTROY:
