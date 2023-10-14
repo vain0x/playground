@@ -5,11 +5,11 @@
 
 #include "pch.h"
 
-#include "framework.h"
 #include "Ipc.h"
+#include "framework.h"
 
 // for CommCtrl
-#pragma comment (lib, "comctl32")
+#pragma comment(lib, "comctl32")
 
 // -----------------------------------------------
 // Util
@@ -33,7 +33,7 @@ static auto error(LPCTSTR fmt, ...) -> std::exception {
 	TCHAR buffer[1024];
 	_vstprintf_s(buffer, fmt, args);
 	OutputDebugStringW(buffer);
-	throw std::exception{ "error" };
+	throw std::exception{"error"};
 }
 
 static auto error_api(const char* prefix) -> std::exception {
@@ -41,87 +41,97 @@ static auto error_api(const char* prefix) -> std::exception {
 
 	OutputDebugStringA(prefix);
 	debug(L", err: %d", e);
-	throw std::exception{ prefix };
+	throw std::exception{prefix};
 }
 
-static auto utf8_to_os_str(char8_t const* utf8_str, std::size_t utf8_str_len) -> OsString {
+static auto utf8_to_os_str(char8_t const* utf8_str, std::size_t utf8_str_len)
+    -> OsString {
 	assert(utf8_str != nullptr);
 
 	if (utf8_str_len == 0) {
 		return OsString{};
 	}
 
-	auto len = MultiByteToWideChar(CP_UTF8, 0, (char const*)utf8_str, (int)utf8_str_len, LPTSTR{}, 0);
+	auto len = MultiByteToWideChar(
+	    CP_UTF8, 0, (char const*)utf8_str, (int)utf8_str_len, LPTSTR{}, 0
+	);
 	if (len == 0) {
-		throw std::exception{ "MultiByteToWideChar" };
+		throw std::exception{"MultiByteToWideChar"};
 	}
 	assert(len > 0);
 
 	auto os_str = OsString{};
 	os_str.resize(len);
 
-	auto result = MultiByteToWideChar(CP_UTF8, 0, (char const*)utf8_str, (int)utf8_str_len, os_str.data(), len);
+	auto result = MultiByteToWideChar(
+	    CP_UTF8, 0, (char const*)utf8_str, (int)utf8_str_len, os_str.data(), len
+	);
 	if (result == 0) {
-		throw std::exception{ "MultiByteToWideChar" };
+		throw std::exception{"MultiByteToWideChar"};
 	}
 	assert(result == len);
 
 	return os_str;
 }
 
-static auto os_to_utf8_str(LPCTSTR os_str, std::size_t os_str_len) -> std::u8string {
+static auto os_to_utf8_str(LPCTSTR os_str, std::size_t os_str_len)
+    -> std::u8string {
 	assert(os_str != nullptr);
 
 	if (os_str_len == 0) {
 		return std::u8string{};
 	}
 
-	auto len = WideCharToMultiByte(CP_UTF8, 0, os_str, (int)os_str_len, nullptr, 0, nullptr, nullptr);
+	auto len = WideCharToMultiByte(
+	    CP_UTF8, 0, os_str, (int)os_str_len, nullptr, 0, nullptr, nullptr
+	);
 	if (len == 0) {
-		throw std::exception{ "WideCharToMultiByte" };
+		throw std::exception{"WideCharToMultiByte"};
 	}
 	assert(len > 0);
 
 	auto utf8_str = std::u8string{};
 	utf8_str.resize(len);
 
-	auto result = WideCharToMultiByte(CP_UTF8, 0, os_str, (int)os_str_len, (char*)utf8_str.data(), len, nullptr, nullptr);
+	auto result = WideCharToMultiByte(
+	    CP_UTF8, 0, os_str, (int)os_str_len, (char*)utf8_str.data(), len,
+	    nullptr, nullptr
+	);
 	if (result == 0) {
-		throw std::exception{ "WideCharToMultiByte" };
+		throw std::exception{"WideCharToMultiByte"};
 	}
 	assert(result == len);
 
 	return utf8_str;
 }
 
-
-
-static constexpr auto PIPE_BUFFER_SIZE = DWORD{ 0x10000 };
+static constexpr auto PIPE_BUFFER_SIZE = DWORD{0x10000};
 
 static auto compute_pipe_name(char const* prefix) -> OsString {
 	auto pid = GetCurrentProcessId();
 
 	char buf[128] = "";
-	sprintf_s(buf, "\\\\.\\pipe\\LOCAL\\KNOWBUG_PIPE_%s_%u", prefix, (unsigned)pid);
-	auto s = std::u8string{ (const char8_t*)buf };
+	sprintf_s(
+	    buf, "\\\\.\\pipe\\LOCAL\\KNOWBUG_PIPE_%s_%u", prefix, (unsigned)pid
+	);
+	auto s = std::u8string{(const char8_t*)buf};
 	return utf8_to_os_str(s.data(), s.size());
 }
 
 static auto create_named_pipe(OsStringView name) -> HANDLE {
-	auto security_attrs = SECURITY_ATTRIBUTES{ sizeof(SECURITY_ATTRIBUTES) };
+	auto security_attrs = SECURITY_ATTRIBUTES{sizeof(SECURITY_ATTRIBUTES)};
 	security_attrs.bInheritHandle = TRUE;
 
-	auto h_pipe = CreateNamedPipeW((LPCWSTR)name.data(), PIPE_ACCESS_DUPLEX, PIPE_TYPE_BYTE, 1, PIPE_BUFFER_SIZE, PIPE_BUFFER_SIZE, 0, &security_attrs);
+	auto h_pipe = CreateNamedPipeW(
+	    (LPCWSTR)name.data(), PIPE_ACCESS_DUPLEX, PIPE_TYPE_BYTE, 1,
+	    PIPE_BUFFER_SIZE, PIPE_BUFFER_SIZE, 0, &security_attrs
+	);
 	if (h_pipe == INVALID_HANDLE_VALUE) {
 		throw error_api("CreateNamedPipe");
 	}
 	assert(h_pipe != NULL);
 	return h_pipe;
 }
-
-
-
-
 
 // -----------------------------------------------
 // Application
@@ -148,8 +158,15 @@ static auto on_main_window_shown() -> void {
 	auto instance = s_instance;
 
 	// input, button
-	s_input = CreateWindowExW(0, WC_EDITW, L"", WS_VISIBLE | WS_CHILD | WS_BORDER | WS_TABSTOP, 10, 10, 240, 40, hwnd, (HMENU)IDC_INPUT, s_instance, nullptr);
-	s_send_button = CreateWindowExW(0, WC_BUTTON, L"Send", WS_VISIBLE | WS_CHILD | WS_TABSTOP | BS_PUSHBUTTON, 10 + 240 + 10, 10, 120, 40, hwnd, (HMENU)IDC_BUTTON, s_instance, nullptr);
+	s_input = CreateWindowExW(
+	    0, WC_EDITW, L"", WS_VISIBLE | WS_CHILD | WS_BORDER | WS_TABSTOP, 10,
+	    10, 240, 40, hwnd, (HMENU)IDC_INPUT, s_instance, nullptr
+	);
+	s_send_button = CreateWindowExW(
+	    0, WC_BUTTON, L"Send",
+	    WS_VISIBLE | WS_CHILD | WS_TABSTOP | BS_PUSHBUTTON, 10 + 240 + 10, 10,
+	    120, 40, hwnd, (HMENU)IDC_BUTTON, s_instance, nullptr
+	);
 
 	SetFocus(s_input);
 }
@@ -157,7 +174,7 @@ static auto on_main_window_shown() -> void {
 // on WM_CREATE
 static auto on_create() -> void {
 	// create pipes, spawn subprocess
-	auto name = OsString{ s_work_dir };
+	auto name = OsString{s_work_dir};
 	if (name.ends_with(L"\\")) {
 		name.pop_back();
 	}
@@ -169,7 +186,7 @@ static auto on_create() -> void {
 	}
 	name += L"\\client.exe";
 
-	auto cmdline = OsString{ L"\"" };
+	auto cmdline = OsString{L"\""};
 	cmdline += name;
 	cmdline += L"\"";
 
@@ -177,8 +194,8 @@ static auto on_create() -> void {
 	// (in: サーバーからクライアントへ、out: クライアントからサーバーへ)
 	auto in_read_pipe_name = compute_pipe_name("in_read");
 	auto out_write_pipe_name = compute_pipe_name("out_write");
-	auto in_read_pipe= create_named_pipe(in_read_pipe_name);
-	auto out_write_pipe= create_named_pipe(out_write_pipe_name);
+	auto in_read_pipe = create_named_pipe(in_read_pipe_name);
+	auto out_write_pipe = create_named_pipe(out_write_pipe_name);
 
 	s_in_read_pipe = in_read_pipe;
 	s_out_write_pipe = out_write_pipe;
@@ -190,16 +207,16 @@ static auto on_create() -> void {
 
 	// サーバーが使うパイプをクライアントプロセスに継承しないように設定する。
 	// (標準入力への書き込みと、標準出力からの読み取り。)
-//	if (!SetHandleInformation(client_stdin_pipe_opt->write_.get(), HANDLE_FLAG_INHERIT, DWORD{})) {
-//		return std::nullopt;
-//	}
-//
-//	if (!SetHandleInformation(client_stdout_pipe_opt->read_.get(), HANDLE_FLAG_INHERIT, DWORD{})) {
-//		return std::nullopt;
-//	}
+	//	if (!SetHandleInformation(client_stdin_pipe_opt->write_.get(), HANDLE_FLAG_INHERIT, DWORD{})) {
+	//		return std::nullopt;
+	//	}
+	//
+	//	if (!SetHandleInformation(client_stdout_pipe_opt->read_.get(), HANDLE_FLAG_INHERIT, DWORD{})) {
+	//		return std::nullopt;
+	//	}
 
 	// クライアントプロセスの標準入出力のリダイレクトを設定する。
-	auto startup_info = STARTUPINFO{ sizeof(STARTUPINFO) };
+	auto startup_info = STARTUPINFO{sizeof(STARTUPINFO)};
 	auto process_info = PROCESS_INFORMATION{};
 
 	//startup_info.hStdInput = in_read_pipe;
@@ -209,22 +226,18 @@ static auto on_create() -> void {
 
 	// クライアントプロセスを起動する。
 	if (!CreateProcessW(
-		LPCTSTR{},
-		cmdline.data(),
-		// process security
-		nullptr,
-		// thread security
-		nullptr,
-		// inherit handles
-		TRUE,
-		NORMAL_PRIORITY_CLASS,
-		// env
-		nullptr,
-		// work dir
-		nullptr,
-		&startup_info,
-		&process_info
-	)) {
+	        LPCTSTR{}, cmdline.data(),
+	        // process security
+	        nullptr,
+	        // thread security
+	        nullptr,
+	        // inherit handles
+	        TRUE, NORMAL_PRIORITY_CLASS,
+	        // env
+	        nullptr,
+	        // work dir
+	        nullptr, &startup_info, &process_info
+	    )) {
 		throw error_api("CreateProcessW");
 	}
 	debug(L"spawned");
@@ -266,7 +279,9 @@ static void try_read() {
 	//DWORD peek_size;
 	DWORD total_size;
 	//DWORD left_size;
-	if (!PeekNamedPipe(stdout_handle, nullptr, 0, nullptr, &total_size, nullptr)) {
+	if (!PeekNamedPipe(
+	        stdout_handle, nullptr, 0, nullptr, &total_size, nullptr
+	    )) {
 		auto e = GetLastError();
 		debug(L"WARN PeekNamedPipe e=%d", e);
 		return;
@@ -277,7 +292,10 @@ static void try_read() {
 	}
 
 	auto read_size = DWORD{};
-	if (!ReadFile(stdout_handle, s_buffer.data(), (DWORD)s_buffer.size(), &read_size, LPOVERLAPPED{})) {
+	if (!ReadFile(
+	        stdout_handle, s_buffer.data(), (DWORD)s_buffer.size(), &read_size,
+	        LPOVERLAPPED{}
+	    )) {
 		auto e = GetLastError();
 		if (e != ERROR_BROKEN_PIPE) {
 			assert(false && "ReadFile");
@@ -295,7 +313,10 @@ static void try_write(OsStringView data) {
 	auto text = os_to_utf8_str(data.data(), data.size());
 
 	auto written_size = DWORD{};
-	if (!WriteFile(handle, text.data(), (DWORD)text.size(), &written_size, LPOVERLAPPED{})) {
+	if (!WriteFile(
+	        handle, text.data(), (DWORD)text.size(), &written_size,
+	        LPOVERLAPPED{}
+	    )) {
 		auto e = GetLastError();
 		debug(L"WriteFile e=%d", e);
 		if (e != ERROR_BROKEN_PIPE) {
@@ -308,7 +329,8 @@ static void try_write(OsStringView data) {
 
 static auto on_button_click() -> void {
 	static TCHAR s_buffer[1024];
-	auto size = GetWindowTextW(s_input, s_buffer, sizeof(s_buffer) / sizeof(TCHAR) - 2);
+	auto size =
+	    GetWindowTextW(s_input, s_buffer, sizeof(s_buffer) / sizeof(TCHAR) - 2);
 
 	// クリックされたとき、テキストが入力済みならそれを子プロセスに送信する
 	// 空欄なら読み取りを試みる
@@ -318,7 +340,7 @@ static auto on_button_click() -> void {
 	} else {
 		assert(size >= 0);
 		debug(L"input: %s", s_buffer);
-		try_write(OsStringView{ s_buffer, (DWORD)size });
+		try_write(OsStringView{s_buffer, (DWORD)size});
 	}
 
 	SetWindowTextW(s_input, L"");
@@ -337,8 +359,6 @@ static void on_destroy() {
 	}
 }
 
-
-
 // -----------------------------------------------
 // Template
 // -----------------------------------------------
@@ -346,81 +366,74 @@ static void on_destroy() {
 #define MAX_LOADSTRING 100
 
 // グローバル変数:
-HINSTANCE hInst;                                // 現在のインターフェイス
-WCHAR szTitle[MAX_LOADSTRING];                  // タイトル バーのテキスト
-WCHAR szWindowClass[MAX_LOADSTRING];            // メイン ウィンドウ クラス名
+HINSTANCE hInst;                     // 現在のインターフェイス
+WCHAR szTitle[MAX_LOADSTRING];       // タイトル バーのテキスト
+WCHAR szWindowClass[MAX_LOADSTRING]; // メイン ウィンドウ クラス名
 
 // このコード モジュールに含まれる関数の宣言を転送します:
-ATOM                MyRegisterClass(HINSTANCE hInstance);
-BOOL                InitInstance(HINSTANCE, int);
-LRESULT CALLBACK    WndProc(HWND, UINT, WPARAM, LPARAM);
-INT_PTR CALLBACK    About(HWND, UINT, WPARAM, LPARAM);
+ATOM MyRegisterClass(HINSTANCE hInstance);
+BOOL InitInstance(HINSTANCE, int);
+LRESULT CALLBACK WndProc(HWND, UINT, WPARAM, LPARAM);
+INT_PTR CALLBACK About(HWND, UINT, WPARAM, LPARAM);
 
-int APIENTRY wWinMain(_In_ HINSTANCE hInstance,
-                     _In_opt_ HINSTANCE hPrevInstance,
-                     _In_ LPWSTR    lpCmdLine,
-                     _In_ int       nCmdShow)
-{
-    UNREFERENCED_PARAMETER(hPrevInstance);
-    UNREFERENCED_PARAMETER(lpCmdLine);
+int APIENTRY wWinMain(
+    _In_ HINSTANCE hInstance, _In_opt_ HINSTANCE hPrevInstance,
+    _In_ LPWSTR lpCmdLine, _In_ int nCmdShow
+) {
+	UNREFERENCED_PARAMETER(hPrevInstance);
+	UNREFERENCED_PARAMETER(lpCmdLine);
 
-    // TODO: ここにコードを挿入してください。
+	// TODO: ここにコードを挿入してください。
 
-    // グローバル文字列を初期化する
-    LoadStringW(hInstance, IDS_APP_TITLE, szTitle, MAX_LOADSTRING);
-    LoadStringW(hInstance, IDC_IPC, szWindowClass, MAX_LOADSTRING);
-    MyRegisterClass(hInstance);
+	// グローバル文字列を初期化する
+	LoadStringW(hInstance, IDS_APP_TITLE, szTitle, MAX_LOADSTRING);
+	LoadStringW(hInstance, IDC_IPC, szWindowClass, MAX_LOADSTRING);
+	MyRegisterClass(hInstance);
 
-    // アプリケーション初期化の実行:
-    if (!InitInstance (hInstance, nCmdShow))
-    {
-        return FALSE;
-    }
+	// アプリケーション初期化の実行:
+	if (!InitInstance(hInstance, nCmdShow)) {
+		return FALSE;
+	}
 
-    HACCEL hAccelTable = LoadAccelerators(hInstance, MAKEINTRESOURCE(IDC_IPC));
+	HACCEL hAccelTable = LoadAccelerators(hInstance, MAKEINTRESOURCE(IDC_IPC));
 
-    MSG msg;
+	MSG msg;
 
-    // メイン メッセージ ループ:
-    while (GetMessage(&msg, nullptr, 0, 0))
-    {
+	// メイン メッセージ ループ:
+	while (GetMessage(&msg, nullptr, 0, 0)) {
 		//if (!TranslateAccelerator(msg.hwnd, hAccelTable, &msg))
-		if (!IsDialogMessage(s_main_hwnd, &msg))
-        {
-            TranslateMessage(&msg);
-            DispatchMessage(&msg);
-        }
-    }
+		if (!IsDialogMessage(s_main_hwnd, &msg)) {
+			TranslateMessage(&msg);
+			DispatchMessage(&msg);
+		}
+	}
 
-    return (int) msg.wParam;
+	return (int)msg.wParam;
 }
-
-
 
 //
 //  関数: MyRegisterClass()
 //
 //  目的: ウィンドウ クラスを登録します。
 //
-ATOM MyRegisterClass(HINSTANCE hInstance)
-{
-    WNDCLASSEXW wcex;
+ATOM MyRegisterClass(HINSTANCE hInstance) {
+	WNDCLASSEXW wcex;
 
-    wcex.cbSize = sizeof(WNDCLASSEX);
+	wcex.cbSize = sizeof(WNDCLASSEX);
 
-    wcex.style          = CS_HREDRAW | CS_VREDRAW;
-    wcex.lpfnWndProc    = WndProc;
-    wcex.cbClsExtra     = 0;
-    wcex.cbWndExtra     = 0;
-    wcex.hInstance      = hInstance;
-    wcex.hIcon          = LoadIcon(hInstance, MAKEINTRESOURCE(IDI_IPC));
-    wcex.hCursor        = LoadCursor(nullptr, IDC_ARROW);
-    wcex.hbrBackground  = (HBRUSH)(COLOR_WINDOW+1);
-    wcex.lpszMenuName   = MAKEINTRESOURCEW(IDC_IPC);
-    wcex.lpszClassName  = szWindowClass;
-    wcex.hIconSm        = LoadIcon(wcex.hInstance, MAKEINTRESOURCE(IDI_SMALL));
+	wcex.style = CS_HREDRAW | CS_VREDRAW;
+	wcex.lpfnWndProc = WndProc;
+	wcex.cbClsExtra = 0;
+	wcex.cbWndExtra = 0;
+	wcex.hInstance = hInstance;
+	wcex.hIcon = LoadIcon(hInstance, MAKEINTRESOURCE(IDI_IPC));
+	wcex.hCursor = LoadCursor(nullptr, IDC_ARROW);
+	wcex.hbrBackground = (HBRUSH)(COLOR_WINDOW + 1);
+	wcex.lpszMenuName = MAKEINTRESOURCEW(IDC_IPC);
+	wcex.lpszClassName = szWindowClass;
+	wcex.hIconSm = LoadIcon(wcex.hInstance, MAKEINTRESOURCE(IDI_SMALL));
 
-    return RegisterClassExW(&wcex);
+	return RegisterClassExW(&wcex);
 }
 
 //
@@ -433,29 +446,29 @@ ATOM MyRegisterClass(HINSTANCE hInstance)
 //        この関数で、グローバル変数でインスタンス ハンドルを保存し、
 //        メイン プログラム ウィンドウを作成および表示します。
 //
-BOOL InitInstance(HINSTANCE hInstance, int nCmdShow)
-{
-   hInst = hInstance; // グローバル変数にインスタンス ハンドルを格納する
+BOOL InitInstance(HINSTANCE hInstance, int nCmdShow) {
+	hInst = hInstance; // グローバル変数にインスタンス ハンドルを格納する
 
-   on_start_up();
+	on_start_up();
 
-   HWND hWnd = CreateWindowW(szWindowClass, szTitle, WS_OVERLAPPEDWINDOW,
-      CW_USEDEFAULT, CW_USEDEFAULT, 480, 480, nullptr, nullptr, hInstance, nullptr);
+	HWND hWnd = CreateWindowW(
+	    szWindowClass, szTitle, WS_OVERLAPPEDWINDOW, CW_USEDEFAULT,
+	    CW_USEDEFAULT, 480, 480, nullptr, nullptr, hInstance, nullptr
+	);
 
-   if (!hWnd)
-   {
-      return FALSE;
-   }
+	if (!hWnd) {
+		return FALSE;
+	}
 
-   s_instance = hInst;
-   s_main_hwnd = hWnd;
+	s_instance = hInst;
+	s_main_hwnd = hWnd;
 
-   on_main_window_shown();
+	on_main_window_shown();
 
-   ShowWindow(hWnd, nCmdShow);
-   UpdateWindow(hWnd);
+	ShowWindow(hWnd, nCmdShow);
+	UpdateWindow(hWnd);
 
-   return TRUE;
+	return TRUE;
 }
 
 //
@@ -468,76 +481,67 @@ BOOL InitInstance(HINSTANCE hInstance, int nCmdShow)
 //  WM_DESTROY  - 中止メッセージを表示して戻る
 //
 //
-LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
-{
-    switch (message)
-    {
-    case WM_COMMAND:
-        {
-            int wmId = LOWORD(wParam);
-			int hi = HIWORD(wParam);
+LRESULT CALLBACK
+WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam) {
+	switch (message) {
+	case WM_COMMAND: {
+		int wmId = LOWORD(wParam);
+		int hi = HIWORD(wParam);
 
-			if (wmId == IDC_BUTTON) {
-				if (hi == BN_CLICKED) {
-					on_button_click();
-					break;
-				}
-				goto DEFAULT;
+		if (wmId == IDC_BUTTON) {
+			if (hi == BN_CLICKED) {
+				on_button_click();
+				break;
 			}
+			goto DEFAULT;
+		}
 
-            // 選択されたメニューの解析:
-            switch (wmId)
-            {
-            case IDM_ABOUT:
-                DialogBox(hInst, MAKEINTRESOURCE(IDD_ABOUTBOX), hWnd, About);
-                break;
-            case IDM_EXIT:
-                DestroyWindow(hWnd);
-                break;
-            default:
-                return DefWindowProc(hWnd, message, wParam, lParam);
-            }
-        }
-        break;
-    case WM_PAINT:
-        {
-            PAINTSTRUCT ps;
-            HDC hdc = BeginPaint(hWnd, &ps);
-            // TODO: HDC を使用する描画コードをここに追加してください...
-            EndPaint(hWnd, &ps);
-        }
-        break;
+		// 選択されたメニューの解析:
+		switch (wmId) {
+		case IDM_ABOUT:
+			DialogBox(hInst, MAKEINTRESOURCE(IDD_ABOUTBOX), hWnd, About);
+			break;
+		case IDM_EXIT:
+			DestroyWindow(hWnd);
+			break;
+		default:
+			return DefWindowProc(hWnd, message, wParam, lParam);
+		}
+	} break;
+	case WM_PAINT: {
+		PAINTSTRUCT ps;
+		HDC hdc = BeginPaint(hWnd, &ps);
+		// TODO: HDC を使用する描画コードをここに追加してください...
+		EndPaint(hWnd, &ps);
+	} break;
 	case WM_CREATE: {
 		on_create();
 		break;
 	}
-    case WM_DESTROY:
+	case WM_DESTROY:
 		on_destroy();
-        PostQuitMessage(0);
-        break;
-    default:
+		PostQuitMessage(0);
+		break;
+	default:
 	DEFAULT:
-        return DefWindowProc(hWnd, message, wParam, lParam);
-    }
-    return 0;
+		return DefWindowProc(hWnd, message, wParam, lParam);
+	}
+	return 0;
 }
 
 // バージョン情報ボックスのメッセージ ハンドラーです。
-INT_PTR CALLBACK About(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam)
-{
-    UNREFERENCED_PARAMETER(lParam);
-    switch (message)
-    {
-    case WM_INITDIALOG:
-        return (INT_PTR)TRUE;
+INT_PTR CALLBACK About(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam) {
+	UNREFERENCED_PARAMETER(lParam);
+	switch (message) {
+	case WM_INITDIALOG:
+		return (INT_PTR)TRUE;
 
-    case WM_COMMAND:
-        if (LOWORD(wParam) == IDOK || LOWORD(wParam) == IDCANCEL)
-        {
-            EndDialog(hDlg, LOWORD(wParam));
-            return (INT_PTR)TRUE;
-        }
-        break;
-    }
-    return (INT_PTR)FALSE;
+	case WM_COMMAND:
+		if (LOWORD(wParam) == IDOK || LOWORD(wParam) == IDCANCEL) {
+			EndDialog(hDlg, LOWORD(wParam));
+			return (INT_PTR)TRUE;
+		}
+		break;
+	}
+	return (INT_PTR)FALSE;
 }
