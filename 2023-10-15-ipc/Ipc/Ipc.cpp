@@ -164,30 +164,12 @@ static HANDLE s_write_pipe_connected_et, s_write_pipe_read_et,
     s_write_pipe_written_et;
 static HANDLE s_connected_waiter, s_written_waiter;
 
+// アプリの開始時、メインウィンドウの生成前に呼ばれる
 static auto on_start_up() -> void {
 	InitCommonControls();
 
 	GetCurrentDirectoryW(sizeof(s_work_dir) / sizeof(TCHAR) - 1, s_work_dir);
 	debug(L"work_dir = %s", s_work_dir);
-}
-
-static auto on_main_window_shown() -> void {
-	// create controls on the main window
-	auto hwnd = s_main_hwnd;
-	auto instance = s_instance;
-
-	// input, button
-	s_input = CreateWindowExW(
-	    0, WC_EDITW, L"", WS_VISIBLE | WS_CHILD | WS_BORDER | WS_TABSTOP, 10,
-	    10, 240, 40, hwnd, (HMENU)IDC_INPUT, s_instance, nullptr
-	);
-	s_send_button = CreateWindowExW(
-	    0, WC_BUTTON, L"Send",
-	    WS_VISIBLE | WS_CHILD | WS_TABSTOP | BS_PUSHBUTTON, 10 + 240 + 10, 10,
-	    120, 40, hwnd, (HMENU)IDC_BUTTON, s_instance, nullptr
-	);
-
-	SetFocus(s_input);
 }
 
 // (WaitOrTimerCallback)
@@ -210,9 +192,27 @@ on_read_completed(DWORD err, DWORD read_size, LPOVERLAPPED p_ol) -> void {
 	SendMessage(s_main_hwnd, WM_APP, 2, (LPARAM)read_size);
 }
 
+static void init_main_window(HWND hwnd) {
+	auto instance = s_instance;
+
+	// input, button
+	s_input = CreateWindowExW(
+	    0, WC_EDITW, L"", WS_VISIBLE | WS_CHILD | WS_BORDER | WS_TABSTOP, 10,
+	    10, 240, 40, hwnd, (HMENU)IDC_INPUT, s_instance, nullptr
+	);
+	s_send_button = CreateWindowExW(
+	    0, WC_BUTTON, L"Send",
+	    WS_VISIBLE | WS_CHILD | WS_TABSTOP | BS_PUSHBUTTON, 10 + 240 + 10, 10,
+	    120, 40, hwnd, (HMENU)IDC_BUTTON, s_instance, nullptr
+	);
+
+	SetFocus(s_input);
+}
+
 // on WM_CREATE
 static auto on_create(HWND hwnd) -> void {
 	s_main_hwnd = hwnd;
+	init_main_window(hwnd);
 
 	// create pipes, spawn subprocess
 	auto name = OsString{s_work_dir};
@@ -252,7 +252,8 @@ static auto on_create(HWND hwnd) -> void {
 	// (in: サーバーからクライアントへ、out: クライアントからサーバーへ)
 	auto in_read_pipe_name = compute_pipe_name("in_read");
 	auto out_write_pipe_name = compute_pipe_name("out_write");
-	auto in_read_pipe = create_named_pipe(in_read_pipe_name, /* is_overlapped */ false);
+	auto in_read_pipe =
+	    create_named_pipe(in_read_pipe_name, /* is_overlapped */ false);
 	auto out_write_pipe =
 	    create_named_pipe(out_write_pipe_name, /* is_overlapped */ true);
 
@@ -266,24 +267,8 @@ static auto on_create(HWND hwnd) -> void {
 	cmdline += L" --written=";
 	cmdline += event_name;
 
-	// サーバーが使うパイプをクライアントプロセスに継承しないように設定する。
-	// (標準入力への書き込みと、標準出力からの読み取り。)
-	//	if (!SetHandleInformation(client_stdin_pipe_opt->write_.get(), HANDLE_FLAG_INHERIT, DWORD{})) {
-	//		return std::nullopt;
-	//	}
-	//
-	//	if (!SetHandleInformation(client_stdout_pipe_opt->read_.get(), HANDLE_FLAG_INHERIT, DWORD{})) {
-	//		return std::nullopt;
-	//	}
-
-	// クライアントプロセスの標準入出力のリダイレクトを設定する。
 	auto startup_info = STARTUPINFO{sizeof(STARTUPINFO)};
 	auto process_info = PROCESS_INFORMATION{};
-
-	//startup_info.hStdInput = in_read_pipe;
-	//startup_info.hStdOutput = out_write_pipe;
-	//startup_info.hStdError = out_write_pipe;
-	//startup_info.dwFlags |= STARTF_USESTDHANDLES;
 
 	// クライアントプロセスを起動する。
 	if (!CreateProcessW(
@@ -359,6 +344,7 @@ static auto on_create(HWND hwnd) -> void {
 static std::string s_read_buffer;
 static auto s_read_ol = OVERLAPPED{};
 
+// パイプからの読み取りを非同期で開始する
 static void try_read() {
 	auto stdout_handle = s_out_write_pipe;
 	auto& s_buffer = s_read_buffer;
@@ -366,32 +352,6 @@ static void try_read() {
 	if (s_buffer.size() == 0) {
 		s_buffer.resize(8);
 	}
-
-	//DWORD peek_size;
-	//DWORD total_size;
-	//DWORD left_size;
-	//if (!PeekNamedPipe(stdout_handle, nullptr, 0, nullptr, &total_size, nullptr)) {
-	//	auto e = GetLastError();
-	//	debug(L"WARN PeekNamedPipe e=%d", e);
-	//	return;
-	//}
-	//if (total_size == 0) {
-	//	debug(L"No data");
-	//	return;
-	//}
-
-	//auto read_size = DWORD{};
-	//if (!ReadFile(stdout_handle, s_buffer.data(), (DWORD)s_buffer.size(), &read_size, LPOVERLAPPED{})) {
-	//	auto e = GetLastError();
-	//	if (e != ERROR_BROKEN_PIPE) {
-	//		assert(false && "ReadFile");
-	//	}
-	//	debug(L"WARN ReadFile e=%d", e);
-	//	return;
-	//}
-
-	//auto data = utf8_to_os_str((char8_t const*)s_buffer.data(), read_size);
-	//debug(L"OK receive: '%s' (%d)", data.data(), (int)data.size());
 
 	auto h_pipe = s_out_write_pipe;
 	auto& ol = s_read_ol;
@@ -422,9 +382,8 @@ static void after_read(DWORD read_size) {
 
 static void after_written_signaled() {
 	ResetEvent(s_write_pipe_written_et);
-	// alertable wait
-	//WaitForSingleObjectEx(s_written_waiter, 1, TRUE);
-	// enter an alertable wait state for 1millis
+	// 「アラータブルウェイト」状態に入る
+	// (ReadFileEx などの操作が開始される)
 	SleepEx(0, TRUE);
 }
 
@@ -455,15 +414,14 @@ static auto on_button_click() -> void {
 	// クリックされたとき、テキストが入力済みならそれを子プロセスに送信する
 	// 空欄なら読み取りを試みる
 
-	if (size == 0) {
-		try_read();
-	} else {
+	if (size != 0) {
 		assert(size >= 0);
 		debug(L"input: %s", s_buffer);
 		try_write(OsStringView{s_buffer, (DWORD)size});
 	}
 
 	SetWindowTextW(s_input, L"");
+	SetFocus(s_input);
 }
 
 static void on_destroy() {
@@ -472,8 +430,8 @@ static void on_destroy() {
 
 	CloseHandle(s_write_pipe_connected_et);
 	CloseHandle(s_write_pipe_written_et);
-	//CloseHandle(s_connected_waiter);
 
+	// 子プロセスをキルする
 	if (s_child_process) {
 		if (!TerminateProcess(s_child_process, EXIT_SUCCESS)) {
 			auto err = GetLastError();
@@ -504,9 +462,9 @@ static void on_wm_app(WPARAM wp, LPARAM lp) {
 	}
 }
 
-// -----------------------------------------------
-// Template
-// -----------------------------------------------
+// ===============================================
+
+// 以下、ほとんど自動生成されたテンプレートコード
 
 #define MAX_LOADSTRING 100
 
@@ -608,8 +566,6 @@ BOOL InitInstance(HINSTANCE hInstance, int nCmdShow) {
 
 	s_instance = hInst;
 	s_main_hwnd = hWnd;
-
-	on_main_window_shown();
 
 	ShowWindow(hWnd, nCmdShow);
 	UpdateWindow(hWnd);
