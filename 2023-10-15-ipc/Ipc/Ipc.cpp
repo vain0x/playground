@@ -1,6 +1,8 @@
 // ipc.cpp : アプリケーションのエントリ ポイントを定義します。
 //
 
+// 必ず x86 をターゲットにすること (ポインタが32ビットである必要があるため)
+
 // プログラムは wWinMain からスタートします
 
 #include "pch.h"
@@ -104,17 +106,6 @@ static auto os_to_utf8_str(LPCTSTR os_str, std::size_t os_str_len)
 	return utf8_str;
 }
 
-static auto compute_event_name(char const* prefix) -> OsString {
-	auto pid = GetCurrentProcessId();
-
-	// https://learn.microsoft.com/en-us/windows/win32/termserv/kernel-object-namespaces
-	// `Local\` というプリフィックスをつける(?)
-	char buf[128] = "";
-	sprintf_s(buf, "knowbug_event_%s_%u", prefix, (unsigned)pid);
-	auto s = std::u8string{(const char8_t*)buf};
-	return utf8_to_os_str(s.data(), s.size());
-}
-
 static constexpr auto PIPE_BUFFER_SIZE = DWORD{0x10000};
 
 static auto compute_pipe_name(char const* prefix) -> OsString {
@@ -159,10 +150,10 @@ static HINSTANCE s_instance;
 static HWND s_input, s_send_button;
 static TCHAR s_work_dir[1024];
 static HANDLE s_in_read_pipe, s_out_write_pipe, s_child_process;
+static HANDLE s_write_pipe_connected_et;
+static HANDLE s_connected_waiter;
 
-static HANDLE s_write_pipe_connected_et, s_write_pipe_read_et,
-    s_write_pipe_written_et;
-static HANDLE s_connected_waiter, s_written_waiter;
+static HWND s_client_hwnd;
 
 // アプリの開始時、メインウィンドウの生成前に呼ばれる
 static auto on_start_up() -> void {
@@ -176,13 +167,6 @@ static auto on_start_up() -> void {
 static auto CALLBACK on_connected_signaled(PVOID _context, BOOLEAN is_timed_out)
     -> void {
 	debug(L"connected signeled");
-	SendMessage(s_main_hwnd, WM_APP, 1, 0);
-}
-
-static auto CALLBACK on_written_signaled(PVOID _context, BOOLEAN is_timed_out)
-    -> void {
-	debug(L"written signeled t=%d", GetCurrentThreadId());
-	SendMessage(s_main_hwnd, WM_APP, 3, 0);
 }
 
 // (LPOVERLAPPED_COMPLETION_ROUTINE)
@@ -233,18 +217,8 @@ static auto on_create(HWND hwnd) -> void {
 
 	// パイプが使うイベントを生成する
 	// (security, manual, initial, name)
-	auto event_name = compute_event_name("written");
 	s_write_pipe_connected_et = CreateEventW(nullptr, true, false, nullptr);
 	if (s_write_pipe_connected_et == INVALID_HANDLE_VALUE) {
-		throw error_api("CreateEvent");
-	}
-	s_write_pipe_written_et =
-	    CreateEventW(nullptr, true, false, event_name.data());
-	if (s_write_pipe_written_et == INVALID_HANDLE_VALUE) {
-		throw error_api("CreateEvent");
-	}
-	s_write_pipe_read_et = CreateEventW(nullptr, true, false, nullptr);
-	if (s_write_pipe_read_et == INVALID_HANDLE_VALUE) {
 		throw error_api("CreateEvent");
 	}
 
@@ -264,8 +238,14 @@ static auto on_create(HWND hwnd) -> void {
 	cmdline += in_read_pipe_name;
 	cmdline += L" --output=";
 	cmdline += out_write_pipe_name;
-	cmdline += L" --written=";
-	cmdline += event_name;
+
+	OsString hwnd_str;
+	{
+		auto s = std::to_string((unsigned long long)hwnd);
+		hwnd_str = utf8_to_os_str((const char8_t*)s.data(), s.size());
+	}
+	cmdline += L" --server-hwnd=";
+	cmdline += hwnd_str;
 
 	auto startup_info = STARTUPINFO{sizeof(STARTUPINFO)};
 	auto process_info = PROCESS_INFORMATION{};
@@ -330,22 +310,13 @@ static auto on_create(HWND hwnd) -> void {
 			debug(L"out_write_pipe connected begin waiting");
 		}
 	}
-
-	assert(s_write_pipe_written_et != nullptr);
-	if (!RegisterWaitForSingleObject(
-	        &s_written_waiter, s_write_pipe_written_et, on_written_signaled,
-	        nullptr, INFINITE, 0
-	    )) {
-		throw error_api("RegisterWaitForSingleObject");
-	}
-	debug(L"written waiter is set");
 }
 
 static std::string s_read_buffer;
 static auto s_read_ol = OVERLAPPED{};
 
 // パイプからの読み取りを非同期で開始する
-static void try_read() {
+static void begin_read_output() {
 	auto stdout_handle = s_out_write_pipe;
 	auto& s_buffer = s_read_buffer;
 
@@ -370,21 +341,13 @@ static void try_read() {
 	debug(L"ReadFile begin");
 }
 
-static void after_read(DWORD read_size) {
+static void end_read_output(DWORD read_size) {
 	auto& s_buffer = s_read_buffer;
 
 	auto data = utf8_to_os_str((char8_t const*)s_buffer.data(), read_size);
 	debug(L"OK receive: '%s' (%d)", data.data(), (int)data.size());
 
-	// queue next
-	try_read();
-}
-
-static void after_written_signaled() {
-	ResetEvent(s_write_pipe_written_et);
-	// 「アラータブルウェイト」状態に入る
-	// (ReadFileEx などの操作が開始される)
-	SleepEx(0, TRUE);
+	begin_read_output();
 }
 
 static void try_write(OsStringView data) {
@@ -429,7 +392,6 @@ static void on_destroy() {
 	CloseHandle(s_out_write_pipe);
 
 	CloseHandle(s_write_pipe_connected_et);
-	CloseHandle(s_write_pipe_written_et);
 
 	// 子プロセスをキルする
 	if (s_child_process) {
@@ -444,18 +406,38 @@ static void on_destroy() {
 	}
 }
 
+// WM_APP が送られたときに呼ばれる
 static void on_wm_app(WPARAM wp, LPARAM lp) {
 	debug(L"WM_APP %d", wp);
 	switch (wp) {
-	case 1:
-		try_read();
-		break;
 	case 2:
-		after_read((DWORD)lp);
+		end_read_output((DWORD)lp);
 		break;
-	case 3:
-		after_written_signaled();
+
+		// 以下のメッセージはクライアントから送られる
+
+	case 101: {
+		// クライアントが起動時に送ってくる
+		debug(L"On client_hwnd: %d", lp);
+		s_client_hwnd = (HWND)lp;
 		break;
+	}
+	case 102: {
+		// クライアントがパイプにメッセージを書き込んだ後に送ってくる
+		debug(L"On client written: %d", lp);
+		assert(s_client_hwnd != nullptr);
+
+		// まだ読み取りが開始していなかったら、開始する
+		// (初回のみ。メッセージの読み取りが完了するたびに続きの読み取りが開始されるため、1回だけでいい)
+		static auto s_read_started = false;
+		if (!s_read_started) {
+			s_read_started = true;
+			begin_read_output();
+		}
+		// 一瞬だけアラータブル・ウェイト状態に入る
+		SleepEx(0, TRUE);
+		break;
+	}
 	default:
 		debug(L"unknown WM_APP message %d", wp);
 		assert(false && "on_wm_app");

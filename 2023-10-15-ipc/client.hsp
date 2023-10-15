@@ -1,3 +1,6 @@
+; クライアントアプリ
+
+; サーバーから起動される
 
 #packopt name "client"
 
@@ -6,6 +9,7 @@
 #module
 
 #define error(%1) logmes (%1) : dialog ("ERROR: " + (%1)), 1 : end : end
+#define WM_APP 0x8000
 
 #deffunc app_entrypoint
 
@@ -18,8 +22,7 @@
 	split cmdline, " ", args
 	input_pipe = ""
 	output_pipe = ""
-	; this process should set the event signaled after writing a message.
-	written_event = ""
+	server_hwnd_arg = ""
 	repeat length(args)
 		if strmid(args(cnt), 0, 8) == "--input=" {
 			input_pipe = strmid(args(cnt), 8, 0xFFFF)
@@ -29,8 +32,8 @@
 			output_pipe = strmid(args(cnt), 9, 0xFFFF)
 			continue
 		}
-		if strmid(args(cnt), 0, 10) == "--written=" {
-			written_event = strmid(args(cnt), 10, 0xFFFF)
+		if strmid(args(cnt), 0, 14) == "--server-hwnd=" {
+			server_hwnd_arg = strmid(args(cnt), 14, 0xFFFF)
 			continue
 		}
 	loop
@@ -41,13 +44,13 @@
 	if output_pipe == "" {
 		error "WARN: --output missing"
 	}
-	if written_event == "" {
-		error "WARN: --written missing"
+	if server_hwnd_arg == "" {
+		error "WARN: --server-hwnd missing"
 	}
 
 	mes "input = " + input_pipe
 	mes "output = " + output_pipe
-	mes "written = " + written_event
+	mes "server-hwnd = " + server_hwnd_arg
 
 	pipe_rw_open_read input_pipe
 	s_input_pipe_id = stat
@@ -65,13 +68,10 @@
 	s_output_available = true
 	mes "output connected"
 
-	; (2: EVENT_MODIFY_STATE)
-	OpenEventA 2, 0, written_event
-	h_event = stat
-	if h_event == 0 || h_event == -1 { ; (-1: INVALID_HANDLE_VALUE)
-		error "WARN: written event not opened"
-	}
-	mes "event opened " + h_event
+	s_server_hwnd = int(server_hwnd_arg)
+	; 101: hello, lp: clinet hwnd
+	mes "notify hello hwnd=" + hwnd
+	sendmsg s_server_hwnd, WM_APP, 101, hwnd
 
 	buf_size = 0x1000
 	sdim buf, buf_size
@@ -94,18 +94,13 @@
 			mes "received: '" + strmid(buf, 0, read_size) + "'"
 
 			buf = "pong: " + pong_count
+			size = strlen(buf)
 			pong_count++
-			mes "writing: '" + buf + "' (" + strlen(buf) + ")"
-			pipe_rw_write_block s_output_pipe_id, buf, strlen(buf)
-			SetEvent h_event
-			if stat == 0 {
-				GetLastError
-				mes "SetEvent err=" + stat
-			}
-			; cx = ginfo_cx : cy = ginfo_cy
-			; pos cx + ginfo_mesx + 10, cy - ginfo_mesy
-			; mes ", written"
-			; pos cx, cy
+			mes "writing: '" + buf + "' (" + size + ")"
+			pipe_rw_write_block s_output_pipe_id, buf, size
+
+			; noify written
+			sendmsg s_server_hwnd, WM_APP, 102, size
 		}
 
 		await 100
