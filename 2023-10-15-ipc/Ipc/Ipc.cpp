@@ -106,7 +106,8 @@ static auto os_to_utf8_str(LPCTSTR os_str, std::size_t os_str_len)
 	return utf8_str;
 }
 
-static constexpr auto PIPE_BUFFER_SIZE = DWORD{0x10000};
+static constexpr auto PIPE_BUFFER_SIZE = DWORD{0x8000};
+//static constexpr auto PIPE_BUFFER_SIZE = DWORD{8};
 
 static auto compute_pipe_name(char const* prefix) -> OsString {
 	auto pid = GetCurrentProcessId();
@@ -143,11 +144,11 @@ static auto create_named_pipe(OsStringView name, bool is_overlapped) -> HANDLE {
 // Application
 // -----------------------------------------------
 
-inline constexpr uintptr_t IDC_INPUT = 130, IDC_BUTTON = 131;
+inline constexpr uintptr_t IDC_INPUT = 130, IDC_BUTTON = 131, IDC_LABEL = 132;
 
 static HWND s_main_hwnd;
 static HINSTANCE s_instance;
-static HWND s_input, s_send_button;
+static HWND s_input, s_send_button, s_label;
 static TCHAR s_work_dir[1024];
 static HANDLE s_in_read_pipe, s_out_write_pipe, s_child_process;
 static HANDLE s_write_pipe_connected_et;
@@ -179,7 +180,7 @@ on_read_completed(DWORD err, DWORD read_size, LPOVERLAPPED p_ol) -> void {
 static void init_main_window(HWND hwnd) {
 	auto instance = s_instance;
 
-	// input, button
+	// input, button, label
 	s_input = CreateWindowExW(
 	    0, WC_EDITW, L"", WS_VISIBLE | WS_CHILD | WS_BORDER | WS_TABSTOP, 10,
 	    10, 240, 40, hwnd, (HMENU)IDC_INPUT, s_instance, nullptr
@@ -188,6 +189,10 @@ static void init_main_window(HWND hwnd) {
 	    0, WC_BUTTON, L"Send",
 	    WS_VISIBLE | WS_CHILD | WS_TABSTOP | BS_PUSHBUTTON, 10 + 240 + 10, 10,
 	    120, 40, hwnd, (HMENU)IDC_BUTTON, s_instance, nullptr
+	);
+	s_label = CreateWindowExW(
+	    0, WC_STATICW, L"...", WS_VISIBLE | WS_CHILD, 10, 10 + 8 + 40 + 8, 240,
+	    40, hwnd, (HMENU)IDC_LABEL, instance, nullptr
 	);
 
 	SetFocus(s_input);
@@ -347,6 +352,14 @@ static void end_read_output(DWORD read_size) {
 	auto data = utf8_to_os_str((char8_t const*)s_buffer.data(), read_size);
 	debug(L"OK receive: '%s' (%d)", data.data(), (int)data.size());
 
+	{
+		static OsString s;
+		s = L"client written: '";
+		s += data;
+		s += L"'";
+		SetWindowTextW(s_label, s.data());
+	}
+
 	begin_read_output();
 }
 
@@ -419,6 +432,7 @@ static void on_wm_app(WPARAM wp, LPARAM lp) {
 	case 101: {
 		// クライアントが起動時に送ってくる
 		debug(L"On client_hwnd: %d", lp);
+		SetWindowTextW(s_label, L"client ready");
 		s_client_hwnd = (HWND)lp;
 		break;
 	}
