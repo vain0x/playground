@@ -120,14 +120,11 @@ static auto compute_pipe_name(char const* prefix) -> OsString {
 	return utf8_to_os_str(s.data(), s.size());
 }
 
-static auto create_named_pipe(OsStringView name, bool is_overlapped) -> HANDLE {
+static auto create_named_pipe(OsStringView name) -> HANDLE {
 	auto security_attrs = SECURITY_ATTRIBUTES{sizeof(SECURITY_ATTRIBUTES)};
 	security_attrs.bInheritHandle = TRUE;
 
 	auto open_mode = (DWORD)PIPE_ACCESS_DUPLEX;
-	if (is_overlapped) {
-		open_mode |= FILE_FLAG_OVERLAPPED;
-	}
 
 	auto h_pipe = CreateNamedPipeW(
 	    (LPCWSTR)name.data(), open_mode, PIPE_TYPE_BYTE, 1, PIPE_BUFFER_SIZE,
@@ -151,9 +148,6 @@ static HINSTANCE s_instance;
 static HWND s_input, s_send_button, s_label;
 static TCHAR s_work_dir[1024];
 static HANDLE s_in_read_pipe, s_out_write_pipe, s_child_process;
-static HANDLE s_write_pipe_connected_et;
-static HANDLE s_connected_waiter;
-
 static HWND s_client_hwnd;
 
 // アプリの開始時、メインウィンドウの生成前に呼ばれる
@@ -162,20 +156,6 @@ static auto on_start_up() -> void {
 
 	GetCurrentDirectoryW(sizeof(s_work_dir) / sizeof(TCHAR) - 1, s_work_dir);
 	debug(L"work_dir = %s", s_work_dir);
-}
-
-// (WaitOrTimerCallback)
-static auto CALLBACK on_connected_signaled(PVOID _context, BOOLEAN is_timed_out)
-    -> void {
-	debug(L"connected signeled");
-	SendMessage(s_main_hwnd, WM_APP, 1, LPARAM{});
-}
-
-// (LPOVERLAPPED_COMPLETION_ROUTINE)
-static auto WINAPI
-on_read_completed(DWORD err, DWORD read_size, LPOVERLAPPED p_ol) -> void {
-	debug(L"on_read_completed err=%d", err);
-	SendMessage(s_main_hwnd, WM_APP, 2, (LPARAM)read_size);
 }
 
 static void init_main_window(HWND hwnd) {
@@ -222,21 +202,12 @@ static auto on_create(HWND hwnd) -> void {
 	cmdline += name;
 	cmdline += L"\"";
 
-	// パイプが使うイベントを生成する
-	// (security, manual, initial, name)
-	s_write_pipe_connected_et = CreateEventW(nullptr, true, false, nullptr);
-	if (s_write_pipe_connected_et == INVALID_HANDLE_VALUE) {
-		throw error_api("CreateEvent");
-	}
-
 	// クライアントとの通信用のパイプを作成する。
 	// (in: サーバーからクライアントへ、out: クライアントからサーバーへ)
 	auto in_read_pipe_name = compute_pipe_name("in_read");
 	auto out_write_pipe_name = compute_pipe_name("out_write");
-	auto in_read_pipe =
-	    create_named_pipe(in_read_pipe_name, /* is_overlapped */ false);
-	auto out_write_pipe =
-	    create_named_pipe(out_write_pipe_name, /* is_overlapped */ true);
+	auto in_read_pipe = create_named_pipe(in_read_pipe_name);
+	auto out_write_pipe = create_named_pipe(out_write_pipe_name);
 
 	s_in_read_pipe = in_read_pipe;
 	s_out_write_pipe = out_write_pipe;
@@ -279,64 +250,36 @@ static auto on_create(HWND hwnd) -> void {
 	s_child_process = process_info.hProcess;
 
 	// wait for connection
-	debug(L"wait connection");
-	{
-		if (!ConnectNamedPipe(in_read_pipe, nullptr)) {
-			auto e = GetLastError();
-			if (e != ERROR_PIPE_CONNECTED) {
-				throw error_api("ConnectNamedPipe");
-			}
-		}
-		debug(L"in_read_pipe connected");
-
-		// needs overlapped
-		static auto ol = OVERLAPPED{};
-		ol.hEvent = s_write_pipe_connected_et;
-		assert(s_write_pipe_connected_et != nullptr);
-
-		//auto connect_timeout = (DWORD)1000;
-		auto connect_timeout = (DWORD)INFINITE;
-		if (!RegisterWaitForSingleObject(
-		        &s_connected_waiter, s_write_pipe_connected_et,
-		        on_connected_signaled, nullptr, INFINITE, 0
-		    )) {
-			throw error_api("RegisterWaitForSingleObject");
-		}
-
-		if (!ConnectNamedPipe(out_write_pipe, &ol)) {
-			auto e = GetLastError();
-			if (e != ERROR_PIPE_CONNECTED) {
-				throw error_api("ConnectNamedPipe");
-			}
-			debug(L"out_write_pipe already connected");
-			if (!UnregisterWait(s_connected_waiter)) {
-				throw error_api("UnregisterWait");
-			}
-			on_connected_signaled(nullptr, FALSE);
-		} else {
-			debug(L"out_write_pipe connected begin waiting");
+	debug(L"accept connect");
+	if (!ConnectNamedPipe(in_read_pipe, LPOVERLAPPED{})) {
+		auto err = GetLastError();
+		if (err != ERROR_PIPE_CONNECTED) {
+			throw error_api("ConnectNamedPipe");
 		}
 	}
+	debug(L"in_read_pipe connected");
+
+	if (!ConnectNamedPipe(out_write_pipe, LPOVERLAPPED{})) {
+		auto err = GetLastError();
+		if (err != ERROR_PIPE_CONNECTED) {
+			throw error_api("ConnectNamedPipe");
+		}
+	}
+	debug(L"out_write_pipe connected");
 }
 
-static std::string s_read_buffer;
-static auto s_read_ol = OVERLAPPED{};
-
 // パイプからの読み取りを非同期で開始する
-static void begin_read_output() {
-	auto stdout_handle = s_out_write_pipe;
-	auto& s_buffer = s_read_buffer;
-
+static void read_output() {
+	static std::string s_buffer;
 	if (s_buffer.size() == 0) {
-		s_buffer.resize(8);
+		s_buffer.resize(16);
 	}
 
 	auto h_pipe = s_out_write_pipe;
-	auto& ol = s_read_ol;
-
-	if (!ReadFileEx(
-	        h_pipe, s_buffer.data(), (DWORD)s_buffer.size(), &ol,
-	        on_read_completed
+	auto read_size = DWORD{};
+	if (!ReadFile(
+	        h_pipe, s_buffer.data(), (DWORD)s_buffer.size(), &read_size,
+	        LPOVERLAPPED{}
 	    )) {
 		auto err = GetLastError();
 		if (err != ERROR_BROKEN_PIPE) {
@@ -345,11 +288,6 @@ static void begin_read_output() {
 		debug(L"ReadFile: broken pipe");
 		return;
 	}
-	debug(L"ReadFile begin");
-}
-
-static void end_read_output(DWORD read_size) {
-	auto& s_buffer = s_read_buffer;
 
 	auto data = utf8_to_os_str((char8_t const*)s_buffer.data(), read_size);
 	debug(L"OK receive: '%s' (%d)", data.data(), (int)data.size());
@@ -361,11 +299,9 @@ static void end_read_output(DWORD read_size) {
 		s += L"'";
 		SetWindowTextW(s_label, s.data());
 	}
-
-	begin_read_output();
 }
 
-static void try_write(OsStringView data) {
+static void write_to_input(OsStringView data) {
 	// クライアントとは接続済み (接続した後にボタンを有効化するため)
 	assert(s_client_hwnd != nullptr);
 
@@ -402,7 +338,7 @@ static auto on_button_click() -> void {
 	if (size != 0) {
 		assert(size >= 0);
 		debug(L"input: %s", s_buffer);
-		try_write(OsStringView{s_buffer, (DWORD)size});
+		write_to_input(OsStringView{s_buffer, (DWORD)size});
 	}
 
 	SetWindowTextW(s_input, L"");
@@ -412,8 +348,6 @@ static auto on_button_click() -> void {
 static void on_destroy() {
 	CloseHandle(s_in_read_pipe);
 	CloseHandle(s_out_write_pipe);
-
-	CloseHandle(s_write_pipe_connected_et);
 
 	// 子プロセスをキルする
 	if (s_child_process) {
@@ -432,15 +366,6 @@ static void on_destroy() {
 static void on_wm_app(WPARAM wp, LPARAM lp) {
 	debug(L"WM_APP %d", wp);
 	switch (wp) {
-	case 1:
-		// after connected
-		EnableWindow(s_send_button, TRUE);
-		break;
-
-	case 2:
-		end_read_output((DWORD)lp);
-		break;
-
 		// 以下のメッセージはクライアントから送られる
 
 	case 101: {
@@ -448,6 +373,7 @@ static void on_wm_app(WPARAM wp, LPARAM lp) {
 		debug(L"On client_hwnd: %d", lp);
 		SetWindowTextW(s_label, L"client ready");
 		s_client_hwnd = (HWND)lp;
+		EnableWindow(s_send_button, TRUE);
 		break;
 	}
 	case 102: {
@@ -455,15 +381,7 @@ static void on_wm_app(WPARAM wp, LPARAM lp) {
 		debug(L"On client written: %d", lp);
 		assert(s_client_hwnd != nullptr);
 
-		// まだ読み取りが開始していなかったら、開始する
-		// (初回のみ。メッセージの読み取りが完了するたびに続きの読み取りが開始されるため、1回だけでいい)
-		static auto s_read_started = false;
-		if (!s_read_started) {
-			s_read_started = true;
-			begin_read_output();
-		}
-		// 一瞬だけアラータブル・ウェイト状態に入る
-		SleepEx(0, TRUE);
+		read_output();
 		break;
 	}
 	default:
