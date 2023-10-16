@@ -15,6 +15,20 @@
 
 	title "client"
 
+	; window setup
+	font "Cascadia Mono", 14
+	objmode objmode_usefont
+	pos 8, 8
+	sdim s_input_buf, 0x200
+	input s_input_buf, 280, 40
+	s_input_id = stat
+
+	pos 8 + 280 + 8, 8
+	objsize 120, 40
+	button gosub "Send", *l_send_message
+
+	pos 8, 8 + 40 + 8
+
 	; parse cmdline
 	logmes "cmdline = " + dir_cmdline
 	mes dir_cmdline
@@ -75,12 +89,18 @@
 
 	buf_size = 0x1000
 	sdim buf, buf_size
+	ping_count = 0
 	pong_count = 0
-	wait_count = 0
 
 	oncmd gosub *on_app, WM_APP
 
 	mes "stop"
+
+	; repeat
+	; 	s_input_buf = "send: " + cnt
+	; 	gosub *l_send_message
+	; 	await 100
+	; loop
 	stop
 
 *on_app
@@ -106,20 +126,22 @@
 			error "read"
 		}
 
-		gosub *handle_message
+		gosub *l_handle_message
 		return 0
 	}
 
 	return -1
 
 ; use (buf, read_si)
-*handle_message
+*l_handle_message
+
+	gosub *l_page_break
 
 	msg_contents = strmid(buf, 0, read_size)
 	mes "received: '" + msg_contents + "'"
 
 	; send a message back
-	msg_contents = "pong: " + pong_count
+	msg_contents = "pong: " + msg_contents
 	msg_size = strlen(msg_contents)
 	pong_count++
 	mes "writing: '" + msg_contents + "' (" + msg_size + ")"
@@ -129,6 +151,50 @@
 	}
 	; notify written
 	sendmsg s_server_hwnd, WM_APP, 102, msg_size
+	return
+
+*l_send_message
+
+	gosub *l_page_break
+
+	msg_contents = s_input_buf
+	msg_size = strlen(msg_contents)
+	if msg_size == 0 {
+		objsel s_input_id
+		return
+	}
+
+	ping_count++
+	mes "writing: '" + msg_contents + "' (" + msg_size + ")"
+	pipe_rw_write_block s_output_pipe_id, msg_contents, msg_size
+	if stat < 0 {
+		error "write"
+	}
+	; notify written
+	sendmsg s_server_hwnd, WM_APP, 102, msg_size
+
+	s_input_buf = ""
+	objprm s_input_id, s_input_buf
+	objsel s_input_id
+	return
+
+*l_page_break
+
+	if ping_count + pong_count < 5 {
+		return
+	}
+
+	ping_count = 0
+	pong_count = 0
+	s_reset_requested = 0
+
+	redraw 2
+	hsvcolor , , 255 ; white
+	boxf
+
+	color
+	pos 10, 8 + 40 + 8
+	redraw
 	return
 
 #global

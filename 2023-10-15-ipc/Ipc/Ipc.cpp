@@ -269,10 +269,10 @@ static auto on_create(HWND hwnd) -> void {
 }
 
 // パイプからの読み取りを非同期で開始する
-static void read_output() {
+static void read_output(DWORD size) {
 	static std::string s_buffer;
-	if (s_buffer.size() == 0) {
-		s_buffer.resize(16);
+	if (s_buffer.size()  < size) {
+		s_buffer.resize(size);
 	}
 
 	auto h_pipe = s_out_write_pipe;
@@ -378,10 +378,11 @@ static void on_wm_app(WPARAM wp, LPARAM lp) {
 	}
 	case 102: {
 		// クライアントがパイプにメッセージを書き込んだ後に送ってくる
-		debug(L"On client written: %d", lp);
+		auto size = (DWORD)lp;
+		debug(L"On client written: %d", size);
 		assert(s_client_hwnd != nullptr);
 
-		read_output();
+		read_output(size);
 		break;
 	}
 	default:
