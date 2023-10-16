@@ -168,6 +168,7 @@ static auto on_start_up() -> void {
 static auto CALLBACK on_connected_signaled(PVOID _context, BOOLEAN is_timed_out)
     -> void {
 	debug(L"connected signeled");
+	SendMessage(s_main_hwnd, WM_APP, 1, LPARAM{});
 }
 
 // (LPOVERLAPPED_COMPLETION_ROUTINE)
@@ -190,6 +191,7 @@ static void init_main_window(HWND hwnd) {
 	    WS_VISIBLE | WS_CHILD | WS_TABSTOP | BS_PUSHBUTTON, 10 + 240 + 10, 10,
 	    120, 40, hwnd, (HMENU)IDC_BUTTON, s_instance, nullptr
 	);
+	EnableWindow(s_send_button, FALSE);
 	s_label = CreateWindowExW(
 	    0, WC_STATICW, L"...", WS_VISIBLE | WS_CHILD, 10, 10 + 8 + 40 + 8, 240,
 	    40, hwnd, (HMENU)IDC_LABEL, instance, nullptr
@@ -364,6 +366,9 @@ static void end_read_output(DWORD read_size) {
 }
 
 static void try_write(OsStringView data) {
+	// クライアントとは接続済み (接続した後にボタンを有効化するため)
+	assert(s_client_hwnd != nullptr);
+
 	auto handle = s_in_read_pipe;
 	auto text = os_to_utf8_str(data.data(), data.size());
 
@@ -380,6 +385,10 @@ static void try_write(OsStringView data) {
 		return;
 	}
 	debug(L"Written (%d)", (int)data.size());
+
+	// クライアントに書き込んだことを伝える
+	assert(written_size <= INT32_MAX);
+	SendMessage(s_client_hwnd, WM_APP, 201, (LPARAM)written_size);
 }
 
 static auto on_button_click() -> void {
@@ -423,6 +432,11 @@ static void on_destroy() {
 static void on_wm_app(WPARAM wp, LPARAM lp) {
 	debug(L"WM_APP %d", wp);
 	switch (wp) {
+	case 1:
+		// after connected
+		EnableWindow(s_send_button, TRUE);
+		break;
+
 	case 2:
 		end_read_output((DWORD)lp);
 		break;

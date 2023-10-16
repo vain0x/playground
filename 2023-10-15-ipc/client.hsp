@@ -78,11 +78,27 @@
 	pong_count = 0
 	wait_count = 0
 
-	repeat
-		if wait_count == 0 || wait_count \ 1000 == 0 {
-			mes "waiting..."
+	oncmd gosub *on_app, WM_APP
+
+	mes "stop"
+	stop
+
+*on_app
+
+	mes strf("wm_app: wp=%d, lp=%d", wparam, lparam)
+	wp = wparam
+	lp = lparam
+
+	; messages are sent from the server
+	if wp == 201 {
+		msg_size = lp
+
+		; expand the buffer to hold the message
+		if buf_size <= msg_size {
+			buf_size = limit(msg_size + 1, buf_size * 2, 0x7fffffff)
+			assert buf_size - 1 >= msg_size
+			memexpand buf, buf_size
 		}
-		wait_count++
 
 		pipe_rw_read_block s_input_pipe_id, buf, buf_size - 1
 		read_size = stat
@@ -90,22 +106,29 @@
 			error "read"
 		}
 
-		if read_size > 0 {
-			mes "received: '" + strmid(buf, 0, read_size) + "'"
+		gosub *handle_message
+		return 0
+	}
 
-			buf = "pong: " + pong_count
-			size = strlen(buf)
-			pong_count++
-			mes "writing: '" + buf + "' (" + size + ")"
-			pipe_rw_write_block s_output_pipe_id, buf, size
+	return -1
 
-			; noify written
-			sendmsg s_server_hwnd, WM_APP, 102, size
-		}
+; use (buf, read_si)
+*handle_message
 
-		await 100
-	loop
+	msg_contents = strmid(buf, 0, read_size)
+	mes "received: '" + msg_contents + "'"
 
+	; send a message back
+	msg_contents = "pong: " + pong_count
+	msg_size = strlen(msg_contents)
+	pong_count++
+	mes "writing: '" + msg_contents + "' (" + msg_size + ")"
+	pipe_rw_write_block s_output_pipe_id, msg_contents, msg_size
+	if stat < 0 {
+		error "write"
+	}
+	; notify written
+	sendmsg s_server_hwnd, WM_APP, 102, msg_size
 	return
 
 #global
