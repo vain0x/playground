@@ -10,6 +10,7 @@
 
 // C++の標準ライブラリ (汎用的なもの)
 #include <exception>
+#include <functional>
 #include <memory>
 #include <string>
 

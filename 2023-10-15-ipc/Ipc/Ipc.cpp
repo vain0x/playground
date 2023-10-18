@@ -124,7 +124,8 @@ static auto create_named_pipe(OsStringView name) -> HANDLE {
 	auto security_attrs = SECURITY_ATTRIBUTES{sizeof(SECURITY_ATTRIBUTES)};
 	security_attrs.bInheritHandle = TRUE;
 
-	auto open_mode = (DWORD)PIPE_ACCESS_DUPLEX;
+	// ConnectNamedPipe を非同期で行うために FILE_FLAG_OVERLAPPED を指定する
+	auto open_mode = (DWORD)(PIPE_ACCESS_DUPLEX | FILE_FLAG_OVERLAPPED);
 
 	auto h_pipe = CreateNamedPipeW(
 	    (LPCWSTR)name.data(), open_mode, PIPE_TYPE_BYTE, 1, PIPE_BUFFER_SIZE,
@@ -148,7 +149,12 @@ static HINSTANCE s_instance;
 static HWND s_input, s_send_button, s_label;
 static TCHAR s_work_dir[1024];
 static HANDLE s_in_read_pipe, s_out_write_pipe, s_child_process;
+static HANDLE s_child_wait;
 static HWND s_client_hwnd;
+
+static HANDLE s_in_read_connected_event, s_out_write_connected_event;
+//static HANDLE s_in_read_connected_wait, s_out_write_connected_wait, ;
+static bool s_child_exited, s_in_read_connected, s_out_write_connected;
 
 // アプリの開始時、メインウィンドウの生成前に呼ばれる
 static auto on_start_up() -> void {
@@ -171,13 +177,22 @@ static void init_main_window(HWND hwnd) {
 	    WS_VISIBLE | WS_CHILD | WS_TABSTOP | BS_PUSHBUTTON, 10 + 240 + 10, 10,
 	    120, 40, hwnd, (HMENU)IDC_BUTTON, s_instance, nullptr
 	);
-	EnableWindow(s_send_button, FALSE);
+	//EnableWindow(s_send_button, FALSE);
 	s_label = CreateWindowExW(
 	    0, WC_STATICW, L"...", WS_VISIBLE | WS_CHILD, 10, 10 + 8 + 40 + 8, 240,
 	    40, hwnd, (HMENU)IDC_LABEL, instance, nullptr
 	);
 
 	SetFocus(s_input);
+}
+
+// (WAITORTIMERCALLBACK)
+static void CALLBACK
+on_child_process_signaled(PVOID context, BOOLEAN _is_timeout) {
+	debug(L"on_child_process_signaled");
+
+	auto id = (uintptr_t)context;
+	PostMessageW(s_main_hwnd, WM_APP, 1, (LPARAM)id);
 }
 
 // on WM_CREATE
@@ -249,33 +264,185 @@ static auto on_create(HWND hwnd) -> void {
 	CloseHandle(process_info.hThread);
 	s_child_process = process_info.hProcess;
 
-	// wait for connection
-	debug(L"accept connect");
-	if (!ConnectNamedPipe(in_read_pipe, LPOVERLAPPED{})) {
+	if (!RegisterWaitForSingleObject(
+	        &s_child_wait, s_child_process, on_child_process_signaled,
+	        (LPVOID)1, INFINITE, WT_EXECUTEONLYONCE
+	    )) {
 		auto err = GetLastError();
-		if (err != ERROR_PIPE_CONNECTED) {
-			throw error_api("ConnectNamedPipe");
-		}
+		throw error(L"RegisterWaitForSingleObject %d", err);
 	}
-	debug(L"in_read_pipe connected");
 
-	if (!ConnectNamedPipe(out_write_pipe, LPOVERLAPPED{})) {
-		auto err = GetLastError();
-		if (err != ERROR_PIPE_CONNECTED) {
-			throw error_api("ConnectNamedPipe");
+	//// wait for connection
+	//debug(L"accept connect");
+	//if (!ConnectNamedPipe(in_read_pipe, LPOVERLAPPED{})) {
+	//	auto err = GetLastError();
+	//	if (err != ERROR_PIPE_CONNECTED) {
+	//		throw error_api("ConnectNamedPipe");
+	//	}
+	//}
+	//debug(L"in_read_pipe connected");
+
+	//if (!ConnectNamedPipe(out_write_pipe, LPOVERLAPPED{})) {
+	//	auto err = GetLastError();
+	//	if (err != ERROR_PIPE_CONNECTED) {
+	//		throw error_api("ConnectNamedPipe");
+	//	}
+	//}
+	//debug(L"out_write_pipe connected");
+
+	debug(L"wait for connected or process exit");
+	{
+		static auto s_ol1 = OVERLAPPED{};
+		static auto s_ol2 = OVERLAPPED{};
+
+		s_in_read_connected_event = CreateEventA(nullptr, TRUE, FALSE, nullptr);
+		if (!s_in_read_connected_event ||
+		    s_in_read_connected_event == INVALID_HANDLE_VALUE) {
+			auto err = GetLastError();
+			throw error(L"CreateEvent %d", err);
+		}
+		s_ol1.hEvent = s_in_read_connected_event;
+		if (!ConnectNamedPipe(s_in_read_pipe, &s_ol1)) {
+			auto err = GetLastError();
+			if (err == ERROR_PIPE_CONNECTED) {
+				// OK
+				s_in_read_connected = true;
+			} else if (err == ERROR_IO_PENDING) {
+				debug(L"  begin waiting for in_read");
+			} else {
+				throw error_api("ConnectNamedPipe");
+			}
+		} else {
+			debug(L"  ConnectedNamedPipe succeeded (in_read)");
+		}
+		// if (!RegisterWaitForSingleObject(
+		//         &s_in_read_connected_wait, s_in_read_connected_event,
+		//         on_child_process_signaled, (LPVOID)2, INFINITE,
+		//         WT_EXECUTEONLYONCE
+		//     )) {
+		// 	auto err = GetLastError();
+		// 	throw error(L"RegisterWaitForSingleObject %d", err);
+		// }
+
+		s_out_write_connected_event =
+		    CreateEventA(nullptr, TRUE, FALSE, nullptr);
+		if (!s_out_write_connected_event ||
+		    s_out_write_connected_event == INVALID_HANDLE_VALUE) {
+			auto err = GetLastError();
+			throw error(L"CreateEvent %d", err);
+		}
+		s_ol2.hEvent = s_out_write_connected_event;
+		if (!ConnectNamedPipe(s_out_write_pipe, &s_ol2)) {
+			auto err = GetLastError();
+			if (err == ERROR_PIPE_CONNECTED) {
+				// OK
+				s_out_write_connected = true;
+			} else if (err == ERROR_IO_PENDING) {
+				debug(L"  begin waiting for out_write");
+			} else {
+				throw error_api("ConnectNamedPipe");
+			}
+		} else {
+			debug(L"  ConnectNamedPipe completed (out_write)");
+		}
+		// if (!RegisterWaitForSingleObject(
+		//         &s_out_write_connected_wait, s_out_write_connected_event,
+		//         on_child_process_signaled, (LPVOID)3, INFINITE,
+		//         WT_EXECUTEONLYONCE
+		//     )) {
+		// 	auto err = GetLastError();
+		// 	throw error(L"RegisterWaitForSingleObject %d", err);
+		// }
+
+		// ブロックしてパイプへの接続を待つ
+		// 接続完了とクライアントの終了を同時に待つ
+		// (そうでないとクライアントが終了した場合に接続待ちがハングしてしまう)
+		if (!s_in_read_connected) {
+			debug(L"block waiting for in_read pipe connection");
+			HANDLE handles[2] = {
+			    s_child_process,
+			    s_in_read_connected_event,
+			};
+			// wait any
+			auto status = WaitForMultipleObjects(
+			    sizeof(handles) / sizeof(HANDLE), handles, FALSE, (DWORD)5000
+			);
+			if (status == WAIT_OBJECT_0 || status == WAIT_ABANDONED_0) {
+				// child exited
+				debug(L"  detect child exit");
+				return;
+			} else if (status == WAIT_OBJECT_0 + 1) {
+				// connected
+				debug(L"  detect in_read connected");
+			} else if (status == WAIT_ABANDONED_0 + 1) {
+				// pipe broken?
+				debug(L"  in_read pipe abandoned");
+				throw std::exception{"pipe abandoned"};
+			} else if (status == WAIT_TIMEOUT) {
+				debug(L"  waiting for client timeout");
+				throw std::exception{"wait timeout"};
+			} else {
+				auto err = GetLastError();
+				throw error(L"WaitForMultipleObjects %d", err);
+			}
+			s_in_read_connected = true;
+		}
+
+		if (!s_out_write_connected) {
+			debug(L"block waiting for out_write pipe connection");
+			HANDLE handles[2] = {
+			    s_child_process,
+			    s_out_write_connected_event,
+			};
+			// wait any
+			auto status = WaitForMultipleObjects(
+			    sizeof(handles) / sizeof(HANDLE), handles, FALSE, (DWORD)5000
+			);
+			if (status == WAIT_OBJECT_0 || status == WAIT_ABANDONED_0) {
+				// child exited
+				debug(L"  detect child exit");
+				return;
+			} else if (status == WAIT_OBJECT_0 + 1) {
+				// connected
+				debug(L"  detect out_write connected");
+			} else if (status == WAIT_ABANDONED_0 + 1) {
+				// pipe broken?
+				debug(L"  out_write pipe abandoned");
+				throw std::exception{"pipe abandoned"};
+			} else if (status == WAIT_TIMEOUT) {
+				debug(L"  waiting for client timeout");
+				throw std::exception{"wait timeout"};
+			} else {
+				auto err = GetLastError();
+				throw error(L"WaitForMultipleObjects %d", err);
+			}
+			s_out_write_connected = true;
 		}
 	}
-	debug(L"out_write_pipe connected");
 }
 
 // パイプからの読み取りを非同期で開始する
 static void read_output(DWORD size) {
 	static std::string s_buffer;
-	if (s_buffer.size()  < size) {
+	if (s_buffer.size() < size) {
 		s_buffer.resize(size);
 	}
 
 	auto h_pipe = s_out_write_pipe;
+	if (s_child_exited) {
+		debug(L"cannot read after child exit");
+		return;
+	}
+	if (!s_out_write_connected) {
+		debug(L"reading after waiting for connection");
+		if (!WaitForSingleObject(h_pipe, (DWORD)3000)) {
+			auto err = GetLastError();
+			throw error(L"WaitForSingleObject %d", err);
+		}
+		s_out_write_connected = true;
+	}
+	assert(s_client_hwnd != nullptr);
+
 	auto read_size = DWORD{};
 	if (!ReadFile(
 	        h_pipe, s_buffer.data(), (DWORD)s_buffer.size(), &read_size,
@@ -303,14 +470,28 @@ static void read_output(DWORD size) {
 
 static void write_to_input(OsStringView data) {
 	// クライアントとは接続済み (接続した後にボタンを有効化するため)
-	assert(s_client_hwnd != nullptr);
+	//assert(s_client_hwnd != nullptr);
 
-	auto handle = s_in_read_pipe;
+	auto h_pipe = s_in_read_pipe;
 	auto text = os_to_utf8_str(data.data(), data.size());
+
+	if (s_child_exited) {
+		debug(L"cannot write after child exit");
+		return;
+	}
+	if (!s_in_read_connected) {
+		debug(L"writing after waiting for connection");
+		if (!WaitForSingleObject(h_pipe, (DWORD)3000)) {
+			auto err = GetLastError();
+			throw error(L"WaitForSingleObject %d", err);
+		}
+		s_in_read_connected = true;
+	}
+	assert(s_client_hwnd != nullptr);
 
 	auto written_size = DWORD{};
 	if (!WriteFile(
-	        handle, text.data(), (DWORD)text.size(), &written_size,
+	        h_pipe, text.data(), (DWORD)text.size(), &written_size,
 	        LPOVERLAPPED{}
 	    )) {
 		auto e = GetLastError();
@@ -354,7 +535,7 @@ static void on_destroy() {
 		if (!TerminateProcess(s_child_process, EXIT_SUCCESS)) {
 			auto err = GetLastError();
 			if (err != ERROR_ACCESS_DENIED) {
-				debug(L"TerminateProecss, err=%d", err);
+				debug(L"TerminateProcess, err=%d", err);
 				assert(false && "TerminateProcess");
 			}
 		}
@@ -365,7 +546,28 @@ static void on_destroy() {
 // WM_APP が送られたときに呼ばれる
 static void on_wm_app(WPARAM wp, LPARAM lp) {
 	debug(L"WM_APP %d", wp);
+
 	switch (wp) {
+	case 1: {
+		// wait signaled
+		auto id = (DWORD)lp;
+		switch (id) {
+		case 1:
+			s_child_exited = true;
+			SetWindowTextW(s_label, L"client exited");
+			break;
+		case 2:
+			s_in_read_connected = true;
+			break;
+		case 3:
+			s_out_write_connected = true;
+			break;
+		default:
+			throw error(L"unknown event id");
+		}
+		break;
+	}
+
 		// 以下のメッセージはクライアントから送られる
 
 	case 101: {
@@ -373,14 +575,15 @@ static void on_wm_app(WPARAM wp, LPARAM lp) {
 		debug(L"On client_hwnd: %d", lp);
 		SetWindowTextW(s_label, L"client ready");
 		s_client_hwnd = (HWND)lp;
-		EnableWindow(s_send_button, TRUE);
+
+		//EnableWindow(s_send_button, TRUE);
 		break;
 	}
 	case 102: {
 		// クライアントがパイプにメッセージを書き込んだ後に送ってくる
 		auto size = (DWORD)lp;
 		debug(L"On client written: %d", size);
-		assert(s_client_hwnd != nullptr);
+		//assert(s_client_hwnd != nullptr);
 
 		read_output(size);
 		break;

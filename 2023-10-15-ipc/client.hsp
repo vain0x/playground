@@ -52,6 +52,8 @@
 		}
 	loop
 
+	; wait 300
+
 	if input_pipe == "" {
 		error "WARN: --input missing"
 	}
