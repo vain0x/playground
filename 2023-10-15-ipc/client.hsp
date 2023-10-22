@@ -4,6 +4,7 @@
 
 #packopt name "client"
 
+#include "user32.as"
 #include "mod_pipe_rw.hsp"
 
 #module
@@ -68,6 +69,11 @@
 	mes "output = " + output_pipe
 	mes "server-hwnd = " + server_hwnd_arg
 
+	; post a message to simulate a runtime event
+	s_server_hwnd = int(server_hwnd_arg)
+	PostMessage s_server_hwnd, WM_APP, 201, 0
+	await
+
 	pipe_rw_open_read input_pipe
 	s_input_pipe_id = stat
 	if s_input_pipe_id < 0 {
@@ -84,10 +90,9 @@
 	s_output_available = true
 	mes "output connected"
 
-	s_server_hwnd = int(server_hwnd_arg)
 	; 101: hello, lp: clinet hwnd
 	mes "notify hello hwnd=" + hwnd
-	sendmsg s_server_hwnd, WM_APP, 101, hwnd
+	PostMessage s_server_hwnd, WM_APP, 101, hwnd
 
 	buf_size = 0x1000
 	sdim buf, buf_size

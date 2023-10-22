@@ -429,19 +429,22 @@ static void read_output(DWORD size) {
 	}
 
 	auto h_pipe = s_out_write_pipe;
-	if (s_child_exited) {
-		debug(L"cannot read after child exit");
-		return;
-	}
-	if (!s_out_write_connected) {
-		debug(L"reading after waiting for connection");
-		if (!WaitForSingleObject(h_pipe, (DWORD)3000)) {
-			auto err = GetLastError();
-			throw error(L"WaitForSingleObject %d", err);
-		}
-		s_out_write_connected = true;
-	}
-	assert(s_client_hwnd != nullptr);
+
+	// (ここで同期的に待機しても s_client_hwnd を得られるわけではない。
+	//  ここでメインスレッドをブロックしているかぎりウィンドウメッセージの処理が進行しないため)
+	//if (s_child_exited) {
+	//	debug(L"cannot read after child exit");
+	//	return;
+	//}
+	//if (!s_out_write_connected) {
+	//	debug(L"reading after waiting for connection");
+	//	if (!WaitForSingleObject(h_pipe, (DWORD)3000)) {
+	//		auto err = GetLastError();
+	//		throw error(L"WaitForSingleObject %d", err);
+	//	}
+	//	s_out_write_connected = true;
+	//}
+	//assert(s_client_hwnd != nullptr);
 
 	auto read_size = DWORD{};
 	if (!ReadFile(
@@ -468,26 +471,22 @@ static void read_output(DWORD size) {
 	}
 }
 
-static void write_to_input(OsStringView data) {
-	// クライアントとは接続済み (接続した後にボタンを有効化するため)
-	//assert(s_client_hwnd != nullptr);
+static void do_write_to_input(OsStringView data) {
+	// 事前条件
+	assert(s_client_hwnd != nullptr && !s_child_exited);
 
 	auto h_pipe = s_in_read_pipe;
 	auto text = os_to_utf8_str(data.data(), data.size());
 
-	if (s_child_exited) {
-		debug(L"cannot write after child exit");
-		return;
-	}
-	if (!s_in_read_connected) {
-		debug(L"writing after waiting for connection");
-		if (!WaitForSingleObject(h_pipe, (DWORD)3000)) {
-			auto err = GetLastError();
-			throw error(L"WaitForSingleObject %d", err);
-		}
-		s_in_read_connected = true;
-	}
-	assert(s_client_hwnd != nullptr);
+	//if (!s_in_read_connected) {
+	//	debug(L"writing after waiting for connection");
+	//	if (!WaitForSingleObject(h_pipe, (DWORD)3000)) {
+	//		auto err = GetLastError();
+	//		throw error(L"WaitForSingleObject %d", err);
+	//	}
+	//	s_in_read_connected = true;
+	//}
+	//assert(s_client_hwnd != nullptr);
 
 	auto written_size = DWORD{};
 	if (!WriteFile(
@@ -508,6 +507,24 @@ static void write_to_input(OsStringView data) {
 	SendMessage(s_client_hwnd, WM_APP, 201, (LPARAM)written_size);
 }
 
+// クライアントとの接続が確立する前に送ろうとしたメッセージを溜めこむためのバッファー
+static std::vector<OsString> s_send_message_pending_;
+
+static void enqueue_write_to_input(OsString data) {
+	if (s_client_hwnd == nullptr) {
+		s_send_message_pending_.push_back(std::move(data));
+		return;
+	}
+
+	if (s_child_exited) {
+		debug(L"cannot write after child exit");
+		return;
+	}
+
+	assert(s_client_hwnd != nullptr && !s_child_exited);
+	do_write_to_input(data);
+}
+
 static auto on_button_click() -> void {
 	static TCHAR s_buffer[1024];
 	auto size =
@@ -519,7 +536,7 @@ static auto on_button_click() -> void {
 	if (size != 0) {
 		assert(size >= 0);
 		debug(L"input: %s", s_buffer);
-		write_to_input(OsStringView{s_buffer, (DWORD)size});
+		enqueue_write_to_input(OsString{s_buffer, (DWORD)size});
 	}
 
 	SetWindowTextW(s_input, L"");
@@ -576,6 +593,15 @@ static void on_wm_app(WPARAM wp, LPARAM lp) {
 		SetWindowTextW(s_label, L"client ready");
 		s_client_hwnd = (HWND)lp;
 
+		if (!s_send_message_pending_.empty()) {
+			debug(L" writing pending messages");
+		}
+		assert(s_out_write_connected);
+		for (auto&& message : s_send_message_pending_) {
+			do_write_to_input(std::move(message));
+		}
+		s_send_message_pending_.clear();
+
 		//EnableWindow(s_send_button, TRUE);
 		break;
 	}
@@ -583,9 +609,17 @@ static void on_wm_app(WPARAM wp, LPARAM lp) {
 		// クライアントがパイプにメッセージを書き込んだ後に送ってくる
 		auto size = (DWORD)lp;
 		debug(L"On client written: %d", size);
-		//assert(s_client_hwnd != nullptr);
+		assert(s_client_hwnd != nullptr);
 
 		read_output(size);
+		break;
+	}
+
+		// 以下のメッセージはランタイムのイベント発生をシミュレートするために送られる
+	case 201: {
+		debug(L"On runtime event");
+
+		enqueue_write_to_input(OsString{L"logmes called"});
 		break;
 	}
 	default:
