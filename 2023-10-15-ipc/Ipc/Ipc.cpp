@@ -544,6 +544,7 @@ static auto on_button_click() -> void {
 }
 
 static void on_destroy() {
+	debug(L"on_destroy");
 	CloseHandle(s_in_read_pipe);
 	CloseHandle(s_out_write_pipe);
 
@@ -612,6 +613,12 @@ static void on_wm_app(WPARAM wp, LPARAM lp) {
 		assert(s_client_hwnd != nullptr);
 
 		read_output(size);
+		break;
+	}
+	case 103: {
+		// クライアントの終了時に送られてくる
+
+		PostMessageW(s_main_hwnd, WM_CLOSE, 0, 0);
 		break;
 	}
 

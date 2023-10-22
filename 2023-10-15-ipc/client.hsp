@@ -100,6 +100,7 @@
 	pong_count = 0
 
 	oncmd gosub *on_app, WM_APP
+	onexit *on_exit
 
 	mes "stop"
 
@@ -156,7 +157,7 @@
 	if stat < 0 {
 		error "write"
 	}
-	; notify written
+	; 102: notify written
 	sendmsg s_server_hwnd, WM_APP, 102, msg_size
 	return
 
@@ -203,6 +204,14 @@
 	pos 10, 8 + 40 + 8
 	redraw
 	return
+
+*on_exit
+
+	if s_server_hwnd != 0 {
+		; 103: terminated
+		PostMessage s_server_hwnd, WM_APP, 103, 0
+	}
+	end
 
 #global
 
