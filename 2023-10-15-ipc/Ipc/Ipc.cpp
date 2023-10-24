@@ -475,16 +475,6 @@ static void do_write_to_input(OsStringView data) {
 	auto h_pipe = s_in_read_pipe;
 	auto text = os_to_utf8_str(data.data(), data.size());
 
-	//if (!s_in_read_connected) {
-	//	debug(L"writing after waiting for connection");
-	//	if (!WaitForSingleObject(h_pipe, (DWORD)3000)) {
-	//		auto err = GetLastError();
-	//		throw error(L"WaitForSingleObject %d", err);
-	//	}
-	//	s_in_read_connected = true;
-	//}
-	//assert(s_client_hwnd != nullptr);
-
 	auto written_size = DWORD{};
 	if (!WriteFile(
 	        h_pipe, text.data(), (DWORD)text.size(), &written_size,
