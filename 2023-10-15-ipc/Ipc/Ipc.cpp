@@ -201,16 +201,13 @@ static auto on_create(HWND hwnd) -> void {
 	init_main_window(hwnd);
 
 	// create pipes, spawn subprocess
-	auto name = OsString{s_work_dir};
-	if (name.ends_with(L"\\")) {
-		name.pop_back();
+	auto work_dir = OsString{s_work_dir};
+	{
+		auto index = work_dir.find(L"-ipc");
+		assert(index != std::u8string::npos);
+		work_dir.erase(index + 4);
 	}
-	if (name.ends_with(L"Ipc")) {
-		name.resize(name.size() - 3);
-	}
-	if (name.ends_with(L"\\")) {
-		name.pop_back();
-	}
+	auto name = work_dir;
 	name += L"\\client.exe";
 
 	auto cmdline = OsString{L"\""};
