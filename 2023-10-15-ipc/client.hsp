@@ -11,6 +11,7 @@
 
 #define error(%1) logmes (%1) : dialog ("ERROR: " + (%1)), 1 : end : end
 #define WM_APP 0x8000
+#define WM_COPYDATA 0x004A
 
 #deffunc app_entrypoint
 
@@ -35,18 +36,18 @@
 	mes dir_cmdline
 	cmdline = dir_cmdline
 	split cmdline, " ", args
-	input_pipe = ""
-	output_pipe = ""
+	; input_pipe = ""
+	; output_pipe = ""
 	server_hwnd_arg = ""
 	repeat length(args)
-		if strmid(args(cnt), 0, 8) == "--input=" {
-			input_pipe = strmid(args(cnt), 8, 0xFFFF)
-			continue
-		}
-		if strmid(args(cnt), 0, 9) == "--output=" {
-			output_pipe = strmid(args(cnt), 9, 0xFFFF)
-			continue
-		}
+		; if strmid(args(cnt), 0, 8) == "--input=" {
+		; 	input_pipe = strmid(args(cnt), 8, 0xFFFF)
+		; 	continue
+		; }
+		; if strmid(args(cnt), 0, 9) == "--output=" {
+		; 	output_pipe = strmid(args(cnt), 9, 0xFFFF)
+		; 	continue
+		; }
 		if strmid(args(cnt), 0, 14) == "--server-hwnd=" {
 			server_hwnd_arg = strmid(args(cnt), 14, 0xFFFF)
 			continue
@@ -55,18 +56,18 @@
 
 	; wait 300
 
-	if input_pipe == "" {
-		error "WARN: --input missing"
-	}
-	if output_pipe == "" {
-		error "WARN: --output missing"
-	}
+	; if input_pipe == "" {
+	; 	error "WARN: --input missing"
+	; }
+	; if output_pipe == "" {
+	; 	error "WARN: --output missing"
+	; }
 	if server_hwnd_arg == "" {
 		error "WARN: --server-hwnd missing"
 	}
 
-	mes "input = " + input_pipe
-	mes "output = " + output_pipe
+	; mes "input = " + input_pipe
+	; mes "output = " + output_pipe
 	mes "server-hwnd = " + server_hwnd_arg
 
 	; post a message to simulate a runtime event
@@ -74,21 +75,21 @@
 	PostMessage s_server_hwnd, WM_APP, 201, 0
 	await
 
-	pipe_rw_open_read input_pipe
-	s_input_pipe_id = stat
-	if s_input_pipe_id < 0 {
-		error "WARN: input_pipe not opened"
-	}
-	s_input_available = true
-	mes "input connected"
+	; pipe_rw_open_read input_pipe
+	; s_input_pipe_id = stat
+	; if s_input_pipe_id < 0 {
+	; 	error "WARN: input_pipe not opened"
+	; }
+	; s_input_available = true
+	; mes "input connected"
 
-	pipe_rw_open_write output_pipe
-	s_output_pipe_id = stat
-	if s_output_pipe_id < 0 {
-		error "WARN: output_pipe not opened"
-	}
-	s_output_available = true
-	mes "output connected"
+	; pipe_rw_open_write output_pipe
+	; s_output_pipe_id = stat
+	; if s_output_pipe_id < 0 {
+	; 	error "WARN: output_pipe not opened"
+	; }
+	; s_output_available = true
+	; mes "output connected"
 
 	; 101: hello, lp: clinet hwnd
 	mes "notify hello hwnd=" + hwnd
@@ -98,8 +99,10 @@
 	sdim buf, buf_size
 	ping_count = 0
 	pong_count = 0
+	sdim msg_data
 
 	oncmd gosub *on_app, WM_APP
+	oncmd gosub *on_copydata, WM_COPYDATA
 	onexit *on_exit
 
 	mes "stop"
@@ -110,6 +113,33 @@
 	; 	await 100
 	; loop
 	stop
+
+*on_copydata
+
+	mes strf("WM_COPYDATA (lp=%d)", lparam)
+
+	; COPYDATASTRUCT const*
+	; lp = lparam
+	dupptr copy_data, lparam, 3 * 4
+	msg_ptr = copy_data(2) ; lpData
+	msg_size = copy_data(1) ; cbData
+	dupptr msg_data, msg_ptr, msg_size, vartype("str")
+
+	; expand the buffer to hold the message
+	if buf_size <= msg_size {
+		buf_size = limit(msg_size + 1, buf_size * 2, 0x7fffffff)
+		assert buf_size - 1 >= msg_size
+		memexpand buf, buf_size
+	}
+	memcpy buf, msg_data, msg_size
+	poke buf, msg_size,
+	read_size = msg_size
+
+	sdim msg_data
+	dim copy_data
+
+	gosub *l_handle_message
+	return
 
 *on_app
 
@@ -140,25 +170,31 @@
 
 	return -1
 
-; use (buf, read_si)
+; use (buf, read_size)
 *l_handle_message
 
 	gosub *l_page_break
 
-	msg_contents = strmid(buf, 0, read_size)
-	mes "received: '" + msg_contents + "'"
+	; msg_contents = strmid(buf, 0, read_size)
+	; mes "received: '" + msg_contents + "'"
+	mes "received: '" + buf + "'"
 
 	; send a message back
-	msg_contents = "pong: " + msg_contents
+	msg_contents = "pong: " + buf
 	msg_size = strlen(msg_contents)
 	pong_count++
 	mes "writing: '" + msg_contents + "' (" + msg_size + ")"
-	pipe_rw_write_block s_output_pipe_id, msg_contents, msg_size
-	if stat < 0 {
-		error "write"
-	}
-	; 102: notify written
-	sendmsg s_server_hwnd, WM_APP, 102, msg_size
+	; pipe_rw_write_block s_output_pipe_id, msg_contents, msg_size
+	; if stat < 0 {
+	; 	error "write"
+	; }
+	; ; 102: notify written
+	; sendmsg s_server_hwnd, WM_APP, 102, msg_size
+
+	dim copy_data, 3 * 4
+	copy_data = 0, msg_size, varptr(msg_contents) ; dwData, cbData, lpData
+	assert s_server_hwnd != 0
+	sendmsg s_server_hwnd, WM_COPYDATA, 0, varptr(copy_data)
 	return
 
 *l_send_message
@@ -174,12 +210,17 @@
 
 	ping_count++
 	mes "writing: '" + msg_contents + "' (" + msg_size + ")"
-	pipe_rw_write_block s_output_pipe_id, msg_contents, msg_size
-	if stat < 0 {
-		error "write"
-	}
-	; notify written
-	sendmsg s_server_hwnd, WM_APP, 102, msg_size
+	; pipe_rw_write_block s_output_pipe_id, msg_contents, msg_size
+	; if stat < 0 {
+	; 	error "write"
+	; }
+	; ; notify written
+	; sendmsg s_server_hwnd, WM_APP, 102, msg_size
+
+	dim copy_data, 3 * 4
+	copy_data = 0, msg_size, varptr(msg_contents) ; dwData, cbData, lpData
+	assert s_server_hwnd != 0
+	sendmsg s_server_hwnd, WM_COPYDATA, 0, varptr(copy_data)
 
 	s_input_buf = ""
 	objprm s_input_id, s_input_buf
