@@ -813,9 +813,14 @@ let generateLrParser (grammarText: string) : LrParser =
              let (Lr1Term (branchId, dot, skip, lookahead)) = lt
              let _, terms = branchArray.[branchId]
 
+             // ドットが非終端記号についている場合は、その非終端記号から導出するルールのLR(1)項を状態に加える
              if dot < terms.Length then
                match terms.[dot] with
                | Term.Node (nodeId, _) ->
+                 // ドットがついている項より後の部分のFIRST集合が先読みとなる
+                 // ((X → … ・Y Z, w) なら FIRST(Z w) に含まれる記号を先読みとする)
+                //  trace "  on dot:%d %s" dot (Term.toString termArray.[nodeId])
+
                  let lookaheadSet =
                    let rest = Array.append terms.[dot + 1 ..] [| termArray.[lookahead] |]
                    computeFirstOf rest
