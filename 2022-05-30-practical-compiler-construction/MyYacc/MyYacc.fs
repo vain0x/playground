@@ -806,9 +806,7 @@ let generateLrParser (grammarText: string) : LrParser =
       else
         modified, state
 
-    let rec go acc =
-      let _, state = acc
-
+    let rec go state =
       state
       |> Set.fold
            (fun acc (lt: Lr1Term) ->
@@ -847,10 +845,10 @@ let generateLrParser (grammarText: string) : LrParser =
                | Term.Token _ -> acc
              else
                acc)
-           acc
+           (false, state)
 
     let rec makeClosure state =
-      let modified, state = go (false, state)
+      let modified, state = go state
 
       if modified then
         makeClosure state
