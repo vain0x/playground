@@ -3,6 +3,7 @@ module MyYacc
 module MyLex = MyLex
 
 type private Dictionary<'K, 'T> = System.Collections.Generic.Dictionary<'K, 'T>
+type private Stack<'T> = System.Collections.Generic.Stack<'T>
 
 let inline private unreachable () = failwith "unreachable"
 
@@ -21,7 +22,7 @@ let private addMultiset key value map =
 
 // Set true to print trace logs.
 [<Literal>]
-let private Trace = false
+let private Trace = true
 
 let private trace fmt =
   Printf.kprintf (if Trace then eprintf "%s\n" else ignore) fmt
@@ -644,7 +645,7 @@ let private computeFollowSet (nullableSet: NullableSet) (firstSet: FirstSet) (ru
 // -----------------------------------------------
 
 /// Production rule (`X -> A B`.)
-type private BranchData = NodeId * Term list
+type private BranchData = NodeId * Term array
 
 type private BranchId = int
 
@@ -686,56 +687,44 @@ let generateLrParser (grammarText: string) : LrParser =
   let firstSet = computeFirstSet termArray nullableSet rules
   // let followSet = computeFollowSet nullableSet firstSet rules
 
+  let ruleBranches: BranchId array array = Array.replicate termArray.Length Array.empty
+  let branchArray = ResizeArray<BranchData>()
+  let branchPrec = ResizeArray<int * Assoc>()
   let stateArray = ResizeArray<Lr1State>()
   let stateMemo = Dictionary<Lr1State, StateId>()
   let edgeMap = Dictionary<StateId * TermId, StateId>()
-  let generatedStateStack = System.Collections.Generic.Stack()
+  let generatedStateStack = Stack()
   let branchNames = ResizeArray()
 
-  let branchArray, branchPrec, ruleBranches =
-    let acc = ResizeArray()
-    let branchPrec = ResizeArray()
-    let ruleBranches = Array.replicate termArray.Length Array.empty
+  // 生成規則のブランチごとにブランチデータを生成する
+  let addBranch (nodeId: NodeId) (b: Branch) : BranchId =
+    let bi = branchArray.Count
+    let name, prec, terms = b
 
-    rules
-    |> List.fold
-         (fun bi (ruleId, branches) ->
-           let branchIds = ResizeArray()
+    trace
+      "branch %d:%s %s -> %s"
+      bi
+      name
+      (Term.toString termArray.[nodeId])
+      (terms
+        |> List.map Term.toString
+        |> String.concat " ")
 
-           let bi =
-             branches
-             |> List.fold
-                  (fun bi (b: Branch) ->
-                    let name, prec, terms = b
+    branchArray.Add(nodeId, terms |> List.toArray)
+    branchPrec.Add(prec)
+    branchNames.Add(name)
+    bi
 
-                    trace
-                      "branch %d:%s %s -> %s"
-                      bi
-                      name
-                      (Term.toString termArray.[ruleId])
-                      (terms
-                       |> List.map Term.toString
-                       |> String.concat " ")
+  for ruleId, branches in rules do
+    let branchIds = [| for b in branches -> addBranch ruleId b |]
 
-                    acc.Add(ruleId, terms |> List.toArray)
-                    branchPrec.Add(prec)
-                    branchIds.Add(bi)
-                    branchNames.Add(name)
-                    bi + 1)
-                  bi
+    trace
+      "rule-branches %d:%s -> %s"
+      ruleId
+      (Term.toString termArray.[ruleId])
+      (branchIds |> Seq.map string |> String.concat ", ")
 
-           trace
-             "rule-branches %d:%s -> %s"
-             ruleId
-             (Term.toString termArray.[ruleId])
-             (branchIds |> Seq.map string |> String.concat ", ")
-
-           ruleBranches.[ruleId] <- branchIds.ToArray()
-           bi)
-         0
-    |> ignore
-
-    acc.ToArray(), branchPrec.ToArray(), ruleBranches
+    ruleBranches.[ruleId] <- branchIds
 
   let computeFirstOf (terms: Term array) : Set<TokenId> =
     let rec go state i =
