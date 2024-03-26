@@ -1,0 +1,87 @@
+grammar:
+
+    %start
+    block: LB decs stmts RB
+
+    dec: ID FD
+    decs: /* empty */
+    decs: dec decs
+
+    stmt: ID EQ
+    stmts: stmts stmt
+    stmts: stmt
+
+
+
+FIRST:
+    FIRST(decs stmts RB) = {ID, RB}
+    FIRST(stmts RB) = {ID, RB}
+    FIRST(dec) = {ID}
+    FIRST(decs) = {ID}
+    FIRST(stmt) = {ID}
+    FIRST(stmts) = {ID}
+
+
+
+state 1:
+    (initial)
+    block: *LB decs stmts RB, EOF
+
+state 2:
+    (from 1:LB)
+    block: LB *decs stmts RB, EOF
+    decs: *, FIRST(stmts RB)
+    decs: *dec decs, FIRST(stmts RB)
+    dec: *ID FD, FIRST(decs stmts RB)
+
+state 3:
+    (from 2:decs)
+    block: LB decs *stmts RB, EOF
+    stmts: *stmts stmt, FIRST(stmts RB)
+    stmts: *stmt, FIRST(stmts RB)
+    stmt: *ID EQ, FIRST(stmt, stmts RB)
+
+state 4:
+    (from 2:dec, from 4:DEC)
+    decs: dec *decs, FIRST(stmts RB)
+    decs: *, FIRST(decs stmts RB)
+    decs: *dec decs, FIRST(stmts RB)
+    dec: *ID FD, FIRST(decs stmts RB, stmts RB)
+
+state 5:
+    (from 2:ID, 4:ID)
+    dec: ID *FD, FIRST(decs stmts RB)
+
+state 6:
+    (from 3:stmts)
+    block: LB decs stmts *RB, EOF
+    stmts: stmts *stmt, FIRST(stmts RB)
+    stmt: *ID EQ, FIRST(stmts RB)
+
+state 7:
+    (from 3:stmt)
+    stmts: stmt *, FIRST(stmts RB)
+
+state 8:
+    (from 3:ID, 6:ID)
+    stmt: ID *EQ, FIRST(stmt, stmts RB)
+
+state 9:
+    (from 4:decs)
+    decs: dec decs *, FIRST(stmts RB)
+
+state 10:
+    (from 5:FD)
+    dec: ID FD *, FIRST(decs stmts RB)
+
+state 11:
+    (from 6:RB)
+    block: LB decs stmts RB *, EOF
+
+state 12:
+    (from 6:stmt)
+    stmts: stmts stmt *, FIRST(stmts RB)
+
+state 13:
+    (from 8:EQ)
+    stmt: ID EQ *, FIRST(stmt, stmts RB)
