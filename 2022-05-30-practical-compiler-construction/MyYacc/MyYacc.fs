@@ -22,7 +22,7 @@ let private addMultiset key value map =
 
 // Set true to print trace logs.
 [<Literal>]
-let private Trace = true
+let private Trace = false
 
 let private trace fmt =
   Printf.kprintf (if Trace then eprintf "%s\n" else ignore) fmt
@@ -827,12 +827,13 @@ let generateLrParser (grammarText: string) : LrParser =
                         acc
 
                  // 空許容なノードを飛び越えた後の項を加える
-                 let acc =
-                   if nullableSet |> Set.contains nodeId then
-                     let lt = Lr1Term(branchId, dot + 1, skip + 1, lookahead)
-                     addLt acc lt
-                   else
-                     acc
+                //
+                //  let acc =
+                //    if nullableSet |> Set.contains nodeId then
+                //      let lt = Lr1Term(branchId, dot + 1, skip + 1, lookahead)
+                //      addLt acc lt
+                //    else
+                //      acc
 
                  acc
 

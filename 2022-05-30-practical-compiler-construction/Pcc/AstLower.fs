@@ -32,7 +32,12 @@ let private lowerTyp element =
 let private lowerDecs element =
   match element with
   | PElement.Node ("DecsNil", _) -> []
-  | PElement.Node ("DecsCons", [ h; t ]) -> lowerDec h :: lowerDecs t
+
+  // FIXME: `decs` が空列に還元されたとき空の宣言列が子要素として追加されない
+  //        (空許容な非終端記号の飛び越しを同一の状態に含める場合)
+  // | PElement.Node ("DecsCons", [ t ]) -> [ lowerDec t ]
+
+  | PElement.Node ("DecsCons", [ h; t ]) -> List.append (lowerDecs h) [ lowerDec t ]
   | _ -> unreachable element
 
 let private lowerDec element =
