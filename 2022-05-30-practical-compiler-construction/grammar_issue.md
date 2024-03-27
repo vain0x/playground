@@ -1,6 +1,8 @@
 # 文法の問題
 
-(* 本の定義では dec decs ではなく decs dec の並びだったが、状況はあまり変わらない *)
+TODO: decs → dec decs から decs → decs dec に置き換えたので記述を見直す
+
+----
 
 本の記述を参考にパーサジェネレータを作っている。
 しかしパースできそうにない構文がみつかった
@@ -15,7 +17,7 @@
     dec : ID ID '(' ')' block;
 
     decs : /* empty */
-         | dec decs;
+         | decs dec;
 
     # 代入文のような構文。例: `x = y;`
     stmt : ID '=' ID ';';
@@ -47,9 +49,9 @@
     block → '{' decs ・ stmts '}'
     dec → ・ ID ID '(' ')' block
     decs → ・
-    decs → ・ dec decs
+    decs → ・ decs dec
     decs → dec ・ decs
-    decs → dec decs ・
+    decs → decs dec ・
     stmt → ・ ID '=' ID ';'
     stmts → ・ stmts stmt
     stmts → ・ stmt
@@ -60,7 +62,7 @@
 
 入力Bの場合、次にくるのも関数宣言 (`c d() {...}`) なので、ここではシフトしてほしい。
 (その後、関数宣言の '}' までシフトした後にdecを還元する。
-次に空列からdecsに還元し、`dec decs` からdecsを還元する。
+次に空列からdecsに還元し、`decs dec` からdecsを還元する。
 2行目の関数宣言であるdecと、いま作ったdecsで改めて `decs` を還元する。
 その後 `z` をシフトして `stmts` のパースに入る。後は入力Aと同様の流れ)
 

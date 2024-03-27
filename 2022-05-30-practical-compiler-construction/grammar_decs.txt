@@ -2,7 +2,7 @@
 prog : block
      ;
 
-decs : dec decs
+decs : decs dec
      | /* empty */
      ;
 

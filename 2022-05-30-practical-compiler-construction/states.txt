@@ -5,7 +5,7 @@ grammar:
 
     dec: ID FD
     decs: /* empty */
-    decs: dec decs
+    decs: decs dec
 
     stmt: ID EQ
     stmts: stmts stmt
@@ -23,6 +23,14 @@ FIRST:
 
 
 
+legend:
+    state s:
+        (from t:X)  // edge: state t -[X]-> s
+        lr1-terms
+        X: α *X β, lookahead
+
+
+
 state 1:
     (initial)
     block: *LB decs stmts RB, EOF
@@ -31,12 +39,14 @@ state 2:
     (from 1:LB)
     block: LB *decs stmts RB, EOF
     decs: *, FIRST(stmts RB)
-    decs: *dec decs, FIRST(stmts RB)
+    decs: *decs dec, FIRST(stmts RB)
     dec: *ID FD, FIRST(decs stmts RB)
 
 state 3:
     (from 2:decs)
     block: LB decs *stmts RB, EOF
+    decs: decs *dec, FIRST(stmts RB)
+    dec: *ID FD, FIRST(stmts RB)
     stmts: *stmts stmt, FIRST(stmts RB)
     stmts: *stmt, FIRST(stmts RB)
     stmt: *ID EQ, FIRST(stmt, stmts RB)
@@ -45,12 +55,13 @@ state 4:
     (from 2:dec, from 4:DEC)
     decs: dec *decs, FIRST(stmts RB)
     decs: *, FIRST(decs stmts RB)
-    decs: *dec decs, FIRST(stmts RB)
+    decs: *decs dec, FIRST(stmts RB)
     dec: *ID FD, FIRST(decs stmts RB, stmts RB)
 
 state 5:
-    (from 2:ID, 4:ID)
+    (from 3:ID, 4:ID)
     dec: ID *FD, FIRST(decs stmts RB)
+    stmt: *ID EQ, FIRST(stmt, stmts RB)
 
 state 6:
     (from 3:stmts)
@@ -68,7 +79,7 @@ state 8:
 
 state 9:
     (from 4:decs)
-    decs: dec decs *, FIRST(stmts RB)
+    decs: decs dec *, FIRST(stmts RB)
 
 state 10:
     (from 5:FD)
