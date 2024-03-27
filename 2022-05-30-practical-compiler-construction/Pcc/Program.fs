@@ -42,6 +42,8 @@ module private UseMyYacc =
         PElement.Node("Root", children)
       | _ -> unreachable root
 
+    eprintfn "  ast: %A" root
+
     AstLower.lowerRoot root
 
   let internal run () =

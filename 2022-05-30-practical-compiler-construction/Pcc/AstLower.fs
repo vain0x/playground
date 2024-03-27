@@ -38,6 +38,10 @@ let private lowerDecs element =
   // | PElement.Node ("DecsCons", [ t ]) -> [ lowerDec t ]
 
   | PElement.Node ("DecsCons", [ h; t ]) -> List.append (lowerDecs h) [ lowerDec t ]
+
+  // FIXME: パーサの実装不備により空列はEpsという名前のノードになってしまう (DecsNilであるべき)
+  | PElement.Node ("Eps", _) -> []
+
   | _ -> unreachable element
 
 let private lowerDec element =
@@ -66,6 +70,10 @@ let private lowerFargsOpt element =
   match element with
   | PElement.Node ("FArgsNone", _) -> []
   | PElement.Node ("FArgsSome", [ fargs ]) -> lowerFargs fargs
+
+  // FIXME: パーサの実装不備
+  | PElement.Node ("Eps", _) -> []
+
   | _ -> unreachable element
 
 let private lowerFargs element =
