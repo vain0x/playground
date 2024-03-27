@@ -59,7 +59,7 @@ let private lowerDec element =
 let private lowerIds element : string list =
   match element with
   | PElement.Node ("IdsSingle", [ id ]) -> [ lowerId id ]
-  | PElement.Node ("IdsCons", [ h; _; t ]) -> lowerId h :: lowerIds t
+  | PElement.Node ("IdsCons", [ h; _; t ]) -> List.append (lowerIds h) [ lowerId t ]
   | _ -> unreachable element
 
 let private lowerFargsOpt element =
