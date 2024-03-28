@@ -40,7 +40,6 @@ state 2:
     block: LB *decs stmts RB, EOF
     decs: *, FIRST(stmts RB)
     decs: *decs dec, FIRST(stmts RB)
-    dec: *ID FD, FIRST(decs stmts RB)
 
 state 3:
     (from 2:decs)
@@ -52,47 +51,42 @@ state 3:
     stmt: *ID EQ, FIRST(stmt, stmts RB)
 
 state 4:
-    (from 2:dec, from 4:DEC)
-    decs: dec *decs, FIRST(stmts RB)
-    decs: *, FIRST(decs stmts RB)
-    decs: *decs dec, FIRST(stmts RB)
-    dec: *ID FD, FIRST(decs stmts RB, stmts RB)
-
-state 5:
-    (from 3:ID, 4:ID)
-    dec: ID *FD, FIRST(decs stmts RB)
-    stmt: *ID EQ, FIRST(stmt, stmts RB)
-
-state 6:
     (from 3:stmts)
     block: LB decs stmts *RB, EOF
     stmts: stmts *stmt, FIRST(stmts RB)
-    stmt: *ID EQ, FIRST(stmts RB)
+    stmts: *stmt, FIRST(stmts RB)
+    stmt: *ID EQ, FIRST(stmt, stmts RB)
+
+state 5:
+    (from 3:dec)
+    decs: decs dec *, FIRST(stmts RB)
+
+state 6:
+    (from 3:ID)
+    dec: ID *FD, FIRST(stmts RB)
+    stmt: ID *EQ, FIRST(stmt, stmts RB)
 
 state 7:
     (from 3:stmt)
     stmts: stmt *, FIRST(stmts RB)
 
 state 8:
-    (from 3:ID, 6:ID)
-    stmt: ID *EQ, FIRST(stmt, stmts RB)
-
-state 9:
-    (from 4:decs)
-    decs: decs dec *, FIRST(stmts RB)
-
-state 10:
-    (from 5:FD)
-    dec: ID FD *, FIRST(decs stmts RB)
-
-state 11:
-    (from 6:RB)
+    (from 4:RB)
     block: LB decs stmts RB *, EOF
 
-state 12:
-    (from 6:stmt)
+state 9:
+    (from 4:stmt)
     stmts: stmts stmt *, FIRST(stmts RB)
+    stmts: stmt *, FIRST(stmts RB)
 
-state 13:
-    (from 8:EQ)
+state 10:
+    (from 4:ID)
+    stmt: ID *EQ, FIRST(stmt, stmts RB)
+
+state 11:
+    (from 6:FD)
+    dec: ID FD *, FIRST(decs stmts RB)
+
+state 12:
+    (from 6:EQ, 10:EQ)
     stmt: ID EQ *, FIRST(stmt, stmts RB)
