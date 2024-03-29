@@ -68,8 +68,8 @@ let private lowerIds element : string list =
 
 let private lowerFargsOpt element =
   match element with
-  | PElement.Node ("FArgsNone", _) -> []
-  | PElement.Node ("FArgsSome", [ fargs ]) -> lowerFargs fargs
+  | PElement.Node ("FArgsOptNone", _) -> []
+  | PElement.Node ("FArgsOptSome", [ fargs ]) -> lowerFargs fargs
 
   // FIXME: パーサの実装不備
   | PElement.Node ("Eps", _) -> []
