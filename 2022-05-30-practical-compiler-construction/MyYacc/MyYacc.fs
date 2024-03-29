@@ -945,9 +945,10 @@ let generateLrParser (grammarText: string) : LrParser =
 
         if prec < precAt stateId lookahead then
           trace "  less priority"
-        else if terms.Length = 0 then
-          trace "  empty branch"
         else
+          if terms.Length = 0 then
+            trace "  empty branch"
+
           // スタックからポップする状態の個数
           // スキップした空許容なノードに対応する状態がスタックに配置されてないので、スキップした数だけポップする数を減らす
           // let width = dot - List.length skip
