@@ -1,8 +1,14 @@
-# 文法の問題
+# ~~文法の問題~~
 
-TODO: decs → dec decs から decs → decs dec に置き換えたので記述を見直す
+**勘違い** だった。原因:
+
+- `decs → decs dec` の右辺の順番を間違えていて `dec decs` にしてしまっていた
+- MyYaccの実装で、空規則の `reduce` アクションが生成されないバグがあった
 
 ----
+----
+
+(**以下の記述は誤り**。本の記述は正しかった)
 
 本の記述を参考にパーサジェネレータを作っている。
 しかしパースできそうにない構文がみつかった
@@ -17,7 +23,7 @@ TODO: decs → dec decs から decs → decs dec に置き換えたので記述�
     dec : ID ID '(' ')' block;
 
     decs : /* empty */
-         | decs dec;
+         | dec decs;           // EDIT: ←これが誤り、冒頭を見よ
 
     # 代入文のような構文。例: `x = y;`
     stmt : ID '=' ID ';';
@@ -49,9 +55,9 @@ TODO: decs → dec decs から decs → decs dec に置き換えたので記述�
     block → '{' decs ・ stmts '}'
     dec → ・ ID ID '(' ')' block
     decs → ・
-    decs → ・ decs dec
+    decs → ・ dec decs
     decs → dec ・ decs
-    decs → decs dec ・
+    decs → dec decs ・
     stmt → ・ ID '=' ID ';'
     stmts → ・ stmts stmt
     stmts → ・ stmt
@@ -62,7 +68,7 @@ TODO: decs → dec decs から decs → decs dec に置き換えたので記述�
 
 入力Bの場合、次にくるのも関数宣言 (`c d() {...}`) なので、ここではシフトしてほしい。
 (その後、関数宣言の '}' までシフトした後にdecを還元する。
-次に空列からdecsに還元し、`decs dec` からdecsを還元する。
+次に空列からdecsに還元し、`dec decs` からdecsを還元する。
 2行目の関数宣言であるdecと、いま作ったdecsで改めて `decs` を還元する。
 その後 `z` をシフトして `stmts` のパースに入る。後は入力Aと同様の流れ)
 
