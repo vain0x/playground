@@ -42,7 +42,7 @@ module private UseMyYacc =
         PElement.Node("Root", children)
       | _ -> unreachable root
 
-    eprintfn "  ast: %A" root
+    eprintfn "Parse success! Parse tree is: %A" root
 
     AstLower.lowerRoot root
 
