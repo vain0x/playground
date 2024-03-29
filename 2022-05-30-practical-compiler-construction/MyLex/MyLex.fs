@@ -1,6 +1,17 @@
+// lex (正規表現による字句解析器ジェネレータ) の実装
+//
+// `lex.txt` のコンテンツをパースして字句解析器を生成する
+//
+// ENV:
+//    環境変数 LEX_VERBOSE=1 とするとデバッグ出力を行う
+
 module MyLex
 
-type private Dictionary<'K, 'T> = System.Collections.Generic.Dictionary<'K, 'T>
+open System.Collections.Generic
+
+// -----------------------------------------------
+// Util
+// -----------------------------------------------
 
 let inline private unreachable () = failwith "unreachable"
 
@@ -17,40 +28,34 @@ let private addMulti key value map =
 // -----------------------------------------------
 
 // Set true to print trace logs.
-[<Literal>]
-let private Trace = false
+let private allowTrace = System.Environment.GetEnvironmentVariable("LEX_VERBOSE") <> "1"
 
 let private trace fmt =
-  Printf.kprintf (if Trace then eprintf "%s\n" else ignore) fmt
+  Printf.kprintf (if allowTrace then eprintf "%s\n" else ignore) fmt
 
 // -----------------------------------------------
 // Parse
 // -----------------------------------------------
 
-// Parse lex.txt
+// `lex.txt` に書かれている字句定義をパースする
 
 exception ParseLexerException of msg: string * row: int * column: int
 
 exception private ParseTermException of msg: string * index: int
 
-/// Term of regular expression.
+/// 正規表現の項(term)
 [<RequireQualifiedAccess; NoEquality; NoComparison>]
 type Term =
+  /// `foo` 文字列リテラル
   | String of string
-  /// `[...]`
-  | AnyOf of byte []
-  /// `[^...]`
-  | NoneOf of byte []
+  /// `[...]` 文字集合
+  | AnyOf of byte array
+  /// `[^...]` 文字集合の補集合
+  | NoneOf of byte array
   /// `x*`
   | Rep of Term
   /// `x+`
   | Rep1 of Term
-
-/// Checks if `text.[i..]` starts with `infix`.
-let private occursAt (infix: string) (text: string) i =
-  i + infix.Length <= text.Length
-  && (infix.Length = 0 || text.[i] = infix.[0])
-  && text.[i .. i + infix.Length - 1] = infix
 
 /// Un-escapes a character.
 let private unescape i (c: char) =
@@ -216,15 +221,19 @@ let parseLexer (text: string) : (string * Term list) list =
 // NTerm
 // -----------------------------------------------
 
-/// Normalized term.
+/// 正規表現の項 (normalized term) を正規化したもの
 [<RequireQualifiedAccess; NoEquality; NoComparison>]
 type private NTerm =
-  | AnyOf of byte []
+  /// 文字集合
+  | AnyOf of byte array
+  /// 連接 (conjunctive)
   | Conj of NTerm * NTerm
+  /// 繰り返し (repetition)
   | Rep of NTerm
 
-let rec private lower term =
+let rec private lower (term: Term) : NTerm =
   match term with
+  // 文字列リテラル →　文字の連接 (e.g. `abc` → `[a] [b] [c]`)
   | Term.String s ->
     let rec go (l: int) r =
       assert (l < r)
@@ -240,12 +249,14 @@ let rec private lower term =
 
   | Term.AnyOf chars -> NTerm.AnyOf chars
 
+  // 補集合を計算する (ここでは1バイトの文字しか考慮していない)
   | Term.NoneOf chars ->
     NTerm.AnyOf [| for c in 1uy .. 255uy do
                      if Array.contains c chars |> not then c |]
 
   | Term.Rep t -> NTerm.Rep(lower t)
 
+  // `X+` → `X (X*)`
   | Term.Rep1 t ->
     let t = lower t
     NTerm.Conj(t, NTerm.Rep t)
@@ -263,6 +274,8 @@ let private lowerTerms terms =
 // -----------------------------------------------
 // NFA
 // -----------------------------------------------
+
+// 正規表現から NFA (non-deterministic finite automaton; 非決定性有限オートマトン) を構築する部分
 
 /// NFA (Non-deterministic finite automaton)
 ///
@@ -382,13 +395,16 @@ let emulateNfa (input: string) (nfa: Nfa) : string option =
 
 exception TokenizeException of index: int
 
+/// NFAを使って字句解析を実行する
+///
+/// 出力: (種類名, マッチしたトークンの長さ) からなるリスト
 let tokenizeWithNfa (input: string) (nfa: Nfa) : (string * int) list =
   let u, trans, accepts = nfa
 
-  let setArray = ResizeArray()
+  let setArray = ResizeArray<Set<int>>()
   let setMemo = Dictionary<Set<int>, int>()
   let edgeMemo = Dictionary<int * byte, int>()
-  let acceptMemo = ResizeArray()
+  let acceptMemo = ResizeArray<string option>()
 
   let internSet (d: Set<int>) =
     match setMemo.TryGetValue(d) with
@@ -488,6 +504,7 @@ let tokenizeWithNfa (input: string) (nfa: Nfa) : (string * int) list =
 type NfaLexer = private { Nfa: Nfa }
 
 module NfaLexer =
+  /// 字句定義をパースして字句解析器を生成する
   let parse (lexText: string) : NfaLexer =
     try
       let rules = parseLexer lexText
@@ -497,7 +514,10 @@ module NfaLexer =
       printfn "FATAL: Invalid lexer. %s at %d:%d" msg (row + 1) (column + 1)
       exit 1
 
-  let tokenize (input: string) (lexer: NfaLexer) =
+  /// 字句解析を実行する
+  ///
+  /// 出力: (種類, 文字列) からなるリスト
+  let tokenize (input: string) (lexer: NfaLexer) : (string * string) list =
     // Tokenize.
     let tokens =
       try
@@ -524,7 +544,7 @@ module NfaLexer =
 
     List.rev acc
 
-let dumpTokens tokens =
+let dumpTokens (tokens: (string * int) list) : unit =
   tokens
   |> List.map (fun (kind, len) -> sprintf "%s(%d)" kind len)
   |> String.concat " "

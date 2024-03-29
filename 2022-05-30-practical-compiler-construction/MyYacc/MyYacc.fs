@@ -1,9 +1,15 @@
+// yacc (LR(1)パーサジェネレータ) の実装
+//
+// ENV:
+//    環境変数 YACC_VERBOSE=1 とするとデバッグ出力を行う
+
 module MyYacc
 
-module MyLex = MyLex
+open System.Collections.Generic
 
-type private Dictionary<'K, 'T> = System.Collections.Generic.Dictionary<'K, 'T>
-type private Stack<'T> = System.Collections.Generic.Stack<'T>
+// -----------------------------------------------
+// Util
+// -----------------------------------------------
 
 let inline private unreachable () = failwith "unreachable"
 
@@ -21,11 +27,10 @@ let private addMultiset key value map =
 // -----------------------------------------------
 
 // Set true to print trace logs.
-[<Literal>]
-let private Trace = false
+let private allowTrace = System.Environment.GetEnvironmentVariable("YACC_VERBOSE") <> "1"
 
 let private trace fmt =
-  Printf.kprintf (if Trace then eprintf "%s\n" else ignore) fmt
+  Printf.kprintf (if allowTrace then eprintf "%s\n" else ignore) fmt
 
 // -----------------------------------------------
 // Types
@@ -45,7 +50,7 @@ type private TokenText = string
 /// ノードの名前
 type private NodeText = string
 
-/// 項をインターン化したID
+/// 項ID (インターン化された項ID、つまり `termArray` におけるインデックス)
 type private TermId = int
 type private TokenId = TermId
 type private NodeId = TermId
@@ -82,7 +87,11 @@ let private Eof: TokenId = 0
 // Parse Grammar
 // -----------------------------------------------
 
+// `grammar.txt` に書かれている構文定義をパースする
+
 exception ParseGrammarException of msg: string * index: int
+
+// パース結果の型:
 
 [<RequireQualifiedAccess; NoEquality; NoComparison>]
 type private ParsedTerm =
@@ -277,8 +286,7 @@ let private parseDirective acc (text: string) i =
     ParseGrammarException("Expected directive", i)
     |> raise
 
-// see grammar.txt for example
-let private parseGrammar (text: string) =
+let private parseGrammar (text: string) : Acc =
   let rec go acc i =
     if i < text.Length then
       let acc, i = parseDirective acc text i
@@ -439,8 +447,12 @@ let private lower (parsedAcc: Acc) =
 // Nullable
 // -----------------------------------------------
 
+
+/// 空許容(nullable)なノードIDからなる集合
 type private NullableSet = Set<NodeId>
 
+/// ノードがそれぞれ空許容(nullable)かどうかを計算する
+// (不動点アルゴリズムによって計算できる)
 let private computeNullableSet (rules: Rule list) : NullableSet =
   let nullableSet, rules =
     let isNode t =
@@ -500,8 +512,13 @@ let private computeNullableSet (rules: Rule list) : NullableSet =
 // First
 // -----------------------------------------------
 
+/// ノードごとの `FIRST` 集合の計算結果
 type private FirstSet = Map<TermId, Set<TokenId>>
 
+/// 項列の `FIRST` 集合を計算する。
+///
+/// 事前計算によって `nullableSet`, `firstSet` が与えられている必要がある。
+/// (ノードのFIRST集合は `firstSet` のみ参照する)
 let private computeFirstOf (nullableSet: NullableSet) (firstSet: FirstSet) (terms: Term list) =
   let rec go acc terms =
     match terms with
@@ -519,6 +536,8 @@ let private computeFirstOf (nullableSet: NullableSet) (firstSet: FirstSet) (term
 
   go Set.empty terms
 
+/// 構文定義にもとづいて、ノードの `FIRST` 集合をすべて計算する
+// (不動点アルゴリズムによって計算する)
 let private computeFirstSet (termArray: Term array) (nullableSet: NullableSet) (rules: Rule list) : FirstSet =
   let firstOf (acc: FirstSet) terms = computeFirstOf nullableSet acc terms
 
@@ -564,11 +583,11 @@ let private computeFirstSet (termArray: Term array) (nullableSet: NullableSet) (
 // Follow
 // -----------------------------------------------
 
-// LRパースでFOLLOW集合は使わない。SLRでは使う
+// NOTE: LRパースでFOLLOW集合は使わない。SLRでは使うらしい
 
 type private FollowSet = Map<TermId, Set<TermId>>
 
-type private FollowAcc = bool * FollowSet
+// type private FollowAcc = bool * FollowSet
 
 let private computeFollowSet (nullableSet: NullableSet) (firstSet: FirstSet) (rules: Rule list) : FollowSet =
   let isNullable i = nullableSet |> Set.contains i
@@ -644,12 +663,14 @@ let private computeFollowSet (nullableSet: NullableSet) (firstSet: FirstSet) (ru
 // LR Parser Generation
 // -----------------------------------------------
 
-/// Production rule (`X -> A B`.)
+/// 生成規則 (production rule) (`X -> A B`)
 type private BranchData = NodeId * Term array
 
 type private BranchId = int
 
 /// LR(1)-term
+///
+/// (ブランチID, ドットの位置, 先読み)
 type private Lr1Term = Lr1Term of BranchId * dotPos: int * lookahead: TokenId
 
 /// State of DFA for LR(1).
@@ -658,6 +679,7 @@ type private Lr1State = Set<Lr1Term>
 /// Interned ID of state.
 type private StateId = int
 
+/// LRパーサのアクション (パーサテーブルに書き込まれる操作)
 [<RequireQualifiedAccess; NoEquality; NoComparison>]
 type private LrAction =
   | Shift of StateId
@@ -667,6 +689,7 @@ type private LrAction =
   | Reduce of NodeId * BranchId * width: int
   | Accept of BranchId
 
+/// LRパーサ
 [<RequireQualifiedAccess; NoEquality; NoComparison>]
 type LrParser =
   private
@@ -678,6 +701,7 @@ type LrParser =
       // branchId -> name of reduced node
       BranchArray: string array }
 
+/// LRパーサを生成する
 let generateLrParser (grammarText: string) : LrParser =
   let termArray, tokenMemo, _nodeMemo, root, rules = parseGrammar grammarText |> lower
 
@@ -865,7 +889,9 @@ let generateLrParser (grammarText: string) : LrParser =
       edgeMap.[(s, termId)] <- nextState)
     |> Seq.iter ignore
 
-  // Generate DFA.
+  // DFAを生成する。開始規則を含む状態集合から始めて、
+  // すべての状態集合とそこから伸びる辺や遷移先の状態集合を計算することを繰り返し、
+  // オートマトン全体を構築する
   let initialState =
     ruleBranches.[root]
     |> Array.map (fun bi -> Lr1Term(bi, 0, Eof))
@@ -876,7 +902,7 @@ let generateLrParser (grammarText: string) : LrParser =
     let state = generatedStateStack.Pop()
     genAdjacentEdges state
 
-  // Convert DFA to table.
+  // DFAからパーサテーブルを構築する
   let table = Dictionary<StateId * TermId, LrAction>()
   let tablePrec = Dictionary<StateId * TermId, int>()
   let mutable acceptSet: Set<StateId> = Set.empty
@@ -956,12 +982,16 @@ let generateLrParser (grammarText: string) : LrParser =
     TokenMemo = tokenMemo
     BranchArray = branchNames.ToArray() }
 
+/// パースイベント (パース出力の要素)
 [<RequireQualifiedAccess; NoEquality; NoComparison>]
 type ParseEvent =
+  /// 入力トークン列の位置 `index` にあるトークンをシフトすること
   | Token of index: int
+  /// 構文ノードの開始で、次の `count` 個のイベントを子要素とすること
   | StartNode of name: string * count: int
 
 module LrParser =
+  /// トークン列に対して構文解析を実行する
   let parse (tokens: string list) (p: LrParser) =
     let tokenMemo = Array.append (Array.ofList tokens) [| "$"; "$$" |]
     let tokenCount = tokenMemo.Length - 2
@@ -1070,13 +1100,14 @@ module ParseEvent =
 // Parse Tree
 // -----------------------------------------------
 
-/// Element of parse tree.
+/// 解析木の要素
 [<RequireQualifiedAccess; NoEquality; NoComparison>]
 type PElement =
   | Token of name: string * text: string
   | Node of name: string * children: PElement list
 
 module ParseTree =
+  /// 入力トークン列とそのパース結果であるパースイベントのリストから、解析木を組み立てる
   let generate (tokens: (string * string) array) (events: ParseEvent list) : PElement =
     let rec go acc count events =
       match events with
@@ -1106,7 +1137,8 @@ module ParseTree =
 // Interface
 // -----------------------------------------------
 
-let generateParser grammarText =
+/// 構文定義をもとにパーサを生成する
+let generateParser (grammarText: string) : LrParser =
   try
     generateLrParser grammarText
   with
@@ -1114,7 +1146,8 @@ let generateParser grammarText =
     eprintfn "FATAL: Invalid grammar. %s at %d" msg i
     exit 1
 
-let parseTokensToTree tokens (parser: LrParser) =
+/// トークン列をパースして、解析木を構築する
+let parseTokensToTree (tokens: (string * string) array) (parser: LrParser) : PElement =
   let events =
     let tokens = tokens |> Array.map fst |> Array.toList
     LrParser.parse tokens parser
