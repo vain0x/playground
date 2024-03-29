@@ -650,10 +650,7 @@ type private BranchData = NodeId * Term array
 type private BranchId = int
 
 /// LR(1)-term
-///
-/// skip: 空許容な非終端記号を飛び越してこの項に辿りついている場合、どの記号を飛び越したかをこのリストで記録する。
-///       (例: (X → LB decs *stmt RB, _) というLR項で、空許容記号であるdecsを飛び越してこの項に辿りついている場合、skip = [ 1 ] (decsの位置) となる)
-type private Lr1Term = Lr1Term of BranchId * dotPos: int * skip: int list * lookahead: TokenId
+type private Lr1Term = Lr1Term of BranchId * dotPos: int * lookahead: TokenId
 
 /// State of DFA for LR(1).
 type private Lr1State = Set<Lr1Term>
@@ -667,8 +664,7 @@ type private LrAction =
   /// 還元後の遷移
   | Jump of StateId
   /// `width`: ポップする状態の個数 (生成規則の右辺にある項の個数)
-  /// `skip`: Lr1Termを参照
-  | Reduce of NodeId * BranchId * width: int * skip: int list
+  | Reduce of NodeId * BranchId * width: int
   | Accept of BranchId
 
 [<RequireQualifiedAccess; NoEquality; NoComparison>]
@@ -764,7 +760,7 @@ let generateLrParser (grammarText: string) : LrParser =
         (s
          |> Set.toList
          |> List.map (fun (lt: Lr1Term) ->
-           let (Lr1Term (bi, dot, _, lookahead)) = lt
+           let (Lr1Term (bi, dot, lookahead)) = lt
            let la = Term.toString termArray.[lookahead]
            let node, terms = branchArray.[bi]
 
@@ -801,7 +797,7 @@ let generateLrParser (grammarText: string) : LrParser =
       state
       |> Set.fold
            (fun acc (lt: Lr1Term) ->
-             let (Lr1Term (branchId, dot, skip, lookahead)) = lt
+             let (Lr1Term (branchId, dot, lookahead)) = lt
              let _, terms = branchArray.[branchId]
 
              // ドットが非終端記号についている場合は、その非終端記号から導出するルールのLR(1)項を状態に加える
@@ -823,21 +819,10 @@ let generateLrParser (grammarText: string) : LrParser =
                           lookaheadSet
                           |> Set.fold
                                (fun acc lookahead ->
-                                 let lt = Lr1Term(bi, 0, [], lookahead)
+                                 let lt = Lr1Term(bi, 0, lookahead)
                                  addLt acc lt)
                                acc)
                         acc
-
-                 // 空許容なノードを飛び越えた後の項を加える
-                 // (この項を含む状態に、ε遷移後の状態をマージする。
-                 //  飛び越えた記号を還元するときにスタックにプッシュされるはずだった状態が欠落するが、
-                 //  それは `skip` によって調整する)
-                 let acc =
-                   if nullableSet |> Set.contains nodeId then
-                     let lt = Lr1Term(branchId, dot + 1, dot :: skip, lookahead)
-                     addLt acc lt
-                   else
-                     acc
 
                  acc
 
@@ -863,11 +848,11 @@ let generateLrParser (grammarText: string) : LrParser =
     |> List.choose (fun (lt: Lr1Term) ->
       // LR(1)項のドットを1つ右に進めて、その際に飛び越える項と、更新後のLR(1)項を得る
       // ドットが右端だったらNone
-      let (Lr1Term (branchId, dot, skip, lookahead)) = lt
+      let (Lr1Term (branchId, dot, lookahead)) = lt
       let _, terms = branchArray.[branchId]
 
       if dot + 1 <= terms.Length then
-        Some(Term.id terms.[dot], Lr1Term(branchId, dot + 1, skip, lookahead))
+        Some(Term.id terms.[dot], Lr1Term(branchId, dot + 1, lookahead))
       else
         None)
     |> Seq.groupBy fst
@@ -883,7 +868,7 @@ let generateLrParser (grammarText: string) : LrParser =
   // Generate DFA.
   let initialState =
     ruleBranches.[root]
-    |> Array.map (fun bi -> Lr1Term(bi, 0, [], Eof))
+    |> Array.map (fun bi -> Lr1Term(bi, 0, Eof))
     |> Set.ofArray
     |> getClosure
 
@@ -900,7 +885,7 @@ let generateLrParser (grammarText: string) : LrParser =
     stateArray.[stateId]
     |> Set.fold
          (fun p (lt: Lr1Term) ->
-           let (Lr1Term (branchId, dot, _, _)) = lt
+           let (Lr1Term (branchId, dot, _)) = lt
            let _, terms = branchArray.[branchId]
 
            if dot < terms.Length && Term.id terms.[dot] = termId then
@@ -925,7 +910,7 @@ let generateLrParser (grammarText: string) : LrParser =
 
   for stateId, state in stateArray |> Seq.indexed do
     for lt in state do
-      let (Lr1Term (branchId, dot, skip, lookahead)) = lt
+      let (Lr1Term (branchId, dot, lookahead)) = lt
       let node, terms = branchArray.[branchId]
       let prec, _ = branchPrec.[branchId]
 
@@ -941,7 +926,7 @@ let generateLrParser (grammarText: string) : LrParser =
           (Term.toString termArray.[lookahead])
           node
           (Term.toString termArray.[node])
-          (terms.Length - List.length skip)
+          terms.Length
 
         if prec < precAt stateId lookahead then
           trace "  less priority"
@@ -950,11 +935,9 @@ let generateLrParser (grammarText: string) : LrParser =
             trace "  empty branch"
 
           // スタックからポップする状態の個数
-          // スキップした空許容なノードに対応する状態がスタックに配置されてないので、スキップした数だけポップする数を減らす
-          // let width = dot - List.length skip
           let width = dot
 
-          table.[(stateId, lookahead)] <- LrAction.Reduce(node, branchId, width, skip)
+          table.[(stateId, lookahead)] <- LrAction.Reduce(node, branchId, width)
           tablePrec.[(stateId, lookahead)] <- prec
 
           if node = root then
@@ -988,13 +971,6 @@ module LrParser =
     let onShift (i: int) =
       if i < tokenCount then
         builder.Add([ ParseEvent.Token i ])
-
-    let onPreReduce (count: int) (skip: int list) =
-      let startIndex = builder.Count - count
-
-      for dot in List.rev skip do
-        // FIXME: 空列になった非終端記号の名前
-        builder.Insert(startIndex + dot, [ ParseEvent.StartNode("Eps", 0) ])
 
     let onReduce (name: string) (count: int) =
       let index = builder.Count - count
@@ -1037,26 +1013,10 @@ module LrParser =
           cursor <- cursor + 1
           go next (state :: stack) tokenTail
 
-        | Some (LrAction.Reduce (nodeId, branchId, width, skip)) ->
-          let skipCount = List.length skip
-          let items, stack = List.splitAt (width - skipCount) (state :: stack)
-
-          let items =
-            if List.isEmpty skip then
-              items
-            else
-              // 途中、一部の空許容な非終端記号を空列に還元してこの状態に辿りついているため、
-              // それらの記号に対応するstateがスタックにプッシュされていない。ここで挿入して補う
-              eprintfn "  insert skipped nodes: %s items=%A skip=%A"  p.BranchArray.[branchId] items skip
-              let mutable items = ResizeArray(items)
-              for dot in List.rev skip do
-                items.Insert(dot, -1) // FIXME: stateId?
-              List.ofSeq items
+        | Some (LrAction.Reduce (nodeId, branchId, width)) ->
+          let items, stack = List.splitAt width (state :: stack)
 
           trace "reduce %s(N%d -> %A) => s#%d" p.BranchArray.[branchId] nodeId items (List.head stack)
-
-          if skipCount <> 0 then
-            onPreReduce (width - skipCount) skip
 
           onReduce p.BranchArray.[branchId] width
 
