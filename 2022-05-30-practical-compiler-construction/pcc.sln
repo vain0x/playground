@@ -9,6 +9,8 @@ Project("{F2A71F9B-5D33-465A-A702-920D77279786}") = "MyLex", "MyLex\MyLex.fsproj
 EndProject
 Project("{F2A71F9B-5D33-465A-A702-920D77279786}") = "MyYacc", "MyYacc\MyYacc.fsproj", "{79E97328-ED6F-482B-876E-E297CC7DA442}"
 EndProject
+Project("{F2A71F9B-5D33-465A-A702-920D77279786}") = "UseFsYacc", "UseFsYacc\UseFsYacc.fsproj", "{B10D4FE2-AE23-4D12-AF1A-5768A60872DE}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -30,5 +32,9 @@ Global
 		{79E97328-ED6F-482B-876E-E297CC7DA442}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{79E97328-ED6F-482B-876E-E297CC7DA442}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{79E97328-ED6F-482B-876E-E297CC7DA442}.Release|Any CPU.Build.0 = Release|Any CPU
+		{B10D4FE2-AE23-4D12-AF1A-5768A60872DE}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{B10D4FE2-AE23-4D12-AF1A-5768A60872DE}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{B10D4FE2-AE23-4D12-AF1A-5768A60872DE}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{B10D4FE2-AE23-4D12-AF1A-5768A60872DE}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 EndGlobal

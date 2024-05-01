@@ -42,6 +42,8 @@ module private UseMyYacc =
         PElement.Node("Root", children)
       | _ -> unreachable root
 
+    eprintfn "Parse success! Parse tree is: %A" root
+
     AstLower.lowerRoot root
 
   let internal run () =

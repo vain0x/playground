@@ -1,7 +1,7 @@
 {
-    type T = int;
-    type c = int;
-    int a, b, x, y, z, w;
+    # type T = int;
+    # type c = int;
+    # int a, b, x, y, z, w;
 
     T f() { a = b; }
     c d() { x = y; }

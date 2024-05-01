@@ -2,19 +2,19 @@
 prog : block
      ;
 
-decs : dec decs
-     | /* empty */
+decs : decs dec               %name DecsCons
+     | /* empty */            %name DecsNil
      ;
 
-dec : ID ID LP RP block
+dec : ID ID LP RP block       %name FuncDec
     ;
 
-stmts : stmt
-      | stmts stmt
+stmts : stmt                  %name StmtsSingle
+      | stmts stmt            %name StmtsCons
       ;
 
-stmt : ID ASSIGN ID SEMI
+stmt : ID ASSIGN ID SEMI      %name AssignStmt
      ;
 
-block : LB decs stmts RB
+block : LB decs stmts RB      %name Block
       ;

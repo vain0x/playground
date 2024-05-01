@@ -32,7 +32,16 @@ let private lowerTyp element =
 let private lowerDecs element =
   match element with
   | PElement.Node ("DecsNil", _) -> []
-  | PElement.Node ("DecsCons", [ h; t ]) -> lowerDec h :: lowerDecs t
+
+  // FIXME: `decs` が空列に還元されたとき空の宣言列が子要素として追加されない
+  //        (空許容な非終端記号の飛び越しを同一の状態に含める場合)
+  // | PElement.Node ("DecsCons", [ t ]) -> [ lowerDec t ]
+
+  | PElement.Node ("DecsCons", [ h; t ]) -> List.append (lowerDecs h) [ lowerDec t ]
+
+  // FIXME: パーサの実装不備により空列はEpsという名前のノードになってしまう (DecsNilであるべき)
+  | PElement.Node ("Eps", _) -> []
+
   | _ -> unreachable element
 
 let private lowerDec element =
@@ -54,13 +63,17 @@ let private lowerDec element =
 let private lowerIds element : string list =
   match element with
   | PElement.Node ("IdsSingle", [ id ]) -> [ lowerId id ]
-  | PElement.Node ("IdsCons", [ h; _; t ]) -> lowerId h :: lowerIds t
+  | PElement.Node ("IdsCons", [ h; _; t ]) -> List.append (lowerIds h) [ lowerId t ]
   | _ -> unreachable element
 
 let private lowerFargsOpt element =
   match element with
-  | PElement.Node ("FArgsNone", _) -> []
-  | PElement.Node ("FArgsSome", [ fargs ]) -> lowerFargs fargs
+  | PElement.Node ("FArgsOptNone", _) -> []
+  | PElement.Node ("FArgsOptSome", [ fargs ]) -> lowerFargs fargs
+
+  // FIXME: パーサの実装不備
+  | PElement.Node ("Eps", _) -> []
+
   | _ -> unreachable element
 
 let private lowerFargs element =
